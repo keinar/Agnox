@@ -67,6 +67,7 @@ jobs:
         path: allure-results/
         retention-days: 30
 
+
   deploy-report:
     name: Deploy Allure Report to Pages
     if: always()
@@ -74,22 +75,54 @@ jobs:
     runs-on: ubuntu-latest
     
     permissions:
-      contents: read
+      contents: write
       pages: write
       id-token: write
 
     steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
     - name: Download Allure results
       uses: actions/download-artifact@v4
       with:
         name: allure-results
         path: allure-results
 
+    - name: Restore previous Allure history (if exists)
+      run: |
+        if [ -d "allure-history" ]; then
+          echo "History found"
+        else
+          echo "No history found"
+        fi
+
+    - name: Restore history from GitHub Pages branch (gh-pages)
+      run: |
+        git fetch --depth=1 origin gh-pages || true
+        if git checkout origin/gh-pages -- allure-history 2>/dev/null; then
+          echo "Restored history"
+        else
+          echo "No history to restore"
+        fi
+
     - name: Generate Allure report
-      uses: simple-elf/allure-report@v1
+      uses: simple-elf/allure-report-action@v1
       with:
-        results-path: allure-results
-        report-path: allure-report
+        results: allure-results
+        report: allure-report
+
+    - name: Copy history into new report
+      run: |
+        if [ -d "allure-history" ]; then
+          mkdir -p allure-report/history
+          cp -r allure-history/* allure-report/history/
+        fi
+
+    - name: Save new history
+      run: |
+        mkdir -p allure-history
+        cp -r allure-report/history/* allure-history/
 
     - name: Setup GitHub Pages
       uses: actions/configure-pages@v4
