@@ -73,7 +73,7 @@ jobs:
     if: always()
     needs: test
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: write
       pages: write
@@ -89,40 +89,34 @@ jobs:
         name: allure-results
         path: allure-results
 
-    - name: Restore previous Allure history (if exists)
+    - name: Install Allure CLI
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y default-jre unzip wget
+        wget https://github.com/allure-framework/allure2/releases/latest/download/allure-commandline.zip
+        unzip allure-commandline.zip -d /opt/allure
+        sudo ln -s /opt/allure/allure-*/bin/allure /usr/bin/allure
+
+    - name: Restore history from gh-pages
+      run: |
+        git fetch origin gh-pages || true
+        git checkout origin/gh-pages -- allure-history 2>/dev/null || echo "No previous history"
+
+    - name: Merge existing history into results
       run: |
         if [ -d "allure-history" ]; then
-          echo "History found"
-        else
-          echo "No history found"
+          mkdir -p allure-results/history
+          cp -r allure-history/* allure-results/history/
         fi
 
-    - name: Restore history from GitHub Pages branch (gh-pages)
+    - name: Generate Allure Report
       run: |
-        git fetch --depth=1 origin gh-pages || true
-        if git checkout origin/gh-pages -- allure-history 2>/dev/null; then
-          echo "Restored history"
-        else
-          echo "No history to restore"
-        fi
+        allure generate allure-results --clean -o allure-report
 
-    - name: Generate Allure report
-      uses: simple-elf/allure-report-action@v1
-      with:
-        results: allure-results
-        report: allure-report
-
-    - name: Copy history into new report
-      run: |
-        if [ -d "allure-history" ]; then
-          mkdir -p allure-report/history
-          cp -r allure-history/* allure-report/history/
-        fi
-
-    - name: Save new history
+    - name: Save new history for next runs
       run: |
         mkdir -p allure-history
-        cp -r allure-report/history/* allure-history/
+        cp -r allure-report/history/* allure-history/ || true
 
     - name: Setup GitHub Pages
       uses: actions/configure-pages@v4
