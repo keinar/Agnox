@@ -1,0 +1,72 @@
+import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+import path from 'path';
+/**
+ * Read environment variables from file.
+ * https://github.com/motdotla/dotenv
+ */
+dotenv.config();
+/**
+ * See https://playwright.dev/docs/test-configuration.
+ */
+export default defineConfig({
+  testDir: './tests',
+  /* Run tests in files in parallel */
+  fullyParallel: false,
+  /* Fail the build on CI if you accidentally left test.only in the source code. */
+  forbidOnly: !!process.env.CI,
+  /* Retry on CI only */
+  retries: process.env.CI ? 2 : 0,
+  /* Opt out of parallel tests on CI. */
+  workers: process.env.CI ? 1 : undefined,
+  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
+  reporter: [
+    ['html', { open: 'never' }],
+    ['list']
+  ],
+
+  timeout: 10 * 1000,
+
+  expect: {
+    timeout: 5000
+  },
+// Global setup file to perform API login and save auth state
+  globalSetup: require.resolve('./global.setup.ts'),
+
+  use: {
+    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
+    trace: 'on-first-retry',
+
+    headless: !!process.env.CI,
+
+    viewport: { width: 1920, height: 1080 },
+    storageState: 'playwright/.auth/auth-state.json',
+  },
+
+  projects: [
+    {
+      name: 'ui-tests-chrome',
+      testDir: './tests/ui',
+      use: { 
+        ...devices['Desktop Chrome'],
+        baseURL: process.env.BASE_URL  
+      },
+    },
+    {
+      name: 'api-tests',
+      testDir: './tests/api',
+      use: { 
+        ...devices['Desktop Chrome'],
+        baseURL: process.env.BASE_URL
+       },
+    },
+    {
+      name: 'e2e-tests',
+      testDir: './tests/e2e',
+      use: { 
+        ...devices['Desktop Chrome'],
+        baseURL: process.env.BASE_URL
+      },
+    }
+  ],
+});
