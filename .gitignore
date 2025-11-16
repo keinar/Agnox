@@ -26,3 +26,6 @@ pnpm-debug.log*
 allure-results/
 allure-report/
 .allure
+
+# MacOS
+.DS_Store
