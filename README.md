@@ -85,8 +85,8 @@ Supports **Allure Reports** + native Playwright HTML reports.
 ## 2️⃣ Installation
 
 ```bash
-git clone https://github.com/keinar/pw-ts-bp.git
-cd PW-TS-BP
+git clone https://github.com/keinar/Playwright-Full-Stack-Framework.git
+cd Playwright-Full-Stack-Framework
 npm install
 npx playwright install
 ```
