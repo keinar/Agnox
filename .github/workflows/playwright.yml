@@ -128,3 +128,44 @@ jobs:
 
     - name: Deploy to GitHub Pages
       uses: actions/deploy-pages@v4
+
+    - name: Comment PR with Allure Report link
+      if: ${{ github.event_name == 'pull_request' }}
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const repoOwner = context.repo.owner;
+          const repoName = context.repo.repo;
+          const prNumber = context.payload.pull_request.number;
+          const reportUrl = `https://${repoOwner}.github.io/${repoName}/`;
+
+          // Delete previous bot comments to avoid spam
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: repoOwner,
+            repo: repoName,
+            issue_number: prNumber
+          });
+
+          for (const c of comments) {
+            if (c.user.login === "github-actions[bot]" && c.body.includes("📊 Allure Report")) {
+              await github.rest.issues.deleteComment({
+                owner: repoOwner,
+                repo: repoName,
+                comment_id: c.id
+              });
+            }
+          }
+
+          // Add updated comment
+          await github.rest.issues.createComment({
+            owner: repoOwner,
+            repo: repoName,
+            issue_number: prNumber,
+            body: `📊 **Allure Report is ready!**\n\n🔗 ${reportUrl}`
+          });
+    
+    - name: Add Action Summary with report link
+      run: |
+        echo "## 📊 Allure Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🔗 **https://$GITHUB_REPOSITORY_OWNER.github.io/${GITHUB_REPOSITORY#*/}/**" >> $GITHUB_STEP_SUMMARY
