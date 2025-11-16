@@ -82,6 +82,14 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         baseURL: process.env.BASE_URL
       },
-    }
+    },
+    {
+      name: 'visual-tests',
+      testDir: './tests/visual',
+      use: { 
+        ...devices['Desktop Chrome'],
+        baseURL: process.env.BASE_URL
+      },
+    },
   ],
 });
