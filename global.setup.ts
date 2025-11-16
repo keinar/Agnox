@@ -1,6 +1,7 @@
 import { request, FullConfig } from '@playwright/test';
 import * as dotenv from 'dotenv';
-import * as fs from 'fs'; // Import File System
+import * as fs from 'fs';
+import * as path from 'path';
 
 dotenv.config();
 
@@ -53,6 +54,11 @@ async function globalSetup(config: FullConfig) {
       }
     ]
   };
+
+  const authDir = path.dirname(authFile);
+  if (!fs.existsSync(authDir)) {
+    fs.mkdirSync(authDir, { recursive: true });
+  }
 
   fs.writeFileSync(authFile, JSON.stringify(authState));
 
