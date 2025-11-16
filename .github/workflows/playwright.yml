@@ -94,8 +94,8 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y default-jre unzip wget
         wget https://github.com/allure-framework/allure2/releases/download/2.35.1/allure-2.35.1.zip
-        unzip allure-commandline.zip -d /opt/allure
-        sudo ln -s /opt/allure/allure-*/bin/allure /usr/bin/allure
+        unzip allure-2.35.1.zip -d /opt/allure
+        sudo ln -s /opt/allure/allure-2.35.1/bin/allure /usr/bin/allure
 
     - name: Restore history from gh-pages
       run: |
