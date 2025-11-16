@@ -85,11 +85,13 @@ jobs:
         name: allure-results
         path: allure-results
 
-    - name: Generate Allure report
-      uses: allure-framework/allure-action@v1
+    - name: Install Allure
+      uses: allure-actions/setup-allure@v1
       with:
-        results_path: allure-results
-        report_path: allure-report
+        allure_version: 'latest'
+
+    - name: Generate Allure report
+      run: allure generate allure-results --clean -o allure-report
 
     - name: Setup GitHub Pages
       uses: actions/configure-pages@v4
