@@ -2,7 +2,6 @@ import { test, expect } from '@playwright/test';
 import { ApiClient } from '../../helpers/apiClient';
 import { AiHelper } from '../../helpers/aiHelper';
 
-
 test.describe('AI-Assisted Content Validation', () => {
 
     let apiClient: ApiClient;
@@ -16,7 +15,7 @@ test.describe('AI-Assisted Content Validation', () => {
 
     test('1. Should generate creative title via Gemini and validate relevance', async () => {
         
-        const theme = "Futuristic Cyberpunk City";
+        const theme = "Family Vacation";
         
         console.log(`[AI] Asking Gemini to generate a title for: ${theme}...`);
         const aiTitle = await aiHelper.generateGalleryTitle(theme);
@@ -40,13 +39,18 @@ test.describe('AI-Assisted Content Validation', () => {
         const savedTitle = fetchedBody.title;
 
         console.log(`[AI] Asking Gemini to validate relevance...`);
+    
         
-        // Ask Gemini: Is the title saved in the DB actually relevant to "Cyberpunk"?
-        // This tests that the system didn't corrupt the data and that the context is preserved.
-        const isRelevant = await aiHelper.validateRelevance(savedTitle, theme);
+        // We receive an object { isValid: boolean, reasoning: string }
+        const validation = await aiHelper.validateRelevance(savedTitle, theme);
         
-        // Assertion: The AI must agree that the title matches the theme
-        expect(isRelevant).toBe(true);
+        // Log the AI's reasoning for debugging/reporting
+        console.log(`[AI Oracle] Logic: "${validation.reasoning}"`);
+
+        // Assertion: We check validation.isValid instead of the whole object
+        // If it fails, the error message will contain the AI's reasoning!
+        expect(validation.isValid, `AI rejected the title. Reason: ${validation.reasoning}`).toBe(true);
+
     });
 
     test.afterEach(async () => {

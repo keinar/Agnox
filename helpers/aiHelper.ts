@@ -12,6 +12,11 @@ export interface ImageAnalysisResult {
     mainSubject: string;
 }
 
+export interface TextValidationResult {
+    isValid: boolean;
+    reasoning: string;
+}
+
 export class AiHelper {
     private genAI: GoogleGenerativeAI;
     private model: any;
@@ -45,25 +50,34 @@ export class AiHelper {
 
     /**
      * Validates if a given text matches a specific topic/sentiment.
-     * Acts as an "AI Oracle" for assertions.
-     * @returns boolean (true if valid)
+     * Returns a boolean verdict AND the reasoning behind it.
      */
-    async validateRelevance(textToCheck: string, topic: string): Promise<boolean> {
-        const prompt = `You are a strict QA validation bot.
-        Does the text "${textToCheck}" logically relate to the topic "${topic}"?
-        Answer strictly with "YES" or "NO" only.`;
+    async validateRelevance(textToCheck: string, topic: string): Promise<TextValidationResult> {
+        // Ensure we use a stable model
+        const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+
+        const prompt = `
+            Act as a strict QA auditor.
+            Analyze if the text "${textToCheck}" is logically relevant to the topic "${topic}".
+            
+            Return a JSON object with:
+            - "isValid": boolean (true if relevant, false if off-topic).
+            - "reasoning": A short explanation (max 15 words) of why it passes or fails.
+            
+            Return ONLY the JSON.
+        `;
 
         try {
-            const result = await this.model.generateContent(prompt);
-            const response = await result.response;
-            const answer = response.text().trim().toUpperCase();
+            const result = await model.generateContent(prompt);
+            const text = result.response.text().replace(/```json|```/g, '').trim();
             
-            console.log(`[AI Oracle] Input: "${textToCheck}" | Topic: "${topic}" | Verdict: ${answer}`);
+            console.log(`[AI Oracle] Analysis: ${text}`);
             
-            return answer.includes('YES');
+            return JSON.parse(text) as TextValidationResult;
+
         } catch (error) {
             console.error("AI Validation Failed:", error);
-            return false;
+            return { isValid: false, reasoning: "AI Error" };
         }
     }
 
