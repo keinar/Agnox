@@ -1,44 +1,34 @@
 # **Playwright Full-Stack Automation Framework**
 ### End-to-End Quality Automation Framework for Modern Web Apps (Playwright + TypeScript)
 
-This project is a complete, senior-level QA Automation framework built using **Playwright** and **TypeScript**, designed to test a full-stack **MERN** application (React + Node.js + MongoDB).
+This project is a complete, senior-level QA Automation framework built using **Playwright** and **TypeScript**, designed to test a full-stack **MERN** application.
 
-It demonstrates best-practice automation patterns in modern tech organizations — including scalable structure, API authentication, hybrid testing, POM architecture, database validation, visual testing, resilience testing, code quality, and CI/CD readiness.
+It goes beyond standard testing by integrating **Generative AI (Google Gemini)** for complex content validation, alongside best-practice patterns like Hybrid Testing, POM, and direct Database Validation.
 
 ---
 
 ## 🚀 **Project Highlights**
 
+### 🤖 **AI-Powered Testing (New!)**
+Leverages **Google Gemini 2.5 Flash** via the official SDK to perform intelligent validations:
+* **Visual Content Analysis:** Validates image contents (e.g., "Does this photo contain a human?" or "Is it food?") rather than just pixel comparison.
+* **Semantic Text Validation:** Uses AI to determine if generated content is logically relevant to a specific topic/sentiment.
+
 ### ✔️ Global API Authentication  
-A dedicated `global.setup.ts` authenticates once using the backend API and stores the JWT token for all following UI + API tests.
-
-### ✔️ UI Automation (POM Architecture)  
-All UI tests use a clean Page Object Model, ensuring reuse, maintainability, and readability.
-
-### ✔️ API Automation  
-A strongly typed `ApiClient` wrapper performs CRUD operations and automatically injects the authentication token.
+A dedicated `global.setup.ts` authenticates once using the backend API and stores the JWT token. Custom fixtures inject this state automatically into tests.
 
 ### ✔️ Hybrid (UI + API) Testing  
-Fast data creation/deletion via API + UI validation in the browser.  
-The most efficient E2E testing style for real production systems.
+Combines API for fast setup/teardown with UI for user-centric validation.
+* *Example:* Create a gallery via API -> Verify it appears in the UI -> Delete via API.
 
 ### ✔️ Direct Database Validation  
-Integration tests connect directly to **MongoDB** to validate inserted/deleted/updated data at the source — independent of API/UI.
+Connects directly to **MongoDB** to assert data integrity at the source, independent of the UI or API responses.
 
 ### ✔️ Visual Regression Testing  
-Uses Playwright's `toHaveScreenshot` to capture and compare snapshots of specific UI components, ensuring CSS and layout integrity across changes.
+Uses Playwright's `toHaveScreenshot` for pixel-perfect UI verification across different environments (Linux/macOS).
 
-### ✔️ UI Resilience (API Mocking)
-Utilizes `page.route()` to intercept API calls and simulate server errors (e.g., 500) or empty states, validating that the UI responds gracefully.
-
-### ✔️ Code Quality & Maintainability  
-Integrated with **ESLint** and **Prettier** to enforce consistent coding standards and prevent common errors, making the framework scalable for teams.
-
-### ✔️ CI/CD Ready  
-Includes a GitHub Actions workflow: `playwright.yml`.
-
-### ✔️ Professional Reporting  
-Supports **Allure Reports** + native Playwright HTML reports.
+### ✔️ Resilience Testing  
+Simulates backend failures (e.g., 500 Error, Empty States) using network interception (`page.route`) to ensure the UI handles errors gracefully.
 
 ---
 
@@ -48,58 +38,45 @@ Supports **Allure Reports** + native Playwright HTML reports.
 |------|------------|
 | Automation Framework | **Playwright** |
 | Language | **TypeScript** |
+| AI Integration | **Google Gemini (Generative AI SDK)** |
 | UI Architecture | **POM (Page Object Model)** |
-| API Layer | Playwright `request` |
-| Database Validation | MongoDB native driver |
-| Visual Testing | Playwright `toHaveScreenshot` |
-| Resilience Testing | Playwright `page.route` (Mocking) |
-| Code Quality | ESLint & Prettier |
-| Reporting | Allure + Playwright HTML |
-| CI/CD | GitHub Actions |
+| Database | **MongoDB (Native Driver)** |
+| CI/CD | **GitHub Actions** |
+| Reporting | **Allure + Playwright HTML** |
 
 ---
 
 ## 📁 **Project Structure**
 
-```
+```plaintext
 📦 project-root
- ┣ 📂 helpers
- ┃ ┣ 📜 apiClient.ts
- ┃ ┗ 📜 mongoHelper.ts
- ┣ 📂 pages
- ┃ ┣ 📜 basePage.ts
- ┃ ┣ 📜 loginPage.ts
- ┃ ┗ 📜 dashboardPage.ts
+ ┣ 📂 fixtures           # Custom Playwright fixtures (e.g., Authenticated API Context)
+ ┣ 📂 helpers            # Shared logic (ApiClient, MongoHelper, AiHelper)
+ ┣ 📂 pages              # Page Object Models (POM)
  ┣ 📂 tests
- ┃ ┣ 📂 api
- ┃ ┣ 📂 ui
- ┃ ┣ 📂 e2e
- ┃ ┣ 📂 data
- ┃ ┗ 📂 visual
+ ┃ ┣ 📂 api              # API CRUD tests
+ ┃ ┣ 📂 ui               # UI Functional tests
+ ┃ ┣ 📂 e2e              # Hybrid E2E scenarios
+ ┃ ┣ 📂 data             # DB integrity tests
+ ┃ ┣ 📂 visual           # Visual regression tests
+ ┃ ┗ 📂 ai               # AI-assisted validation tests
  ┣ 📜 playwright.config.ts
  ┣ 📜 global.setup.ts
  ┣ 📜 .env
- ┣ 📜 .eslintrc.js
- ┣ 📜 .prettierrc
- ┗ 📜 README.md
+ ┗ 📜 package.json
 ```
 
----
-
-
----
+-----
 
 ## 🏁 **Getting Started**
 
 ### 1️⃣ Prerequisites
-- Node.js **18+**
-- Installed Playwright browsers
-- Running backend + frontend of the project under test
-- Access to the MongoDB cluster
 
----
+  - Node.js **18+**
+  - Access to the MongoDB cluster
+  - **Gemini API Key** (for AI tests)
 
-## 2️⃣ Installation
+### 2️⃣ Installation
 
 ```bash
 git clone https://github.com/keinar/Playwright-Full-Stack-Framework.git
@@ -108,89 +85,44 @@ npm install
 npx playwright install
 ```
 
----
-
-## 3️⃣ Environment Setup
+### 3️⃣ Environment Setup
 
 Create a `.env` file in the project root:
 
 ```ini
 BASE_URL=https://photo-gallery.keinar.com/
-ADMIN_USER=your-admin-email@example.com
-ADMIN_PASS=your-admin-password
-MONGO_URI=mongodb+srv://<user>:<pass>@<cluster>/<db>?retryWrites=true&w=majority
+ADMIN_USER=your-email@example.com
+ADMIN_PASS=your-password
+MONGO_URI=mongodb+srv://<user>:<pass>@<cluster>/<db>...
+GEMINI_API_KEY=your_google_gemini_api_key  # Required for AI tests
 ```
 
----
+-----
 
 ## 🧪 **Running Tests**
 
-### Run ALL tests:
+| Test Type | Command | Description |
+|-----------|---------|-------------|
+| **Run All** | `npm test` | Runs all tests in headless mode |
+| **UI Tests** | `npm run test:ui` | Runs only UI functional tests |
+| **API Tests** | `npm run test:api` | Runs API CRUD tests |
+| **Visual Tests** | `npm run test:visual` | Runs visual regression tests |
+| **Headed Mode** | `npm run test:headed` | Runs tests with the browser visible |
+| **Update Snapshots** | `npx playwright test --update-snapshots` | Updates visual reference images |
+
+-----
+
+## 📊 **Reports**
+
+Generate and view the comprehensive Allure report:
+
 ```bash
-npx playwright test
+npm run allure:generate
+npm run allure:open
 ```
 
-### UI Tests:
-```bash
-npx playwright test --project=ui-tests-chrome
-```
+-----
 
-### API Tests:
-```bash
-npx playwright test --project=api-tests
-```
+## 📧 Author
 
-### Hybrid E2E Tests:
-```bash
-npx playwright test --project=e2e-tests
-```
-
-### Database Tests:
-```bash
-npx playwright test --project=data-tests
-```
-
-### Visual Tests:
-```bash
-npx playwright test --project=visual-tests
-```
-
-### Update Visual Snapshots:
-```bash
-npx playwright test --project=visual-tests --update-snapshots
-```
-
----
-
-# 📊 **Reports**
-
-### Allure:
-```bash
-npx allure open
-```
-
-### Playwright HTML:
-```bash
-npx playwright show-report
-```
-
----
-
-# 🧹 **Code Quality**
-
-### Run ESLint (Check for errors):
-```bash
-npx eslint . --ext .ts
-```
-
-### Run Prettier (Check formatting):
-```bash
-npx prettier --check .
-```
-
----
-
-# 📧 Author
-
-**Keinar Elkayam**  
-Senior QA Automation Engineer
+**Keinar Elkayam** — Senior QA Automation Engineer
