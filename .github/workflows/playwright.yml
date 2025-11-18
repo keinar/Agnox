@@ -49,6 +49,7 @@ jobs:
         ADMIN_USER: ${{ secrets.ADMIN_USER }}
         ADMIN_PASS: ${{ secrets.ADMIN_PASS }}
         MONGO_URI: ${{ secrets.MONGO_URI }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: npx playwright test
 
     - name: Upload Playwright HTML report

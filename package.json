@@ -23,5 +23,8 @@
     "allure-playwright": "^3.4.2",
     "dotenv": "^17.2.3",
     "mongodb": "^7.0.0"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1"
   }
 }

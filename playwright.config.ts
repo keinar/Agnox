@@ -92,5 +92,13 @@ export default defineConfig({
         baseURL: process.env.BASE_URL
       },
     },
+    {
+      name: 'ai-tests',
+      testDir: './tests/ai',
+      use: { 
+        ...devices['Desktop Chrome'],
+        baseURL: process.env.BASE_URL
+      },
+    },
   ],
 });
