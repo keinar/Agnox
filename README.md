@@ -1,9 +1,9 @@
-# **Playwright TS Project**
-### _End-to-End Quality Automation Framework (Playwright + TypeScript)_
+# **Playwright Full-Stack Automation Framework**
+### End-to-End Quality Automation Framework for Modern Web Apps (Playwright + TypeScript)
 
 This project is a complete, senior-level QA Automation framework built using **Playwright** and **TypeScript**, designed to test a full-stack **MERN** application (React + Node.js + MongoDB).
 
-It demonstrates best-practice automation patterns used by senior QA engineers in modern tech organizations — including scalable structure, API authentication, hybrid testing, POM architecture, database validation, visual testing, resilience testing, code quality, and CI/CD readiness.
+It demonstrates best-practice automation patterns in modern tech organizations — including scalable structure, API authentication, hybrid testing, POM architecture, database validation, visual testing, resilience testing, code quality, and CI/CD readiness.
 
 ---
 

@@ -1,8 +1,6 @@
 import { Page } from "@playwright/test";
 
-/**
- * BasePage class to be extended by all page objects
- */
+
 export class BasePage {
     readonly page: Page;
 
