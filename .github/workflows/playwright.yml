@@ -119,6 +119,25 @@ jobs:
         mkdir -p allure-history
         cp -r allure-report/history/* allure-history/ || true
 
+    - name: Commit and Push Allure History
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        
+        # Ensure we are on the correct branch (or create it)
+        git checkout gh-pages || git checkout -b gh-pages
+        
+        # Add the history directory (which should exist from the previous step)
+        git add allure-history
+        
+        # If there are changes, commit them
+        if [ -n "$(git status --porcelain=v1)" ]; then
+            git commit -m "ci: Update Allure Report history for next runs"
+            git push origin gh-pages
+        else
+            echo "No changes in Allure history to commit."
+        fi
+
     - name: Setup GitHub Pages
       uses: actions/configure-pages@v4
 
@@ -140,7 +159,6 @@ jobs:
           const prNumber = context.payload.pull_request.number;
           const reportUrl = `https://${repoOwner}.github.io/${repoName}/`;
 
-          // Delete previous bot comments to avoid spam
           const { data: comments } = await github.rest.issues.listComments({
             owner: repoOwner,
             repo: repoName,
@@ -157,7 +175,6 @@ jobs:
             }
           }
 
-          // Add updated comment
           await github.rest.issues.createComment({
             owner: repoOwner,
             repo: repoName,
