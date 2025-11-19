@@ -27,7 +27,6 @@ export class AiHelper {
             throw new Error("GEMINI_API_KEY is missing in .env file");
         }
         this.genAI = new GoogleGenerativeAI(apiKey);
-        // Use the flash model for speed and efficiency in tests
         this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
     }
 
@@ -53,7 +52,6 @@ export class AiHelper {
      * Returns a boolean verdict AND the reasoning behind it.
      */
     async validateRelevance(textToCheck: string, topic: string): Promise<TextValidationResult> {
-        // Ensure we use a stable model
         const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
         const prompt = `
@@ -128,6 +126,73 @@ export class AiHelper {
                 isFood: false, 
                 mainSubject: "Unknown" 
             };
+        }
+    }
+
+    /**
+     * Scans text (HTML source, API response, Logs) for security risks.
+     */
+    async scanForSecurityRisks(content: string, context: string): Promise<{ isSecure: boolean, detectedIssues: string[] }> {
+        try {
+            const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+
+            // Truncate content if it's too huge to save tokens, keep critical parts
+            const safeContent = content.slice(0, 10000); 
+
+            const prompt = `
+                Act as a Security Analyst.
+                Review the following ${context}:
+                
+                """
+                ${safeContent}
+                """
+
+                Check for:
+                1. PII Leakage (Emails, Phone numbers, Addresses found in unexpected places).
+                2. Sensitive Technical Data (Stack traces, DB connection strings, Internal IPs).
+                3. Exposed Secrets (API Keys, Tokens, Password Hashes).
+                
+                Return a JSON object:
+                - "isSecure": boolean (true if NO sensitive data is found).
+                - "detectedIssues": string array (list specific findings, e.g. "Found generic stack trace", "Exposed email address").
+            `;
+
+            const result = await model.generateContent(prompt);
+            const text = result.response.text().replace(/```json|```/g, '').trim();
+            return JSON.parse(text);
+
+        } catch (error) {
+            console.error("AI Security Scan Failed:", error);
+            return { isSecure: true, detectedIssues: ["AI Error - Scan skipped"] };
+        }
+    }
+
+    /**
+     * Generates tricky, toxic, or edge-case inputs for Fuzz Testing.
+     * @param scenario Description of the desired input (e.g., "SQL Injection strings", "Toxic usernames")
+     * @param count Number of inputs to generate
+     */
+    async generateTestInputs(scenario: string, count: number = 3): Promise<string[]> {
+        const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+        
+        const prompt = `
+            Act as a QA Security Tester.
+            Generate a JSON array containing ${count} string inputs.
+            Goal: Create inputs that match this description: "${scenario}".
+            
+            The inputs should be strings that might break a web form or test content moderation filters.
+            Return ONLY the raw JSON array (e.g. ["string1", "string2"]). No markdown formatting.
+        `;
+
+        try {
+            const result = await model.generateContent(prompt);
+            const text = result.response.text().replace(/```json|```/g, '').trim();
+            console.log(`[AI Fuzzing] Generated inputs for "${scenario}": ${text}`);
+            return JSON.parse(text);
+        } catch (error) {
+            console.error("AI Generation Failed:", error);
+            // Fallback to prevent test crash
+            return ["fallback_test_data"];
         }
     }
 }

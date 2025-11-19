@@ -1,6 +1,9 @@
 import { type APIRequestContext, type APIResponse } from '@playwright/test';
 import * as fs from 'fs'; // Import File System module
 
+
+const AUTH_FILE_PATH = 'playwright/.auth/auth-state.json';
+
 /**
  * @file apiClient.ts
  * @description Wrapper for the 'photographer-gallery' API.
@@ -87,5 +90,46 @@ export class ApiClient {
         return this.request.delete(`api/galleries/${id}`, {
             headers: this.authHeader
         });
+    }
+
+    /**
+     * Public static method to retrieve the Authorization header (JWT)
+     * by reading the auth state file directly from disk.
+     * Useful for unauthenticated hooks (like test.afterAll) that require API access.
+     * @returns The Authorization header object, or empty object if token is missing.
+     */
+    public static readAuthHeaderFromDisk(): { [key: string]: string } {
+        try {
+            // 1. Read the complex auth state file
+            const authFileContent = fs.readFileSync(AUTH_FILE_PATH, 'utf-8');
+            const authData = JSON.parse(authFileContent);
+
+            // 2. Navigate the complex object to find the 'user' item (which holds the JWT)
+            const localStorage = authData.origins[0].localStorage;
+            const userItem = localStorage.find(
+                (item: { name: string; }) => item.name === 'user' 
+            );
+
+            if (!userItem) {
+                throw new Error("Could not find 'user' in localStorage of auth file.");
+            }
+
+            // 3. Parse the *inner* JSON string (the value of 'user')
+            const userInfo = JSON.parse(userItem.value);
+            const token = userInfo.token;
+            
+            if (!token) {
+                throw new Error("Token not found in auth file.");
+            }
+            
+            // Return only the Authorization header
+            return {
+                'Authorization': `Bearer ${token}`
+            };
+        } catch (error) {
+            console.warn(`[ApiClient] Could not load auth token for teardown: ${error.message}.`);
+            // Return an empty object if auth fails
+            return {};
+        }
     }
 }
