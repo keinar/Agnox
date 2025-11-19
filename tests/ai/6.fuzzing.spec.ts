@@ -2,10 +2,6 @@ import { test, expect, APIRequestContext } from '@playwright/test';
 import { AiHelper } from '../../helpers/aiHelper';
 import { ProfilePage } from '../../pages/profilePage';
 import { ApiClient } from '../../helpers/apiClient';
-import * as dotenv from 'dotenv';
-
-
-dotenv.config();
 
 const ADMIN_EMAIL_FOR_LOGIN = process.env.ADMIN_USER || 'fallback@example.com';
 const ORIGINAL_ADMIN_PASS = process.env.ADMIN_PASS || 'Password123!'; 
