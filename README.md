@@ -1,6 +1,8 @@
 # **Playwright Full-Stack Automation Framework**
 ### End-to-End Quality Automation Framework for Modern Web Apps (Playwright + TypeScript)
 
+[![Allure Report](https://img.shields.io/badge/Allure_Report-View-blue?style=for-the-badge)](https://keinar.github.io/Playwright-Full-Stack-Framework/)  [![Playwright CI](https://github.com/keinar/Playwright-Full-Stack-Framework/actions/workflows/playwright.yml/badge.svg)](https://github.com/keinar/Playwright-Full-Stack-Framework/actions/workflows/playwright.yml)
+
 This project is a complete, senior-level QA Automation framework built using **Playwright** and **TypeScript**, designed to test a full-stack **MERN** application.
 
 It goes beyond standard testing by integrating **Generative AI (Google Gemini)** for complex content validation, alongside best-practice patterns like Hybrid Testing, POM, and direct Database Validation.
