@@ -1,14 +1,62 @@
-import { Page } from "@playwright/test";
+import { Locator, Page, test, expect } from "@playwright/test";
+import { Logger } from "../helpers/logger"; 
 
-
-export class BasePage {
+export abstract class BasePage {
     readonly page: Page;
 
     constructor(page: Page) {
         this.page = page;
     }
 
-    async navigateTo(path: string) {
-        await this.page.goto(path);
+    private async step<T>(description: string, action: () => Promise<T>): Promise<T> {
+        Logger.info(description);
+
+        return await test.step(description, async () => {
+            try {
+                return await action();
+            } catch (error) {
+                Logger.error(`Failed step: ${description}`);
+                throw error;
+            }
+        });
+    }
+
+    protected async navigateTo(path: string) {
+        await this.step(`Maps to URL: '${path}'`, async () => {
+            await this.page.goto(path, { waitUntil: 'domcontentloaded' });
+        });
+    }
+
+    protected async clickElement(locator: Locator, description: string) {
+        await this.step(`Click '${description}'`, async () => {
+            await locator.waitFor({ state: 'visible' }); 
+            await locator.click();
+        });
+    }
+
+    protected async fillElement(locator: Locator, value: string, description: string) {
+        await this.step(`Fill '${value}' into '${description}'`, async () => {
+            await locator.waitFor({ state: 'visible' });
+            await locator.fill(value);
+        });
+    }
+
+    protected async getElementText(locator: Locator, description: string): Promise<string> {
+        return await this.step(`Get text from '${description}'`, async () => {
+            const text = await locator.textContent();
+            return text ?? '';
+        });
+    }
+
+    protected async validateElementContainsText(locator: Locator, expectedText: string, description: string) {
+        await this.step(`Assert '${description}' contains text: "${expectedText}"`, async () => {
+            await expect(locator).toContainText(expectedText);
+        });
+    }
+
+    protected async validateElementVisible(locator: Locator, description: string) {
+        await this.step(`Assert '${description}' is visible`, async () => {
+            await expect(locator).toBeVisible();
+        });
     }
 }

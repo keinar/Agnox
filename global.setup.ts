@@ -2,12 +2,15 @@ import { request, FullConfig } from '@playwright/test';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Logger } from './helpers/logger';
 
 dotenv.config();
 
 const authFile = 'playwright/.auth/auth-state.json';
 
 async function globalSetup(config: FullConfig) {
+  // Clean legacy logs before starting the new run
+  Logger.clean();
   const apiContext = await request.newContext();
   const username = process.env.ADMIN_USER!;
   const password = process.env.ADMIN_PASS!;
