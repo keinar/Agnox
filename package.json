@@ -9,6 +9,8 @@
     "test:ui": "playwright test tests/ui",
     "test:api": "playwright test tests/api",
     "test:visual": "playwright test tests/visual",
+    "test:ai": "playwright test tests/ai",
+    "test:data": "playwright test tests/data",
     "allure:generate": "allure generate allure-results --clean -o allure-report",
     "allure:open": "allure open allure-report"
   },

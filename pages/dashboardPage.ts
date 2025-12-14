@@ -3,7 +3,7 @@ import { type Page, type Locator } from '@playwright/test';
 
 export class DashboardPage extends BasePage {
     
-    // Private Locators - Encapsulation ensures tests can't bypass our logic
+    // Private Locators - Strictly Encapsulated
     private readonly galleryTitleInput: Locator;
     private readonly clientNameInput: Locator;
     private readonly createGalleryButton: Locator;
@@ -13,19 +13,16 @@ export class DashboardPage extends BasePage {
     constructor(page: Page) {
         super(page);
 
-        // Initialize locators using specific IDs or Roles
+        // Locators Definition
         this.galleryTitleInput = page.locator('#galleryTitle');
         this.clientNameInput = page.locator('#clientName');
         this.createGalleryButton = page.locator('#createGalleryButton');
-        
-        // Complex locators are defined once here
         this.sidebar = page.locator('aside div').first();
         this.logoutButton = page.getByRole('button', { name: 'Logout' });
     }
 
     /**
-     * Business Action: Creates a new gallery.
-     * Logs and steps are handled automatically by BasePage.
+     * Creates a new gallery via the UI.
      */
     async createGallery(title: string, clientName: string) {
         await this.fillElement(this.galleryTitleInput, title, "Gallery Title Input");
@@ -43,5 +40,22 @@ export class DashboardPage extends BasePage {
 
     async verifySidebarVisible() {
         await this.validateElementVisible(this.sidebar, "Dashboard Sidebar");
+    }
+
+    /**
+     * Validates that a gallery card appears on the dashboard with correct details.
+     * This encapsulates the DOM structure knowledge within the Page Object.
+     */
+    async validateGalleryVisible(title: string, clientName: string) {
+        // Scoped locator: Finds a card that specifically contains the title text
+        const galleryCard = this.page.locator('div.border', { hasText: title });
+
+        await this.validateElementVisible(galleryCard, `Gallery Card for "${title}"`);
+        
+        await this.validateElementContainsText(
+            galleryCard, 
+            clientName, 
+            `Gallery Card Client Name ("${clientName}")`
+        );
     }
 }

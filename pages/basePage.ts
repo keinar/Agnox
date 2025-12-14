@@ -55,7 +55,7 @@ export abstract class BasePage {
     }
 
     protected async validateElementVisible(locator: Locator, description: string) {
-        await this.step(`Assert '${description}' is visible`, async () => {
+        await this.step(`Assert '${locator}' is visible`, async () => {
             await expect(locator).toBeVisible();
         });
     }

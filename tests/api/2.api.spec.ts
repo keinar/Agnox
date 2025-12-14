@@ -17,18 +17,15 @@ test.describe.serial('Gallery API - Full CRUD Flow', () => {
     };
 
     test('1. CREATE - Should create a new gallery', async () => {
-        const response = await apiClient.createGallery(galleryPayload);
-        expect(response.status()).toBe(201);
+        const newGallery = await apiClient.createGallery(galleryPayload);
 
-        const body = await response.json();
+        expect(newGallery).toHaveProperty('_id');
+        expect(newGallery).toHaveProperty('secretLink');
 
-        expect(body).toHaveProperty('_id');
-        expect(body).toHaveProperty('secretLink');
+        galleryId = newGallery._id;
+        gallerySecret = newGallery.secretLink;
 
-        galleryId = body._id;
-        gallerySecret = body.secretLink;
-
-        expect(body.title).toBe(galleryPayload.title);
+        expect(newGallery.title).toBe(galleryPayload.title);
     });
 
     test('2. READ - Should retrieve the created gallery (public GET)', async () => {
@@ -44,10 +41,8 @@ test.describe.serial('Gallery API - Full CRUD Flow', () => {
     test('3. DELETE - Should delete the created gallery', async () => {
         test.fail(!galleryId, "Gallery ID was not set");
 
-        const delRes = await apiClient.deleteGallery(galleryId);
-        expect(delRes.status()).toBe(200);
+        await apiClient.deleteGallery(galleryId);
 
-        // Public GET should now return 404
         const getRes = await apiClient.getGalleryPublic(gallerySecret);
         expect(getRes.status()).toBe(404);
     });

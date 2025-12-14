@@ -56,15 +56,14 @@ export default defineConfig({
       name: 'ui-tests',
       testDir: './tests/ui',
       use: { 
-        ...devices['Desktop Chrome'],
+        browserName: 'chromium',
         baseURL: process.env.BASE_URL  
       },
     },
     {
       name: 'api-tests',
       testDir: './tests/api',
-      use: { 
-        ...devices['Desktop Chrome'],
+      use: {
         baseURL: process.env.BASE_URL
        },
     },
@@ -72,7 +71,7 @@ export default defineConfig({
       name: 'e2e-tests',
       testDir: './tests/e2e',
       use: { 
-        ...devices['Desktop Chrome'],
+        browserName: 'chromium',
         baseURL: process.env.BASE_URL
       },
     },
@@ -80,7 +79,7 @@ export default defineConfig({
       name: 'data-validation-tests',
       testDir: './tests/data',
       use: { 
-        ...devices['Desktop Chrome'],
+        browserName: 'chromium',
         baseURL: process.env.BASE_URL
       },
     },
@@ -88,7 +87,9 @@ export default defineConfig({
       name: 'visual-tests',
       testDir: './tests/visual',
       use: { 
-        ...devices['Desktop Chrome'],
+        browserName: 'chromium',
+        viewport: { width: 1920, height: 1080 },
+        deviceScaleFactor: 1,
         baseURL: process.env.BASE_URL
       },
     },
@@ -96,7 +97,7 @@ export default defineConfig({
       name: 'ai-tests',
       testDir: './tests/ai',
       use: { 
-        ...devices['Desktop Chrome'],
+        browserName: 'chromium',
         baseURL: process.env.BASE_URL
       },
     },

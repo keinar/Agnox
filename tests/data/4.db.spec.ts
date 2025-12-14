@@ -38,12 +38,9 @@ test.describe.serial('Data Validation - API vs DB', () => {
 
         // --- 1. SETUP (via API) ---
         console.log('[Test Setup] Creating gallery via API...');
-        const createResponse = await apiClient.createGallery(galleryPayload);
-        expect(createResponse.status()).toBe(201);
-        const body = await createResponse.json();
-        newGalleryId = body._id;
+        const newGallery = await apiClient.createGallery(galleryPayload);
+        newGalleryId = newGallery._id;
         
-
         // --- 2. TEST (via DB) ---
         console.log(`[Test Run] Validating gallery ${newGalleryId} in MongoDB...`);
         
@@ -61,7 +58,6 @@ test.describe.serial('Data Validation - API vs DB', () => {
 
         // --- 3. TEARDOWN (via API) ---
         console.log(`[Test Teardown] Deleting gallery via API: ${newGalleryId}`);
-        const deleteResponse = await apiClient.deleteGallery(newGalleryId);
-        expect(deleteResponse.status()).toBe(200);
+        await apiClient.deleteGallery(newGalleryId);
     });
 });
