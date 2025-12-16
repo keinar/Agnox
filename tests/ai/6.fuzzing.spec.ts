@@ -1,4 +1,4 @@
-import { test, expect } from '../../fixtures/services.fixture';
+import { test, expect } from '../../fixtures/base.fixture';
 import { AiHelper } from '../../helpers/aiHelper';
 import { ProfilePage } from '../../pages/profilePage';
 import { config } from '../../config/env';
@@ -22,7 +22,7 @@ test.describe('AI-Driven Fuzz Testing', () => {
         });
     });
 
-    test('Should handle malicious usernames', async ({ page, apiClient }) => {
+    test('Should handle malicious usernames', async ({ page }) => {
         const profilePage = new ProfilePage(page);
         await profilePage.goto();
 

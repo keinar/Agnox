@@ -1,22 +1,17 @@
-import { test, expect } from '@playwright/test';
-import { ApiClient } from '../../helpers/apiClient';
+import { test, expect } from '../../fixtures/base.fixture';
 import { AiHelper } from '../../helpers/aiHelper';
-import { GalleryService } from '../../services/gallery.service';
+
 
 test.describe('AI-Assisted Content Validation', () => {
 
-    let apiClient: ApiClient;
-    let galleryService: GalleryService;
     let aiHelper: AiHelper;
     let galleryId: string;
 
-    test.beforeEach(async ({ request }) => {
-        apiClient = new ApiClient(request);
-        galleryService = new GalleryService(apiClient);
+    test.beforeEach(async () => {
         aiHelper = new AiHelper();
     });
 
-    test('1. Should generate creative title via Gemini and validate relevance', async () => {
+    test('1. Should generate creative title via Gemini and validate relevance', async ({galleryService}) => {
         
         // --- MOCKING START ---
         // Mock 1: Generate Title
@@ -58,7 +53,7 @@ test.describe('AI-Assisted Content Validation', () => {
         expect(validation.isValid, `AI rejected the title. Reason: ${validation.reasoning}`).toBe(true);
     });
 
-    test.afterEach(async () => {
+    test.afterEach(async ({galleryService}) => {
         if (galleryId) {
             await galleryService.delete(galleryId);
         }

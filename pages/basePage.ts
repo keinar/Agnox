@@ -27,34 +27,34 @@ export abstract class BasePage {
         });
     }
 
-    protected async clickElement(locator: Locator, description: string) {
-        await this.step(`Click '${description}'`, async () => {
+    protected async clickElement(locator: Locator) {
+        await this.step(`Click '${locator}'`, async () => {
             await locator.waitFor({ state: 'visible' }); 
             await locator.click();
         });
     }
 
-    protected async fillElement(locator: Locator, value: string, description: string) {
-        await this.step(`Fill '${value}' into '${description}'`, async () => {
+    protected async fillElement(locator: Locator, value: string) {
+        await this.step(`Fill '${value}' into '${locator}'`, async () => {
             await locator.waitFor({ state: 'visible' });
             await locator.fill(value);
         });
     }
 
-    protected async getElementText(locator: Locator, description: string): Promise<string> {
-        return await this.step(`Get text from '${description}'`, async () => {
+    protected async getElementText(locator: Locator): Promise<string> {
+        return await this.step(`Get text from '${locator}'`, async () => {
             const text = await locator.textContent();
             return text ?? '';
         });
     }
 
-    protected async validateElementContainsText(locator: Locator, expectedText: string, description: string) {
-        await this.step(`Assert '${description}' contains text: "${expectedText}"`, async () => {
+    protected async validateElementContainsText(locator: Locator, expectedText: string) {
+        await this.step(`Assert '${locator}' contains text: "${expectedText}"`, async () => {
             await expect(locator).toContainText(expectedText);
         });
     }
 
-    protected async validateElementVisible(locator: Locator, description: string) {
+    protected async validateElementVisible(locator: Locator) {
         await this.step(`Assert '${locator}' is visible`, async () => {
             await expect(locator).toBeVisible();
         });

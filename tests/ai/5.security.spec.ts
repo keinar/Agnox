@@ -1,26 +1,14 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../fixtures/base.fixture';
 import { AiHelper } from '../../helpers/aiHelper';
-import { ApiClient } from '../../helpers/apiClient';
-import { DashboardPage } from '../../pages/dashboardPage';
-import { GalleryService } from '../../services/gallery.service';
 
 test.describe('AI-Assisted Security Scans', () => {
     let aiHelper: AiHelper;
-    let apiClient: ApiClient;
-    let galleryService: GalleryService;
-    let dashboard: DashboardPage;
 
     test.beforeAll(() => {
         aiHelper = new AiHelper();
     });
 
-    test.beforeEach(async ({ request, page }) => {
-        apiClient = new ApiClient(request);
-        galleryService = new GalleryService(apiClient);
-        dashboard = new DashboardPage(page);
-    });
-
-    test('Should detect sensitive info in Error Responses (Mocked 500)', async ({ page }) => {
+    test('Should detect sensitive info in Error Responses (Mocked 500)', async ({ page, dashboardPage }) => {
         // --- Mocking AI: Simulate Finding a Leak ---
         aiHelper.scanForSecurityRisks = async (content, context) => {
             return {
@@ -42,7 +30,7 @@ test.describe('AI-Assisted Security Scans', () => {
             });
         });
 
-        await dashboard.goto();
+        await dashboardPage.goto();
         
         const response = await responsePromise;
         const responseBody = await response.text();
@@ -54,7 +42,7 @@ test.describe('AI-Assisted Security Scans', () => {
         ).toBeFalsy(); 
     });
 
-    test('Should not expose PII in public API responses', async () => {
+    test('Should not expose PII in public API responses', async ({galleryService}) => {
         // --- Mocking AI: Simulate SECURE Response ---
         aiHelper.scanForSecurityRisks = async (content, context) => {
             return { isSecure: true, detectedIssues: [] };
@@ -68,7 +56,7 @@ test.describe('AI-Assisted Security Scans', () => {
         expect(scanResult.isSecure).toBeTruthy();
     });
 
-    test('Production Security Scan - Real Traffic Analysis', async ({ page }) => {
+    test('Production Security Scan - Real Traffic Analysis', async ({ page, dashboardPage }) => {
         // --- Mocking AI: Simulate SECURE Response ---
         aiHelper.scanForSecurityRisks = async (content, context) => {
             return { isSecure: true, detectedIssues: [] };
@@ -87,7 +75,7 @@ test.describe('AI-Assisted Security Scans', () => {
         });
 
         console.log('[Security Scan] Navigating...');
-        await dashboard.goto();
+        await dashboardPage.goto();
         await page.waitForLoadState('networkidle');
 
         const trafficReport = capturedTraffic.join('\n');

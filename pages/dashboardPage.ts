@@ -1,8 +1,8 @@
 import { BasePage } from './basePage';
-import { type Page, type Locator } from '@playwright/test';
+import { type Page, type Locator, expect} from '@playwright/test';
 
 export class DashboardPage extends BasePage {
-    
+
     // Private Locators - Strictly Encapsulated
     private readonly galleryTitleInput: Locator;
     private readonly clientNameInput: Locator;
@@ -25,9 +25,9 @@ export class DashboardPage extends BasePage {
      * Creates a new gallery via the UI.
      */
     async createGallery(title: string, clientName: string) {
-        await this.fillElement(this.galleryTitleInput, title, "Gallery Title Input");
-        await this.fillElement(this.clientNameInput, clientName, "Client Name Input");
-        await this.clickElement(this.createGalleryButton, "Create Gallery Button");
+        await this.fillElement(this.galleryTitleInput, title);
+        await this.fillElement(this.clientNameInput, clientName);
+        await this.clickElement(this.createGalleryButton);
     }
 
     async goto() {
@@ -35,11 +35,13 @@ export class DashboardPage extends BasePage {
     }
 
     async logout() {
-        await this.clickElement(this.logoutButton, "Logout Button");
+        await this.clickElement(this.logoutButton);
+        await expect(this.page).toHaveURL(/\/login$/, { timeout: 10000 });
+        await expect(this.page.getByRole('button', { name: 'Sign In' })).toBeVisible();
     }
 
     async verifySidebarVisible() {
-        await this.validateElementVisible(this.sidebar, "Dashboard Sidebar");
+        await this.validateElementVisible(this.sidebar);
     }
 
     /**
@@ -50,12 +52,19 @@ export class DashboardPage extends BasePage {
         // Scoped locator: Finds a card that specifically contains the title text
         const galleryCard = this.page.locator('div.border', { hasText: title });
 
-        await this.validateElementVisible(galleryCard, `Gallery Card for "${title}"`);
-        
-        await this.validateElementContainsText(
-            galleryCard, 
-            clientName, 
-            `Gallery Card Client Name ("${clientName}")`
-        );
+        await this.validateElementVisible(galleryCard);
+
+        await this.validateElementContainsText(galleryCard, clientName);
+    }
+
+    async validateCreateGalleryButtonVisible() {
+        await this.validateElementVisible(this.createGalleryButton);
+    }
+
+    async validateDashboardDesignMatch() {
+        await this.sidebar.waitFor({ state: 'visible' });
+        await expect(this.sidebar).toHaveScreenshot('dashboard-sidebar.png', {
+            maxDiffPixels: 100
+        });
     }
 }

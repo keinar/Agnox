@@ -1,5 +1,4 @@
-// במקום import { test } from '@playwright/test';
-import { test, expect } from '../../fixtures/services.fixture'; // Import from fixture
+import { test, expect } from '../../fixtures/base.fixture';
 import { v4 as uuidv4 } from 'uuid';
 import { DashboardPage } from '../../pages/dashboardPage';
 import { PollingHelper } from '../../helpers/pollingHelper';

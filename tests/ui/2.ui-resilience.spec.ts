@@ -1,17 +1,10 @@
-import { test, expect } from '@playwright/test';
-import { DashboardPage } from '../../pages/dashboardPage';
+import { test, expect } from '../../fixtures/base.fixture';
 
 
 test.describe('UI Resilience - API Error Handling', () => {
 
-    let dashboardPage: DashboardPage;
 
-    test.beforeEach(async ({ page }) => {
-        dashboardPage = new DashboardPage(page);
-    });
-
-
-    test('1. Should display empty state if galleries API returns 500', async ({ page }) => {
+    test('1. Should display empty state if galleries API returns 500', async ({ page, dashboardPage }) => {
         
         await page.route('**/api/galleries', route => {
             console.log('[Mock API] Intercepted /api/galleries, returning 500 error.');
@@ -24,13 +17,12 @@ test.describe('UI Resilience - API Error Handling', () => {
 
         await dashboardPage.goto();
 
-        // Verify that the empty state message is displayed (as per DashboardPage.jsx)
         const errorMessage = page.locator("text=You haven't created any galleries yet.");
         await expect(errorMessage).toBeVisible();
     });
 
 
-    test('2. Should display empty state if galleries API returns empty list', async ({ page }) => {
+    test('2. Should display empty state if galleries API returns empty list', async ({ page, dashboardPage }) => {
         
         await page.route('**/api/galleries', route => {
             console.log('[Mock API] Intercepted /api/galleries, returning empty array.');
@@ -43,7 +35,6 @@ test.describe('UI Resilience - API Error Handling', () => {
 
         await dashboardPage.goto();
 
-        // Verify that the "empty state" message is displayed (as per DashboardPage.jsx)
         const emptyMessage = page.locator("text=You haven't created any galleries yet.");
         await expect(emptyMessage).toBeVisible();
     });

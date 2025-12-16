@@ -1,24 +1,16 @@
-import { test, expect } from '@playwright/test';
-import { ApiClient } from '../../helpers/apiClient';
-import { GalleryService } from '../../services/gallery.service';
+import { test, expect } from '../../fixtures/base.fixture';
 
 test.describe.serial('Gallery API - Full CRUD Flow (Refactored)', () => {
 
-    let galleryService: GalleryService;
     let createdGalleryId: string;
     let secretLink: string;
-
-    test.beforeEach(async ({ request }) => {
-        const apiClient = new ApiClient(request);
-        galleryService = new GalleryService(apiClient);
-    });
 
     const galleryPayload = {
         title: `API-Refactor-Test-${Date.now()}`,
         clientName: "Service Layer Client"
     };
 
-    test('1. CREATE - Should create a new gallery', async () => {
+    test('1. CREATE - Should create a new gallery', async ({galleryService}) => {
         const newGallery = await galleryService.create(galleryPayload);
 
         expect(newGallery).toHaveProperty('_id');
@@ -29,7 +21,7 @@ test.describe.serial('Gallery API - Full CRUD Flow (Refactored)', () => {
         secretLink = newGallery.secretLink;
     });
 
-    test('2. READ - Should retrieve the created gallery (public GET)', async () => {
+    test('2. READ - Should retrieve the created gallery (public GET)', async ({galleryService}) => {
         // Ensure dependent data exists
         test.fail(!secretLink, "Skipping: Secret link not available from previous step");
 
@@ -40,7 +32,7 @@ test.describe.serial('Gallery API - Full CRUD Flow (Refactored)', () => {
         expect(body.title).toBe(galleryPayload.title);
     });
 
-    test('3. DELETE - Should delete the created gallery', async () => {
+    test('3. DELETE - Should delete the created gallery', async ({galleryService}) => {
         test.fail(!createdGalleryId, "Skipping: ID not available from previous step");
 
         await galleryService.delete(createdGalleryId);

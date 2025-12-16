@@ -1,15 +1,7 @@
-import { test, expect } from '@playwright/test';
-import { ApiClient } from '../../helpers/apiClient';
-import { MongoHelper } from '../../helpers/mongoHelper'; // Fixed import path
-import { GalleryService } from '../../services/gallery.service';
-import { GalleryRepository } from '../../repositories/gallery.repository';
+import { test, expect } from '../../fixtures/base.fixture';
 import { PollingHelper } from '../../helpers/pollingHelper';
 
 test.describe.serial('Data Validation - API vs DB (Refactored)', () => {
-
-    let mongoHelper: MongoHelper;
-    let galleryService: GalleryService;
-    let galleryRepo: GalleryRepository;
     
     // State management
     let createdGalleryId: string;
@@ -19,31 +11,21 @@ test.describe.serial('Data Validation - API vs DB (Refactored)', () => {
         clientName: "DB Test Client"
     };
 
-    test.beforeAll(async () => {
-        // 1. Connect to DB directly
-        mongoHelper = new MongoHelper();
+    test.beforeAll(async ({mongoHelper}) => {
         await mongoHelper.connect();
     });
 
-    test.afterAll(async () => {
+    test.afterAll(async ({mongoHelper}) => {
         await mongoHelper.disconnect();
     });
 
-    test.beforeEach(async ({ request }) => {
-        // 2. Initialize Layers
-        const apiClient = new ApiClient(request);
-        galleryService = new GalleryService(apiClient);
-        galleryRepo = new GalleryRepository(mongoHelper);
-    });
-
-    test.afterEach(async () => {
-        // 3. Cleanup using Service Layer
+    test.afterEach(async ({galleryService}) => {
         if (createdGalleryId) {
             await galleryService.delete(createdGalleryId);
         }
     });
     
-    test('1. Gallery created via API should exist in MongoDB', async () => {
+    test('1. Gallery created via API should exist in MongoDB', async ({galleryService, galleryRepo}) => {
 
         // --- 1. SETUP (via Service) ---
         console.log('[Test Setup] Creating gallery via Service Layer...');
