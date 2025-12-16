@@ -1,6 +1,7 @@
 import { test } from '@playwright/test';
 import { ApiClient } from '../../helpers/apiClient';
 import { DashboardPage } from '../../pages/dashboardPage';
+import { GalleryFactory } from '../../helpers/dataFactory';
 
 test.describe('Hybrid E2E - Admin Panel Validation', () => {
 
@@ -10,10 +11,7 @@ test.describe('Hybrid E2E - Admin Panel Validation', () => {
     // Variable to store the created ID for teardown
     let createdGalleryId: string;
 
-    const galleryData = {
-        title: `Hybrid-Test-${Date.now()}`,
-        clientName: "VIP Client"
-    };
+    const galleryData = GalleryFactory.createDefault();
 
     test.beforeEach(async ({ page, request }) => {
         apiClient = new ApiClient(request);

@@ -42,6 +42,7 @@ export default defineConfig({
   use: {
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+    baseURL: process.env.BASE_URL,
 
     headless: !!process.env.CI,
 
@@ -56,31 +57,25 @@ export default defineConfig({
       name: 'ui-tests',
       testDir: './tests/ui',
       use: { 
-        browserName: 'chromium',
-        baseURL: process.env.BASE_URL  
+        browserName: 'chromium'
       },
     },
     {
       name: 'api-tests',
       testDir: './tests/api',
-      use: {
-        baseURL: process.env.BASE_URL
-       },
     },
     {
       name: 'e2e-tests',
       testDir: './tests/e2e',
       use: { 
-        browserName: 'chromium',
-        baseURL: process.env.BASE_URL
+        browserName: 'chromium'
       },
     },
     {
       name: 'data-validation-tests',
       testDir: './tests/data',
       use: { 
-        browserName: 'chromium',
-        baseURL: process.env.BASE_URL
+        browserName: 'chromium'
       },
     },
     {
@@ -90,15 +85,13 @@ export default defineConfig({
         browserName: 'chromium',
         viewport: { width: 1920, height: 1080 },
         deviceScaleFactor: 1,
-        baseURL: process.env.BASE_URL
       },
     },
     {
       name: 'ai-tests',
       testDir: './tests/ai',
       use: { 
-        browserName: 'chromium',
-        baseURL: process.env.BASE_URL
+        browserName: 'chromium'
       },
     },
   ],
