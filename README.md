@@ -11,6 +11,7 @@ Built with **Playwright** and **TypeScript**, this framework demonstrates advanc
 * **Hybrid Testing** (UI + API)
 * **AI‑driven validation**
 * **Direct Database Assertions**
+* **Dockerized Execution** for consistency
 
 ---
 
@@ -43,8 +44,8 @@ Powered by **Google Gemini 2.5 Flash**, enabling validations beyond classic auto
   * API Services
   * Database Helpers
 
-* **Configuration Safety**
-  **Zod** schemas validate environment variables and fail fast on misconfiguration.
+* **Dockerized Environment**
+  Tests run inside a controlled Docker container to ensure 100% consistency between local development and CI pipelines, eliminating *“works on my machine”* issues.
 
 ---
 
@@ -57,7 +58,7 @@ Powered by **Google Gemini 2.5 Flash**, enabling validations beyond classic auto
   Mocked backend failures (500s, timeouts) to validate UI error handling.
 
 * **Visual Regression Testing**
-  Pixel‑perfect snapshot comparison with cross‑platform consistency (Linux / Windows).
+  Pixel‑perfect snapshot comparison ensuring consistency across environments via Docker.
 
 ---
 
@@ -67,6 +68,7 @@ Powered by **Google Gemini 2.5 Flash**, enabling validations beyond classic auto
 | -------------- | ----------------- | ----------------------------------------- |
 | Core Framework | Playwright        | End‑to‑End testing & network interception |
 | Language       | TypeScript        | Strong typing & OOP patterns              |
+| Infrastructure | Docker            | Containerized execution environment       |
 | AI Engine      | Google Gemini SDK | AI validation & security analysis         |
 | Validation     | Zod               | Environment schema validation             |
 | Database       | MongoDB Driver    | Direct DB assertions & cleanup            |
@@ -91,6 +93,8 @@ Powered by **Google Gemini 2.5 Flash**, enabling validations beyond classic auto
  ┃ ┣ 📂 e2e              # Hybrid E2E flows (UI + API + DB)
  ┃ ┣ 📂 ui               # Functional UI tests
  ┃ ┗ 📂 visual           # Visual regression tests
+ ┣ 📜 Dockerfile         # Docker image definition
+ ┣ 📜 docker-compose.yml # Local orchestration config
  ┗ 📜 playwright.config.ts
 ```
 
@@ -100,7 +104,8 @@ Powered by **Google Gemini 2.5 Flash**, enabling validations beyond classic auto
 
 ### 1️⃣ Prerequisites
 
-* **Node.js** v18+
+* **Docker** & **Docker Compose** (Recommended)
+* **Node.js** v18+ (only if running without Docker)
 * **MongoDB** connection string
 * **Google Gemini API Key** (required for AI tests)
 
@@ -111,8 +116,6 @@ Powered by **Google Gemini 2.5 Flash**, enabling validations beyond classic auto
 ```bash
 git clone https://github.com/keinar/Playwright-Full-Stack-Framework.git
 cd Playwright-Full-Stack-Framework
-npm install
-npx playwright install --with-deps
 ```
 
 ---
@@ -131,7 +134,48 @@ GEMINI_API_KEY=your_google_ai_studio_key
 
 ---
 
-## 🧪 Running Tests
+## 🐳 Running with Docker (Recommended)
+
+Running tests in Docker ensures your local environment matches the CI environment perfectly — especially for **Visual Regression** tests.
+
+### Run All Tests
+
+```bash
+docker-compose up --build
+```
+
+### Run Specific Suite
+
+```bash
+docker-compose run --rm playwright-tests npx playwright test tests/api
+```
+
+### Update Visual Snapshots
+
+Generate Linux‑based snapshots compatible with CI:
+
+```bash
+docker-compose run --rm playwright-tests npx playwright test --update-snapshots
+```
+
+### View Reports
+
+```bash
+npx playwright show-report
+```
+
+---
+
+## 🧪 Running Locally (Without Docker)
+
+1. **Install Dependencies**
+
+```bash
+npm install
+npx playwright install --with-deps
+```
+
+2. **Run Commands**
 
 | Suite         | Command               | Description                      |
 | ------------- | --------------------- | -------------------------------- |
@@ -141,7 +185,7 @@ GEMINI_API_KEY=your_google_ai_studio_key
 | E2E Hybrid    | `npm run test:e2e`    | Full flows (UI + API + DB)       |
 | AI & Security | `npm run test:ai`     | AI vision, fuzzing & security    |
 | Visual Tests  | `npm run test:visual` | Snapshot comparison              |
-| Last failed   | `npm run test:lf`     | Run the last failed tests        |
+| Last Failed   | `npm run test:lf`     | Run last failed tests            |
 | Debug Mode    | `npm run test:headed` | Runs with visible browser        |
 
 ---

@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  playwright-tests:
+    build: .
+    environment:
+      - BASE_URL=https://photo-gallery.keinar.com/
+      - MONGO_URI=${MONGO_URI} 
+      - ADMIN_USER=${ADMIN_USER}
+      - ADMIN_PASS=${ADMIN_PASS}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - CI=true
+    volumes:
+      - ./playwright-report:/app/playwright-report
+      - ./allure-results:/app/allure-results
+      - ./test-results:/app/test-results
+    # Using ipc: host is recommended for Playwright in Docker to avoid memory crashes
+    ipc: host
