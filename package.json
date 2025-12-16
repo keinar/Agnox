@@ -27,6 +27,8 @@
     "mongodb": "^7.0.0"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1"
+    "@google/generative-ai": "^0.24.1",
+    "@types/uuid": "^10.0.0",
+    "uuid": "^13.0.0"
   }
 }
