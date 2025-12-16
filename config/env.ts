@@ -4,6 +4,10 @@ import * as path from 'path';
 
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
+/**
+ * Zod Schema for Environment Variables.
+ * This ensures the test run fails immediately if configuration is missing.
+ */
 const envSchema = z.object({
     BASE_URL: z.url(),
     MONGO_URI: z.string().startsWith('mongodb'),

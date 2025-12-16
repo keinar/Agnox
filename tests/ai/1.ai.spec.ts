@@ -1,24 +1,24 @@
 import { test, expect } from '@playwright/test';
 import { ApiClient } from '../../helpers/apiClient';
 import { AiHelper } from '../../helpers/aiHelper';
+import { GalleryService } from '../../services/gallery.service';
 
 test.describe('AI-Assisted Content Validation', () => {
 
     let apiClient: ApiClient;
+    let galleryService: GalleryService;
     let aiHelper: AiHelper;
     let galleryId: string;
 
     test.beforeEach(async ({ request }) => {
         apiClient = new ApiClient(request);
+        galleryService = new GalleryService(apiClient);
         aiHelper = new AiHelper();
     });
 
     test('1. Should generate creative title via Gemini and validate relevance', async () => {
         
         // --- MOCKING START ---
-        // We override the AI methods to return fixed data.
-        // This bypasses Google API entirely, solving the 429 error.
-        
         // Mock 1: Generate Title
         aiHelper.generateGalleryTitle = async (theme: string) => {
             console.log(`[Mock] Generating title for ${theme}`);
@@ -39,21 +39,18 @@ test.describe('AI-Assisted Content Validation', () => {
         
         expect(aiTitle.length).toBeGreaterThan(0);
         
-        // We use the AI-generated title to create real data in the system
-        const newGallery = await apiClient.createGallery({
+        const newGallery = await galleryService.create({
             title: aiTitle,
             clientName: "Gemini Bot"
         });
         galleryId = newGallery._id;
 
-        // We fetch the gallery back from the DB/API
-        const getResponse = await apiClient.getGalleryPublic(newGallery.secretLink);
+        const getResponse = await galleryService.getPublic(newGallery.secretLink);
         const fetchedBody = await getResponse.json();
         const savedTitle = fetchedBody.title;
 
         console.log(`[AI] Asking Gemini to validate relevance...`);
     
-        // This will now use our Mock and return true immediately
         const validation = await aiHelper.validateRelevance(savedTitle, theme);
         
         console.log(`[AI Oracle] Logic: "${validation.reasoning}"`);
@@ -63,7 +60,7 @@ test.describe('AI-Assisted Content Validation', () => {
 
     test.afterEach(async () => {
         if (galleryId) {
-            await apiClient.deleteGallery(galleryId);
+            await galleryService.delete(galleryId);
         }
     });
 });

@@ -1,26 +1,26 @@
 import { test, expect } from '@playwright/test';
 import { ApiClient } from '../../helpers/apiClient';
-import { MongoHelper } from '../../repositories/mongoHelper';
+import { MongoHelper } from '../../helpers/mongoHelper'; // Fixed import path
+import { GalleryService } from '../../services/gallery.service';
+import { GalleryRepository } from '../../repositories/gallery.repository';
+import { PollingHelper } from '../../helpers/pollingHelper';
 
-/**
- * @file 4.db.spec.ts
- * @description This test covers the "Data Validation" requirement.
- * 1. Creates a gallery via API.
- * 2. Connects *directly* to MongoDB to verify the record was written correctly.
- * 3. Deletes the gallery via API.
- */
-test.describe.serial('Data Validation - API vs DB', () => {
+test.describe.serial('Data Validation - API vs DB (Refactored)', () => {
 
-    let apiClient: ApiClient;
     let mongoHelper: MongoHelper;
-    let newGalleryId: string;
+    let galleryService: GalleryService;
+    let galleryRepo: GalleryRepository;
+    
+    // State management
+    let createdGalleryId: string;
 
     const galleryPayload = {
-        title: `DB-Validation-Test-${Date.now()}`,
+        title: `DB-Validation-Refactor-${Date.now()}`,
         clientName: "DB Test Client"
     };
 
     test.beforeAll(async () => {
+        // 1. Connect to DB directly
         mongoHelper = new MongoHelper();
         await mongoHelper.connect();
     });
@@ -30,34 +30,38 @@ test.describe.serial('Data Validation - API vs DB', () => {
     });
 
     test.beforeEach(async ({ request }) => {
-        apiClient = new ApiClient(request);
+        // 2. Initialize Layers
+        const apiClient = new ApiClient(request);
+        galleryService = new GalleryService(apiClient);
+        galleryRepo = new GalleryRepository(mongoHelper);
     });
 
+    test.afterEach(async () => {
+        // 3. Cleanup using Service Layer
+        if (createdGalleryId) {
+            await galleryService.delete(createdGalleryId);
+        }
+    });
     
     test('1. Gallery created via API should exist in MongoDB', async () => {
 
-        // --- 1. SETUP (via API) ---
-        console.log('[Test Setup] Creating gallery via API...');
-        const newGallery = await apiClient.createGallery(galleryPayload);
-        newGalleryId = newGallery._id;
+        // --- 1. SETUP (via Service) ---
+        console.log('[Test Setup] Creating gallery via Service Layer...');
+        const newGallery = await galleryService.create(galleryPayload);
+        createdGalleryId = newGallery._id;
         
-        // --- 2. TEST (via DB) ---
-        console.log(`[Test Run] Validating gallery ${newGalleryId} in MongoDB...`);
+        // --- 2. TEST (via Repository & Polling) ---
+        console.log(`[Test Run] Validating gallery ${createdGalleryId} in MongoDB...`);
         
-        // Find the gallery directly in the database
-        const galleryFromDB = await mongoHelper.getGalleryById(newGalleryId);
+        // Use PollingHelper to wait for eventual consistency (Best Practice)
+        const galleryFromDB = await PollingHelper.pollUntil(
+            "Gallery document in MongoDB",
+            async () => await galleryRepo.findById(createdGalleryId),
+            (doc) => doc !== null && doc.title === galleryPayload.title
+        );
         
-        // Assertion 1: Check that the document was found
+        // Assertion: Validate data integrity
         expect(galleryFromDB).toBeDefined();
-        expect(galleryFromDB).not.toBeNull();
-
-        // Assertion 2: Validate the data at the source
-        expect(galleryFromDB?.title).toBe(galleryPayload.title);
         expect(galleryFromDB?.clientName).toBe(galleryPayload.clientName);
-        
-
-        // --- 3. TEARDOWN (via API) ---
-        console.log(`[Test Teardown] Deleting gallery via API: ${newGalleryId}`);
-        await apiClient.deleteGallery(newGalleryId);
     });
 });

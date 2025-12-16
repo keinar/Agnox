@@ -1,11 +1,13 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { AiHelper } from '../../helpers/aiHelper';
 import { ApiClient } from '../../helpers/apiClient';
 import { DashboardPage } from '../../pages/dashboardPage';
+import { GalleryService } from '../../services/gallery.service';
 
 test.describe('AI-Assisted Security Scans', () => {
     let aiHelper: AiHelper;
     let apiClient: ApiClient;
+    let galleryService: GalleryService;
     let dashboard: DashboardPage;
 
     test.beforeAll(() => {
@@ -14,6 +16,7 @@ test.describe('AI-Assisted Security Scans', () => {
 
     test.beforeEach(async ({ request, page }) => {
         apiClient = new ApiClient(request);
+        galleryService = new GalleryService(apiClient);
         dashboard = new DashboardPage(page);
     });
 
@@ -21,15 +24,13 @@ test.describe('AI-Assisted Security Scans', () => {
         // --- Mocking AI: Simulate Finding a Leak ---
         aiHelper.scanForSecurityRisks = async (content, context) => {
             return {
-                isSecure: false, // We want the test to pass by detecting this is FALSE
+                isSecure: false,
                 detectedIssues: ["Critical Leak: Internal IP found", "Stack Trace exposed"]
             };
         };
         
-        // 1. Prepare to capture the specific network response
         const responsePromise = page.waitForResponse(resp => resp.url().includes('/api/galleries'));
 
-        // 2. Mock the endpoint to return sensitive leaked data
         await page.route('**/api/galleries', route => {
             route.fulfill({
                 status: 500,
@@ -41,14 +42,11 @@ test.describe('AI-Assisted Security Scans', () => {
             });
         });
 
-        // 3. Trigger the request
         await dashboard.goto();
         
-        // 4. Get the mocked response
         const response = await responsePromise;
         const responseBody = await response.text();
 
-        // 5. Verify the AI shouts "UNSAFE"
         const scanResult = await aiHelper.scanForSecurityRisks(responseBody, "500 API Response Body");
         
         expect(scanResult.isSecure, 
@@ -62,7 +60,7 @@ test.describe('AI-Assisted Security Scans', () => {
             return { isSecure: true, detectedIssues: [] };
         };
 
-        const response = await apiClient.getGalleryPublic('some-secret-link'); 
+        const response = await galleryService.getPublic('some-secret-link'); 
         const body = await response.text();
 
         const scanResult = await aiHelper.scanForSecurityRisks(body, "Public API Response");

@@ -1,37 +1,39 @@
 import { test, expect } from '@playwright/test';
 import { ApiClient } from '../../helpers/apiClient';
+import { GalleryService } from '../../services/gallery.service';
 
-test.describe.serial('Gallery API - Full CRUD Flow', () => {
+test.describe.serial('Gallery API - Full CRUD Flow (Refactored)', () => {
 
-    let apiClient: ApiClient;
-    let galleryId: string;
-    let gallerySecret: string;
+    let galleryService: GalleryService;
+    let createdGalleryId: string;
+    let secretLink: string;
 
     test.beforeEach(async ({ request }) => {
-        apiClient = new ApiClient(request);
+        const apiClient = new ApiClient(request);
+        galleryService = new GalleryService(apiClient);
     });
 
     const galleryPayload = {
-        title: `Test Gallery ${Date.now()}`,
-        clientName: "Created by Playwright API test"
+        title: `API-Refactor-Test-${Date.now()}`,
+        clientName: "Service Layer Client"
     };
 
     test('1. CREATE - Should create a new gallery', async () => {
-        const newGallery = await apiClient.createGallery(galleryPayload);
+        const newGallery = await galleryService.create(galleryPayload);
 
         expect(newGallery).toHaveProperty('_id');
-        expect(newGallery).toHaveProperty('secretLink');
-
-        galleryId = newGallery._id;
-        gallerySecret = newGallery.secretLink;
-
         expect(newGallery.title).toBe(galleryPayload.title);
+
+        // Store for next steps
+        createdGalleryId = newGallery._id;
+        secretLink = newGallery.secretLink;
     });
 
     test('2. READ - Should retrieve the created gallery (public GET)', async () => {
-        test.fail(!gallerySecret, "secretLink was not set");
+        // Ensure dependent data exists
+        test.fail(!secretLink, "Skipping: Secret link not available from previous step");
 
-        const response = await apiClient.getGalleryPublic(gallerySecret);
+        const response = await galleryService.getPublic(secretLink);
         expect(response.status()).toBe(200);
 
         const body = await response.json();
@@ -39,11 +41,12 @@ test.describe.serial('Gallery API - Full CRUD Flow', () => {
     });
 
     test('3. DELETE - Should delete the created gallery', async () => {
-        test.fail(!galleryId, "Gallery ID was not set");
+        test.fail(!createdGalleryId, "Skipping: ID not available from previous step");
 
-        await apiClient.deleteGallery(galleryId);
+        await galleryService.delete(createdGalleryId);
 
-        const getRes = await apiClient.getGalleryPublic(gallerySecret);
-        expect(getRes.status()).toBe(404);
+        // Verify deletion by trying to fetch it again
+        const response = await galleryService.getPublic(secretLink);
+        expect(response.status()).toBe(404);
     });
 });
