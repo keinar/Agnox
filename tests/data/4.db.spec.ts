@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { ApiClient } from '../../helpers/apiClient';
-import { MongoHelper } from '../../helpers/mongoHelper';
+import { MongoHelper } from '../../repositories/mongoHelper';
 
 /**
  * @file 4.db.spec.ts

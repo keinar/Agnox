@@ -1,26 +1,22 @@
 import { test as baseTest, request as apiRequest, APIRequestContext } from '@playwright/test';
 import { ApiClient } from '../helpers/apiClient';
 
-// Define the path to the auth file
 const authFile = 'playwright/.auth/auth-state.json';
 
 /**
  * @file api.fixture.ts
  * @description This file defines a custom "test fixture" for our ApiClient.
  *
- * THIS IS THE ROBUST SOLUTION:
  * This fixture does NOT depend on the built-in '{ request }' fixture.
  * Instead, it *manually* creates a new APIRequestContext and *explicitly*
  * loads the 'storageState' file (the auth file) that was created by global.setup.ts.
  * This guarantees the context is authenticated.
  */
 
-// Define the shape of our new fixtures
 type MyFixtures = {
     apiClient: ApiClient;
 };
 
-// Extend the base 'test' with our new fixture
 export const test = baseTest.extend<MyFixtures>({
 
     /**

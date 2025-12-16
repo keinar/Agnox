@@ -1,6 +1,7 @@
-import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
+import { MongoClient, Db, Collection, Document } from 'mongodb';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { Logger } from './logger';
 
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
@@ -11,9 +12,9 @@ if (!MONGO_URI) {
 }
 
 /**
- * @file mongoHelper.ts
- * @description A helper class to connect directly to the MongoDB database
- * for data validation tests. This demonstrates deep backend testing.
+ * MongoHelper.
+ * Handles the low-level database connection.
+ * Provides access to collections for Repositories.
  */
 export class MongoHelper {
     private client: MongoClient;
@@ -25,42 +26,44 @@ export class MongoHelper {
 
     /**
      * Connects to the database.
-     * This should be called in a 'beforeAll' hook.
+     * Should be called in 'beforeAll'.
      */
     async connect() {
         try {
-            await this.client.connect();
-
-            this.db = this.client.db('test');
-            console.log('[MongoHelper] Successfully connected to MongoDB.');
+            if (!this.db) {
+                await this.client.connect();
+                this.db = this.client.db('test'); // Adjust DB name if necessary
+                Logger.info('[MongoHelper] Successfully connected to MongoDB.');
+            }
         } catch (error) {
-            console.error('[MongoHelper] Failed to connect to MongoDB:', error);
+            Logger.error(`[MongoHelper] Failed to connect to MongoDB: ${error}`);
             throw error;
         }
     }
 
     /**
      * Disconnects from the database.
-     * This should be called in an 'afterAll' hook.
+     * Should be called in 'afterAll'.
      */
     async disconnect() {
-        await this.client.close();
-        console.log('[MongoHelper] Disconnected from MongoDB.');
+        try {
+            await this.client.close();
+            this.db = undefined;
+            Logger.info('[MongoHelper] Disconnected from MongoDB.');
+        } catch (error) {
+            Logger.error(`[MongoHelper] Error during disconnect: ${error}`);
+        }
     }
 
     /**
-     * Finds a gallery by its ID.
-     * @param galleryId The ID of the gallery (as a string)
-     * @returns The gallery document or null
+     * Returns a MongoDB Collection to perform operations on.
+     * This generic method allows Repositories to access any collection safely.
+     * * @param name - The name of the collection (e.g., 'galleries', 'users')
      */
-    async getGalleryById(galleryId: string) {
-        if (!this.db) throw new Error("Database not connected. Call connect() first.");
-        
-        // Find the 'galleries' collection
-        const galleriesCollection: Collection = this.db.collection('galleries');
-        
-        // Find the document by its _id (must convert string to ObjectId)
-        const result = await galleriesCollection.findOne({ _id: new ObjectId(galleryId) });
-        return result;
+    public getCollection<T extends Document>(name: string): Collection<T> {
+        if (!this.db) {
+            throw new Error("[MongoHelper] Database not connected. Call connect() first.");
+        }
+        return this.db.collection<T>(name);
     }
 }
