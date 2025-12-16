@@ -12,6 +12,7 @@
     "test:ai": "playwright test tests/ai",
     "test:data": "playwright test tests/data",
     "test:e2e": "playwright test tests/e2e",
+    "test:lf": "npx playwright test --last-failed",
     "allure:generate": "allure generate allure-results --clean -o allure-report",
     "allure:open": "allure open allure-report"
   },

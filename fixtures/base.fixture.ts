@@ -8,6 +8,10 @@ import { DashboardPage } from '../pages/dashboardPage';
 import { LoginPage } from '../pages/loginPage';
 import { ProfilePage } from '../pages/profilePage';
 
+type WorkerFixtures = {
+    mongoWorker: MongoHelper;
+};
+
 type MyFixtures = {
     // Infrastructure
     apiClient: ApiClient;
@@ -26,16 +30,21 @@ type MyFixtures = {
     profilePage: ProfilePage;
 };
 
-export const test = base.extend<MyFixtures>({
+export const test = base.extend<MyFixtures, WorkerFixtures>({
     // --- Infrastructure ---
     apiClient: async ({ request }, use) => {
         await use(new ApiClient(request));
     },
-    mongoHelper: async ({}, use) => {
+
+    mongoWorker: [async ({}, use) => {
         const mongo = new MongoHelper();
         await mongo.connect();
         await use(mongo);
         await mongo.disconnect();
+    }, { scope: 'worker' }],
+
+    mongoHelper: async ({ mongoWorker }, use) => {
+        await use(mongoWorker);
     },
 
     // --- Services ---

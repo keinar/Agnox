@@ -55,10 +55,10 @@ test.describe('AI Vision Capabilities', () => {
         const analysis = await aiHelper.analyzeImageInDetail(screenshotPath);
 
         // 6. Validations
-        expect(analysis.description).not.toBe("Analysis Error");
-        expect(analysis.isHuman, 'Should detect a human in the photo').toBeTruthy();
-        expect(analysis.mainSubject.toLowerCase()).toMatch(/baby|child|person/);
-        expect(analysis.isFood, 'Should NOT identify the image as food').toBeFalsy();
+        expect.soft(analysis.description).not.toBe("Analysis Error");
+        expect.soft(analysis.isHuman, 'Should detect a human in the photo').toBeTruthy();
+        expect.soft(analysis.mainSubject.toLowerCase()).toMatch(/baby|child|person/);
+        expect.soft(analysis.isFood, 'Should NOT identify the image as food').toBeFalsy();
         
         console.log(`[Test] AI Description: "${analysis.description}"`);
     });

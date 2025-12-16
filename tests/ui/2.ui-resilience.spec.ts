@@ -3,7 +3,6 @@ import { test, expect } from '../../fixtures/base.fixture';
 
 test.describe('UI Resilience - API Error Handling', () => {
 
-
     test('1. Should display empty state if galleries API returns 500', async ({ page, dashboardPage }) => {
         
         await page.route('**/api/galleries', route => {
