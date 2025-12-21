@@ -32,7 +32,7 @@ export class MongoHelper {
         try {
             if (!this.db) {
                 await this.client.connect();
-                this.db = this.client.db('test'); // Adjust DB name if necessary
+                this.db = this.client.db('test');
                 Logger.info('[MongoHelper] Successfully connected to MongoDB.');
             }
         } catch (error) {

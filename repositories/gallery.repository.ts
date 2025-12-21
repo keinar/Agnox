@@ -9,7 +9,6 @@ export class GalleryRepository {
         return await collection.findOne({ _id: new ObjectId(id) });
     }
     
-    // דוגמה לשאילתה עסקית "אמיתית"
     async isGalleryExists(title: string): Promise<boolean> {
         const collection = await this.mongo.getCollection('galleries');
         const count = await collection.countDocuments({ title });
