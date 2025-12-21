@@ -1,0 +1,1 @@
+[2025-12-21T12:53:25.918Z] [INFO] API POST Request: /api/galleries
