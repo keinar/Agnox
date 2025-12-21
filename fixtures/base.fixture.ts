@@ -7,6 +7,7 @@ import { GalleryRepository } from '../repositories/gallery.repository';
 import { DashboardPage } from '../pages/dashboardPage';
 import { LoginPage } from '../pages/loginPage';
 import { ProfilePage } from '../pages/profilePage';
+import { AiHelper } from '../helpers/aiHelper';
 
 type WorkerFixtures = {
     mongoWorker: MongoHelper;
@@ -16,6 +17,7 @@ type MyFixtures = {
     // Infrastructure
     apiClient: ApiClient;
     mongoHelper: MongoHelper;
+    aiHelper: AiHelper;
     
     // Services (API/Logic)
     authService: AuthService;
@@ -45,6 +47,10 @@ export const test = base.extend<MyFixtures, WorkerFixtures>({
 
     mongoHelper: async ({ mongoWorker }, use) => {
         await use(mongoWorker);
+    },
+
+    aiHelper: async ({}, use) => {
+        await use(new AiHelper());
     },
 
     // --- Services ---

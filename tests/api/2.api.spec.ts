@@ -1,4 +1,5 @@
 import { test, expect } from '../../fixtures/base.fixture';
+import { faker } from '@faker-js/faker';
 
 test.describe.serial('Gallery API - Full CRUD Flow (Refactored)', () => {
 
@@ -6,11 +7,11 @@ test.describe.serial('Gallery API - Full CRUD Flow (Refactored)', () => {
     let secretLink: string;
 
     const galleryPayload = {
-        title: `API-Refactor-Test-${Date.now()}`,
-        clientName: "Service Layer Client"
+        title: faker.company.catchPhrase(),
+        clientName: faker.person.fullName()
     };
 
-    test('1. CREATE - Should create a new gallery', async ({galleryService}) => {
+    test('1. CREATE - Should create a new gallery @api @sanity', async ({galleryService}) => {
         const newGallery = await galleryService.create(galleryPayload);
 
         expect(newGallery).toHaveProperty('_id');

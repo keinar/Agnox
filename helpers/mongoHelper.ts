@@ -21,7 +21,11 @@ export class MongoHelper {
     private db: Db | undefined;
 
     constructor() {
-        this.client = new MongoClient(MONGO_URI!);
+        this.client = new MongoClient(MONGO_URI!, {
+            maxPoolSize: 10,
+            minPoolSize: 1, 
+            serverSelectionTimeoutMS: 5000
+        });
     }
 
     /**
