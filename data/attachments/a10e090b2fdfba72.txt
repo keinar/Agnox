@@ -1,0 +1,8 @@
+[2025-12-21T12:10:26.831Z] [INFO] [MongoHelper] Successfully connected to MongoDB.
+[2025-12-21T12:10:26.975Z] [INFO] API POST Request: /api/galleries
+[2025-12-21T12:10:27.495Z] [INFO] Maps to URL: '/dashboard'
+[2025-12-21T12:10:28.595Z] [INFO] Assert 'locator('div.border').filter({ hasText: 'Senior-Test-9bafb3e7-565c-4982-8a0b-8d33b277670c' })' is visible
+[2025-12-21T12:10:29.011Z] [INFO] Assert 'locator('div.border').filter({ hasText: 'Senior-Test-9bafb3e7-565c-4982-8a0b-8d33b277670c' })' contains text: "Fixture Client"
+[2025-12-21T12:10:29.045Z] [INFO] [Polling] Starting: Gallery record in DB
+[2025-12-21T12:10:29.197Z] [INFO] [Polling] Success: Gallery record in DB
+[2025-12-21T12:10:29.205Z] [INFO] API DELETE Request: /api/galleries/6947e3b3f0943ab0033338df
