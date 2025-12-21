@@ -1,5 +1,5 @@
 import { Locator, Page, test, expect } from "@playwright/test";
-import { Logger } from "../helpers/logger"; 
+import { Logger } from "../helpers/logger";
 
 export abstract class BasePage {
     readonly page: Page;
@@ -29,7 +29,7 @@ export abstract class BasePage {
 
     protected async clickElement(locator: Locator) {
         await this.step(`Click '${locator}'`, async () => {
-            await locator.waitFor({ state: 'visible' }); 
+            await locator.waitFor({ state: 'visible' });
             await locator.click();
         });
     }

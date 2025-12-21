@@ -42,7 +42,7 @@ export default defineConfig({
     headless: !!process.env.CI,
 
     viewport: { width: 1920, height: 1080 },
-    storageState: 'playwright/.auth/auth-state.json',
+    storageState: '.auth/auth-state.json',
     video: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },

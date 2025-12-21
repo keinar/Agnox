@@ -66,15 +66,15 @@ jobs:
     if: always()
     needs: test
     runs-on: ubuntu-latest
-
+    
     permissions:
       contents: write
-      pages: write
-      id-token: write
 
     steps:
     - name: Checkout repo
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Download Allure results
       uses: actions/download-artifact@v4
@@ -92,12 +92,8 @@ jobs:
 
     - name: Restore history from gh-pages
       run: |
-        # Fetch the 'history' directory from the deployed GitHub Pages branch.
         git fetch origin gh-pages || true
-        git checkout origin/gh-pages -- history 2>/dev/null || echo "No previous history found"
-
-    - name: Merge existing history into results
-      run: |
+        git checkout origin/gh-pages -- history/ || true
         if [ -d "history" ]; then
           mkdir -p allure-results/history
           cp -r history/* allure-results/history/
@@ -107,16 +103,12 @@ jobs:
       run: |
         allure generate allure-results --clean -o allure-report
 
-    - name: Setup GitHub Pages
-      uses: actions/configure-pages@v4
-
-    - name: Upload report artifact
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: allure-report
-
     - name: Deploy to GitHub Pages
-      uses: actions/deploy-pages@v4
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./allure-report
+        publish_branch: gh-pages
 
     - name: Comment PR with Allure Report link
       if: ${{ github.event_name == 'pull_request' }}

@@ -6,7 +6,7 @@ import { ApiClient } from './helpers/apiClient';
 import { AuthService } from './services/auth.service';
 import { Logger } from './helpers/logger';
 
-const authFile = 'playwright/.auth/auth-state.json';
+const authFile = '.auth/auth-state.json';
 
 async function globalSetup(fullConfig: FullConfig) {
     Logger.clean();

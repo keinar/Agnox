@@ -2,7 +2,7 @@ import { type APIRequestContext, type APIResponse } from '@playwright/test';
 import * as fs from 'fs';
 import { Logger } from './logger';
 
-const AUTH_FILE_PATH = 'playwright/.auth/auth-state.json';
+const AUTH_FILE_PATH = '.auth/auth-state.json';
 
 /**
  * Generic API Client.
