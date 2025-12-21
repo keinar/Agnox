@@ -90,7 +90,6 @@ jobs:
         unzip allure-2.35.1.zip -d /opt/allure
         sudo ln -s /opt/allure/allure-2.35.1/bin/allure /usr/bin/allure
 
-    # --- התיקון הגדול כאן ---
     - name: Restore history from gh-pages
       run: |
         echo "🔍 Starting history restoration..."
