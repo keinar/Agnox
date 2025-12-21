@@ -90,13 +90,29 @@ jobs:
         unzip allure-2.35.1.zip -d /opt/allure
         sudo ln -s /opt/allure/allure-2.35.1/bin/allure /usr/bin/allure
 
+    # --- התיקון הגדול כאן ---
     - name: Restore history from gh-pages
       run: |
-        git fetch origin gh-pages || true
-        git checkout origin/gh-pages -- history/ || true
-        if [ -d "history" ]; then
+        echo "🔍 Starting history restoration..."
+        
+        # 1. Fetch the branch
+        git fetch origin gh-pages || echo "⚠️ Could not fetch gh-pages (might not exist yet)"
+        
+        # 2. Check if history exists using ls-tree (safe check)
+        if git ls-tree -r origin/gh-pages --name-only | grep -q "^history/"; then
+          echo "✅ History folder found in gh-pages. Extracting..."
+          
+          # Checkout WITHOUT trailing slash (The Fix!)
+          git checkout origin/gh-pages -- history
+          
+          echo "📂 Copying history to allure-results..."
           mkdir -p allure-results/history
           cp -r history/* allure-results/history/
+          
+          echo "📋 Contents of allure-results/history:"
+          ls -l allure-results/history
+        else
+          echo "⚠️ No 'history' folder found in gh-pages branch. This is normal for the first run."
         fi
 
     - name: Generate Allure Report
