@@ -1,9 +1,0 @@
-[AI] Asking Gemini to generate a title for: Family Vacation...
-[Mock] Generating title for Family Vacation
-[AI] Generated Title: "Mocked Family Vacation Title"
-[2025-12-21T11:52:46.711Z] [INFO] API POST Request: /api/galleries
-[2025-12-21T11:52:47.289Z] [INFO] API RAW Request: /api/galleries/public/ILgPAIRJVL
-[AI] Asking Gemini to validate relevance...
-[Mock] Validating relevance for Mocked Family Vacation Title
-[AI Oracle] Logic: "Perfect match (Mocked)"
-[2025-12-21T11:52:47.457Z] [INFO] API DELETE Request: /api/galleries/6947df8ff0943ab003333709
