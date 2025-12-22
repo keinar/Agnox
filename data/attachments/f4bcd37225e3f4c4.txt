@@ -1,0 +1,2 @@
+[2025-12-22T08:04:29.381Z] [INFO] API DELETE Request: /api/galleries/6948fb8df0943ab003333c8c
+[2025-12-22T08:04:29.502Z] [INFO] API RAW Request: /api/galleries/public/Gx-y9HFxyJ

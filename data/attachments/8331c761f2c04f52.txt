@@ -1,0 +1,8 @@
+[2025-12-22T08:04:35.975Z] [INFO] [MongoHelper] Successfully connected to MongoDB.
+[Test Setup] Creating gallery via Service Layer...
+[2025-12-22T08:04:36.007Z] [INFO] API POST Request: /api/galleries
+[Test Run] Validating gallery 6948fb94f0943ab003333cc0 in MongoDB...
+[2025-12-22T08:04:36.460Z] [INFO] [Polling] Starting: Gallery document in MongoDB
+[2025-12-22T08:04:36.575Z] [INFO] [Polling] Success: Gallery document in MongoDB
+[2025-12-22T08:04:36.579Z] [INFO] API DELETE Request: /api/galleries/6948fb94f0943ab003333cc0
+[2025-12-22T08:04:36.724Z] [INFO] [MongoHelper] Disconnected from MongoDB.
