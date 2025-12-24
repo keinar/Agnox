@@ -30,4 +30,4 @@ COPY --from=builder /app/apps/producer-service/package.json ./apps/producer-serv
 ENV NODE_ENV=production
 
 WORKDIR /app/apps/producer-service
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/apps/producer-service/src/index.js"]
