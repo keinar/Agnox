@@ -13,7 +13,7 @@ export const Dashboard = () => {
 
     const handleDelete = async (taskId: string) => {
         try {
-            const response = await fetch(`http://localhost:3000/execution/${taskId}`, {
+            const response = await fetch(`http://localhost:3000/executions/${taskId}`, {
                 method: 'DELETE',
             });
 
