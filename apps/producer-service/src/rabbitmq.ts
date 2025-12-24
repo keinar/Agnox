@@ -5,10 +5,12 @@ export class RabbitMqService {
     private connection: Awaited<ReturnType<typeof amqp.connect>> | null = null;
 
     async connect() {
+        const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
         let retries = 5;
         while (retries > 0) {
             try {
-                this.connection = await amqp.connect('amqp://localhost');
+                console.log(`Connecting to RabbitMQ at ${RABBITMQ_URL}...`);
+                this.connection = await amqp.connect(RABBITMQ_URL);
                 this.channel = await this.connection.createChannel();
                 await this.channel.assertQueue('test_queue', { durable: true });
                 console.log('Connected to RabbitMQ');
