@@ -23,7 +23,7 @@ jobs:
       run: npm ci
 
     - name: Build Shared Types
-      run: npm run build -w packages/shared-types
+      run: npm run build -w shared-types
 
     - name: Linting (Optional)
       run: npm run lint --if-present
