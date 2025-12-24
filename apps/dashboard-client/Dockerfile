@@ -9,7 +9,7 @@ COPY packages/shared-types ./packages/shared-types
 
 COPY apps/dashboard-client ./apps/dashboard-client
 
-RUN npm ci
+RUN npm install
 
 WORKDIR /app/apps/dashboard-client
 RUN npx vite build
