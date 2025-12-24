@@ -4,7 +4,6 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 COPY tsconfig.json ./
-
 COPY packages/shared-types ./packages/shared-types
 COPY apps/producer-service ./apps/producer-service
 
