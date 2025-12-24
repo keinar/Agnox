@@ -22,4 +22,4 @@ RUN npm run build
 ENV NODE_ENV=production
 
 # Default command to run when the container starts
-CMD ["node", "dist/apps/worker-service/src/worker.js"]
+CMD ["node", "dist/worker.js"]
