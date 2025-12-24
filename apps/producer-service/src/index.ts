@@ -17,6 +17,7 @@ let dbClient: MongoClient;
 
 app.register(cors, {
   origin: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 });
 
 app.get('/', async (request, reply) => {
@@ -77,7 +78,7 @@ app.post('/execution-request', async (request, reply) => {
 
 });
 
-app.delete('/execution/:id', async (request, reply) => {
+app.delete('/executions/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
     try {
         if (!dbClient) {
