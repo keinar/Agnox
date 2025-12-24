@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "tsx src/worker.ts",
+    "build": "tsc",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test tests/ui",

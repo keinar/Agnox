@@ -15,7 +15,11 @@ RUN npm ci
 
 WORKDIR /app/packages/shared-types
 RUN npm run build
+
 WORKDIR /app/apps/worker-service
+RUN npm run build
+
+ENV NODE_ENV=production
 
 # Default command to run when the container starts
-CMD ["npx", "tsx", "src/worker.ts"]
+CMD ["node", "dist/apps/worker-service/src/worker.js"]
