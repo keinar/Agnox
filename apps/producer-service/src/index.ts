@@ -1,3 +1,5 @@
+import { Server } from 'socket.io';
+import http from 'http';
 import fastify from 'fastify';
 import cors from '@fastify/cors';
 import { MongoClient } from 'mongodb';
@@ -14,10 +16,22 @@ const MONGO_URI = process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb:/
 const DB_NAME = 'automation_platform';
 
 let dbClient: MongoClient;
+let io: Server;
 
 app.register(cors, {
   origin: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+});
+
+app.post('/executions/update', async (request, reply) => {
+    const updateData = request.body as any;
+    
+    if (io) {
+        io.emit('execution-updated', updateData);
+        app.log.info(`Broadcasted update for task: ${updateData.taskId}`);
+    }
+
+    return { status: 'broadcasted' };
 });
 
 app.get('/', async (request, reply) => {
@@ -98,13 +112,28 @@ app.delete('/executions/:id', async (request, reply) => {
 
 const start = async () => {
   try {
+    await app.ready();
+    const server = http.createServer(app.server);
+
+    io = new Server(server, {
+        cors: {
+            origin: "*",
+            methods: ["GET", "POST"]
+        }
+    });
+
+    io.on('connection', (socket) => {
+        app.log.info('📺 Dashboard connected via Socket.io');
+    });
+
     console.log('Connecting to RabbitMQ...');
     await rabbitMqService.connect();
     await connectToMongo();
     await app.listen({ port: 3000, host: '0.0.0.0' });
-    console.log('Producer Service is listening on port 3000');
+    console.log('Producer & Socket.io running on port 3000');
   } catch (err) {
     app.log.error(err);
+    process.exit(1);
   }
 };
 

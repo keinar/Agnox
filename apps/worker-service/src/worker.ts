@@ -61,6 +61,14 @@ async function startWorker() {
             const task = JSON.parse(content);
             const taskId = task.taskId || 'unknown-task';
 
+            const startExecutionData = {
+                taskId: taskId,
+                status: 'RUNNING',
+                startTime: new Date(),
+                config: task.config,
+                tests: task.tests
+            };
+
             console.log('------------------------------------------------');
             console.log(`📥 Processing Task: ${taskId}`);
 
@@ -77,6 +85,8 @@ async function startWorker() {
                 { upsert: true }
             );
 
+            await notifyProducer(startExecutionData);
+
             try {
                 const testPaths = task.tests.join(' ');
                 const command = `npx playwright test ${testPaths}`;
@@ -88,37 +98,49 @@ async function startWorker() {
                 };
 
                 const { stdout, stderr } = await execPromise(command, { env: envVars });
+                
+                const passData = {
+                    taskId,
+                    status: 'PASSED',
+                    endTime: new Date(),
+                    output: stdout
+                };
 
                 console.log('Tests Passed!');
 
-                await executionsCollection.updateOne(
-                    { taskId: taskId },
-                    {
-                        $set: {
-                            status: 'PASSED',
-                            endTime: new Date(),
-                            output: stdout
-                        }
-                    }
-                );
+                await executionsCollection.updateOne({ taskId }, { $set: passData })
+
+                await notifyProducer(passData);
             } catch (error: any) {
+                const failData = {
+                    taskId,
+                    status: 'FAILED',
+                    endTime: new Date(),
+                    error: error.stderr || error.stdout || error.message
+                };
                 console.error('Tests Failed!');
-                await executionsCollection.updateOne(
-                    { taskId: taskId },
-                    {
-                        $set: {
-                            status: 'FAILED',
-                            endTime: new Date(),
-                            error: error.stderr || error.stdout || error.message
-                        }
-                    }
-                );
+                await executionsCollection.updateOne({ taskId }, { $set: failData });
+                await notifyProducer(failData);
             } finally {
                 channel!.ack(msg);
                 console.log('------------------------------------------------');
             }
         }
     });
+}
+
+async function notifyProducer(executionData: any) {
+    const PRODUCER_URL = process.env.PRODUCER_URL || 'http://producer:3000';
+    try {
+        await fetch(`${PRODUCER_URL}/executions/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(executionData)
+        });
+        console.log(`[Worker] Notified Producer about task ${executionData.taskId}`);
+    } catch (error) {
+        console.error('[Worker] Failed to notify Producer:', error.message);
+    }
 }
 
 startWorker();

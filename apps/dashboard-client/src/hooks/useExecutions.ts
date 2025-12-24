@@ -1,37 +1,65 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import { useEffect } from 'react';
+import { io } from 'socket.io-client';
 import type { Execution } from '../types';
 
 const fetchExecutions = async (): Promise<Execution[]> => {
     const { data } = await axios.get('http://localhost:3000/executions');
-    
     if (!Array.isArray(data)) {
         throw new Error(data?.error || 'Invalid data format received from server');
     }
-    
     return data;
 };
 
 export const useExecutions = () => {
+    const queryClient = useQueryClient();
+
     const { 
         data: executions = [], 
         isLoading: loading, 
-        error,
-        refetch 
+        error 
     } = useQuery({
         queryKey: ['executions'],
         queryFn: fetchExecutions,
-        refetchInterval: 5000,
-        refetchOnWindowFocus: true,
     });
 
-    // Support legacy error string format
+    useEffect(() => {
+        const socket = io('http://localhost:3000');
+
+        socket.on('execution-updated', (updatedTask: Partial<Execution>) => {
+            console.log('⚡ Real-time update received:', updatedTask);
+
+            queryClient.setQueryData(['executions'], (oldData: Execution[] | undefined) => {
+                if (!oldData) return [updatedTask as Execution];
+
+                const index = oldData.findIndex(ex => ex.taskId === updatedTask.taskId);
+                
+                if (index !== -1) {
+                    const newData = [...oldData];
+                    newData[index] = { ...newData[index], ...updatedTask };
+                    return newData;
+                } else {
+                    return [updatedTask as Execution, ...oldData];
+                }
+            });
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, [queryClient]);
+
     const errorMessage = error instanceof Error ? error.message : error ? String(error) : null;
+
+    const setExecutionsManual = (updater: (old: Execution[]) => Execution[]) => {
+        queryClient.setQueryData(['executions'], updater);
+    };
 
     return { 
         executions, 
         loading, 
         error: errorMessage,
-        refetch 
+        setExecutions: setExecutionsManual
     };
 };
