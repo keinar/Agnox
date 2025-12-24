@@ -10,7 +10,7 @@ COPY apps/dashboard-client ./apps/dashboard-client
 
 RUN rm package-lock.json
 
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 WORKDIR /app/apps/dashboard-client
 RUN npx vite build
