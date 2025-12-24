@@ -1,5 +1,5 @@
 import amqp, { Channel, ConsumeMessage } from 'amqplib';
-import { MongoClient, ObjectId } from 'mongodb';
+import { MongoClient } from 'mongodb';
 import { exec } from 'child_process';
 import util from 'util';
 import * as dotenv from 'dotenv';
@@ -9,7 +9,9 @@ dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
 const execPromise = util.promisify(exec);
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';
+const MONGO_URI = process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb://localhost:27017';
+const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
+
 const DB_NAME = 'automation_platform';
 const COLLECTION_NAME = 'executions';
 
@@ -19,20 +21,21 @@ async function startWorker() {
     let mongoClient: MongoClient | null = null;
 
     try {
+        console.log(`👷 Worker connecting to Mongo: ${MONGO_URI}`);
         mongoClient = new MongoClient(MONGO_URI);
         await mongoClient.connect();
-        console.log('✅ Connected to MongoDB');
+        console.log('Connected to MongoDB');
 
         let retries = 5;
 
         while (retries > 0) {
             try {
-                console.log(`👷 Worker connecting to RabbitMQ... (${retries} attempts left)`);
-                connection = await amqp.connect('amqp://localhost');
+                console.log(`👷 Worker connecting to RabbitMQ at ${RABBITMQ_URL}... (${retries} attempts left)`);
+                connection = await amqp.connect(RABBITMQ_URL);
                 channel = await connection.createChannel();
                 await channel.assertQueue('test_queue', { durable: true });
                 await channel?.prefetch(1);
-                console.log('👷 Worker connected to RabbitMQ and waiting for messages...')
+                console.log('Worker connected to RabbitMQ and waiting for messages...')
                 break;
             } catch (error) {
                 console.error('Failed to connect to RabbitMQ', error);
@@ -50,7 +53,7 @@ async function startWorker() {
     const db = mongoClient.db(DB_NAME);
     const executionsCollection = db.collection(COLLECTION_NAME);
 
-    console.log('👷 Worker is ready to process messages.');
+    console.log('Worker is ready to process messages.');
 
     channel.consume('test_queue', async (msg: ConsumeMessage | null) => {
         if (msg) {
@@ -76,7 +79,6 @@ async function startWorker() {
 
             try {
                 const testPaths = task.tests.join(' ');
-
                 const command = `npx playwright test ${testPaths}`;
                 console.log(`Executing command: ${command}`);
 
