@@ -3,6 +3,8 @@ version: '3.8'
 services:
   producer:
     image: keinar101/producer-service:latest
+    volumes:
+      - test_results:/app/apps/producer-service/results
     ports:
       - "3000:3000"
     environment:
@@ -17,6 +19,8 @@ services:
 
   worker:
     image: keinar101/worker-service:latest
+    volumes:
+      - test_results:/app/apps/worker-service/test-results
     environment:
       - RABBITMQ_URL=amqp://rabbitmq
       - MONGODB_URL=mongodb://mongo:27017/executions_db
@@ -65,3 +69,4 @@ networks:
 
 volumes:
   mongo_data:
+  test_results:

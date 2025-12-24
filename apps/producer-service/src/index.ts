@@ -6,7 +6,7 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { rabbitMqService } from './rabbitmq.js';
 import { TestExecutionRequestSchema } from '../../../packages/shared-types/index.js';
-import type { FastifyInstance } from 'fastify';
+import fastifyStatic from '@fastify/static';
 import type { Server } from 'socket.io';
 
 declare module 'fastify' {
@@ -36,6 +36,12 @@ app.register(socketio, {
         origin: "*",
         methods: ["GET", "POST"]
     }
+});
+
+app.register(fastifyStatic, {
+    root: path.join(process.cwd(), 'results'),
+    prefix: '/reports/',
+    decorateReply: false
 });
 
 app.get('/', async () => {

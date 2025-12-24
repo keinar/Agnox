@@ -1,5 +1,5 @@
 import { format, intervalToDuration } from 'date-fns';
-import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Trash2, FileText } from 'lucide-react';
 import type { Execution } from '../types';
 import { StatusBadge } from './StatusBadge';
 import { TerminalView } from './TerminalView';
@@ -44,7 +44,21 @@ export const ExecutionRow = ({ execution, isExpanded, onToggle, onDelete }: Prop
                 </td>
                 <td>{format(new Date(execution.startTime), 'dd/MM/yy HH:mm')}</td>
                 <td>{calculateDuration(execution.startTime, execution.endTime)}</td>
-                <td style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <td style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'flex-end' }}>
+                    
+                    {(execution.status === 'PASSED' || execution.status === 'FAILED') && (
+                        <a 
+                            href={`http://localhost:3000/reports/${execution.taskId}/index.html`} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            title="View Playwright Report"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ color: '#60a5fa', display: 'flex', alignItems: 'center' }}
+                        >
+                            <FileText size={18} />
+                        </a>
+                    )}
+
                     <button 
                         onClick={handleDelete}
                         style={{ 

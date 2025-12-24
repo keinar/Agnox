@@ -88,13 +88,15 @@ async function startWorker() {
             await notifyProducer(startExecutionData);
 
             try {
+                const reportPath = path.join(process.cwd(), 'test-results', taskId);
                 const testPaths = task.tests.join(' ');
-                const command = `npx playwright test ${testPaths}`;
+                const command = `npx playwright test ${testPaths} --reporter=html`;
                 console.log(`Executing command: ${command}`);
 
                 const envVars = {
                     ...process.env,
-                    BASE_URL: task.config.baseUrl || process.env.BASE_URL
+                    BASE_URL: task.config.baseUrl || process.env.BASE_URL,
+                    PLAYWRIGHT_HTML_REPORT: reportPath
                 };
 
                 const { stdout, stderr } = await execPromise(command, { env: envVars });
