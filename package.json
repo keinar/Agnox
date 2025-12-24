@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build:shared": "npm run build -w packages/shared-types",
+    "build:shared": "npm run build -w shared-types",
     "test": "npm run test --workspaces"
   },
   "devDependencies": {
