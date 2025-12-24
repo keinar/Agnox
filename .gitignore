@@ -1,31 +1,70 @@
-
-# Playwright
+# ---------------------------------
+# 1. Dependencies (Node.js)
+# ---------------------------------
 node_modules/
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-/.auth/
+.pnp
+.pnp.js
 
-# Environment variables
-.env
-
-# TypeScript
+# ---------------------------------
+# 2. Build Outputs (Production code)
+# ---------------------------------
 dist/
 build/
-*.tsbuildinfo
-# Logs
+out/
+coverage/
+
+# ---------------------------------
+# 3. Environment Variables (SECRETS!)
+# ---------------------------------
+# חשוב מאוד לא להעלות סיסמאות לגיט
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+*.pem
+
+# אבל כן נרצה להעלות קובץ דוגמה אם קיים
+!.env.example
+
+# ---------------------------------
+# 4. Playwright & Testing
+# ---------------------------------
+# תוצאות של טסטים, וידאו ותמונות שנכשלו
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# ---------------------------------
+# 5. Allure Reports (אם נשתמש בעתיד)
+# ---------------------------------
+allure-results/
+allure-report/
+
+# ---------------------------------
+# 6. Logs
+# ---------------------------------
 logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
 
-# Allure
-allure-results/
-allure-report/
-.allure
-
-# MacOS
+# ---------------------------------
+# 7. IDE & OS Files
+# ---------------------------------
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ---------------------------------
+# 8. Docker (Local volumes/dev)
+# ---------------------------------
+docker-data/

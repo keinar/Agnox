@@ -1,0 +1,70 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install Dependencies
+      run: npm ci
+
+    - name: Build Shared Types
+      run: npm run build -w packages/shared-types
+
+    - name: Linting (Optional)
+      run: npm run lint --if-present
+
+  build-push-containers:
+    needs: build-and-test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Build Producer
+      - name: Build and push Producer
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/producer-service/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/producer-service:latest
+
+      # Build Worker
+      - name: Build and push Worker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/worker-service/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/worker-service:latest
+
+      # Build Dashboard
+      - name: Build and push Dashboard
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/dashboard-client/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/dashboard-client:latest
