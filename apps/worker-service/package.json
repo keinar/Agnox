@@ -28,7 +28,7 @@
     "@types/amqplib": "^0.10.8",
     "@types/mongodb": "^4.0.6",
     "@types/node": "^24.10.4",
-    "allure-playwright": "^3.4.2",
+    "allure-playwright": "^3.4.3",
     "dotenv": "^17.2.3",
     "mongodb": "^7.0.0",
     "ts-node": "^10.9.2",

@@ -41,6 +41,7 @@ app.register(socketio, {
 app.register(fastifyStatic, {
     root: path.join(process.cwd(), 'results'),
     prefix: '/reports/',
+    index: ['index.html'],
     decorateReply: false
 });
 

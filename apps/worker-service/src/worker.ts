@@ -89,17 +89,22 @@ async function startWorker() {
 
             try {
                 const reportPath = path.join(process.cwd(), 'test-results', taskId);
+                const allureResultsPath = path.join(reportPath, 'allure-results');
+                const allureReportPath = path.join(reportPath, 'allure-report');
                 const testPaths = task.tests.join(' ');
-                const command = `npx playwright test ${testPaths} --reporter=html`;
+                const command = `npx playwright test ${testPaths} --reporter=html,allure-playwright`;
                 console.log(`Executing command: ${command}`);
 
                 const envVars = {
                     ...process.env,
                     BASE_URL: task.config.baseUrl || process.env.BASE_URL,
-                    PLAYWRIGHT_HTML_REPORT: reportPath
+                    PLAYWRIGHT_HTML_REPORT: reportPath,
+                    ALLURE_RESULTS_DIR: allureResultsPath
                 };
 
                 const { stdout, stderr } = await execPromise(command, { env: envVars });
+
+                await execPromise(`npx allure generate ${allureResultsPath} -o ${allureReportPath} --clean`);
                 
                 const passData = {
                     taskId,
