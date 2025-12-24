@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  producer:
+    image: keinar101/producer-service:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq
+      - MONGODB_URL=mongodb://mongo:27017/executions_db
+    depends_on:
+      - rabbitmq
+      - mongo
+    networks:
+      - app-network
+
+  worker:
+    image: keinar101/worker-service:latest
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq
+      - MONGODB_URL=mongodb://mongo:27017/executions_db
+      - CI=true 
+    depends_on:
+      - rabbitmq
+      - mongo
+      - producer
+    networks:
+      - app-network
+
+  dashboard:
+    image: keinar101/dashboard-client:latest
+    ports:
+      - "8080:80"
+    depends_on:
+      - producer
+    networks:
+      - app-network
+  
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - app-network
+
+  mongo:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongo_data:

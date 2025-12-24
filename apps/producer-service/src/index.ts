@@ -10,7 +10,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
 const app = fastify({ logger: true });
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';
+const MONGO_URI = process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb://localhost:27017';
 const DB_NAME = 'automation_platform';
 
 let dbClient: MongoClient;
@@ -82,7 +82,7 @@ const start = async () => {
     console.log('Connecting to RabbitMQ...');
     await rabbitMqService.connect();
     await connectToMongo();
-    await app.listen({ port: 3000 });
+    await app.listen({ port: 3000, host: '0.0.0.0' });
     console.log('Producer Service is listening on port 3000');
   } catch (err) {
     app.log.error(err);
