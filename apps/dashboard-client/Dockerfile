@@ -6,8 +6,9 @@ COPY package.json package-lock.json ./
 COPY tsconfig.json ./
 
 COPY packages/shared-types ./packages/shared-types
-
 COPY apps/dashboard-client ./apps/dashboard-client
+
+RUN rm package-lock.json
 
 RUN npm install
 
