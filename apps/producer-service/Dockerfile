@@ -9,7 +9,7 @@ COPY packages/shared-types ./packages/shared-types
 
 COPY apps/producer-service ./apps/producer-service
 
-RUN npm ci
+RUN npm install
 
 WORKDIR /app/packages/shared-types
 RUN npm run build
