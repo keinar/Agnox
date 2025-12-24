@@ -77,6 +77,24 @@ app.post('/execution-request', async (request, reply) => {
 
 });
 
+app.delete('/execution/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    try {
+        if (!dbClient) {
+            return reply.status(500).send({ error: 'Database not connected' });
+        }
+        const collection = dbClient.db(DB_NAME).collection('executions');
+        const deleteResult = await collection.deleteOne({ taskId: id });
+        if (deleteResult.deletedCount === 0) {
+            return reply.status(404).send({ error: 'Execution not found' });
+        }
+        return { status: 'Execution deleted successfully' };
+    } catch (error) {
+        app.log.error(error);
+        return reply.status(500).send({ error: 'Failed to delete execution' });
+    }
+});
+
 const start = async () => {
   try {
     console.log('Connecting to RabbitMQ...');

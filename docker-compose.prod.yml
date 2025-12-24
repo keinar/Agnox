@@ -20,8 +20,12 @@ services:
     environment:
       - RABBITMQ_URL=amqp://rabbitmq
       - MONGODB_URL=mongodb://mongo:27017/executions_db
-      - MONGO_URI=mongodb://mongo:27017/executions_db
-      - CI=true 
+      - MONGO_URI=${MONGO_URI}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - BASE_URL=${BASE_URL}
+      - ADMIN_USER=${ADMIN_USER}
+      - ADMIN_PASS=${ADMIN_PASS}
+      - CI=true
     depends_on:
       - rabbitmq
       - mongo

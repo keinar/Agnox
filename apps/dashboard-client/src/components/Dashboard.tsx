@@ -4,11 +4,29 @@ import { StatsGrid } from './StatsGrid';
 import { ExecutionRow } from './ExecutionRow';
 
 export const Dashboard = () => {
-    const { executions, loading, error } = useExecutions();
+    const { executions, loading, error, refetch } = useExecutions();
     const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
     const toggleRow = (id: string) => {
         setExpandedRowId(expandedRowId === id ? null : id);
+    };
+
+    const handleDelete = async (taskId: string) => {
+        try {
+            const response = await fetch(`http://localhost:3000/execution/${taskId}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                await refetch();
+            } else {
+                const errData = await response.json();
+                alert(`Error: ${errData.error || 'Failed to delete'}`);
+            }
+        } catch (err) {
+            console.error('Delete failed:', err);
+            alert('Server connection error');
+        }
     };
 
     if (error) return <div style={{color: 'red', padding: 20}}>Error: {error}</div>;
@@ -33,11 +51,13 @@ export const Dashboard = () => {
                             <th>Environment</th>
                             <th>Start Time</th>
                             <th>Duration</th>
-                            <th>Action</th>
+                            <th style={{ textAlign: 'right', paddingRight: '20px' }}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {loading && <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20 }}>Loading live data...</td></tr>}
+                        {loading && executions.length === 0 && (
+                            <tr><td colSpan={6} style={{ textAlign: 'center', padding: 20 }}>Loading live data...</td></tr>
+                        )}
                         
                         {executions.map((exec) => (
                             <ExecutionRow 
@@ -45,6 +65,7 @@ export const Dashboard = () => {
                                 execution={exec} 
                                 isExpanded={expandedRowId === exec._id}
                                 onToggle={() => toggleRow(exec._id)}
+                                onDelete={handleDelete}
                             />
                         ))}
                     </tbody>

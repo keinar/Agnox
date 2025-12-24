@@ -1,5 +1,5 @@
 import { format, intervalToDuration } from 'date-fns';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import type { Execution } from '../types';
 import { StatusBadge } from './StatusBadge';
 import { TerminalView } from './TerminalView';
@@ -8,9 +8,17 @@ interface Props {
     execution: Execution;
     isExpanded: boolean;
     onToggle: () => void;
+    onDelete: (taskId: string) => void;
 }
 
-export const ExecutionRow = ({ execution, isExpanded, onToggle }: Props) => {
+export const ExecutionRow = ({ execution, isExpanded, onToggle, onDelete }: Props) => {
+
+    const handleDelete = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (window.confirm(`Are you sure you want to delete task ${execution.taskId}?`)) {
+            onDelete(execution.taskId);
+        }
+    };
     
     const calculateDuration = (start: string, end?: string) => {
         if (!end) return 'Running...';
@@ -36,7 +44,24 @@ export const ExecutionRow = ({ execution, isExpanded, onToggle }: Props) => {
                 </td>
                 <td>{format(new Date(execution.startTime), 'dd/MM/yy HH:mm')}</td>
                 <td>{calculateDuration(execution.startTime, execution.endTime)}</td>
-                <td>{isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</td>
+                <td style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <button 
+                        onClick={handleDelete}
+                        style={{ 
+                            background: 'none', 
+                            border: 'none', 
+                            color: '#ef4444', 
+                            cursor: 'pointer',
+                            padding: '4px',
+                            display: 'flex',
+                            alignItems: 'center'
+                        }}
+                        title="Delete Execution"
+                    >
+                        <Trash2 size={18} />
+                    </button>
+                    {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                </td>
             </tr>
 
             {isExpanded && (
@@ -44,7 +69,7 @@ export const ExecutionRow = ({ execution, isExpanded, onToggle }: Props) => {
                     <td colSpan={6} style={{ padding: 0 }}>
                         <div className="expanded-content">
                             <div className="info-grid">
-                                <InfoItem label="Base URL" value={execution.config?.baseUrl} />
+                                <InfoItem label="Task ID" value={execution.taskId} />
                                 <InfoItem label="Tests Path" value={execution.tests.join(', ')} />
                                 <InfoItem label="Retries" value={execution.config?.retryAttempts?.toString()} />
                             </div>
