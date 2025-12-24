@@ -1,5 +1,5 @@
 import { format, intervalToDuration } from 'date-fns';
-import { ChevronDown, ChevronUp, Trash2, FileText } from 'lucide-react';
+import { ChevronDown, ChevronUp, Trash2, FileText, BarChart2 } from 'lucide-react';
 import type { Execution } from '../types';
 import { StatusBadge } from './StatusBadge';
 import { TerminalView } from './TerminalView';
@@ -19,7 +19,7 @@ export const ExecutionRow = ({ execution, isExpanded, onToggle, onDelete }: Prop
             onDelete(execution.taskId);
         }
     };
-    
+
     const calculateDuration = (start: string, end?: string) => {
         if (!end) return 'Running...';
         const duration = intervalToDuration({
@@ -45,26 +45,37 @@ export const ExecutionRow = ({ execution, isExpanded, onToggle, onDelete }: Prop
                 <td>{format(new Date(execution.startTime), 'dd/MM/yy HH:mm')}</td>
                 <td>{calculateDuration(execution.startTime, execution.endTime)}</td>
                 <td style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'flex-end' }}>
-                    
+
                     {(execution.status === 'PASSED' || execution.status === 'FAILED') && (
-                        <a 
-                            href={`http://localhost:3000/reports/${execution.taskId}/index.html`} 
-                            target="_blank" 
-                            rel="noreferrer"
-                            title="View Playwright Report"
-                            onClick={(e) => e.stopPropagation()}
-                            style={{ color: '#60a5fa', display: 'flex', alignItems: 'center' }}
-                        >
-                            <FileText size={18} />
-                        </a>
+                        <>
+                            {/* Playwright Report */}
+                            <a
+                                href={`http://localhost:3000/reports/${execution.taskId}/index.html`}
+                                target="_blank"
+                                title="Playwright Report"
+                                style={{ color: '#60a5fa' }}
+                            >
+                                <FileText size={18} />
+                            </a>
+
+                            {/* Allure Report */}
+                            <a
+                                href={`http://localhost:3000/reports/${execution.taskId}/allure-report/index.html`}
+                                target="_blank"
+                                title="Allure Dashboard"
+                                style={{ color: '#10b981' }}
+                            >
+                                <BarChart2 size={18} />
+                            </a>
+                        </>
                     )}
 
-                    <button 
+                    <button
                         onClick={handleDelete}
-                        style={{ 
-                            background: 'none', 
-                            border: 'none', 
-                            color: '#ef4444', 
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#ef4444',
                             cursor: 'pointer',
                             padding: '4px',
                             display: 'flex',
@@ -87,7 +98,7 @@ export const ExecutionRow = ({ execution, isExpanded, onToggle, onDelete }: Prop
                                 <InfoItem label="Tests Path" value={execution.tests.join(', ')} />
                                 <InfoItem label="Retries" value={execution.config?.retryAttempts?.toString()} />
                             </div>
-                            
+
                             <TerminalView output={execution.output} error={execution.error} />
                         </div>
                     </td>
