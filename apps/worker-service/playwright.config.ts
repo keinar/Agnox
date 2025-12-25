@@ -1,8 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
-import * as path from 'path';
-
-const ALLURE_DIR = process.env.ALLURE_RESULTS_DIR;
-const HTML_DIR = process.env.PLAYWRIGHT_HTML_REPORT;
+import { defineConfig } from '@playwright/test';
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -20,18 +16,12 @@ export default defineConfig({
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['list'],
-    ['html', { 
-      outputFolder: HTML_DIR || 'playwright-report',
-      open: 'never'
-    }],
+    ['html', { outputFolder: 'playwright-report', open: 'never' }],
     ['allure-playwright', { 
-      outputFolder: ALLURE_DIR || path.resolve(process.cwd(), 'allure-results'),
+      outputFolder: 'allure-results',
       detail: true,
       suiteTitle: false,
-      environmentInfo: {
-        FRAMEWORK: 'Playwright',
-        NODE_VERSION: process.version
-      }
+      environmentInfo: { FRAMEWORK: 'Playwright' }
     }]
   ],
 

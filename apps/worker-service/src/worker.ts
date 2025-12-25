@@ -59,90 +59,91 @@ async function startWorker() {
         if (msg) {
             const content = msg.content.toString();
             const task = JSON.parse(content);
-            const taskId = task.taskId || 'unknown-task';
+            const taskId = task.taskId || 'unknown';
 
             const baseTaskDir = path.join(process.cwd(), 'test-results', taskId);
+            const finalAllureResultsDir = path.join(baseTaskDir, 'allure-results');
+            const finalAllureReportDir = path.join(baseTaskDir, 'allure-report');
+            const finalHtmlReportDir = path.join(baseTaskDir, 'playwright-report');
             const outputDir = path.join(baseTaskDir, 'raw-assets');
-            const playwrightReportDir = path.join(baseTaskDir, 'playwright-report');
-            const allureResultsDir = path.join(baseTaskDir, 'allure-results');
-            const allureReportDir = path.join(baseTaskDir, 'allure-report');
 
-            const startExecutionData = {
-                taskId: taskId,
-                status: 'RUNNING',
-                startTime: new Date(),
-                config: task.config,
-                tests: task.tests
-            };
+            const localAllureResults = path.join(process.cwd(), 'allure-results');
+            const localHtmlReport = path.join(process.cwd(), 'playwright-report');
 
             console.log('------------------------------------------------');
             console.log(`📥 Processing Task: ${taskId}`);
 
             try {
+                if (fs.existsSync(localAllureResults)) fs.rmSync(localAllureResults, { recursive: true, force: true });
+                if (fs.existsSync(localHtmlReport)) fs.rmSync(localHtmlReport, { recursive: true, force: true });
+            } catch (e) {}
+
+            try {
                 fs.mkdirSync(outputDir, { recursive: true });
-                fs.mkdirSync(allureResultsDir, { recursive: true });
-                console.log('Created directories successfully');
-            } catch (err) {
-                console.error('Failed to create directories:', err);
-            }
+                fs.mkdirSync(finalAllureResultsDir, { recursive: true });
+            } catch (err) {}
 
-            await executionsCollection.updateOne(
-                { taskId: taskId },
-                {
-                    $set: {
-                        status: 'RUNNING',
-                        startTime: new Date(),
-                        config: task.config,
-                        tests: task.tests
-                    }
-                },
-                { upsert: true }
-            );
-
-            await notifyProducer(startExecutionData);
+            await executionsCollection.updateOne({ taskId }, { $set: { status: 'RUNNING', startTime: new Date(), config: task.config } }, { upsert: true });
+            await notifyProducer({ taskId, status: 'RUNNING' });
 
             try {
                 const testPaths = task.tests.join(' ');
-                const configPath = path.join(process.cwd(), 'playwright.config.ts');
-                const command = `npx playwright test ${testPaths} --output="${outputDir}" -c "${configPath}"`;
-                console.log(`Executing command: ${command}`);
+                
+                const command = `npx playwright test ${testPaths} --output="${outputDir}" -c playwright.config.ts`;
+                
+                console.log(`Executing: ${command}`);
 
                 const envVars = {
                     ...process.env,
                     BASE_URL: task.config.baseUrl || process.env.BASE_URL,
-                    PLAYWRIGHT_HTML_REPORT: playwrightReportDir,
-                    ALLURE_RESULTS_DIR: allureResultsDir,
                     CI: 'true'
                 };
 
                 const { stdout } = await execPromise(command, { env: envVars });
 
-                if (fs.existsSync(allureResultsDir) && fs.readdirSync(allureResultsDir).length > 0) {
-                    console.log('Generating Allure Report...');
-                    await execPromise(`npx allure generate "${allureResultsDir}" -o "${allureReportDir}" --clean`);
-                } else {
-                    console.warn('Warning: No Allure results found. Config might have been ignored.');
+                console.log('🚚 Moving reports to task directory...');
+                
+                if (fs.existsSync(localAllureResults)) {
+                    const files = fs.readdirSync(localAllureResults);
+                    files.forEach(file => {
+                        fs.renameSync(path.join(localAllureResults, file), path.join(finalAllureResultsDir, file));
+                    });
+                    console.log(`✅ Moved ${files.length} Allure files.`);
                 }
 
+                if (fs.existsSync(localHtmlReport)) {
+                    fs.cpSync(localHtmlReport, finalHtmlReportDir, { recursive: true });
+                }
+
+                if (fs.readdirSync(finalAllureResultsDir).length > 0) {
+                    await execPromise(`npx allure generate "${finalAllureResultsDir}" -o "${finalAllureReportDir}" --clean`);
+                    console.log('✅ Allure HTML generated.');
+                } else {
+                    console.warn('⚠️ No Allure results generated by Playwright.');
+                }
+                // ----------------------------------------
+                
                 const passData = { taskId, status: 'PASSED', endTime: new Date(), output: stdout };
-                console.log('Tests Passed!');
                 await executionsCollection.updateOne({ taskId }, { $set: passData });
                 await notifyProducer(passData);
 
             } catch (error: any) {
                 console.error('Tests Failed');
-
                 try {
-                    if (fs.existsSync(allureResultsDir) && fs.readdirSync(allureResultsDir).length > 0) {
-                        await execPromise(`npx allure generate "${allureResultsDir}" -o "${allureReportDir}" --clean`);
+                    if (fs.existsSync(localAllureResults)) {
+                        const files = fs.readdirSync(localAllureResults);
+                        files.forEach(file => {
+                            fs.renameSync(path.join(localAllureResults, file), path.join(finalAllureResultsDir, file));
+                        });
+                        await execPromise(`npx allure generate "${finalAllureResultsDir}" -o "${finalAllureReportDir}" --clean`);
                     }
-                } catch (e) { console.error('Failed to generate report on error'); }
+                } catch (e) { console.error('Error handling artifacts on failure', e); }
 
-                const failData = {
-                    taskId,
-                    status: 'FAILED',
-                    endTime: new Date(),
-                    error: error.stderr || error.stdout || error.message
+                const failData = { 
+                    taskId, 
+                    status: 'FAILED', 
+                    endTime: new Date(), 
+                    error: error.stderr || error.stdout || error.message 
                 };
                 await executionsCollection.updateOne({ taskId }, { $set: failData });
                 await notifyProducer(failData);
