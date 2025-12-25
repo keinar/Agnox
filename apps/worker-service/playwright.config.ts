@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import { config as envConfig } from './config/env';
+import * as path from 'path';
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -17,11 +18,19 @@ export default defineConfig({
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['list'],
-    ['html', { outputFolder: process.env.PLAYWRIGHT_HTML_REPORT || 'playwright-report' }],
+    ['html', { 
+      outputFolder: process.env.PLAYWRIGHT_HTML_REPORT || 'playwright-report',
+      open: 'never'
+    }],
     ['allure-playwright', { 
-      outputFolder: process.env.ALLURE_RESULTS_DIR || 'allure-results',
+      outputFolder: process.env.ALLURE_RESULTS_DIR 
+            ? path.resolve(process.cwd(), process.env.ALLURE_RESULTS_DIR) 
+            : 'allure-results',
       detail: true,
-      suiteTitle: false 
+      suiteTitle: false,
+      environmentInfo: {
+        FRAMEWORK: 'Playwright'
+      }
     }]
   ],
 
