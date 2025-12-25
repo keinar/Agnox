@@ -62,7 +62,7 @@ async function startWorker() {
             const task = JSON.parse(content);
             const taskId = task.taskId || 'unknown-task';
 
-            const baseTaskDir = path.resolve(process.cwd(), 'test-results', taskId);
+            const baseTaskDir = path.join(process.cwd(), 'test-results', taskId);
 
             const outputDir = path.join(baseTaskDir, 'raw-assets');
 
@@ -80,6 +80,14 @@ async function startWorker() {
 
             console.log('------------------------------------------------');
             console.log(`📥 Processing Task: ${taskId}`);
+            
+            try {
+                fs.mkdirSync(outputDir, { recursive: true });
+                fs.mkdirSync(allureResultsDir, { recursive: true });
+                console.log('✅ Created directories successfully');
+            } catch (err) {
+                console.error('Failed to create directories:', err);
+            }
 
             await executionsCollection.updateOne(
                 { taskId: taskId },
@@ -98,7 +106,7 @@ async function startWorker() {
 
             try {
                 const testPaths = task.tests.join(' ');
-                const command = `npx playwright test ${testPaths} --reporter=html,allure-playwright --output=${outputDir}`;
+                const command = `npx playwright test ${testPaths} --reporter=html,allure-playwright --output=${outputDir} -c playwright.config.ts`;
                 console.log(`Executing command: ${command}`);
 
                 const envVars = {
