@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
-import { config as envConfig } from './config/env';
 import * as path from 'path';
+
+console.log('📢 CONFIG LOADED successfully!');
+console.log('🎯 Allure Target Path (from Env):', process.env.ALLURE_RESULTS_DIR);
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -23,9 +25,7 @@ export default defineConfig({
       open: 'never'
     }],
     ['allure-playwright', { 
-      outputFolder: process.env.ALLURE_RESULTS_DIR 
-            ? path.resolve(process.cwd(), process.env.ALLURE_RESULTS_DIR) 
-            : 'allure-results',
+      outputFolder: process.env.ALLURE_RESULTS_DIR || 'allure-results',
       detail: true,
       suiteTitle: false,
       environmentInfo: {
@@ -45,7 +45,7 @@ export default defineConfig({
   use: {
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
-    baseURL: envConfig.BASE_URL,
+    baseURL: process.env.BASE_URL || 'http://localhost:3000',
 
     headless: !!process.env.CI,
 
