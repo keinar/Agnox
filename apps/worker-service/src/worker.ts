@@ -4,6 +4,7 @@ import { exec } from 'child_process';
 import util from 'util';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import * as fs from 'fs';
 
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
@@ -108,6 +109,15 @@ async function startWorker() {
                 };
 
                 const { stdout, stderr } = await execPromise(command, { env: envVars });
+
+                console.log(`Checking if results exist in: ${allureResultsDir}`);
+                if (fs.existsSync(allureResultsDir)) {
+                    const files = fs.readdirSync(allureResultsDir);
+                    console.log(`Found ${files.length} files in allure-results:`, files);
+                    if (files.length === 0) console.warn('WARNING: allure-results folder is empty!');
+                } else {
+                    console.error(`ERROR: allure-results folder NOT found at ${allureResultsDir}`);
+                }
 
                 await execPromise(`npx allure generate ${allureResultsDir} -o ${allureReportDir} --clean`);
                 
