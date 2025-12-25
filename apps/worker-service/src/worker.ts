@@ -62,7 +62,7 @@ async function startWorker() {
             const task = JSON.parse(content);
             const taskId = task.taskId || 'unknown-task';
 
-            const baseTaskDir = path.join(process.cwd(), 'test-results', taskId);
+            const baseTaskDir = path.resolve(process.cwd(), 'test-results', taskId);
 
             const outputDir = path.join(baseTaskDir, 'raw-assets');
 
@@ -107,6 +107,11 @@ async function startWorker() {
                     PLAYWRIGHT_HTML_REPORT: playwrightReportDir,
                     ALLURE_RESULTS_DIR: allureResultsDir
                 };
+
+                console.log('DEBUG ENV VARS:', {
+                    HTML_REPORT: envVars.PLAYWRIGHT_HTML_REPORT,
+                    ALLURE_DIR: envVars.ALLURE_RESULTS_DIR
+                });
 
                 const { stdout, stderr } = await execPromise(command, { env: envVars });
 
