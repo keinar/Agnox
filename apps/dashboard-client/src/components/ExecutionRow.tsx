@@ -95,7 +95,7 @@ export const ExecutionRow = ({ execution, isExpanded, onToggle, onDelete }: Prop
                         <div className="expanded-content">
                             <div className="info-grid">
                                 <InfoItem label="Task ID" value={execution.taskId} />
-                                <InfoItem label="Tests Path" value={execution.tests.join(', ')} />
+                                <InfoItem label="Tests Path" value={execution.tests?.join(', ') || 'All Tests'} />
                                 <InfoItem label="Retries" value={execution.config?.retryAttempts?.toString()} />
                             </div>
 
