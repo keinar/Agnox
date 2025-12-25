@@ -12,35 +12,10 @@ const execPromise = util.promisify(exec);
 
 const MONGO_URI = process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb://localhost:27017';
 const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
-
 const DB_NAME = 'automation_platform';
 const COLLECTION_NAME = 'executions';
 
-function debugFileSystem() {
-    const cwd = process.cwd();
-    console.log('🔍 DEBUG: Current Working Directory:', cwd);
-    
-    const configPath = path.join(cwd, 'playwright.config.ts');
-    if (fs.existsSync(configPath)) {
-        console.log('DEBUG: Found config file at:', configPath);
-    } else {
-        console.error('CRITICAL ERROR: playwright.config.ts NOT FOUND at:', configPath);
-        console.log('Listing files in CWD:');
-        try {
-            console.log(fs.readdirSync(cwd));
-        } catch (e) { console.log('Cannot list directory'); }
-    }
-
-    const allurePkg = path.join(cwd, 'node_modules', 'allure-playwright');
-    if (fs.existsSync(allurePkg)) {
-        console.log('DEBUG: allure-playwright package found.');
-    } else {
-        console.error('CRITICAL ERROR: allure-playwright NOT installed in node_modules!');
-    }
-}
-
 async function startWorker() {
-    debugFileSystem();
     let connection: Awaited<ReturnType<typeof amqp.connect>> | null = null;
     let channel: Channel | null = null;
     let mongoClient: MongoClient | null = null;
@@ -87,13 +62,10 @@ async function startWorker() {
             const taskId = task.taskId || 'unknown-task';
 
             const baseTaskDir = path.join(process.cwd(), 'test-results', taskId);
-
             const outputDir = path.join(baseTaskDir, 'raw-assets');
-
             const playwrightReportDir = path.join(baseTaskDir, 'playwright-report');
             const allureResultsDir = path.join(baseTaskDir, 'allure-results');
             const allureReportDir = path.join(baseTaskDir, 'allure-report');
-            const absoluteConfigPath = path.join(process.cwd(), 'playwright.config.ts');
 
             const startExecutionData = {
                 taskId: taskId,
@@ -105,7 +77,7 @@ async function startWorker() {
 
             console.log('------------------------------------------------');
             console.log(`📥 Processing Task: ${taskId}`);
-            
+
             try {
                 fs.mkdirSync(outputDir, { recursive: true });
                 fs.mkdirSync(allureResultsDir, { recursive: true });
@@ -131,7 +103,8 @@ async function startWorker() {
 
             try {
                 const testPaths = task.tests.join(' ');
-                const command = `npx playwright test ${testPaths} --output="${outputDir}" -c "${absoluteConfigPath}"`;
+                const configPath = path.join(process.cwd(), 'playwright.config.ts');
+                const command = `npx playwright test ${testPaths} --output="${outputDir}" -c "${configPath}"`;
                 console.log(`Executing command: ${command}`);
 
                 const envVars = {
@@ -142,50 +115,37 @@ async function startWorker() {
                     CI: 'true'
                 };
 
-                console.log('DEBUG ENV VARS:', {
-                    HTML_REPORT: envVars.PLAYWRIGHT_HTML_REPORT,
-                    ALLURE_DIR: envVars.ALLURE_RESULTS_DIR
-                });
+                const { stdout } = await execPromise(command, { env: envVars });
 
-                const { stdout, stderr } = await execPromise(command, { env: envVars });
-
-                console.log(`Checking if results exist in: ${allureResultsDir}`);
-                if (fs.existsSync(allureResultsDir)) {
-                    const files = fs.readdirSync(allureResultsDir);
-                    console.log(`Found ${files.length} files in allure-results:`, files);
-                    if (files.length === 0) console.warn('WARNING: allure-results folder is empty!');
+                if (fs.existsSync(allureResultsDir) && fs.readdirSync(allureResultsDir).length > 0) {
+                    console.log('Generating Allure Report...');
+                    await execPromise(`npx allure generate "${allureResultsDir}" -o "${allureReportDir}" --clean`);
                 } else {
-                    console.error(`ERROR: allure-results folder NOT found at ${allureResultsDir}`);
+                    console.warn('Warning: No Allure results found. Config might have been ignored.');
                 }
 
-                await execPromise(`npx allure generate ${allureResultsDir} -o ${allureReportDir} --clean`);
-                
-                const passData = {
-                    taskId,
-                    status: 'PASSED',
-                    endTime: new Date(),
-                    output: stdout
-                };
-
+                const passData = { taskId, status: 'PASSED', endTime: new Date(), output: stdout };
                 console.log('Tests Passed!');
-
-                await executionsCollection.updateOne({ taskId }, { $set: passData })
-
+                await executionsCollection.updateOne({ taskId }, { $set: passData });
                 await notifyProducer(passData);
+
             } catch (error: any) {
+                console.error('Tests Failed');
+
+                try {
+                    if (fs.existsSync(allureResultsDir) && fs.readdirSync(allureResultsDir).length > 0) {
+                        await execPromise(`npx allure generate "${allureResultsDir}" -o "${allureReportDir}" --clean`);
+                    }
+                } catch (e) { console.error('Failed to generate report on error'); }
+
                 const failData = {
                     taskId,
                     status: 'FAILED',
                     endTime: new Date(),
                     error: error.stderr || error.stdout || error.message
                 };
-                console.error('Tests Failed!');
                 await executionsCollection.updateOne({ taskId }, { $set: failData });
                 await notifyProducer(failData);
-
-                try {
-                     await execPromise(`npx allure generate ${allureResultsDir} -o ${allureReportDir} --clean`);
-                } catch (e) { console.error('Failed to generate allure report on error'); }
             } finally {
                 channel!.ack(msg);
                 console.log('------------------------------------------------');
