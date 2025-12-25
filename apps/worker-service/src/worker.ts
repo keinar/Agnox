@@ -83,7 +83,6 @@ async function startWorker() {
             
             try {
                 fs.mkdirSync(outputDir, { recursive: true });
-                fs.mkdirSync(allureResultsDir, { recursive: true });
                 console.log('✅ Created directories successfully');
             } catch (err) {
                 console.error('Failed to create directories:', err);
