@@ -106,7 +106,7 @@ async function startWorker() {
 
             try {
                 const testPaths = task.tests.join(' ');
-                const command = `npx playwright test ${testPaths} --reporter=html,allure-playwright --output=${outputDir} -c playwright.config.ts`;
+                const command = `npx playwright test ${testPaths} --output=${outputDir} -c playwright.config.ts`;
                 console.log(`Executing command: ${command}`);
 
                 const envVars = {
