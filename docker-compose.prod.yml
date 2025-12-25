@@ -9,8 +9,8 @@ services:
       - "3000:3000"
     environment:
       - RABBITMQ_URL=amqp://rabbitmq
-      - MONGODB_URL=mongodb://mongo:27017/executions_db
-      - MONGO_URI=mongodb://mongo:27017/executions_db
+      - MONGODB_URL=mongodb://mongo:27017/automation_platform
+      - MONGO_URI=mongodb://mongo:27017/automation_platform
     depends_on:
       - rabbitmq
       - mongo
