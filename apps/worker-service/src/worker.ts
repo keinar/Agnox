@@ -16,7 +16,31 @@ const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
 const DB_NAME = 'automation_platform';
 const COLLECTION_NAME = 'executions';
 
+function debugFileSystem() {
+    const cwd = process.cwd();
+    console.log('🔍 DEBUG: Current Working Directory:', cwd);
+    
+    const configPath = path.join(cwd, 'playwright.config.ts');
+    if (fs.existsSync(configPath)) {
+        console.log('DEBUG: Found config file at:', configPath);
+    } else {
+        console.error('CRITICAL ERROR: playwright.config.ts NOT FOUND at:', configPath);
+        console.log('Listing files in CWD:');
+        try {
+            console.log(fs.readdirSync(cwd));
+        } catch (e) { console.log('Cannot list directory'); }
+    }
+
+    const allurePkg = path.join(cwd, 'node_modules', 'allure-playwright');
+    if (fs.existsSync(allurePkg)) {
+        console.log('DEBUG: allure-playwright package found.');
+    } else {
+        console.error('CRITICAL ERROR: allure-playwright NOT installed in node_modules!');
+    }
+}
+
 async function startWorker() {
+    debugFileSystem();
     let connection: Awaited<ReturnType<typeof amqp.connect>> | null = null;
     let channel: Channel | null = null;
     let mongoClient: MongoClient | null = null;
@@ -69,6 +93,7 @@ async function startWorker() {
             const playwrightReportDir = path.join(baseTaskDir, 'playwright-report');
             const allureResultsDir = path.join(baseTaskDir, 'allure-results');
             const allureReportDir = path.join(baseTaskDir, 'allure-report');
+            const absoluteConfigPath = path.join(process.cwd(), 'playwright.config.ts');
 
             const startExecutionData = {
                 taskId: taskId,
@@ -83,7 +108,8 @@ async function startWorker() {
             
             try {
                 fs.mkdirSync(outputDir, { recursive: true });
-                console.log('✅ Created directories successfully');
+                fs.mkdirSync(allureResultsDir, { recursive: true });
+                console.log('Created directories successfully');
             } catch (err) {
                 console.error('Failed to create directories:', err);
             }
@@ -105,14 +131,15 @@ async function startWorker() {
 
             try {
                 const testPaths = task.tests.join(' ');
-                const command = `npx playwright test ${testPaths} --output=${outputDir} -c playwright.config.ts`;
+                const command = `npx playwright test ${testPaths} --output="${outputDir}" -c "${absoluteConfigPath}"`;
                 console.log(`Executing command: ${command}`);
 
                 const envVars = {
                     ...process.env,
                     BASE_URL: task.config.baseUrl || process.env.BASE_URL,
                     PLAYWRIGHT_HTML_REPORT: playwrightReportDir,
-                    ALLURE_RESULTS_DIR: allureResultsDir
+                    ALLURE_RESULTS_DIR: allureResultsDir,
+                    CI: 'true'
                 };
 
                 console.log('DEBUG ENV VARS:', {
