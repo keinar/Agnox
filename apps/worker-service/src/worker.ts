@@ -61,6 +61,14 @@ async function startWorker() {
             const task = JSON.parse(content);
             const taskId = task.taskId || 'unknown-task';
 
+            const baseTaskDir = path.join(process.cwd(), 'test-results', taskId);
+
+            const outputDir = path.join(baseTaskDir, 'raw-assets');
+
+            const playwrightReportDir = path.join(baseTaskDir, 'playwright-report');
+            const allureResultsDir = path.join(baseTaskDir, 'allure-results');
+            const allureReportDir = path.join(baseTaskDir, 'allure-report');
+
             const startExecutionData = {
                 taskId: taskId,
                 status: 'RUNNING',
@@ -88,23 +96,20 @@ async function startWorker() {
             await notifyProducer(startExecutionData);
 
             try {
-                const reportPath = path.join(process.cwd(), 'test-results', taskId);
-                const allureResultsPath = path.join(reportPath, 'allure-results');
-                const allureReportPath = path.join(reportPath, 'allure-report');
                 const testPaths = task.tests.join(' ');
-                const command = `npx playwright test ${testPaths} --reporter=html,allure-playwright`;
+                const command = `npx playwright test ${testPaths} --reporter=html,allure-playwright --output=${outputDir}`;
                 console.log(`Executing command: ${command}`);
 
                 const envVars = {
                     ...process.env,
                     BASE_URL: task.config.baseUrl || process.env.BASE_URL,
-                    PLAYWRIGHT_HTML_REPORT: reportPath,
-                    ALLURE_RESULTS_DIR: allureResultsPath
+                    PLAYWRIGHT_HTML_REPORT: playwrightReportDir,
+                    ALLURE_RESULTS_DIR: allureResultsDir
                 };
 
                 const { stdout, stderr } = await execPromise(command, { env: envVars });
 
-                await execPromise(`npx allure generate ${allureResultsPath} -o ${allureReportPath} --clean`);
+                await execPromise(`npx allure generate ${allureResultsDir} -o ${allureReportDir} --clean`);
                 
                 const passData = {
                     taskId,
@@ -128,6 +133,10 @@ async function startWorker() {
                 console.error('Tests Failed!');
                 await executionsCollection.updateOne({ taskId }, { $set: failData });
                 await notifyProducer(failData);
+
+                try {
+                     await execPromise(`npx allure generate ${allureResultsDir} -o ${allureReportDir} --clean`);
+                } catch (e) { console.error('Failed to generate allure report on error'); }
             } finally {
                 channel!.ack(msg);
                 console.log('------------------------------------------------');

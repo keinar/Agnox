@@ -50,7 +50,7 @@ export const ExecutionRow = ({ execution, isExpanded, onToggle, onDelete }: Prop
                         <>
                             {/* Playwright Report */}
                             <a
-                                href={`http://localhost:3000/reports/${execution.taskId}/index.html`}
+                                href={`http://localhost:3000/reports/${execution.taskId}/playwright-report/index.html`} 
                                 target="_blank"
                                 title="Playwright Report"
                                 style={{ color: '#60a5fa' }}
