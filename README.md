@@ -3,8 +3,7 @@
 A robust, microservices-based test automation platform designed for
 scalability, real-time reporting, and AI-driven analysis.
 
-![Architecture
-Diagram](https://mermaid.ink/img/pako:eNp1ksFuwyAMhl_F8jm9QA697bRdOu2wS4uQG0xQC5GAVNqmve-TFGq7qO0SiP_Pfwz2gTV1gR0U3yv2CboKixXvDS8_Wk5KKY9aC85XoQ2thMHa4A0_jZ1g-M07yqA0-qDkXfKCc6eM3qHkF7QO-g5KflA-G2558y54w6eT99o0Y5wZz-T_8IDW-S54x_fGzWd1fB0y44P2Qckf5H_w3nC78d5y3s7F4-d-L_gV7S2n6H61XPEy-Vf0r1j9k3_B_M3-5b8A2N2HBA?type=png)
+![Architecture Diagram](https://mermaid.ink/img/pako:eNp1ksFuwyAMhl_F8jm9QA697bRdOu2wS4uQG0xQC5GAVNqmve-TFGq7qO0SiP_Pfwz2gTV1gR0U3yv2CboKixXvDS8_Wk5KKY9aC85XoQ2thMHa4A0_jZ1g-M07yqA0-qDkXfKCc6eM3qHkF7QO-g5KflA-G2558y54w6eT99o0Y5wZz-T_8IDW-S54x_fGzWd1fB0y44P2Qckf5H_w3nC78d5y3s7F4-d-L_gV7S2n6H61XPEy-Vf0r1j9k3_B_M3-5b8A2N2HBA?type=png)
 
 ## 🏗️ Architecture
 
