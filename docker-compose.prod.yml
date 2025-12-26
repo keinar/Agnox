@@ -9,8 +9,8 @@ services:
       - "3000:3000"
     environment:
       - RABBITMQ_URL=amqp://rabbitmq
-      - MONGODB_URL=mongodb://mongo:27017/automation_platform
-      - MONGO_URI=mongodb://mongo:27017/automation_platform
+      - MONGODB_URL=${MONGO_URI}
+      - MONGO_URI=${MONGO_URI}
     depends_on:
       - rabbitmq
       - mongo
@@ -23,7 +23,7 @@ services:
       - test_results:/app/apps/worker-service/test-results
     environment:
       - RABBITMQ_URL=amqp://rabbitmq
-      - MONGODB_URL=mongodb://mongo:27017/executions_db
+      - MONGODB_URL=${MONGO_URI}
       - MONGO_URI=${MONGO_URI}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - BASE_URL=${BASE_URL}
@@ -57,7 +57,7 @@ services:
   mongo:
     image: mongo:6.0
     ports:
-      - "27017:27017"
+      - "27020:27017"
     volumes:
       - mongo_data:/data/db
     networks:
