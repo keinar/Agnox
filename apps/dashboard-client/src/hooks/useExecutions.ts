@@ -4,7 +4,10 @@ import { useEffect } from 'react';
 import { io } from 'socket.io-client';
 import type { Execution } from '../types';
 
-const API_URL = `http://${window.location.hostname}:3000`;
+const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+const API_URL = isProduction 
+    ? 'https://api.automation.keinar.com' 
+    : 'http://localhost:3000';
 
 const fetchExecutions = async (): Promise<Execution[]> => {
     const { data } = await axios.get(`${API_URL}/executions`);
