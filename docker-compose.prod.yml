@@ -1,8 +1,8 @@
-version: '3.8'
-
 services:
   producer:
-    image: keinar101/producer-service:latest
+    build:
+      context: .
+      dockerfile: apps/producer-service/Dockerfile
     volumes:
       - test_results:/app/apps/producer-service/results
     ports:
@@ -18,7 +18,9 @@ services:
       - app-network
 
   worker:
-    image: keinar101/worker-service:latest
+    build:
+      context: .
+      dockerfile: apps/worker-service/Dockerfile
     volumes:
       - test_results:/app/apps/worker-service/test-results
     environment:
@@ -38,14 +40,16 @@ services:
       - app-network
 
   dashboard:
-    image: keinar101/dashboard-client:latest
+    build:
+      context: .
+      dockerfile: apps/dashboard-client/Dockerfile
     ports:
       - "8080:80"
     depends_on:
       - producer
     networks:
       - app-network
-  
+
   rabbitmq:
     image: rabbitmq:3-management
     ports:
