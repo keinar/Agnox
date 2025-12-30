@@ -5,6 +5,8 @@ import { ExecutionRow } from './ExecutionRow';
 import { ExecutionModal } from './ExecutionModal';
 import { Play } from 'lucide-react';
 
+const API_URL = `http://${window.location.hostname}:3000`;
+
 export const Dashboard = () => {
     const { executions, loading, error, setExecutions } = useExecutions();
     const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
@@ -16,7 +18,7 @@ export const Dashboard = () => {
 
     const handleRunTest = async (payload: any) => {
         try {
-            const response = await fetch('http://localhost:3000/execution-request', {
+            const response = await fetch(`${API_URL}/execution-request`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -33,7 +35,7 @@ export const Dashboard = () => {
 
     const handleDelete = async (taskId: string) => {
         try {
-            const response = await fetch(`http://localhost:3000/executions/${taskId}`, {
+            const response = await fetch(`${API_URL}/executions/${taskId}`, {
                 method: 'DELETE',
             });
 

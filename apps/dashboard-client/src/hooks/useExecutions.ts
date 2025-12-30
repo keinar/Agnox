@@ -4,8 +4,10 @@ import { useEffect } from 'react';
 import { io } from 'socket.io-client';
 import type { Execution } from '../types';
 
+const API_URL = `http://${window.location.hostname}:3000`;
+
 const fetchExecutions = async (): Promise<Execution[]> => {
-    const { data } = await axios.get('http://localhost:3000/executions');
+    const { data } = await axios.get(`${API_URL}/executions`);
     if (!Array.isArray(data)) {
         throw new Error(data?.error || 'Invalid data format received from server');
     }
@@ -25,7 +27,7 @@ export const useExecutions = () => {
     });
 
     useEffect(() => {
-        const socket = io('http://localhost:3000');
+        const socket = io(API_URL);
 
         socket.on('execution-updated', (updatedTask: Partial<Execution>) => {
             console.log('⚡ Real-time update received:', updatedTask);
