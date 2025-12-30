@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Production Pipeline
 
 on:
   push:
@@ -6,7 +6,32 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Job 1: Quality Gate - Validates the code before deployment
+  quality-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Shared Types
+        run: npm run build -w shared-types
+
+      - name: Linting
+        run: npm run lint --if-present
+
+  # Job 2: Deployment - Runs only if quality-check passes
   deploy:
+    needs: quality-check
     runs-on: ubuntu-latest
     
     steps:
@@ -17,11 +42,14 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            # Navigate to project directory
             cd ~/playwright-full-stack-framework
             
+            # Reset local changes and pull latest code
             git reset --hard
             git pull origin main
             
+            # Recreate .env file with secrets
             echo "MONGO_URI=${{ secrets.MONGO_URI }}" > .env
             echo "RABBITMQ_URL=amqp://rabbitmq" >> .env
             echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
@@ -29,6 +57,9 @@ jobs:
             echo "ADMIN_USER=${{ secrets.ADMIN_USER }}" >> .env
             echo "ADMIN_PASS=${{ secrets.ADMIN_PASS }}" >> .env
 
+            # Build and start services
+            # --build forces a rebuild of the images from source
             docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
             
+            # Cleanup unused images to save disk space
             docker image prune -f
