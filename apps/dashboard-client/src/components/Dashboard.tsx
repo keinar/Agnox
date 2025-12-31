@@ -41,7 +41,7 @@ export const Dashboard = () => {
                 taskId: `run-${Date.now()}`,
                 tests: testsToRun,
                 config: {
-                    environment: formData.environment.toLowerCase(),
+                    environment: formData.environment,
                     baseUrl: formData.baseUrl,
                     retryAttempts: 2
                 }
@@ -53,50 +53,60 @@ export const Dashboard = () => {
                 body: JSON.stringify(payload)
             });
             
-            if (!response.ok) throw new Error('Failed to trigger execution');
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Server Error:', errorData);
+                throw new Error(errorData.error || 'Server validation failed');
+            }
             
-            console.log('✅ Execution triggered successfully:', payload.taskId);
+            const data = await response.json();
+            console.log('✅ Success:', data.taskId);
             setIsModalOpen(false);
 
-        } catch (err) {
+        } catch (err: any) {
             console.error('Run test failed:', err);
-            alert('Error launching test');
+            alert(`Error launching test: ${err.message}`);
         }
     };
 
     const handleDelete = async (taskId: string) => {
-        if (!window.confirm('Are you sure you want to delete this execution history?')) return;
-
+        if (!window.confirm('Delete this execution?')) return;
         try {
-            const response = await fetch(`${API_URL}/executions/${taskId}`, {
-                method: 'DELETE',
-            });
-
-            if (response.ok) {
-                setExecutions((old) => old.filter((exec) => exec.taskId !== taskId));
-            } else {
-                const errData = await response.json();
-                alert(`Error: ${errData.error || 'Failed to delete'}`);
-            }
+            await fetch(`${API_URL}/executions/${taskId}`, { method: 'DELETE' });
+            setExecutions((old) => old.filter((exec) => exec.taskId !== taskId));
         } catch (err) {
-            console.error('Delete failed:', err);
-            alert('Server connection error');
+            alert('Delete failed');
         }
     };
 
-    if (error) return <div className="p-5 text-red-500">Error: {error}</div>;
+    if (error) return <div style={{ color: '#ef4444', padding: '20px' }}>Error: {error}</div>;
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-7xl">
-            <div className="flex justify-between items-center mb-8">
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-100">Automation Center</h1>
-                    <p className="text-slate-400 mt-1">Live monitoring of test infrastructure</p>
+        <div className="container">
+            <div className="header">
+                <div className="title">
+                    <h1>Automation Center</h1>
+                    <p style={{ color: '#94a3b8', marginTop: '4px' }}>Live monitoring of test infrastructure</p>
                 </div>
                 
                 <button 
                     onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors shadow-lg shadow-blue-900/20"
+                    style={{
+                        backgroundColor: '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        padding: '10px 20px',
+                        borderRadius: '8px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.4)',
+                        transition: 'transform 0.1s'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
                 >
                     <Play size={18} /> Run New Test
                 </button>
@@ -111,36 +121,34 @@ export const Dashboard = () => {
                 availableFolders={availableFolders} 
             />
 
-            <div className="bg-slate-800 rounded-xl shadow-xl overflow-hidden border border-slate-700">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-900/50 text-slate-400 text-sm uppercase tracking-wider">
-                            <tr>
-                                <th className="p-4 font-semibold">Status</th>
-                                <th className="p-4 font-semibold">Task ID</th>
-                                <th className="p-4 font-semibold">Environment</th>
-                                <th className="p-4 font-semibold">Start Time</th>
-                                <th className="p-4 font-semibold">Duration</th>
-                                <th className="p-4 font-semibold text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-700">
-                            {loading && executions.length === 0 && (
-                                <tr><td colSpan={6} className="p-8 text-center text-slate-400">Loading live data...</td></tr>
-                            )}
-                            
-                            {executions.map((exec) => (
-                                <ExecutionRow 
-                                    key={exec._id || exec.taskId} 
-                                    execution={exec} 
-                                    isExpanded={expandedRowId === (exec._id || exec.taskId)}
-                                    onToggle={() => toggleRow(exec._id || exec.taskId)}
-                                    onDelete={handleDelete}
-                                />
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+            <div className="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Task ID</th>
+                            <th>Environment</th>
+                            <th>Start Time</th>
+                            <th>Duration</th>
+                            <th style={{ textAlign: 'right' }}>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading && executions.length === 0 && (
+                            <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Loading live data...</td></tr>
+                        )}
+                        
+                        {executions.map((exec) => (
+                            <ExecutionRow 
+                                key={exec._id || exec.taskId} 
+                                execution={exec} 
+                                isExpanded={expandedRowId === (exec._id || exec.taskId)}
+                                onToggle={() => toggleRow(exec._id || exec.taskId)}
+                                onDelete={handleDelete}
+                            />
+                        ))}
+                    </tbody>
+                </table>
             </div>
         </div>
     );
