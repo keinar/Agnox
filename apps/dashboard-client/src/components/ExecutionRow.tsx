@@ -11,6 +11,11 @@ interface Props {
     onDelete: (taskId: string) => void;
 }
 
+const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+const API_URL = isProduction 
+    ? 'https://api.automation.keinar.com' 
+    : 'http://localhost:3000';
+
 export const ExecutionRow = ({ execution, isExpanded, onToggle, onDelete }: Props) => {
 
     const handleDelete = (e: React.MouseEvent) => {
@@ -50,7 +55,7 @@ export const ExecutionRow = ({ execution, isExpanded, onToggle, onDelete }: Prop
                         <>
                             {/* Playwright Report */}
                             <a
-                                href={`http://localhost:3000/reports/${execution.taskId}/playwright-report/index.html`} 
+                                href={`${API_URL}/reports/${execution.taskId}/playwright-report/index.html`} 
                                 target="_blank"
                                 title="Playwright Report"
                                 style={{ color: '#60a5fa' }}
@@ -60,7 +65,7 @@ export const ExecutionRow = ({ execution, isExpanded, onToggle, onDelete }: Prop
 
                             {/* Allure Report */}
                             <a
-                                href={`http://localhost:3000/reports/${execution.taskId}/allure-report/index.html`}
+                                href={`${API_URL}/reports/${execution.taskId}/allure-report/index.html`}
                                 target="_blank"
                                 title="Allure Dashboard"
                                 style={{ color: '#10b981' }}
