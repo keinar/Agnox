@@ -61,9 +61,9 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management
-    expose: 
-       - "5672"
-       - "15672"
+    expose:
+      - "5672"
+      - "15672"
     networks:
       - app-network
 

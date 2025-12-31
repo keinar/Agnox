@@ -36,7 +36,7 @@ export class MongoHelper {
         try {
             if (!this.db) {
                 await this.client.connect();
-                this.db = this.client.db('test');
+                this.db = this.client.db('automation_platform');
                 Logger.info('[MongoHelper] Successfully connected to MongoDB.');
             }
         } catch (error) {
