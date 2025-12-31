@@ -52,17 +52,21 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
         }
     };
 
-    // Smart URL resolution
     const getBaseUrl = () => {
         // 1. Primary: Use what the Worker explicitly saved in DB
         if (execution.reportsBaseUrl) {
             return execution.reportsBaseUrl;
         }
 
-        // 2. Fallback: Detection based on current hostname
-        const isProductionDomain = window.location.hostname === 'automation.keinar.com';
-        return isProductionDomain 
-            ? 'https://api.automation.keinar.com' 
+        // 2. Use build-time environment variable
+        if (import.meta.env.VITE_API_BASE_URL) {
+            return import.meta.env.VITE_API_BASE_URL;
+        }
+
+        // 3. Fallback: Detection based on current hostname
+        const isProductionDomain = window.location.hostname.includes('automation.keinar.com');
+        return isProductionDomain
+            ? 'https://api.automation.keinar.com'
             : 'http://localhost:3000';
     };
 
@@ -75,10 +79,10 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
     let terminalContent = '';
 
     if (execution.error) {
-        const errorMsg = typeof execution.error === 'object' 
-            ? JSON.stringify(execution.error, null, 2) 
+        const errorMsg = typeof execution.error === 'object'
+            ? JSON.stringify(execution.error, null, 2)
             : execution.error;
-        
+
         terminalContent += `🛑 FAILURE DETAILS:\n${errorMsg}\n\n`;
         terminalContent += `──────────────────────────────────────────\n\n`;
     }
@@ -119,22 +123,22 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
                 </td>
                 <td>
                     <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                        
+
                         {isFinished && (
                             <>
-                                <a 
-                                    href={playwrightReportUrl} 
-                                    target="_blank" 
-                                    rel="noreferrer" 
+                                <a
+                                    href={playwrightReportUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
                                     title="Playwright Report"
                                     className="icon-link blue"
                                     onClick={(e) => e.stopPropagation()}
                                 >
                                     <FileText size={18} />
                                 </a>
-                                <a 
-                                    href={allureReportUrl} 
-                                    target="_blank" 
+                                <a
+                                    href={allureReportUrl}
+                                    target="_blank"
                                     rel="noreferrer"
                                     title="Allure Dashboard"
                                     className="icon-link green"
@@ -145,7 +149,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
                             </>
                         )}
 
-                        <button 
+                        <button
                             className="icon-btn red"
                             title="Delete Execution"
                             onClick={(e) => { e.stopPropagation(); onDelete(execution.taskId); }}
@@ -156,7 +160,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
                     </div>
                 </td>
             </tr>
-            
+
             {isExpanded && (
                 <tr>
                     <td colSpan={6} style={{ padding: 0 }}>

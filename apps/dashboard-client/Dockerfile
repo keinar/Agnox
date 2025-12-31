@@ -2,6 +2,10 @@ FROM node:20-slim AS builder
 
 WORKDIR /app
 
+# Accept build argument
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
 COPY package.json package-lock.json ./
 COPY tsconfig.json ./
 
