@@ -1,85 +1,89 @@
 import React, { useState } from 'react';
 import { X, Play } from 'lucide-react';
 
-interface Props {
+interface ExecutionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (data: any) => void;
+    onSubmit: (data: { folder: string; environment: string; baseUrl: string }) => void;
+    availableFolders: string[];
 }
 
-export const ExecutionModal = ({ isOpen, onClose, onSubmit }: Props) => {
-    const [formData, setFormData] = useState({
-        environment: 'production',
-        tests: 'tests/e2e/3.e2e-hybrid.spec.ts',
-        retryAttempts: 0
-    });
+export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose, onSubmit, availableFolders }) => {
+    const [environment, setEnvironment] = useState('DEV');
+    const [baseUrl, setBaseUrl] = useState('https://photo-gallery.keinar.com/');
+    const [selectedFolder, setSelectedFolder] = useState('all');
 
     if (!isOpen) return null;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const payload = {
-            taskId: `run-${Date.now()}`,
-            tests: [formData.tests],
-            config: {
-                environment: formData.environment,
-                retryAttempts: Number(formData.retryAttempts)
-            }
-        };
-        onSubmit(payload);
-        onClose();
+        onSubmit({ folder: selectedFolder, environment, baseUrl });
     };
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <div className="modal-header" style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '20px',
-                    position: 'relative'
-                }}>
-                    <h2 style={{ margin: 0 }}>Launch New Execution</h2>
-                    <button onClick={onClose} className="close-btn">
-                        <X size={24} />
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-slate-900/50">
+                    <h3 className="text-lg font-semibold text-white">Run New Test</h3>
+                    <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+                        <X size={20} />
                     </button>
                 </div>
-
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>Environment</label>
-                        <select
-                            value={formData.environment}
-                            onChange={e => setFormData({ ...formData, environment: e.target.value })}
+                
+                <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                    
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-300">Test Suite</label>
+                        <select 
+                            value={selectedFolder}
+                            onChange={(e) => setSelectedFolder(e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
                         >
-                            <option value="production">Production</option>
-                            <option value="staging">Staging</option>
-                            <option value="dev">Dev</option>
+                            <option value="all">🚀 Run All Tests (Full Suite)</option>
+                            {availableFolders.map(folder => (
+                                <option key={folder} value={folder}>📂 {folder.toUpperCase()}</option>
+                            ))}
                         </select>
                     </div>
 
-                    <div className="form-group">
-                        <label>Test Path</label>
-                        <input
-                            type="text"
-                            value={formData.tests}
-                            onChange={e => setFormData({ ...formData, tests: e.target.value })}
-                            required
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-300">Environment</label>
+                        <select 
+                            value={environment}
+                            onChange={(e) => setEnvironment(e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                            <option value="DEV">Development (DEV)</option>
+                            <option value="STAGING">Staging</option>
+                            <option value="PROD">Production</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-300">Base URL</label>
+                        <input 
+                            type="text" 
+                            value={baseUrl}
+                            onChange={(e) => setBaseUrl(e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label>Retry Attempts</label>
-                        <input
-                            type="number"
-                            min="0" max="3"
-                            value={formData.retryAttempts}
-                            onChange={e => setFormData({ ...formData, retryAttempts: Number(e.target.value) })}
-                        />
+                    <div className="pt-4 flex justify-end gap-3">
+                        <button 
+                            type="button" 
+                            onClick={onClose}
+                            className="px-4 py-2 rounded-lg text-slate-300 hover:bg-slate-700 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            type="submit"
+                            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium flex items-center gap-2 shadow-lg shadow-blue-900/20"
+                        >
+                            <Play size={16} /> Launch Test
+                        </button>
                     </div>
-
-                    <button type="submit" className="submit-btn">Run Execution</button>
                 </form>
             </div>
         </div>

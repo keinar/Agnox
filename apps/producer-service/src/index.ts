@@ -8,6 +8,7 @@ import { rabbitMqService } from './rabbitmq.js';
 import { TestExecutionRequestSchema } from '../../../packages/shared-types/index.js';
 import fastifyStatic from '@fastify/static';
 import type { Server } from 'socket.io';
+import * as fs from 'fs';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -84,10 +85,34 @@ app.get('/executions', async (request, reply) => {
 app.post('/execution-request', async (request, reply) => {
   const parseResult = TestExecutionRequestSchema.safeParse(request.body);
   if (!parseResult.success) return reply.status(400).send({ error: 'Invalid payload', details: parseResult.error });
+  
+  const { taskId, tests, config } = parseResult.data;
+
   try {
+    if (dbClient) {
+        const collection = dbClient.db(DB_NAME).collection('executions');
+        await collection.updateOne(
+            { taskId }, 
+            { 
+                $set: { 
+                    taskId,
+                    status: 'PENDING',
+                    startTime: new Date(),
+                    config,
+                    tests
+                } 
+            },
+            { upsert: true }
+        );
+        
+        app.io.emit('execution-updated', { taskId, status: 'PENDING' });
+    }
+
     await rabbitMqService.sendToQueue(parseResult.data);
-    return reply.status(200).send({ status: 'Message queued successfully', taskId: parseResult.data.taskId });
+    
+    return reply.status(200).send({ status: 'Message queued successfully', taskId });
   } catch (error) {
+    app.log.error(error);
     reply.status(500).send({ status: 'Failed to queue message' });
   }
 });
@@ -102,6 +127,27 @@ app.delete('/executions/:id', async (request, reply) => {
         return { status: 'Deleted successfully' };
     } catch (error) {
         return reply.status(500).send({ error: 'Failed to delete' });
+    }
+});
+
+app.get('/tests-structure', async (request, reply) => {
+    const testsPath = '/app/tests-source';
+    
+    try {
+        if (!fs.existsSync(testsPath)) {
+            return reply.send([]);
+        }
+
+        const items = fs.readdirSync(testsPath, { withFileTypes: true });
+        
+        const folders = items
+            .filter(item => item.isDirectory())
+            .map(item => item.name);
+
+        return reply.send(folders);
+    } catch (error) {
+        app.log.error(error);
+        return reply.send([]);
     }
 });
 

@@ -1,17 +1,23 @@
 services:
+  # -------------------------
+  # App Services
+  # -------------------------
   producer:
     build:
       context: .
       dockerfile: apps/producer-service/Dockerfile
+    container_name: automation-producer
+    restart: always
     volumes:
       - test_results:/app/apps/producer-service/results
+      - ./apps/worker-service/tests:/app/tests-source:ro
     environment:
+      - PORT=3000
       - RABBITMQ_URL=amqp://rabbitmq
-      - MONGODB_URL=${MONGO_URI}
       - MONGO_URI=${MONGO_URI}
+      - MONGODB_URL=${MONGO_URI}
     depends_on:
       - rabbitmq
-      - mongo
     networks:
       - app-network
 
@@ -19,20 +25,21 @@ services:
     build:
       context: .
       dockerfile: apps/worker-service/Dockerfile
-    volumes:
-      - test_results:/app/apps/worker-service/test-results
+    container_name: automation-worker
+    restart: always
     environment:
       - RABBITMQ_URL=amqp://rabbitmq
-      - MONGODB_URL=${MONGO_URI}
       - MONGO_URI=${MONGO_URI}
+      - MONGODB_URL=${MONGO_URI}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - BASE_URL=${BASE_URL}
       - ADMIN_USER=${ADMIN_USER}
       - ADMIN_PASS=${ADMIN_PASS}
       - CI=true
+    volumes:
+      - test_results:/app/test-results
     depends_on:
       - rabbitmq
-      - mongo
       - producer
     networks:
       - app-network
@@ -41,11 +48,16 @@ services:
     build:
       context: .
       dockerfile: apps/dashboard-client/Dockerfile
+    container_name: automation-dashboard
+    restart: always
     depends_on:
       - producer
     networks:
       - app-network
 
+  # -------------------------
+  # Infrastructure
+  # -------------------------
   npm:
     image: 'jc21/nginx-proxy-manager:latest'
     restart: unless-stopped
@@ -61,16 +73,14 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management
+    container_name: automation-rabbitmq
+    restart: always
     expose:
       - "5672"
       - "15672"
-    networks:
-      - app-network
-
-  mongo:
-    image: mongo:6.0
-    volumes:
-      - mongo_data:/data/db
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     networks:
       - app-network
 
@@ -79,5 +89,4 @@ networks:
     driver: bridge
 
 volumes:
-  mongo_data:
   test_results:

@@ -25,6 +25,7 @@ services:
       - "3000:3000"
     volumes:
       - ./test-results:/app/apps/producer-service/results
+      - ./apps/worker-service/tests:/app/tests-source:ro
     environment:
       - PORT=3000
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
