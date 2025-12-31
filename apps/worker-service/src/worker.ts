@@ -14,8 +14,6 @@ const MONGO_URI = process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb:/
 const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
 const DB_NAME = 'automation_platform';
 const COLLECTION_NAME = 'executions';
-const reportsBaseUrl = process.env.PUBLIC_API_URL || 'http://localhost:3000';
-
 
 async function startWorker() {
     let connection: Awaited<ReturnType<typeof amqp.connect>> | null = null;
@@ -61,47 +59,51 @@ async function startWorker() {
             const content = msg.content.toString();
             const task = JSON.parse(content);
             const taskId = task.taskId || 'unknown-task';
+            
+            // Resolve directories
             const reportsDir = process.env.REPORTS_DIR || path.join(process.cwd(), 'test-results');
             const baseTaskDir = path.join(reportsDir, taskId);
             const finalAllureResultsDir = path.join(baseTaskDir, 'allure-results');
             const finalAllureReportDir = path.join(baseTaskDir, 'allure-report');
             const finalHtmlReportDir = path.join(baseTaskDir, 'playwright-report');
             const outputDir = path.join(baseTaskDir, 'raw-assets');
-            
+
             const localAllureResults = path.join(process.cwd(), 'allure-results');
             const localHtmlReport = path.join(process.cwd(), 'playwright-report');
 
             console.log('------------------------------------------------');
             console.log(`📥 Processing Task: ${taskId}`);
 
+            // Clean up local temp files from previous runs
             try {
                 if (fs.existsSync(localAllureResults)) fs.rmSync(localAllureResults, { recursive: true, force: true });
                 if (fs.existsSync(localHtmlReport)) fs.rmSync(localHtmlReport, { recursive: true, force: true });
-            } catch (e) {}
+            } catch (e) { }
 
+            // Ensure task output directory exists
             try {
                 fs.mkdirSync(outputDir, { recursive: true });
-                fs.mkdirSync(finalAllureResultsDir, { recursive: true });
-            } catch (err) {}
+            } catch (err) { }
 
             const startTime = new Date();
-            
+            const currentReportsBaseUrl = process.env.PUBLIC_API_URL || 'http://localhost:3000';
+
+            // Mark task as RUNNING
             await executionsCollection.updateOne(
                 { taskId: taskId },
-                { $set: { status: 'RUNNING', startTime: startTime, config: task.config, tests: task.tests } },
+                { $set: { status: 'RUNNING', startTime: startTime, config: task.config, tests: task.tests, reportsBaseUrl: currentReportsBaseUrl } },
                 { upsert: true }
             );
 
-            await notifyProducer({ 
-                taskId, 
-                status: 'RUNNING', 
-                startTime: startTime, 
-                tests: task.tests 
+            await notifyProducer({
+                taskId,
+                status: 'RUNNING',
+                startTime: startTime,
+                tests: task.tests
             });
 
             try {
                 const testPaths = task.tests.join(' ');
-                
                 const command = `npx playwright test ${testPaths} --output="${outputDir}" -c playwright.config.ts`;
                 console.log(`Executing command: ${command}`);
 
@@ -114,55 +116,72 @@ async function startWorker() {
                 const { stdout } = await execPromise(command, { env: envVars });
 
                 console.log('🚚 Moving reports to task directory...');
-                
+
+                // 1. Process Allure Results
                 if (fs.existsSync(localAllureResults)) {
-                    const files = fs.readdirSync(localAllureResults);
-                    files.forEach(file => {
-                        const srcPath = path.join(localAllureResults, file);
-                        const destPath = path.join(finalAllureResultsDir, file);
-                        fs.cpSync(srcPath, destPath); 
-                        fs.rmSync(srcPath);
-                    });
-                    console.log(`Moved ${files.length} Allure files.`);
+                    try {
+                        if (!fs.existsSync(finalAllureResultsDir)) fs.mkdirSync(finalAllureResultsDir, { recursive: true });
+                        const files = fs.readdirSync(localAllureResults);
+                        for (const file of files) {
+                            fs.copyFileSync(path.join(localAllureResults, file), path.join(finalAllureResultsDir, file));
+                            fs.unlinkSync(path.join(localAllureResults, file));
+                        }
+                        await execPromise(`npx allure generate "${finalAllureResultsDir}" -o "${finalAllureReportDir}" --clean`);
+                    } catch (err) {
+                        console.error('Failed to process Allure reports:', err);
+                    }
                 }
 
+                // 2. Process Playwright HTML Report
                 if (fs.existsSync(localHtmlReport)) {
-                    fs.cpSync(localHtmlReport, finalHtmlReportDir, { recursive: true });
-                    fs.rmSync(localHtmlReport, { recursive: true, force: true });
+                    try {
+                        if (!fs.existsSync(finalHtmlReportDir)) fs.mkdirSync(finalHtmlReportDir, { recursive: true });
+                        fs.cpSync(localHtmlReport, finalHtmlReportDir, { recursive: true, force: true });
+                        fs.rmSync(localHtmlReport, { recursive: true, force: true });
+                    } catch (err) {
+                        console.error('Failed to move Playwright HTML report:', err);
+                    }
                 }
 
-                if (fs.readdirSync(finalAllureResultsDir).length > 0) {
-                    await execPromise(`npx allure generate "${finalAllureResultsDir}" -o "${finalAllureReportDir}" --clean`);
-                    console.log('Allure HTML generated successfully.');
-                }
+                // 3. Fix Permissions for Docker environment
+                try {
+                    await execPromise(`chmod -R 755 "${baseTaskDir}"`);
+                } catch (e) { }
 
-                const passData = { taskId, status: 'PASSED', endTime: new Date(), output: stdout, reportsBaseUrl };
+                const passData = { taskId, status: 'PASSED', endTime: new Date(), output: stdout, reportsBaseUrl: currentReportsBaseUrl };
                 console.log('Tests Passed!');
                 await executionsCollection.updateOne({ taskId }, { $set: passData });
                 await notifyProducer(passData);
 
             } catch (error: any) {
                 console.error('Tests Failed');
+                
+                // Try to save partial reports on failure
                 try {
                     if (fs.existsSync(localAllureResults)) {
-                        const files = fs.readdirSync(localAllureResults);
-                        files.forEach(file => {
-                            const srcPath = path.join(localAllureResults, file);
-                            const destPath = path.join(finalAllureResultsDir, file);
-                            fs.cpSync(srcPath, destPath);
-                            fs.rmSync(srcPath);
+                        if (!fs.existsSync(finalAllureResultsDir)) fs.mkdirSync(finalAllureResultsDir, { recursive: true });
+                        fs.readdirSync(localAllureResults).forEach(file => {
+                            fs.copyFileSync(path.join(localAllureResults, file), path.join(finalAllureResultsDir, file));
+                            fs.unlinkSync(path.join(localAllureResults, file));
                         });
                         await execPromise(`npx allure generate "${finalAllureResultsDir}" -o "${finalAllureReportDir}" --clean`);
                     }
-                } catch (e) {}
+                    if (fs.existsSync(localHtmlReport)) {
+                         if (!fs.existsSync(finalHtmlReportDir)) fs.mkdirSync(finalHtmlReportDir, { recursive: true });
+                         fs.cpSync(localHtmlReport, finalHtmlReportDir, { recursive: true, force: true });
+                         fs.rmSync(localHtmlReport, { recursive: true, force: true });
+                    }
+                    await execPromise(`chmod -R 755 "${baseTaskDir}"`);
+                } catch (e) { }
 
                 const failData = {
                     taskId,
                     status: 'FAILED',
                     endTime: new Date(),
                     error: error.stderr || error.stdout || error.message,
-                    reportsBaseUrl
+                    reportsBaseUrl: currentReportsBaseUrl
                 };
+                
                 await executionsCollection.updateOne({ taskId }, { $set: failData });
                 await notifyProducer(failData);
             } finally {
@@ -182,7 +201,7 @@ async function notifyProducer(executionData: any) {
             body: JSON.stringify(executionData)
         });
         console.log(`[Worker] Notified Producer about task ${executionData.taskId}`);
-    } catch (error) {
+    } catch (error: any) {
         console.error('[Worker] Failed to notify Producer:', error.message);
     }
 }
