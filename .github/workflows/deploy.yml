@@ -56,10 +56,22 @@ jobs:
             echo "BASE_URL=${{ secrets.BASE_URL }}" >> .env
             echo "ADMIN_USER=${{ secrets.ADMIN_USER }}" >> .env
             echo "ADMIN_PASS=${{ secrets.ADMIN_PASS }}" >> .env
+            echo "VITE_API_BASE_URL=https://api.automation.keinar.com" >> .env
 
-            # Build and start services
-            # --build forces a rebuild of the images from source
-            docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+            # Stop all services
+            docker compose -f docker-compose.prod.yml down
+            
+            # Remove old dashboard image to force rebuild
+            docker rmi playwright-full-stack-framework-dashboard || true
+            
+            # Build with no cache for dashboard
+            docker compose -f docker-compose.prod.yml build --no-cache dashboard
+            
+            # Build other services normally
+            docker compose -f docker-compose.prod.yml build
+            
+            # Start all services
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
             
             # Cleanup unused images to save disk space
             docker image prune -f
