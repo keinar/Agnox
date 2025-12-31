@@ -1,28 +1,35 @@
-FROM node:20-slim AS builder
+# Stage 1: Build the React application
+FROM node:18-alpine AS builder
+
+# Define build arguments
+ARG VITE_API_URL
+# Set environment variable for build time
+ENV VITE_API_URL=$VITE_API_URL
 
 WORKDIR /app
 
-# Accept build argument
-ARG VITE_API_BASE_URL
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-
+# Copy root configurations
 COPY package.json package-lock.json ./
 COPY tsconfig.json ./
 
+# Copy necessary packages for monorepo build
 COPY packages/shared-types ./packages/shared-types
 COPY apps/dashboard-client ./apps/dashboard-client
 
-RUN rm package-lock.json
-
+# Install dependencies using legacy-peer-deps for monorepo compatibility
 RUN npm install --legacy-peer-deps
 
+# Build the specific application
 WORKDIR /app/apps/dashboard-client
-RUN npx vite build
+RUN npm run build
 
+# Stage 2: Serve the application with Nginx
 FROM nginx:alpine
 
+# Fix: Copy from the correct stage name 'builder'
 COPY --from=builder /app/apps/dashboard-client/dist /usr/share/nginx/html
 
+# Custom Nginx configuration to handle React Router (SPA)
 RUN echo 'server { \
     listen 80; \
     location / { \
