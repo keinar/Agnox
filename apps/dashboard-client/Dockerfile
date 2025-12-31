@@ -1,35 +1,34 @@
 # Stage 1: Build the React application
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
-# Define build arguments
 ARG VITE_API_URL
-# Set environment variable for build time
 ENV VITE_API_URL=$VITE_API_URL
 
 WORKDIR /app
 
-# Copy root configurations
-COPY package.json package-lock.json ./
-COPY tsconfig.json ./
+# Copy configuration files
+COPY package.json package-lock.json tsconfig.json ./
 
-# Copy necessary packages for monorepo build
+# Copy shared packages and the specific app (Monorepo structure)
 COPY packages/shared-types ./packages/shared-types
 COPY apps/dashboard-client ./apps/dashboard-client
 
-# Install dependencies using legacy-peer-deps for monorepo compatibility
+# Install dependencies 
+# We use --legacy-peer-deps for monorepo stability
+# npm will automatically detect ARM64 and download correct binaries (like rollup)
 RUN npm install --legacy-peer-deps
 
-# Build the specific application
+# Build the application
 WORKDIR /app/apps/dashboard-client
 RUN npm run build
 
-# Stage 2: Serve the application with Nginx
+# Stage 2: Serve with Nginx
 FROM nginx:alpine
 
-# Fix: Copy from the correct stage name 'builder'
+# Copy the built files from the builder stage
 COPY --from=builder /app/apps/dashboard-client/dist /usr/share/nginx/html
 
-# Custom Nginx configuration to handle React Router (SPA)
+# Custom Nginx config for Single Page Application (SPA) routing
 RUN echo 'server { \
     listen 80; \
     location / { \
