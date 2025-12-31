@@ -42,30 +42,23 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # Navigate to project directory
             cd ~/playwright-full-stack-framework
-            
-            # Reset local changes and pull latest code
             git reset --hard
             git pull origin main
             
-            # Recreate .env file with secrets
             echo "MONGO_URI=${{ secrets.MONGO_URI }}" > .env
             echo "RABBITMQ_URL=amqp://rabbitmq" >> .env
             echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
             echo "BASE_URL=${{ secrets.BASE_URL }}" >> .env
             echo "ADMIN_USER=${{ secrets.ADMIN_USER }}" >> .env
             echo "ADMIN_PASS=${{ secrets.ADMIN_PASS }}" >> .env
-            echo "VITE_API_BASE_URL=https://api.automation.keinar.com" >> .env
-
-            # Stop all services
+            
+            echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" > apps/dashboard-client/.env
+            
             docker compose -f docker-compose.prod.yml down
             
-            # Build everything with NO cache
             docker compose -f docker-compose.prod.yml build --no-cache
             
-            # Start all services
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
             
-            # Cleanup unused images to save disk space
             docker image prune -f
