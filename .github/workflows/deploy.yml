@@ -55,6 +55,7 @@ jobs:
             echo "BASE_URL=${{ secrets.BASE_URL }}" >> .env
             echo "ADMIN_USER=${{ secrets.ADMIN_USER }}" >> .env
             echo "ADMIN_PASS=${{ secrets.ADMIN_PASS }}" >> .env
+            echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
             
             # 3. Complete Cleanup & Rebuild
             # Stop services and remove old containers/networks
