@@ -89,6 +89,8 @@ app.post('/execution-request', async (request, reply) => {
   const { taskId, tests, config } = parseResult.data;
 
   try {
+    const startTime = new Date();
+
     if (dbClient) {
         const collection = dbClient.db(DB_NAME).collection('executions');
         await collection.updateOne(
@@ -97,7 +99,7 @@ app.post('/execution-request', async (request, reply) => {
                 $set: { 
                     taskId,
                     status: 'PENDING',
-                    startTime: new Date(),
+                    startTime: startTime,
                     config,
                     tests
                 } 
@@ -105,7 +107,11 @@ app.post('/execution-request', async (request, reply) => {
             { upsert: true }
         );
         
-        app.io.emit('execution-updated', { taskId, status: 'PENDING' });
+        app.io.emit('execution-updated', { 
+            taskId, 
+            status: 'PENDING',
+            startTime: startTime
+        });
     }
 
     await rabbitMqService.sendToQueue(parseResult.data);

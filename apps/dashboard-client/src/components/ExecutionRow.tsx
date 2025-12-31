@@ -1,110 +1,131 @@
-import { format, intervalToDuration } from 'date-fns';
-import { ChevronDown, ChevronUp, Trash2, FileText, BarChart2 } from 'lucide-react';
-import type { Execution } from '../types';
-import { StatusBadge } from './StatusBadge';
-import { TerminalView } from './TerminalView';
+import React from 'react';
+import { Trash2, ExternalLink, ChevronDown, ChevronRight, CheckCircle, XCircle, Clock, PlayCircle } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
-interface Props {
-    execution: Execution;
+interface ExecutionRowProps {
+    execution: any;
     isExpanded: boolean;
     onToggle: () => void;
-    onDelete: (taskId: string) => void;
+    onDelete: (id: string) => void;
 }
 
-const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-const API_URL = isProduction 
-    ? 'https://api.automation.keinar.com' 
-    : 'http://localhost:3000';
+const formatDateSafe = (dateString: string | Date | undefined) => {
+    if (!dateString) return '-';
+    try {
+        return new Date(dateString).toLocaleString();
+    } catch (e) {
+        return 'Invalid Date';
+    }
+};
 
-export const ExecutionRow = ({ execution, isExpanded, onToggle, onDelete }: Props) => {
+const formatDurationSafe = (dateString: string | Date | undefined) => {
+    if (!dateString) return '';
+    try {
+        return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch (e) {
+        return '';
+    }
+};
 
-    const handleDelete = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (window.confirm(`Are you sure you want to delete task ${execution.taskId}?`)) {
-            onDelete(execution.taskId);
-        }
+export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpanded, onToggle, onDelete }) => {
+    const statusColors = {
+        PASSED: 'passed',
+        FAILED: 'failed',
+        RUNNING: 'running',
+        PENDING: 'running'
     };
+    
+    const statusClass = statusColors[execution.status as keyof typeof statusColors] || '';
 
-    const calculateDuration = (start: string, end?: string) => {
-        if (!end) return 'Running...';
-        const duration = intervalToDuration({
-            start: new Date(start),
-            end: new Date(end),
-        });
-        const parts = [];
-        if (duration.minutes) parts.push(`${duration.minutes}m`);
-        if (duration.seconds) parts.push(`${duration.seconds}s`);
-        return parts.join(' ') || '< 1s';
+    const getStatusIcon = (status: string) => {
+        switch (status) {
+            case 'PASSED': return <CheckCircle size={16} />;
+            case 'FAILED': return <XCircle size={16} />;
+            case 'RUNNING': return <PlayCircle size={16} className="animate-spin-slow" />;
+            case 'PENDING': return <Clock size={16} className="animate-pulse" />;
+            default: return <Clock size={16} />;
+        }
     };
 
     return (
         <>
-            <tr onClick={onToggle} style={{ cursor: 'pointer' }}>
-                <td><StatusBadge status={execution.status} /></td>
-                <td style={{ fontFamily: 'monospace', color: '#fff' }}>{execution.taskId}</td>
+            <tr onClick={onToggle} className={isExpanded ? 'expanded-row' : ''}>
                 <td>
-                    <span style={{ padding: '4px 8px', background: '#334155', borderRadius: '4px', fontSize: '0.8rem' }}>
+                    <span className={`badge ${statusClass}`}>
+                        {getStatusIcon(execution.status)}
+                        {execution.status}
+                    </span>
+                </td>
+                <td style={{ fontFamily: 'monospace' }}>{execution.taskId}</td>
+                <td>
+                    <span style={{ 
+                        background: '#334155', 
+                        padding: '2px 8px', 
+                        borderRadius: '4px', 
+                        fontSize: '0.8rem',
+                        border: '1px solid #475569'
+                    }}>
                         {execution.config?.environment?.toUpperCase() || 'DEV'}
                     </span>
                 </td>
-                <td>{format(new Date(execution.startTime), 'dd/MM/yy HH:mm')}</td>
-                <td>{calculateDuration(execution.startTime, execution.endTime)}</td>
-                <td style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'flex-end' }}>
+                
+                <td>
+                    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.9rem' }}>
+                        <span>{formatDateSafe(execution.startTime)}</span>
+                        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                            {formatDurationSafe(execution.startTime)}
+                        </span>
+                    </div>
+                </td>
 
-                    {(execution.status === 'PASSED' || execution.status === 'FAILED') && (
-                        <>
-                            {/* Playwright Report */}
-                            <a
-                                href={`${API_URL}/reports/${execution.taskId}/playwright-report/index.html`} 
-                                target="_blank"
-                                title="Playwright Report"
-                                style={{ color: '#60a5fa' }}
-                            >
-                                <FileText size={18} />
-                            </a>
-
-                            {/* Allure Report */}
-                            <a
-                                href={`${API_URL}/reports/${execution.taskId}/allure-report/index.html`}
-                                target="_blank"
-                                title="Allure Dashboard"
-                                style={{ color: '#10b981' }}
-                            >
-                                <BarChart2 size={18} />
-                            </a>
-                        </>
-                    )}
-
-                    <button
-                        onClick={handleDelete}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#ef4444',
-                            cursor: 'pointer',
-                            padding: '4px',
-                            display: 'flex',
-                            alignItems: 'center'
-                        }}
-                        title="Delete Execution"
-                    >
-                        <Trash2 size={18} />
-                    </button>
-                    {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                <td>{execution.duration || '-'}</td>
+                
+                <td>
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                        <button 
+                            className="btn-icon"
+                            onClick={(e) => { e.stopPropagation(); onDelete(execution.taskId); }}
+                            style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}
+                        >
+                            <Trash2 size={18} />
+                        </button>
+                        {isExpanded ? <ChevronDown size={18} color="#94a3b8" /> : <ChevronRight size={18} color="#94a3b8" />}
+                    </div>
                 </td>
             </tr>
-
+            
             {isExpanded && (
-                <tr className="expanded-row">
+                <tr>
                     <td colSpan={6} style={{ padding: 0 }}>
                         <div className="expanded-content">
                             <div className="info-grid">
-                                <InfoItem label="Task ID" value={execution.taskId} />
-                                <InfoItem label="Tests Path" value={execution.tests?.join(', ') || 'All Tests'} />
-                                <InfoItem label="Retries" value={execution.config?.retryAttempts?.toString()} />
+                                <div className="info-item">
+                                    <label>Base URL</label>
+                                    <span>{execution.config?.baseUrl}</span>
+                                </div>
+                                <div className="info-item">
+                                    <label>Tests</label>
+                                    <span>{execution.tests?.join(', ') || 'All'}</span>
+                                </div>
+                                <div className="info-item">
+                                    <label>Browser</label>
+                                    <span>Chromium (Headless)</span>
+                                </div>
                             </div>
 
-                            <TerminalView output={execution.output} error={execution.error} />
+                            {/* Reports Links */}
+                            <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
+                                <a 
+                                    href={`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/reports/${execution.taskId}/playwright-report/index.html`} 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="btn btn-secondary"
+                                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <ExternalLink size={16} /> Open Playwright Report
+                                </a>
+                            </div>
                         </div>
                     </td>
                 </tr>
@@ -112,10 +133,3 @@ export const ExecutionRow = ({ execution, isExpanded, onToggle, onDelete }: Prop
         </>
     );
 };
-
-const InfoItem = ({ label, value }: { label: string, value?: string }) => (
-    <div className="info-item">
-        <label>{label}</label>
-        <span>{value || 'N/A'}</span>
-    </div>
-);
