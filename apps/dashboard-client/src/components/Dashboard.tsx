@@ -60,7 +60,7 @@ export const Dashboard = () => {
             }
             
             const data = await response.json();
-            console.log('✅ Success:', data.taskId);
+            console.log('Success:', data.taskId);
             setIsModalOpen(false);
 
         } catch (err: any) {

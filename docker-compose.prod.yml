@@ -13,7 +13,6 @@ services:
       - RABBITMQ_URL=amqp://rabbitmq
       - MONGO_URI=${MONGO_URI}
       - MONGODB_URL=${MONGO_URI}
-      # המשתנה החדש שמכוון את הקוד
       - REPORTS_DIR=/app/reports
     depends_on:
       - rabbitmq

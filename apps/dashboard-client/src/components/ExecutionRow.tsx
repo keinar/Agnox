@@ -52,7 +52,11 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
         }
     };
 
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+    const baseUrl = isProduction 
+        ? 'https://api.automation.keinar.com' 
+        : 'http://localhost:3000';
+
     const playwrightReportUrl = `${baseUrl}/reports/${execution.taskId}/playwright-report/index.html`;
     const allureReportUrl = `${baseUrl}/reports/${execution.taskId}/allure-report/index.html`;
 
