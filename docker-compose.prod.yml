@@ -48,6 +48,8 @@ services:
     build:
       context: .
       dockerfile: apps/dashboard-client/Dockerfile
+      args:
+        - VITE_API_BASE_URL=https://api.automation.keinar.com
     container_name: automation-dashboard
     restart: always
     depends_on:
