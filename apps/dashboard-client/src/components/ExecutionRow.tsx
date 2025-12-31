@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, ChevronDown, ChevronRight, CheckCircle, XCircle, Clock, PlayCircle, FileText, BarChart2 } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronRight, CheckCircle, XCircle, Clock, PlayCircle, FileText, BarChart2, Laptop, Server } from 'lucide-react';
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns';
 
 interface ExecutionRowProps {
@@ -53,17 +53,12 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
     };
 
     const getBaseUrl = () => {
-        // 1. Primary: Use what the Worker explicitly saved in DB
         if (execution.reportsBaseUrl) {
             return execution.reportsBaseUrl;
         }
-
-        // 2. Use build-time environment variable
         if (import.meta.env.VITE_API_BASE_URL) {
             return import.meta.env.VITE_API_BASE_URL;
         }
-
-        // 3. Fallback: Detection based on current hostname
         const isProductionDomain = window.location.hostname.includes('automation.keinar.com');
         return isProductionDomain
             ? 'https://api.automation.keinar.com'
@@ -75,6 +70,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
     const allureReportUrl = `${baseUrl}/reports/${execution.taskId}/allure-report/index.html`;
 
     const isFinished = execution.status === 'PASSED' || execution.status === 'FAILED';
+    const isLocal = execution.reportsBaseUrl?.includes('localhost') || execution.reportsBaseUrl?.includes('127.0.0.1');
 
     let terminalContent = '';
 
@@ -103,6 +99,23 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
                     <span className={`badge ${statusClass}`}>
                         {getStatusIcon(execution.status)} {execution.status}
                     </span>
+                </td>
+                <td>
+                    <div style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '6px', 
+                        padding: '4px 8px', 
+                        borderRadius: '6px',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        backgroundColor: isLocal ? 'rgba(56, 189, 248, 0.1)' : 'rgba(168, 85, 247, 0.1)',
+                        color: isLocal ? '#38bdf8' : '#a855f7',
+                        border: `1px solid ${isLocal ? 'rgba(56, 189, 248, 0.2)' : 'rgba(168, 85, 247, 0.2)'}`
+                    }}>
+                        {isLocal ? <Laptop size={12} /> : <Server size={12} />}
+                        {isLocal ? 'LOCAL' : 'CLOUD'}
+                    </div>
                 </td>
                 <td style={{ fontFamily: 'monospace', color: '#cbd5e1' }}>{execution.taskId}</td>
                 <td>
@@ -163,7 +176,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
 
             {isExpanded && (
                 <tr>
-                    <td colSpan={6} style={{ padding: 0 }}>
+                    <td colSpan={7} style={{ padding: 0 }}>
                         <div className="expanded-content">
                             <div className="details-grid">
                                 <div className="detail-item">
@@ -175,8 +188,8 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
                                     <span>{execution.tests?.join(', ') || 'All'}</span>
                                 </div>
                                 <div className="detail-item">
-                                    <label>Browser</label>
-                                    <span>Chromium (Headless)</span>
+                                    <label>Run Origin</label>
+                                    <span>{execution.reportsBaseUrl || 'Unknown'}</span>
                                 </div>
                             </div>
 

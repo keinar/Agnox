@@ -126,6 +126,7 @@ export const Dashboard = () => {
                     <thead>
                         <tr>
                             <th>Status</th>
+                            <th>Source</th>
                             <th>Task ID</th>
                             <th>Environment</th>
                             <th>Start Time</th>
@@ -135,7 +136,7 @@ export const Dashboard = () => {
                     </thead>
                     <tbody>
                         {loading && executions.length === 0 && (
-                            <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Loading live data...</td></tr>
+                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>Loading live data...</td></tr>
                         )}
                         
                         {executions.map((exec) => (
