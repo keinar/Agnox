@@ -52,11 +52,21 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
         }
     };
 
-    const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-    const baseUrl = execution.reportsBaseUrl || (isProduction 
-        ? 'https://api.automation.keinar.com' 
-        : 'http://localhost:3000');
+    // Smart URL resolution
+    const getBaseUrl = () => {
+        // 1. Primary: Use what the Worker explicitly saved in DB
+        if (execution.reportsBaseUrl) {
+            return execution.reportsBaseUrl;
+        }
 
+        // 2. Fallback: Detection based on current hostname
+        const isProductionDomain = window.location.hostname === 'automation.keinar.com';
+        return isProductionDomain 
+            ? 'https://api.automation.keinar.com' 
+            : 'http://localhost:3000';
+    };
+
+    const baseUrl = getBaseUrl();
     const playwrightReportUrl = `${baseUrl}/reports/${execution.taskId}/playwright-report/index.html`;
     const allureReportUrl = `${baseUrl}/reports/${execution.taskId}/allure-report/index.html`;
 
@@ -134,7 +144,6 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
                                 </a>
                             </>
                         )}
-                        {/* -------------------------------------- */}
 
                         <button 
                             className="icon-btn red"

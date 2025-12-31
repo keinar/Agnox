@@ -60,7 +60,6 @@ async function startWorker() {
             const task = JSON.parse(content);
             const taskId = task.taskId || 'unknown-task';
             
-            // Resolve directories
             const reportsDir = process.env.REPORTS_DIR || path.join(process.cwd(), 'test-results');
             const baseTaskDir = path.join(reportsDir, taskId);
             const finalAllureResultsDir = path.join(baseTaskDir, 'allure-results');
@@ -74,24 +73,31 @@ async function startWorker() {
             console.log('------------------------------------------------');
             console.log(`📥 Processing Task: ${taskId}`);
 
-            // Clean up local temp files from previous runs
             try {
                 if (fs.existsSync(localAllureResults)) fs.rmSync(localAllureResults, { recursive: true, force: true });
                 if (fs.existsSync(localHtmlReport)) fs.rmSync(localHtmlReport, { recursive: true, force: true });
             } catch (e) { }
 
-            // Ensure task output directory exists
             try {
                 fs.mkdirSync(outputDir, { recursive: true });
             } catch (err) { }
 
             const startTime = new Date();
+            // Get the URL from environment variable
             const currentReportsBaseUrl = process.env.PUBLIC_API_URL || 'http://localhost:3000';
 
-            // Mark task as RUNNING
+            // IMPORTANT: Save the baseUrl immediately when starting
             await executionsCollection.updateOne(
                 { taskId: taskId },
-                { $set: { status: 'RUNNING', startTime: startTime, config: task.config, tests: task.tests, reportsBaseUrl: currentReportsBaseUrl } },
+                { 
+                    $set: { 
+                        status: 'RUNNING', 
+                        startTime: startTime, 
+                        config: task.config, 
+                        tests: task.tests,
+                        reportsBaseUrl: currentReportsBaseUrl 
+                    } 
+                },
                 { upsert: true }
             );
 
@@ -99,7 +105,8 @@ async function startWorker() {
                 taskId,
                 status: 'RUNNING',
                 startTime: startTime,
-                tests: task.tests
+                tests: task.tests,
+                reportsBaseUrl: currentReportsBaseUrl
             });
 
             try {
@@ -117,7 +124,7 @@ async function startWorker() {
 
                 console.log('🚚 Moving reports to task directory...');
 
-                // 1. Process Allure Results
+                // 1. Allure Results
                 if (fs.existsSync(localAllureResults)) {
                     try {
                         if (!fs.existsSync(finalAllureResultsDir)) fs.mkdirSync(finalAllureResultsDir, { recursive: true });
@@ -132,7 +139,7 @@ async function startWorker() {
                     }
                 }
 
-                // 2. Process Playwright HTML Report
+                // 2. Playwright HTML
                 if (fs.existsSync(localHtmlReport)) {
                     try {
                         if (!fs.existsSync(finalHtmlReportDir)) fs.mkdirSync(finalHtmlReportDir, { recursive: true });
@@ -143,12 +150,18 @@ async function startWorker() {
                     }
                 }
 
-                // 3. Fix Permissions for Docker environment
+                // 3. Permissions
                 try {
                     await execPromise(`chmod -R 755 "${baseTaskDir}"`);
                 } catch (e) { }
 
-                const passData = { taskId, status: 'PASSED', endTime: new Date(), output: stdout, reportsBaseUrl: currentReportsBaseUrl };
+                const passData = { 
+                    taskId, 
+                    status: 'PASSED', 
+                    endTime: new Date(), 
+                    output: stdout, 
+                    reportsBaseUrl: currentReportsBaseUrl 
+                };
                 console.log('Tests Passed!');
                 await executionsCollection.updateOne({ taskId }, { $set: passData });
                 await notifyProducer(passData);
@@ -156,7 +169,6 @@ async function startWorker() {
             } catch (error: any) {
                 console.error('Tests Failed');
                 
-                // Try to save partial reports on failure
                 try {
                     if (fs.existsSync(localAllureResults)) {
                         if (!fs.existsSync(finalAllureResultsDir)) fs.mkdirSync(finalAllureResultsDir, { recursive: true });
@@ -200,9 +212,8 @@ async function notifyProducer(executionData: any) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(executionData)
         });
-        console.log(`[Worker] Notified Producer about task ${executionData.taskId}`);
     } catch (error: any) {
-        console.error('[Worker] Failed to notify Producer:', error.message);
+        console.error('[Worker] Failed to notify Producer');
     }
 }
 
