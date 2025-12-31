@@ -14,6 +14,8 @@ const MONGO_URI = process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb:/
 const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
 const DB_NAME = 'automation_platform';
 const COLLECTION_NAME = 'executions';
+const reportsBaseUrl = process.env.PUBLIC_API_URL || 'http://localhost:3000';
+
 
 async function startWorker() {
     let connection: Awaited<ReturnType<typeof amqp.connect>> | null = null;
@@ -134,7 +136,7 @@ async function startWorker() {
                     console.log('Allure HTML generated successfully.');
                 }
 
-                const passData = { taskId, status: 'PASSED', endTime: new Date(), output: stdout };
+                const passData = { taskId, status: 'PASSED', endTime: new Date(), output: stdout, reportsBaseUrl };
                 console.log('Tests Passed!');
                 await executionsCollection.updateOne({ taskId }, { $set: passData });
                 await notifyProducer(passData);
@@ -158,7 +160,8 @@ async function startWorker() {
                     taskId,
                     status: 'FAILED',
                     endTime: new Date(),
-                    error: error.stderr || error.stdout || error.message
+                    error: error.stderr || error.stdout || error.message,
+                    reportsBaseUrl
                 };
                 await executionsCollection.updateOne({ taskId }, { $set: failData });
                 await notifyProducer(failData);

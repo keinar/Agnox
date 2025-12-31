@@ -24,13 +24,14 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./test-results:/app/apps/producer-service/results
+      - ./test-results:/app/reports
       - ./apps/worker-service/tests:/app/tests-source:ro
     environment:
       - PORT=3000
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
       - MONGO_URI=${MONGO_URI}
       - MONGODB_URL=${MONGO_URI}
+      - REPORTS_DIR=/app/reports
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -52,9 +53,10 @@ services:
       - ADMIN_USER=${ADMIN_USER}
       - ADMIN_PASS=${ADMIN_PASS}
       - CI=true
+      - REPORTS_DIR=/app/reports
+      - PUBLIC_API_URL=http://localhost:3000
     volumes:
-      - ./playwright-report:/app/playwright-report
-      - ./test-results:/app/test-results
+      - ./test-results:/app/reports
     depends_on:
       rabbitmq:
         condition: service_healthy

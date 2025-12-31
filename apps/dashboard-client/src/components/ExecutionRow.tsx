@@ -20,7 +20,7 @@ const formatTimeAgo = (dateString: string | Date | undefined) => {
 };
 
 const calculateDuration = (exec: any) => {
-    if (exec.duration) return exec.duration;
+    if (exec.duration && exec.duration !== '-') return exec.duration;
     if (exec.startTime && exec.endTime) {
         try {
             const start = new Date(exec.startTime);
@@ -53,12 +53,14 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
     };
 
     const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-    const baseUrl = isProduction 
+    const baseUrl = execution.reportsBaseUrl || (isProduction 
         ? 'https://api.automation.keinar.com' 
-        : 'http://localhost:3000';
+        : 'http://localhost:3000');
 
     const playwrightReportUrl = `${baseUrl}/reports/${execution.taskId}/playwright-report/index.html`;
     const allureReportUrl = `${baseUrl}/reports/${execution.taskId}/allure-report/index.html`;
+
+    const isFinished = execution.status === 'PASSED' || execution.status === 'FAILED';
 
     let terminalContent = '';
 
@@ -107,26 +109,33 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
                 </td>
                 <td>
                     <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                        <a 
-                            href={playwrightReportUrl} 
-                            target="_blank" 
-                            rel="noreferrer" 
-                            title="Playwright Report"
-                            className="icon-link blue"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <FileText size={18} />
-                        </a>
-                        <a 
-                            href={allureReportUrl} 
-                            target="_blank" 
-                            rel="noreferrer"
-                            title="Allure Dashboard"
-                            className="icon-link green"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <BarChart2 size={18} />
-                        </a>
+                        
+                        {isFinished && (
+                            <>
+                                <a 
+                                    href={playwrightReportUrl} 
+                                    target="_blank" 
+                                    rel="noreferrer" 
+                                    title="Playwright Report"
+                                    className="icon-link blue"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <FileText size={18} />
+                                </a>
+                                <a 
+                                    href={allureReportUrl} 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    title="Allure Dashboard"
+                                    className="icon-link green"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <BarChart2 size={18} />
+                                </a>
+                            </>
+                        )}
+                        {/* -------------------------------------- */}
+
                         <button 
                             className="icon-btn red"
                             title="Delete Execution"
