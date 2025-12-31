@@ -44,11 +44,12 @@ jobs:
           script: |
             cd ~/playwright-full-stack-framework
             
-            # 1. Force Git Update
+            # 1. Force update from Git (Destructive pull to fix your SSH sync issue)
             git fetch origin main
             git reset --hard origin/main
+            git clean -fd
             
-            # 2. Create Root .env
+            # 2. Recreate .env from GitHub Secrets
             echo "MONGO_URI=${{ secrets.MONGO_URI }}" > .env
             echo "RABBITMQ_URL=amqp://rabbitmq" >> .env
             echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
@@ -56,19 +57,20 @@ jobs:
             echo "ADMIN_USER=${{ secrets.ADMIN_USER }}" >> .env
             echo "ADMIN_PASS=${{ secrets.ADMIN_PASS }}" >> .env
             echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
+            echo "PUBLIC_API_URL=${{ secrets.PUBLIC_API_URL }}" >> .env
             
-            # 3. Complete Cleanup & Rebuild
-            # Stop services and remove old containers/networks
+            # 3. Aggressive Rebuild
+            # Stop and remove everything
             docker compose -f docker-compose.prod.yml down --remove-orphans
             
-            # Force remove the old dashboard image to ensure it rebuilds with new ARGS
+            # Force remove old dashboard image to ensure ARG injection happens
             docker rmi -f playwright-full-stack-framework-dashboard || true
             
-            # Build without cache to be 100% sure
+            # Build without cache
             docker compose -f docker-compose.prod.yml build --no-cache
             
             # 4. Start
             docker compose -f docker-compose.prod.yml up -d
             
-            # Cleanup disk space
+            # disk cleanup
             docker image prune -f
