@@ -15,32 +15,37 @@ The system is built using a modern event-driven architecture to ensure decouplin
 
 ### Services Overview
 
-- **🖥️ Dashboard Client (`apps/dashboard-client`)**
-  - Built with **React**, **Vite**, and **Tailwind CSS**.
-  - Real-time UI for viewing test executions, logs, and statistics.
-  - Uses **Socket.io** for live updates.
+-   **🌐 Gateway / Reverse Proxy (`nginx-proxy-manager`)**
+    -   Manages SSL certificates (Let's Encrypt).
+    -   Handles routing to internal services.
+    -   Ensures secure production access (HTTPS).
 
-- **⚙️ Producer Service (`apps/producer-service`)**
-  - High-performance API Gateway built with **Fastify**.
-  - Handles HTTP requests and manages **MongoDB** connections.
-  - Publishes execution tasks to **RabbitMQ**.
+-   **🖥️ Dashboard Client (`apps/dashboard-client`)**
+    -   Built with **React**, **Vite**, and **Tailwind CSS**.
+    -   Real-time UI for viewing test executions, logs, and statistics.
+    -   Uses **Socket.io** for live updates.
 
-- **👷 Worker Service (`apps/worker-service`)**
-  - The core execution engine (Node.js).
-  - Consumes tasks from **RabbitMQ** and executes **Playwright** tests.
-  - Integrates **Google Gemini AI** for intelligent error analysis.
-  - Generates **Allure Reports** for detailed test visualization.
+-   **⚙️ Producer Service (`apps/producer-service`)**
+    -   High-performance API Gateway built with **Fastify**.
+    -   Handles HTTP requests and manages **MongoDB** connections.
+    -   Publishes execution tasks to **RabbitMQ**.
+
+-   **👷 Worker Service (`apps/worker-service`)**
+    -   The core execution engine (Node.js).
+    -   Consumes tasks from **RabbitMQ** and executes **Playwright** tests.
+    -   Integrates **Google Gemini AI** for intelligent error analysis.
+    -   Generates **Allure Reports** for detailed test visualization.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend:** React, TypeScript, Recharts, Framer Motion
-- **Backend:** Node.js, Fastify, Socket.io
-- **Testing:** Playwright, Allure Report
-- **Infrastructure:** Docker, Docker Compose, RabbitMQ, MongoDB
-- **CI/CD:** GitHub Actions
-- **AI:** Google Gemini (Generative AI)
+-   **Frontend:** React, TypeScript, Recharts, Framer Motion
+-   **Backend:** Node.js, Fastify, Socket.io
+-   **Testing:** Playwright, Allure Report
+-   **Infrastructure:** Docker, Docker Compose, RabbitMQ, MongoDB, Nginx Proxy Manager
+-   **CI/CD:** GitHub Actions
+-   **AI:** Google Gemini (Generative AI)
 
 ---
 
@@ -48,53 +53,51 @@ The system is built using a modern event-driven architecture to ensure decouplin
 
 ### Prerequisites
 
-* Docker & Docker Compose
-* Node.js (v18+)
-* Oracle Cloud Account (for Deployment)
+* [Docker](https://www.docker.com/) & Docker Compose
+* [Node.js](https://nodejs.org/) (v18+)
 * Google Gemini API Key
 
 ### Local Setup
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/keinar/playwright-full-stack-framework.git
-   cd playwright-full-stack-framework
-   ```
+1.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/keinar/playwright-full-stack-framework.git](https://github.com/keinar/playwright-full-stack-framework.git)
+    cd playwright-full-stack-framework
+    ```
 
-2. **Environment Configuration:**
-   Create a `.env` file in the root directory:
-   ```env
-   MONGO_URI=mongodb://mongo:27017/automation
-   RABBITMQ_URL=amqp://rabbitmq
-   GEMINI_API_KEY=your_api_key_here
-   BASE_URL=https://automation.keinar.com
-   ADMIN_USER=admin
-   ADMIN_PASS=securepass
-   ```
+2.  **Environment Configuration:**
+    Create a `.env` file in the root directory:
+    ```env
+    MONGO_URI=mongodb://mongo:27017/automation
+    RABBITMQ_URL=amqp://rabbitmq
+    GEMINI_API_KEY=your_api_key_here
+    BASE_URL=[https://automation.keinar.com](https://automation.keinar.com)
+    ADMIN_USER=admin
+    ADMIN_PASS=securepass
+    ```
 
-3. **Run with Docker Compose:**
-   ```bash
-   docker compose up -d --build
-   ```
+3.  **Run with Docker Compose:**
+    ```bash
+    docker compose up -d --build
+    ```
 
-4. **Access Services:**
-   - **Dashboard:** http://localhost:8080
-   - **Producer API:** http://localhost:3000
-   - **RabbitMQ UI:** http://localhost:15672 (guest/guest)
+4.  **Access Services:**
+    -   **Dashboard:** `http://localhost:8080`
+    -   **Producer API:** `http://localhost:3000`
+    -   **RabbitMQ UI:** `http://localhost:15672` (guest/guest)
 
 ---
 
 ## ☁️ Deployment & CI/CD
 
-This project features a unified **CI/CD pipeline** (`deploy.yml`) using GitHub Actions for seamless deployment to Oracle Cloud.
+This project features a unified **CI/CD pipeline** (`deploy.yml`) using GitHub Actions for seamless deployment to VPS (e.g., Oracle Cloud).
 
 ### Pipeline Flow
-1. **Quality Check:** Runs linting and unit tests.
-2. **Deploy:** Connects via SSH, pulls the latest code, and rebuilds containers directly on the server (optimized for ARM/Ampere architecture).
-3. **Cleanup:** Prunes unused Docker images.
+1.  **Quality Check:** Runs linting and unit tests.
+2.  **Deploy:** Connects via SSH, pulls the latest code, and rebuilds containers directly on the server.
+3.  **Cleanup:** Prunes unused Docker images.
 
 ### Required GitHub Secrets
-
 | Secret Name | Description |
 | :--- | :--- |
 | `VPS_HOST` | Server IP Address |
@@ -105,30 +108,12 @@ This project features a unified **CI/CD pipeline** (`deploy.yml`) using GitHub A
 
 ---
 
-## 🏹 "The Hunter" - Oracle Cloud Auto-Scaler
-
-Included is a specialized script (`hunter.sh`) designed to **automatically hunt and provision** the free-tier **Ampere A1 Compute Instance** (4 OCPUs, 24GB RAM) on Oracle Cloud.
-
-### How it works
-- Scans all Availability Domains (AD-1, AD-2, AD-3).
-- Retries intelligently to avoid API rate limits.
-- Provisions the server as soon as capacity is available.
-
-**Usage:**
-```bash
-nohup ./hunter.sh > hunter.log 2>&1 &
-```
-
----
-
 ## 🧪 Running Tests
 
 ### Option 1: Via Dashboard
-
-Navigate to `http://localhost:8080`, select a test suite, and click **Run**.
+Navigate to your dashboard URL, select a test suite, and click **Run**.
 
 ### Option 2: Manual Trigger (CLI)
-
 ```bash
 docker compose exec worker npx playwright test
 ```
@@ -150,6 +135,6 @@ The system provides two layers of reporting:
 
 ---
 
-## 📜 License
+## License
 
 MIT License
