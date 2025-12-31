@@ -21,30 +21,20 @@ const formatTimeAgo = (dateString: string | Date | undefined) => {
 
 const calculateDuration = (exec: any) => {
     if (exec.duration) return exec.duration;
-
     if (exec.startTime && exec.endTime) {
         try {
             const start = new Date(exec.startTime);
             const end = new Date(exec.endTime);
             const seconds = differenceInSeconds(end, start);
-            
             if (seconds < 60) return `${seconds}s`;
             const minutes = Math.floor(seconds / 60);
             const remainingSeconds = seconds % 60;
             return `${minutes}m ${remainingSeconds}s`;
-        } catch (e) {
-            return '-';
-        }
+        } catch (e) { return '-'; }
     }
-
     if (exec.status === 'RUNNING' && exec.startTime) {
-        try {
-            return formatDistanceToNow(new Date(exec.startTime)).replace('about ', '');
-        } catch {
-            return 'Running...';
-        }
+        try { return formatDistanceToNow(new Date(exec.startTime)).replace('about ', ''); } catch { return 'Running...'; }
     }
-
     return '-';
 };
 
@@ -66,9 +56,24 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
     const playwrightReportUrl = `${baseUrl}/reports/${execution.taskId}/playwright-report/index.html`;
     const allureReportUrl = `${baseUrl}/reports/${execution.taskId}/allure-report/index.html`;
 
-    let logsToDisplay = execution.output || execution.logs;
-    if (Array.isArray(logsToDisplay)) {
-        logsToDisplay = logsToDisplay.join('\n');
+    let terminalContent = '';
+
+    if (execution.error) {
+        const errorMsg = typeof execution.error === 'object' 
+            ? JSON.stringify(execution.error, null, 2) 
+            : execution.error;
+        
+        terminalContent += `🛑 FAILURE DETAILS:\n${errorMsg}\n\n`;
+        terminalContent += `──────────────────────────────────────────\n\n`;
+    }
+
+    const logs = execution.output || execution.logs;
+    if (logs && logs.length > 0) {
+        terminalContent += Array.isArray(logs) ? logs.join('\n') : logs;
+    }
+
+    if (!terminalContent) {
+        terminalContent = 'Waiting for logs...';
     }
 
     return (
@@ -157,10 +162,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
                                     <span className="terminal-title">console output</span>
                                 </div>
                                 <div className="terminal-body">
-                                    {logsToDisplay 
-                                        ? logsToDisplay
-                                        : <span style={{ color: '#64748b' }}>Waiting for logs...</span>
-                                    }
+                                    {terminalContent}
                                 </div>
                             </div>
                         </div>
