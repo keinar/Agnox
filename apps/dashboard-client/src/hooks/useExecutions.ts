@@ -33,7 +33,7 @@ export const useExecutions = () => {
         const socket = io(API_URL);
 
         socket.on('execution-updated', (updatedTask: Partial<Execution>) => {
-            console.log('⚡ Real-time update received:', updatedTask);
+            console.log('Real-time update received:', updatedTask);
 
             queryClient.setQueryData(['executions'], (oldData: Execution[] | undefined) => {
                 if (!oldData) return [updatedTask as Execution];

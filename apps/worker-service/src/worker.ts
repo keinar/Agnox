@@ -59,8 +59,8 @@ async function startWorker() {
             const content = msg.content.toString();
             const task = JSON.parse(content);
             const taskId = task.taskId || 'unknown-task';
-
-            const baseTaskDir = path.join(process.cwd(), 'test-results', taskId);
+            const reportsDir = process.env.REPORTS_DIR || path.join(process.cwd(), 'test-results');
+            const baseTaskDir = path.join(reportsDir, taskId);
             const finalAllureResultsDir = path.join(baseTaskDir, 'allure-results');
             const finalAllureReportDir = path.join(baseTaskDir, 'allure-report');
             const finalHtmlReportDir = path.join(baseTaskDir, 'playwright-report');
@@ -121,7 +121,7 @@ async function startWorker() {
                         fs.cpSync(srcPath, destPath); 
                         fs.rmSync(srcPath);
                     });
-                    console.log(`✅ Moved ${files.length} Allure files.`);
+                    console.log(`Moved ${files.length} Allure files.`);
                 }
 
                 if (fs.existsSync(localHtmlReport)) {
@@ -131,7 +131,7 @@ async function startWorker() {
 
                 if (fs.readdirSync(finalAllureResultsDir).length > 0) {
                     await execPromise(`npx allure generate "${finalAllureResultsDir}" -o "${finalAllureReportDir}" --clean`);
-                    console.log('✅ Allure HTML generated successfully.');
+                    console.log('Allure HTML generated successfully.');
                 }
 
                 const passData = { taskId, status: 'PASSED', endTime: new Date(), output: stdout };

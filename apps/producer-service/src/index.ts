@@ -39,8 +39,10 @@ app.register(socketio, {
     }
 });
 
+const REPORTS_DIR = process.env.REPORTS_DIR || path.join(process.cwd(), 'reports');
+
 app.register(fastifyStatic, {
-    root: path.join(process.cwd(), 'results'),
+    root: REPORTS_DIR,
     prefix: '/reports/',
     index: ['index.html'],
     decorateReply: false

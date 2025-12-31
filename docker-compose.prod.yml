@@ -1,7 +1,4 @@
 services:
-  # -------------------------
-  # App Services
-  # -------------------------
   producer:
     build:
       context: .
@@ -9,13 +6,15 @@ services:
     container_name: automation-producer
     restart: always
     volumes:
-      - test_results:/app/apps/producer-service/results
+      - test_results:/app/reports
       - ./apps/worker-service/tests:/app/tests-source:ro
     environment:
       - PORT=3000
       - RABBITMQ_URL=amqp://rabbitmq
       - MONGO_URI=${MONGO_URI}
       - MONGODB_URL=${MONGO_URI}
+      # המשתנה החדש שמכוון את הקוד
+      - REPORTS_DIR=/app/reports
     depends_on:
       - rabbitmq
     networks:
@@ -36,8 +35,9 @@ services:
       - ADMIN_USER=${ADMIN_USER}
       - ADMIN_PASS=${ADMIN_PASS}
       - CI=true
+      - REPORTS_DIR=/app/reports
     volumes:
-      - test_results:/app/test-results
+      - test_results:/app/reports
     depends_on:
       - rabbitmq
       - producer
