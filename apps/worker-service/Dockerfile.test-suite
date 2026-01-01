@@ -1,0 +1,31 @@
+# This image contains the actual test environment
+FROM mcr.microsoft.com/playwright:v1.57.0-jammy
+
+# Install Java for Allure report generation
+RUN apt-get update && apt-get install -y default-jre && \
+    npm install -g allure-commandline
+
+WORKDIR /app
+
+# Copy the package files from the worker directory
+COPY apps/worker-service/package.json apps/worker-service/package-lock.json ./
+RUN npm install --legacy-peer-deps
+
+# Copy ALL necessary source files for Playwright to run
+COPY apps/worker-service/playwright.config.ts ./
+COPY apps/worker-service/global.setup.ts ./
+COPY apps/worker-service/config ./config
+COPY apps/worker-service/tests ./tests
+COPY apps/worker-service/helpers ./helpers
+COPY apps/worker-service/pages ./pages
+COPY apps/worker-service/fixtures ./fixtures
+
+# Optional folders - only if they exist
+COPY apps/worker-service/services ./services
+COPY apps/worker-service/repositories ./repositories
+
+# Create a directory for results that matches the Manager's volume mount
+RUN mkdir -p /app/results
+
+# Default command: We point the output to our shared volume
+CMD ["npx", "playwright", "test", "--output=/app/results"]
