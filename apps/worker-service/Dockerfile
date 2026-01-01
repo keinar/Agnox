@@ -1,25 +1,26 @@
-FROM mcr.microsoft.com/playwright:v1.57.0-jammy
+# Use a lightweight Node image as this is only an orchestrator
+FROM node:20-slim
 
-RUN apt-get update && apt-get install -y default-jre
-
-RUN npm install -g allure-commandline
-
+# The manager needs to communicate with Docker, but doesn't need Playwright itself
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-COPY tsconfig.json ./
-
+# Copy monorepo configuration
+COPY package.json package-lock.json tsconfig.json ./
 COPY packages/shared-types ./packages/shared-types
 COPY apps/worker-service ./apps/worker-service
 
-RUN npm ci
+# Install dependencies including 'dockerode'
+RUN npm install --legacy-peer-deps
 
+# Build shared types first
 WORKDIR /app/packages/shared-types
 RUN npm run build
 
+# Build the worker manager
 WORKDIR /app/apps/worker-service
 RUN npm run build
 
 ENV NODE_ENV=production
 
+# The manager script runs as the entry point
 CMD ["node", "dist/worker.js"]

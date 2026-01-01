@@ -25,13 +25,11 @@ const DB_NAME = 'automation_platform';
 
 let dbClient: MongoClient;
 
-// 1. Register CORS
 app.register(cors, {
   origin: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 });
 
-// 2. Register Socket.io Plugin
 app.register(socketio, {
     cors: {
         origin: "*",
@@ -49,17 +47,12 @@ app.register(fastifyStatic, {
 });
 
 app.get('/', async () => {
-  return { message: 'Producer Service is running with Socket.io!' };
+  return { message: 'Agnostic Producer Service is running!' };
 });
 
-// 3. Real-time update endpoint
 app.post('/executions/update', async (request, reply) => {
     const updateData = request.body as any;
-    
-    // Use app.io provided by the plugin
     app.io.emit('execution-updated', updateData);
-    app.log.info(`Broadcasted update for task: ${updateData.taskId}`);
-
     return { status: 'broadcasted' };
 });
 
@@ -79,16 +72,25 @@ app.get('/executions', async (request, reply) => {
         const collection = dbClient.db(DB_NAME).collection('executions');
         return await collection.find({}).sort({ startTime: -1 }).limit(50).toArray();
     } catch (error) {
-        app.log.error(error);
         return reply.status(500).send({ error: 'Failed to fetch data' });
     }
 });
 
+/**
+ * Agnostic Execution Request
+ * supports custom Docker images and commands
+ */
 app.post('/execution-request', async (request, reply) => {
   const parseResult = TestExecutionRequestSchema.safeParse(request.body);
-  if (!parseResult.success) return reply.status(400).send({ error: 'Invalid payload', details: parseResult.error });
   
-  const { taskId, tests, config } = parseResult.data;
+  if (!parseResult.success) {
+      return reply.status(400).send({ 
+          error: 'Invalid payload', 
+          details: parseResult.error.format() 
+      });
+  }
+  
+  const { taskId, image, command, tests, config } = parseResult.data;
 
   try {
     const startTime = new Date();
@@ -100,10 +102,12 @@ app.post('/execution-request', async (request, reply) => {
             { 
                 $set: { 
                     taskId,
+                    image,        // Saved to DB for traceability
+                    command,      // Saved to DB for traceability
                     status: 'PENDING',
-                    startTime: startTime,
+                    startTime,
                     config,
-                    tests
+                    tests: tests || []
                 } 
             },
             { upsert: true }
@@ -112,13 +116,16 @@ app.post('/execution-request', async (request, reply) => {
         app.io.emit('execution-updated', { 
             taskId, 
             status: 'PENDING',
-            startTime: startTime
+            startTime
         });
     }
 
+    // Send the full agnostic request to RabbitMQ
     await rabbitMqService.sendToQueue(parseResult.data);
     
+    app.log.info(`Job ${taskId} queued using image: ${image}`);
     return reply.status(200).send({ status: 'Message queued successfully', taskId });
+    
   } catch (error) {
     app.log.error(error);
     reply.status(500).send({ status: 'Failed to queue message' });
@@ -130,8 +137,7 @@ app.delete('/executions/:id', async (request, reply) => {
     try {
         if (!dbClient) return reply.status(500).send({ error: 'Database not connected' });
         const collection = dbClient.db(DB_NAME).collection('executions');
-        const deleteResult = await collection.deleteOne({ taskId: id });
-        if (deleteResult.deletedCount === 0) return reply.status(404).send({ error: 'Not found' });
+        await collection.deleteOne({ taskId: id });
         return { status: 'Deleted successfully' };
     } catch (error) {
         return reply.status(500).send({ error: 'Failed to delete' });
@@ -140,40 +146,25 @@ app.delete('/executions/:id', async (request, reply) => {
 
 app.get('/tests-structure', async (request, reply) => {
     const testsPath = '/app/tests-source';
-    
     try {
-        if (!fs.existsSync(testsPath)) {
-            return reply.send([]);
-        }
-
+        if (!fs.existsSync(testsPath)) return reply.send([]);
         const items = fs.readdirSync(testsPath, { withFileTypes: true });
-        
-        const folders = items
-            .filter(item => item.isDirectory())
-            .map(item => item.name);
-
+        const folders = items.filter(item => item.isDirectory()).map(item => item.name);
         return reply.send(folders);
     } catch (error) {
-        app.log.error(error);
         return reply.send([]);
     }
 });
 
 const start = async () => {
   try {
-    console.log('Connecting to Infrastructure...');
     await rabbitMqService.connect();
     await connectToMongo();
-
-    // 4. Listen normally using Fastify's listen
-    // The plugin handles the HTTP server wrapping for Socket.io automatically
     await app.listen({ port: 3000, host: '0.0.0.0' });
     
     app.io.on('connection', (socket) => {
-        app.log.info('📺 Dashboard connected via Socket.io');
+        app.log.info('Dashboard connected');
     });
-
-    console.log('🚀 Producer & Socket.io running on port 3000');
   } catch (err) {
     app.log.error(err);
     process.exit(1);
