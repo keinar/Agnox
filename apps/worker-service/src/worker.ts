@@ -78,6 +78,7 @@ async function startWorker() {
 
             const container = await docker.createContainer({
                 Image: image,
+                Tty: true,
                 Cmd: command.split(' '),
                 Env: [
                     `BASE_URL=${config.baseUrl || process.env.BASE_URL}`,
@@ -105,8 +106,14 @@ async function startWorker() {
             // Stream and capture logs
             const logStream = await container.logs({ follow: true, stdout: true, stderr: true });
             
-            logStream.on('data', (chunk) => {
-                logsBuffer += chunk.toString();
+            logStream.on('data', (chunk: Buffer) => {
+                let logLine = chunk.toString();
+
+                const cleanLine = stripAnsi(logLine);
+                
+                logsBuffer += cleanLine;
+
+                sendLogToProducer(taskId, cleanLine).catch(() => { });
             });
 
             logStream.pipe(process.stdout);
@@ -116,12 +123,12 @@ async function startWorker() {
             const status = result.StatusCode === 0 ? 'PASSED' : 'FAILED';
 
             const endTime = new Date();
-            const updateData = { 
-                taskId, 
-                status, 
-                endTime, 
+            const updateData = {
+                taskId,
+                status,
+                endTime,
                 output: logsBuffer, // Send all captured logs to dashboard
-                reportsBaseUrl: currentReportsBaseUrl 
+                reportsBaseUrl: currentReportsBaseUrl
             };
 
             await executionsCollection.updateOne({ taskId }, { $set: updateData });
@@ -130,12 +137,12 @@ async function startWorker() {
 
         } catch (error: any) {
             console.error(`❌ Container orchestration failure for task ${taskId}:`, error.message);
-            const errorData = { 
-                taskId, 
-                status: 'ERROR', 
-                error: error.message, 
+            const errorData = {
+                taskId,
+                status: 'ERROR',
+                error: error.message,
                 output: logsBuffer, // Send logs captured before the crash
-                endTime: new Date() 
+                endTime: new Date()
             };
             await executionsCollection.updateOne({ taskId }, { $set: errorData });
             await notifyProducer(errorData);
@@ -143,6 +150,23 @@ async function startWorker() {
             channel!.ack(msg);
         }
     });
+}
+
+function stripAnsi(text: string) {
+    return text.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
+}
+
+async function sendLogToProducer(taskId: string, log: string) {
+    const PRODUCER_URL = process.env.PRODUCER_URL || 'http://producer:3000';
+    try {
+        await fetch(`${PRODUCER_URL}/executions/log`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ taskId, log })
+        });
+    } catch (e) {
+        // We don't want to crash the worker if log streaming fails
+    }
 }
 
 async function pullImage(image: string) {

@@ -56,6 +56,16 @@ app.post('/executions/update', async (request, reply) => {
     return { status: 'broadcasted' };
 });
 
+app.post('/executions/log', async (request, reply) => {
+    const { taskId, log } = request.body as { taskId: string; log: string };
+    
+    // Broadcast the log specifically to the dashboard
+    // We use a specific event name 'execution-log'
+    app.io.emit('execution-log', { taskId, log });
+
+    return { status: 'ok' };
+});
+
 async function connectToMongo() {
     try {
         dbClient = new MongoClient(MONGO_URI);

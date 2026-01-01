@@ -50,6 +50,24 @@ export const useExecutions = () => {
             });
         });
 
+        // Real-time log streaming listener
+        socket.on('execution-log', (data: { taskId: string; log: string }) => {
+            queryClient.setQueryData(['executions'], (oldData: Execution[] | undefined) => {
+                if (!oldData) return [];
+                
+                return oldData.map(exec => {
+                    if (exec.taskId === data.taskId) {
+                        return {
+                            ...exec,
+                            // Append the new log chunk to the existing output
+                            output: (exec.output || '') + data.log
+                        };
+                    }
+                    return exec;
+                });
+            });
+        });
+
         return () => {
             socket.disconnect();
         };
