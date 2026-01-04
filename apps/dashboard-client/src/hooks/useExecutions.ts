@@ -5,8 +5,8 @@ import { io } from 'socket.io-client';
 import type { Execution } from '../types';
 
 const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-const API_URL = isProduction 
-    ? 'https://api.automation.keinar.com' 
+const API_URL = isProduction
+    ? import.meta.env.VITE_API_URL
     : 'http://localhost:3000';
 
 const fetchExecutions = async (): Promise<Execution[]> => {
@@ -20,10 +20,10 @@ const fetchExecutions = async (): Promise<Execution[]> => {
 export const useExecutions = () => {
     const queryClient = useQueryClient();
 
-    const { 
-        data: executions = [], 
-        isLoading: loading, 
-        error 
+    const {
+        data: executions = [],
+        isLoading: loading,
+        error
     } = useQuery({
         queryKey: ['executions'],
         queryFn: fetchExecutions,
@@ -39,7 +39,7 @@ export const useExecutions = () => {
                 if (!oldData) return [updatedTask as Execution];
 
                 const index = oldData.findIndex(ex => ex.taskId === updatedTask.taskId);
-                
+
                 if (index !== -1) {
                     const newData = [...oldData];
                     newData[index] = { ...newData[index], ...updatedTask };
@@ -54,7 +54,7 @@ export const useExecutions = () => {
         socket.on('execution-log', (data: { taskId: string; log: string }) => {
             queryClient.setQueryData(['executions'], (oldData: Execution[] | undefined) => {
                 if (!oldData) return [];
-                
+
                 return oldData.map(exec => {
                     if (exec.taskId === data.taskId) {
                         return {
@@ -79,9 +79,9 @@ export const useExecutions = () => {
         queryClient.setQueryData(['executions'], updater);
     };
 
-    return { 
-        executions, 
-        loading, 
+    return {
+        executions,
+        loading,
         error: errorMessage,
         setExecutions: setExecutionsManual
     };

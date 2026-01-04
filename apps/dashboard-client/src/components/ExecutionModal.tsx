@@ -16,7 +16,7 @@ interface ExecutionModalProps {
 
 export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose, onSubmit, availableFolders }) => {
     const [environment, setEnvironment] = useState('development'); 
-    const [baseUrl, setBaseUrl] = useState('https://photo-gallery.keinar.com/');
+    const [baseUrl, setBaseUrl] = useState(import.meta.env.BASE_URL);
     const [selectedFolder, setSelectedFolder] = useState('all');
     const [showAdvanced, setShowAdvanced] = useState(false);
     
