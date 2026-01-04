@@ -1,49 +1,46 @@
 import amqp, { Channel, ConsumeMessage } from 'amqplib';
 import { MongoClient } from 'mongodb';
-import { exec } from 'child_process';
-import util from 'util';
+import Docker from 'dockerode';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as tar from 'tar-fs';
+import Redis from 'ioredis';
 
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
-const execPromise = util.promisify(exec);
+const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 
 const MONGO_URI = process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb://localhost:27017';
 const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
 const DB_NAME = 'automation_platform';
 const COLLECTION_NAME = 'executions';
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+
+async function updatePerformanceMetrics(testName: string, durationMs: number) {
+    const key = `metrics:test:${testName}`;
+    await redis.lpush(key, durationMs);
+    await redis.ltrim(key, 0, 9);
+    console.log(`[Redis] Updated metrics for ${testName}. Duration: ${durationMs}ms`);
+}
 
 async function startWorker() {
-    let connection: Awaited<ReturnType<typeof amqp.connect>> | null = null;
+    let connection: any = null;
     let channel: Channel | null = null;
     let mongoClient: MongoClient | null = null;
 
     try {
-        console.log(`👷 Worker connecting to Mongo: ${MONGO_URI}`);
         mongoClient = new MongoClient(MONGO_URI);
         await mongoClient.connect();
-        console.log('Connected to MongoDB');
+        console.log('👷 Worker: Connected to MongoDB');
 
-        let retries = 5;
-        while (retries > 0) {
-            try {
-                console.log(`👷 Worker connecting to RabbitMQ at ${RABBITMQ_URL}... (${retries} attempts left)`);
-                connection = await amqp.connect(RABBITMQ_URL);
-                channel = await connection.createChannel();
-                await channel.assertQueue('test_queue', { durable: true });
-                await channel?.prefetch(1);
-                console.log('Worker connected to RabbitMQ and waiting for messages...')
-                break;
-            } catch (error) {
-                console.error('Failed to connect to RabbitMQ', error);
-                retries--;
-                await new Promise(res => setTimeout(res, 5000));
-            }
-        }
+        connection = await amqp.connect(RABBITMQ_URL);
+        channel = await connection.createChannel();
+        await channel.assertQueue('test_queue', { durable: true });
+        await channel.prefetch(1);
+        console.log('👷 Worker: Connected to RabbitMQ, waiting for jobs...');
     } catch (error) {
-        console.error('Critical Infrastructure Failure:', error);
+        console.error('Critical Failure:', error);
         process.exit(1);
     }
 
@@ -52,167 +49,189 @@ async function startWorker() {
     const db = mongoClient.db(DB_NAME);
     const executionsCollection = db.collection(COLLECTION_NAME);
 
-    console.log('Worker is ready to process messages.');
-
     channel.consume('test_queue', async (msg: ConsumeMessage | null) => {
-        if (msg) {
-            const content = msg.content.toString();
-            const task = JSON.parse(content);
-            const taskId = task.taskId || 'unknown-task';
-            
-            const reportsDir = process.env.REPORTS_DIR || path.join(process.cwd(), 'test-results');
-            const baseTaskDir = path.join(reportsDir, taskId);
-            const finalAllureResultsDir = path.join(baseTaskDir, 'allure-results');
-            const finalAllureReportDir = path.join(baseTaskDir, 'allure-report');
-            const finalHtmlReportDir = path.join(baseTaskDir, 'playwright-report');
-            const outputDir = path.join(baseTaskDir, 'raw-assets');
+        if (!msg) return;
 
-            const localAllureResults = path.join(process.cwd(), 'allure-results');
-            const localHtmlReport = path.join(process.cwd(), 'playwright-report');
+        const task = JSON.parse(msg.content.toString());
+        const { taskId, image, command, config } = task;
 
-            console.log('------------------------------------------------');
-            console.log(`📥 Processing Task: ${taskId}`);
+        const reportsDir = process.env.REPORTS_DIR || path.join(process.cwd(), 'test-results');
+        const baseTaskDir = path.join(reportsDir, taskId);
+
+        if (!fs.existsSync(baseTaskDir)) fs.mkdirSync(baseTaskDir, { recursive: true });
+
+        const startTime = new Date();
+        const currentReportsBaseUrl = process.env.PUBLIC_API_URL || 'http://localhost:3000';
+
+        // Notify start (DB update)
+        await executionsCollection.updateOne(
+            { taskId },
+            { $set: { status: 'RUNNING', startTime, config, reportsBaseUrl: currentReportsBaseUrl } },
+            { upsert: true }
+        );
+
+        // Notify start (Socket broadcast - with full details for instant UI update)
+        await notifyProducer({ 
+            taskId, 
+            status: 'RUNNING', 
+            startTime,
+            image,
+            command,
+            config,
+            reportsBaseUrl: currentReportsBaseUrl 
+        });
+
+        let logsBuffer = "";
+        let container: any = null;
+
+        try {
+            console.log(`🚀 Orchestrating container for task: ${taskId} using image: ${image}`);
 
             try {
-                if (fs.existsSync(localAllureResults)) fs.rmSync(localAllureResults, { recursive: true, force: true });
-                if (fs.existsSync(localHtmlReport)) fs.rmSync(localHtmlReport, { recursive: true, force: true });
-            } catch (e) { }
+                console.log(`Attempting to pull image: ${image}...`);
+                await pullImage(image);
+            } catch (pullError: any) {
+                console.warn(`⚠️ Could not pull image ${image}. Proceeding with local cache.`);
+            }
 
-            try {
-                fs.mkdirSync(outputDir, { recursive: true });
-            } catch (err) { }
-
-            const startTime = new Date();
-            // Get the URL from environment variable
-            const currentReportsBaseUrl = process.env.PUBLIC_API_URL || 'http://localhost:3000';
-
-            // IMPORTANT: Save the baseUrl immediately when starting
-            await executionsCollection.updateOne(
-                { taskId: taskId },
-                { 
-                    $set: { 
-                        status: 'RUNNING', 
-                        startTime: startTime, 
-                        config: task.config, 
-                        tests: task.tests,
-                        reportsBaseUrl: currentReportsBaseUrl 
-                    } 
+            container = await docker.createContainer({
+                Image: image,
+                Tty: true,
+                Cmd: ['/bin/sh', '-c', command],
+                Env: [
+                    `BASE_URL=${config.baseUrl || process.env.BASE_URL}`,
+                    `TASK_ID=${taskId}`,
+                    `CI=true`,
+                    `MONGO_URI=${process.env.MONGO_URI || ''}`,
+                    `MONGODB_URL=${process.env.MONGO_URI || ''}`,
+                    `GEMINI_API_KEY=${process.env.GEMINI_API_KEY || ''}`,
+                    `ADMIN_USER=${process.env.ADMIN_USER || ''}`,
+                    `ADMIN_PASS=${process.env.ADMIN_PASS || ''}`,
+                    ...(Object.entries(config.envVars || {}).map(([k, v]) => `${k}=${v}`))
+                ],
+                HostConfig: {
+                    AutoRemove: false // CRITICAL: Must be false so we can copy files after exit
                 },
-                { upsert: true }
-            );
-
-            await notifyProducer({
-                taskId,
-                status: 'RUNNING',
-                startTime: startTime,
-                tests: task.tests,
-                reportsBaseUrl: currentReportsBaseUrl
+                WorkingDir: '/app'
             });
 
-            try {
-                const testPaths = task.tests.join(' ');
-                const command = `npx playwright test ${testPaths} --output="${outputDir}" -c playwright.config.ts`;
-                console.log(`Executing command: ${command}`);
+            await container.start();
 
-                const envVars = {
-                    ...process.env,
-                    BASE_URL: task.config.baseUrl || process.env.BASE_URL,
-                    CI: 'true'
-                };
+            // Logs streaming setup
+            const logStream = await container.logs({ follow: true, stdout: true, stderr: true });
+            
+            // Pipe logs to worker console (Restored feature)
+            logStream.pipe(process.stdout);
 
-                const { stdout } = await execPromise(command, { env: envVars });
+            logStream.on('data', (chunk: Buffer) => {
+                let logLine = chunk.toString();
+                const cleanLine = stripAnsi(logLine);
+                logsBuffer += cleanLine;
+                sendLogToProducer(taskId, cleanLine).catch(() => { });
+            });
 
-                console.log('🚚 Moving reports to task directory...');
-
-                // 1. Allure Results
-                if (fs.existsSync(localAllureResults)) {
-                    try {
-                        if (!fs.existsSync(finalAllureResultsDir)) fs.mkdirSync(finalAllureResultsDir, { recursive: true });
-                        const files = fs.readdirSync(localAllureResults);
-                        for (const file of files) {
-                            fs.copyFileSync(path.join(localAllureResults, file), path.join(finalAllureResultsDir, file));
-                            fs.unlinkSync(path.join(localAllureResults, file));
-                        }
-                        await execPromise(`npx allure generate "${finalAllureResultsDir}" -o "${finalAllureReportDir}" --clean`);
-                    } catch (err) {
-                        console.error('Failed to process Allure reports:', err);
-                    }
-                }
-
-                // 2. Playwright HTML
-                if (fs.existsSync(localHtmlReport)) {
-                    try {
-                        if (!fs.existsSync(finalHtmlReportDir)) fs.mkdirSync(finalHtmlReportDir, { recursive: true });
-                        fs.cpSync(localHtmlReport, finalHtmlReportDir, { recursive: true, force: true });
-                        fs.rmSync(localHtmlReport, { recursive: true, force: true });
-                    } catch (err) {
-                        console.error('Failed to move Playwright HTML report:', err);
-                    }
-                }
-
-                // 3. Permissions
+            // Wait for execution to finish
+            const result = await container.wait();
+            const status = result.StatusCode === 0 ? 'PASSED' : 'FAILED';
+            const duration = new Date().getTime() - startTime.getTime();
+            
+            console.log(`📦 Copying artifacts from container to ${baseTaskDir}...`);
+            const copyFolder = async (containerPath: string) => {
                 try {
-                    await execPromise(`chmod -R 755 "${baseTaskDir}"`);
-                } catch (e) { }
+                    const stream = await container.getArchive({ path: containerPath });
+                    
+                    const extract = tar.extract(baseTaskDir); 
+                    stream.pipe(extract);
+                    
+                    await new Promise((resolve, reject) => {
+                        extract.on('finish', resolve);
+                        extract.on('error', reject);
+                    });
+                    console.log(`   ✅ Copied ${containerPath}`);
+                } catch (e) {
+                    console.log(`   ⚠️ Could not copy ${containerPath} (might not exist)`);
+                }
+            };
 
-                const passData = { 
-                    taskId, 
-                    status: 'PASSED', 
-                    endTime: new Date(), 
-                    output: stdout, 
-                    reportsBaseUrl: currentReportsBaseUrl 
-                };
-                console.log('Tests Passed!');
-                await executionsCollection.updateOne({ taskId }, { $set: passData });
-                await notifyProducer(passData);
+            await copyFolder('/app/playwright-report');
 
-            } catch (error: any) {
-                console.error('Tests Failed');
-                
+            await copyFolder('/app/allure-results');
+
+            await copyFolder('/app/allure-report');
+
+            await updatePerformanceMetrics(image, duration);
+
+            const endTime = new Date();
+            const updateData = {
+                taskId,
+                status,
+                endTime,
+                output: logsBuffer,
+                reportsBaseUrl: currentReportsBaseUrl,
+                image,
+                command
+            };
+
+            await executionsCollection.updateOne({ taskId }, { $set: updateData });
+            await notifyProducer(updateData);
+            console.log(`✅ Task ${taskId} finished with status: ${status}`);
+
+        } catch (error: any) {
+            console.error(`❌ Container orchestration failure for task ${taskId}:`, error.message);
+            const errorData = {
+                taskId,
+                status: 'ERROR',
+                error: error.message,
+                output: logsBuffer,
+                endTime: new Date()
+            };
+            await executionsCollection.updateOne({ taskId }, { $set: errorData });
+            await notifyProducer(errorData);
+        } finally {
+            // Manual cleanup since AutoRemove is false
+            if (container) {
                 try {
-                    if (fs.existsSync(localAllureResults)) {
-                        if (!fs.existsSync(finalAllureResultsDir)) fs.mkdirSync(finalAllureResultsDir, { recursive: true });
-                        fs.readdirSync(localAllureResults).forEach(file => {
-                            fs.copyFileSync(path.join(localAllureResults, file), path.join(finalAllureResultsDir, file));
-                            fs.unlinkSync(path.join(localAllureResults, file));
-                        });
-                        await execPromise(`npx allure generate "${finalAllureResultsDir}" -o "${finalAllureReportDir}" --clean`);
-                    }
-                    if (fs.existsSync(localHtmlReport)) {
-                         if (!fs.existsSync(finalHtmlReportDir)) fs.mkdirSync(finalHtmlReportDir, { recursive: true });
-                         fs.cpSync(localHtmlReport, finalHtmlReportDir, { recursive: true, force: true });
-                         fs.rmSync(localHtmlReport, { recursive: true, force: true });
-                    }
-                    await execPromise(`chmod -R 755 "${baseTaskDir}"`);
+                    await container.remove({ force: true });
                 } catch (e) { }
-
-                const failData = {
-                    taskId,
-                    status: 'FAILED',
-                    endTime: new Date(),
-                    error: error.stderr || error.stdout || error.message,
-                    reportsBaseUrl: currentReportsBaseUrl
-                };
-                
-                await executionsCollection.updateOne({ taskId }, { $set: failData });
-                await notifyProducer(failData);
-            } finally {
-                channel!.ack(msg);
-                console.log('------------------------------------------------');
             }
+            channel!.ack(msg);
         }
     });
 }
 
-async function notifyProducer(executionData: any) {
+function stripAnsi(text: string) {
+    return text.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
+}
+
+async function sendLogToProducer(taskId: string, log: string) {
+    const PRODUCER_URL = process.env.PRODUCER_URL || 'http://producer:3000';
+    try {
+        await fetch(`${PRODUCER_URL}/executions/log`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ taskId, log })
+        });
+    } catch (e) { }
+}
+
+async function pullImage(image: string) {
+    return new Promise((resolve, reject) => {
+        docker.pull(image, (err: any, stream: any) => {
+            if (err) return reject(err);
+            docker.modem.followProgress(stream, (err, res) => err ? reject(err) : resolve(res));
+        });
+    });
+}
+
+async function notifyProducer(data: any) {
     const PRODUCER_URL = process.env.PRODUCER_URL || 'http://producer:3000';
     try {
         await fetch(`${PRODUCER_URL}/executions/update`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(executionData)
+            body: JSON.stringify(data)
         });
-    } catch (error: any) {
+    } catch (e) {
         console.error('[Worker] Failed to notify Producer');
     }
 }

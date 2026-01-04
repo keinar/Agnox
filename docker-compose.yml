@@ -16,6 +16,14 @@ services:
     networks:
       - app-network
 
+  redis:
+    image: redis:alpine
+    container_name: automation-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
   producer:
     build:
       context: .
@@ -24,7 +32,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./test-results:/app/reports
+      - test_results:/app/reports
       - ./apps/worker-service/tests:/app/tests-source:ro
     environment:
       - PORT=3000
@@ -32,6 +40,7 @@ services:
       - MONGO_URI=${MONGO_URI}
       - MONGODB_URL=${MONGO_URI}
       - REPORTS_DIR=/app/reports
+      - REDIS_URL=redis://redis:6379
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -48,15 +57,16 @@ services:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
       - MONGO_URI=${MONGO_URI}
       - MONGODB_URL=${MONGO_URI}
+      - PRODUCER_URL=http://producer:3000
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - BASE_URL=${BASE_URL}
-      - ADMIN_USER=${ADMIN_USER}
-      - ADMIN_PASS=${ADMIN_PASS}
       - CI=true
       - REPORTS_DIR=/app/reports
       - PUBLIC_API_URL=http://localhost:3000
+      - REDIS_URL=redis://redis:6379
     volumes:
-      - ./test-results:/app/reports
+      - /var/run/docker.sock:/var/run/docker.sock
+      - test_results:/app/reports
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -80,3 +90,7 @@ services:
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  test_results:
+    driver: local

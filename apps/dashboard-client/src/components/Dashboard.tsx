@@ -28,17 +28,21 @@ export const Dashboard = () => {
         setExpandedRowId(expandedRowId === id ? null : id);
     };
 
-    const handleRunTest = async (formData: { folder: string; environment: string; baseUrl: string }) => {
+    const handleRunTest = async (formData: { 
+        folder: string; 
+        environment: string; 
+        baseUrl: string;
+        image: string;
+        command: string;
+    }) => {
         try {
-            let testsToRun: string[] = [];
-            if (formData.folder === 'all') {
-                testsToRun = ['tests'];
-            } else {
-                testsToRun = [`tests/${formData.folder}`];
-            }
+            // Mapping UI selection to internal test paths array
+            const testsToRun = formData.folder === 'all' ? ['tests'] : [`tests/${formData.folder}`];
 
             const payload = {
                 taskId: `run-${Date.now()}`,
+                image: formData.image,    // New agnostic field
+                command: formData.command, // New agnostic field
                 tests: testsToRun,
                 config: {
                     environment: formData.environment,
@@ -60,7 +64,7 @@ export const Dashboard = () => {
             }
             
             const data = await response.json();
-            console.log('Success:', data.taskId);
+            console.log('Job Queued:', data.taskId);
             setIsModalOpen(false);
 
         } catch (err: any) {
