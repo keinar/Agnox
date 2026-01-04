@@ -93,3 +93,4 @@ networks:
 
 volumes:
   test_results:
+    driver: local

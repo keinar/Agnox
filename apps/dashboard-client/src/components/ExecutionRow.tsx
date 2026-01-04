@@ -142,10 +142,19 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
     };
 
     const getBaseUrl = () => {
-        if (execution.reportsBaseUrl) return execution.reportsBaseUrl;
-        if (import.meta.env.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL;
-        const isProductionDomain = window.location.hostname.includes('automation.keinar.com');
-        return isProductionDomain ? 'https://api.automation.keinar.com' : 'http://localhost:3000';
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return 'http://localhost:3000';
+        }
+
+        let url = execution.reportsBaseUrl || import.meta.env.VITE_API_BASE_URL;
+        
+        if (!url) {
+            url = window.location.hostname.includes('automation.keinar.com') 
+                ? 'https://api.automation.keinar.com' 
+                : 'http://localhost:3000';
+        }
+
+        return url.replace(/\/$/, '');
     };
 
     const baseUrl = getBaseUrl();
