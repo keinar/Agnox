@@ -1,62 +1,4 @@
 services:
-  producer:
-    build:
-      context: .
-      dockerfile: apps/producer-service/Dockerfile
-    container_name: automation-producer
-    restart: always
-    volumes:
-      - test_results:/app/reports
-      - ./apps/worker-service/tests:/app/tests-source:ro
-    environment:
-      - PORT=3000
-      - RABBITMQ_URL=amqp://rabbitmq
-      - MONGO_URI=${MONGO_URI}
-      - MONGODB_URL=${MONGO_URI}
-      - REPORTS_DIR=/app/reports
-    depends_on:
-      - rabbitmq
-    networks:
-      - app-network
-
-  worker:
-    build:
-      context: .
-      dockerfile: apps/worker-service/Dockerfile
-    container_name: automation-worker
-    restart: always
-    environment:
-      - RABBITMQ_URL=amqp://rabbitmq
-      - MONGO_URI=${MONGO_URI}
-      - MONGODB_URL=${MONGO_URI}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - BASE_URL=${BASE_URL}
-      - ADMIN_USER=${ADMIN_USER}
-      - ADMIN_PASS=${ADMIN_PASS}
-      - CI=true
-      - REPORTS_DIR=/app/reports
-      - PUBLIC_API_URL=${PUBLIC_API_URL}
-    volumes:
-      - test_results:/app/reports
-    depends_on:
-      - rabbitmq
-      - producer
-    networks:
-      - app-network
-
-  dashboard:
-    build:
-      context: .
-      dockerfile: apps/dashboard-client/Dockerfile
-      args:
-        - VITE_API_URL=${VITE_API_URL}
-    container_name: automation-dashboard
-    restart: always
-    depends_on:
-      - producer
-    networks:
-      - app-network
-
   # -------------------------
   # Infrastructure
   # -------------------------
@@ -86,9 +28,86 @@ services:
     networks:
       - app-network
 
+  redis:
+    image: redis:alpine
+    container_name: automation-redis
+    restart: always
+    expose:
+      - "6379"
+    networks:
+      - app-network
+
+  # -------------------------
+  # App Services
+  # -------------------------
+  producer:
+    build:
+      context: .
+      dockerfile: apps/producer-service/Dockerfile
+    container_name: automation-producer
+    restart: always
+    volumes:
+      - test_results:/app/reports
+      - ./apps/worker-service/tests:/app/tests-source:ro
+    environment:
+      - PORT=3000
+      - RABBITMQ_URL=amqp://rabbitmq
+      - MONGO_URI=${MONGO_URI}
+      - MONGODB_URL=${MONGO_URI}
+      - REPORTS_DIR=/app/reports
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - rabbitmq
+      - redis
+    networks:
+      - app-network
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker-service/Dockerfile
+    container_name: automation-worker
+    restart: always
+    environment:
+      - RABBITMQ_URL=amqp://rabbitmq
+      - MONGO_URI=${MONGO_URI}
+      - MONGODB_URL=${MONGO_URI}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - BASE_URL=${BASE_URL}
+      - PRODUCER_URL=http://producer:3000
+      - ADMIN_USER=${ADMIN_USER}
+      - ADMIN_PASS=${ADMIN_PASS}
+      - CI=true
+      - REPORTS_DIR=/app/reports
+      - PUBLIC_API_URL=${PUBLIC_API_URL}
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - test_results:/app/reports
+      - /var/run/docker.sock:/var/run/docker.sock 
+    depends_on:
+      - rabbitmq
+      - producer
+      - redis
+    networks:
+      - app-network
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: apps/dashboard-client/Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL}
+    container_name: automation-dashboard
+    restart: always
+    depends_on:
+      - producer
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge
 
 volumes:
   test_results:
+    driver: local

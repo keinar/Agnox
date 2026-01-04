@@ -4,6 +4,7 @@ import Docker from 'dockerode';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as tar from 'tar-fs';
 import Redis from 'ioredis';
 
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
@@ -18,10 +19,8 @@ const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
 async function updatePerformanceMetrics(testName: string, durationMs: number) {
     const key = `metrics:test:${testName}`;
-    
-    const history = await redis.lpush(key, durationMs);
+    await redis.lpush(key, durationMs);
     await redis.ltrim(key, 0, 9);
-    
     console.log(`[Redis] Updated metrics for ${testName}. Duration: ${durationMs}ms`);
 }
 
@@ -56,7 +55,6 @@ async function startWorker() {
         const task = JSON.parse(msg.content.toString());
         const { taskId, image, command, config } = task;
 
-        // Setup results directory on the host
         const reportsDir = process.env.REPORTS_DIR || path.join(process.cwd(), 'test-results');
         const baseTaskDir = path.join(reportsDir, taskId);
 
@@ -65,13 +63,14 @@ async function startWorker() {
         const startTime = new Date();
         const currentReportsBaseUrl = process.env.PUBLIC_API_URL || 'http://localhost:3000';
 
-        // Initialize execution status in DB
+        // Notify start (DB update)
         await executionsCollection.updateOne(
             { taskId },
             { $set: { status: 'RUNNING', startTime, config, reportsBaseUrl: currentReportsBaseUrl } },
             { upsert: true }
         );
 
+        // Notify start (Socket broadcast - with full details for instant UI update)
         await notifyProducer({ 
             taskId, 
             status: 'RUNNING', 
@@ -79,15 +78,15 @@ async function startWorker() {
             image,
             command,
             config,
-            reportsBaseUrl: currentReportsBaseUrl
+            reportsBaseUrl: currentReportsBaseUrl 
         });
 
-        let logsBuffer = ""; // Capture container output
+        let logsBuffer = "";
+        let container: any = null;
 
         try {
             console.log(`🚀 Orchestrating container for task: ${taskId} using image: ${image}`);
 
-            // Attempt to pull the image, but continue if it fails (allows local images)
             try {
                 console.log(`Attempting to pull image: ${image}...`);
                 await pullImage(image);
@@ -95,62 +94,81 @@ async function startWorker() {
                 console.warn(`⚠️ Could not pull image ${image}. Proceeding with local cache.`);
             }
 
-            const container = await docker.createContainer({
+            container = await docker.createContainer({
                 Image: image,
                 Tty: true,
-                Cmd: command.split(' '),
+                Cmd: ['/bin/sh', '-c', command],
                 Env: [
                     `BASE_URL=${config.baseUrl || process.env.BASE_URL}`,
                     `TASK_ID=${taskId}`,
                     `CI=true`,
-                    // Inject Infrastructure Variables from the Manager to the Test Container
                     `MONGO_URI=${process.env.MONGO_URI || ''}`,
                     `MONGODB_URL=${process.env.MONGO_URI || ''}`,
                     `GEMINI_API_KEY=${process.env.GEMINI_API_KEY || ''}`,
                     `ADMIN_USER=${process.env.ADMIN_USER || ''}`,
                     `ADMIN_PASS=${process.env.ADMIN_PASS || ''}`,
-                    // Inject any custom vars sent from the Dashboard
                     ...(Object.entries(config.envVars || {}).map(([k, v]) => `${k}=${v}`))
                 ],
                 HostConfig: {
-                    // Map the task directory to the container's results folder
-                    Binds: [`${baseTaskDir}:/app/results`],
-                    AutoRemove: true
+                    AutoRemove: false // CRITICAL: Must be false so we can copy files after exit
                 },
                 WorkingDir: '/app'
             });
 
             await container.start();
 
-            // Stream and capture logs
+            // Logs streaming setup
             const logStream = await container.logs({ follow: true, stdout: true, stderr: true });
             
+            // Pipe logs to worker console (Restored feature)
+            logStream.pipe(process.stdout);
+
             logStream.on('data', (chunk: Buffer) => {
                 let logLine = chunk.toString();
-
                 const cleanLine = stripAnsi(logLine);
-                
                 logsBuffer += cleanLine;
-
                 sendLogToProducer(taskId, cleanLine).catch(() => { });
             });
 
-            logStream.pipe(process.stdout);
-
-            // Wait for container to finish execution
+            // Wait for execution to finish
             const result = await container.wait();
             const status = result.StatusCode === 0 ? 'PASSED' : 'FAILED';
             const duration = new Date().getTime() - startTime.getTime();
+            
+            console.log(`📦 Copying artifacts from container to ${baseTaskDir}...`);
+            const copyFolder = async (containerPath: string) => {
+                try {
+                    const stream = await container.getArchive({ path: containerPath });
+                    
+                    const extract = tar.extract(baseTaskDir); 
+                    stream.pipe(extract);
+                    
+                    await new Promise((resolve, reject) => {
+                        extract.on('finish', resolve);
+                        extract.on('error', reject);
+                    });
+                    console.log(`   ✅ Copied ${containerPath}`);
+                } catch (e) {
+                    console.log(`   ⚠️ Could not copy ${containerPath} (might not exist)`);
+                }
+            };
+
+            await copyFolder('/app/playwright-report');
+
+            await copyFolder('/app/allure-results');
+
+            await copyFolder('/app/allure-report');
+
             await updatePerformanceMetrics(image, duration);
 
             const endTime = new Date();
-            const updateData = { 
-                taskId, 
-                status, 
-                endTime, 
-                output: logsBuffer, 
+            const updateData = {
+                taskId,
+                status,
+                endTime,
+                output: logsBuffer,
                 reportsBaseUrl: currentReportsBaseUrl,
-                image, 
+                image,
                 command
             };
 
@@ -164,12 +182,18 @@ async function startWorker() {
                 taskId,
                 status: 'ERROR',
                 error: error.message,
-                output: logsBuffer, // Send logs captured before the crash
+                output: logsBuffer,
                 endTime: new Date()
             };
             await executionsCollection.updateOne({ taskId }, { $set: errorData });
             await notifyProducer(errorData);
         } finally {
+            // Manual cleanup since AutoRemove is false
+            if (container) {
+                try {
+                    await container.remove({ force: true });
+                } catch (e) { }
+            }
             channel!.ack(msg);
         }
     });
@@ -187,9 +211,7 @@ async function sendLogToProducer(taskId: string, log: string) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ taskId, log })
         });
-    } catch (e) {
-        // We don't want to crash the worker if log streaming fails
-    }
+    } catch (e) { }
 }
 
 async function pullImage(image: string) {

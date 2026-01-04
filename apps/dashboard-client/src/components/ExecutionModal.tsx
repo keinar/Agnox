@@ -22,15 +22,16 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
     
     // Agnostic defaults
     const [image, setImage] = useState('local-playwright-tests:latest');
-    const [command, setCommand] = useState('npx playwright test');
+    const [command, setCommand] = useState('npx playwright test; npx allure generate allure-results --clean -o allure-report');
 
-    // Update command automatically when folder changes, 
-    // but allow manual override in advanced mode
+    // Update command automatically when folder changes
     useEffect(() => {
+        const allureCommand = 'npx allure generate allure-results --clean -o allure-report';
+        
         if (selectedFolder === 'all') {
-            setCommand('npx playwright test');
+            setCommand(`npx playwright test; ${allureCommand}`);
         } else {
-            setCommand(`npx playwright test tests/${selectedFolder}`);
+            setCommand(`npx playwright test tests/${selectedFolder}; ${allureCommand}`);
         }
     }, [selectedFolder]);
 
