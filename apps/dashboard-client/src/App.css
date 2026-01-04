@@ -294,6 +294,47 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
   line-height: 1.5;
 }
 
+.source-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.perf-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.perf-badge.slow {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.perf-badge.fast {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.image-name {
+    font-family: monospace;
+    color: #94a3b8;
+}
+
+/* Tooltip style is handled by the browser 'title' attribute, 
+   but this makes the badge look clickable/interactive */
+.perf-badge:hover {
+    cursor: help;
+    filter: brightness(1.2);
+}
+
 @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

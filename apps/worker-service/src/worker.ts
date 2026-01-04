@@ -4,6 +4,7 @@ import Docker from 'dockerode';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
+import Redis from 'ioredis';
 
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
@@ -13,6 +14,16 @@ const MONGO_URI = process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb:/
 const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
 const DB_NAME = 'automation_platform';
 const COLLECTION_NAME = 'executions';
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+
+async function updatePerformanceMetrics(testName: string, durationMs: number) {
+    const key = `metrics:test:${testName}`;
+    
+    const history = await redis.lpush(key, durationMs);
+    await redis.ltrim(key, 0, 9);
+    
+    console.log(`[Redis] Updated metrics for ${testName}. Duration: ${durationMs}ms`);
+}
 
 async function startWorker() {
     let connection: any = null;
@@ -61,7 +72,15 @@ async function startWorker() {
             { upsert: true }
         );
 
-        await notifyProducer({ taskId, status: 'RUNNING', startTime });
+        await notifyProducer({ 
+            taskId, 
+            status: 'RUNNING', 
+            startTime,
+            image,
+            command,
+            config,
+            reportsBaseUrl: currentReportsBaseUrl
+        });
 
         let logsBuffer = ""; // Capture container output
 
@@ -121,14 +140,18 @@ async function startWorker() {
             // Wait for container to finish execution
             const result = await container.wait();
             const status = result.StatusCode === 0 ? 'PASSED' : 'FAILED';
+            const duration = new Date().getTime() - startTime.getTime();
+            await updatePerformanceMetrics(image, duration);
 
             const endTime = new Date();
-            const updateData = {
-                taskId,
-                status,
-                endTime,
-                output: logsBuffer, // Send all captured logs to dashboard
-                reportsBaseUrl: currentReportsBaseUrl
+            const updateData = { 
+                taskId, 
+                status, 
+                endTime, 
+                output: logsBuffer, 
+                reportsBaseUrl: currentReportsBaseUrl,
+                image, 
+                command
             };
 
             await executionsCollection.updateOne({ taskId }, { $set: updateData });

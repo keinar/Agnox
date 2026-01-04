@@ -21,7 +21,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
     const [showAdvanced, setShowAdvanced] = useState(false);
     
     // Agnostic defaults
-    const [image, setImage] = useState('mcr.microsoft.com/playwright:v1.57.0-jammy');
+    const [image, setImage] = useState('local-playwright-tests:latest');
     const [command, setCommand] = useState('npx playwright test');
 
     // Update command automatically when folder changes, 
