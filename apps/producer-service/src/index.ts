@@ -9,6 +9,7 @@ import { TestExecutionRequestSchema } from '../../../packages/shared-types/index
 import fastifyStatic from '@fastify/static';
 import type { Server } from 'socket.io';
 import * as fs from 'fs';
+import Redis from 'ioredis';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -22,6 +23,7 @@ const app = fastify({ logger: true });
 
 const MONGO_URI = process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb://localhost:27017';
 const DB_NAME = 'automation_platform';
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
 let dbClient: MongoClient;
 
@@ -48,6 +50,37 @@ app.register(fastifyStatic, {
 
 app.get('/', async () => {
   return { message: 'Agnostic Producer Service is running!' };
+});
+
+/**
+ * GET Performance insights for a specific image/suite
+ */
+app.get('/metrics/:image', async (request, reply) => {
+    const { image } = request.params as { image: string };
+    const key = `metrics:test:${image}`;
+
+    try {
+        // Fetch last 10 durations
+        const durations = await redis.lrange(key, 0, -1);
+        
+        if (durations.length === 0) {
+            return { averageDuration: 0, status: 'NO_DATA' };
+        }
+
+        const numbers = durations.map(Number);
+        const sum = numbers.reduce((a, b) => a + b, 0);
+        const avg = sum / numbers.length;
+
+        return {
+            averageDuration: Math.round(avg),
+            lastRunDuration: numbers[0],
+            sampleSize: numbers.length,
+            // Senior insight: Is the last run significantly slower than average?
+            isRegression: numbers[0] > avg * 1.2 // 20% slower than usual
+        };
+    } catch (error) {
+        return reply.status(500).send({ error: 'Failed to fetch metrics' });
+    }
 });
 
 app.post('/executions/update', async (request, reply) => {
@@ -125,8 +158,12 @@ app.post('/execution-request', async (request, reply) => {
         
         app.io.emit('execution-updated', { 
             taskId, 
-            status: 'PENDING',
-            startTime
+            status: 'PENDING', 
+            startTime,
+            image,
+            command,
+            config,
+            tests: tests || []
         });
     }
 

@@ -16,6 +16,14 @@ services:
     networks:
       - app-network
 
+  redis:
+    image: redis:alpine
+    container_name: automation-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
   producer:
     build:
       context: .
@@ -32,6 +40,7 @@ services:
       - MONGO_URI=${MONGO_URI}
       - MONGODB_URL=${MONGO_URI}
       - REPORTS_DIR=/app/reports
+      - REDIS_URL=redis://redis:6379
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -54,6 +63,7 @@ services:
       - CI=true
       - REPORTS_DIR=/app/reports
       - PUBLIC_API_URL=http://localhost:3000
+      - REDIS_URL=redis://redis:6379
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - test_results:/app/reports
