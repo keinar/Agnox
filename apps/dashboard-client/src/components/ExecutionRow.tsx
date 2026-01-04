@@ -72,8 +72,8 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
     React.useEffect(() => {
         const isFinished = execution.status === 'PASSED' || execution.status === 'FAILED';
         if (isFinished && execution.image) {
-            const isProd = window.location.hostname.includes('automation.keinar.com');
-            const API_URL = isProd ? 'https://api.automation.keinar.com' : 'http://localhost:3000';
+            const isProd = window.location.hostname.includes('.com');
+            const API_URL = isProd ? import.meta.env.VITE_API_URL : 'http://localhost:3000';
             
             setTimeout(() => {
                 fetch(`${API_URL}/metrics/${encodeURIComponent(execution.image)}`)
@@ -133,10 +133,13 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
         if (execution.reportsBaseUrl) {
             return execution.reportsBaseUrl.replace(/\/$/, '');
         }
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            return 'http://localhost:3000';
+        const envBaseUrl = import.meta.env.VITE_API_URL;
+        if (envBaseUrl) {
+            return envBaseUrl.replace(/\/$/, '');
         }
-        return 'https://api.automation.keinar.com';
+        return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:3000'
+        : `https://api.${window.location.hostname}`;
     };
 
     const baseUrl = getBaseUrl();

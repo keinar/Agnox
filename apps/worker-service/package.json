@@ -5,18 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "tsx src/worker.ts",
-    "build": "tsc",
-    "test": "playwright test",
-    "test:headed": "playwright test --headed",
-    "test:ui": "playwright test tests/ui",
-    "test:api": "playwright test tests/api",
-    "test:visual": "playwright test tests/visual",
-    "test:ai": "playwright test tests/ai",
-    "test:data": "playwright test tests/data",
-    "test:e2e": "playwright test tests/e2e",
-    "test:lf": "npx playwright test --last-failed",
-    "allure:generate": "allure generate allure-results --clean -o allure-report",
-    "allure:open": "allure open allure-report"
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
