@@ -103,6 +103,13 @@ services:
       - producer
     networks:
       - app-network
+  
+  test-suite-builder:
+    build:
+      context: .
+      dockerfile: apps/worker-service/Dockerfile.test-suite
+    image: automation-test-suite:latest
+    entrypoint: ["echo", "Image built successfully"]
 
 networks:
   app-network:
