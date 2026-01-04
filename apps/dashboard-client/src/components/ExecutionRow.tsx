@@ -7,25 +7,21 @@ import { formatDistanceToNow, differenceInSeconds } from 'date-fns';
 
 
 interface ExecutionRowProps {
-
     execution: any;
-
     isExpanded: boolean;
-
     onToggle: () => void;
-
     onDelete: (id: string) => void;
-
 }
 
 
 
 const formatDateSafe = (dateString: string | Date | undefined) => {
-
     if (!dateString) return '-';
-
-    try { return new Date(dateString).toLocaleString(); } catch { return 'Invalid Date'; }
-
+    try { 
+        return new Date(dateString).toLocaleString(); 
+    } catch { 
+        return 'Invalid Date'; 
+    }
 };
 
 
@@ -34,7 +30,10 @@ const formatTimeAgo = (dateString: string | Date | undefined) => {
 
     if (!dateString) return '';
 
-    try { return formatDistanceToNow(new Date(dateString), { addSuffix: true }); } catch { return ''; }
+    try { 
+        return formatDistanceToNow(new Date(dateString), { addSuffix: true }); 
+    } catch { 
+        return ''; }
 
 };
 
@@ -47,33 +46,22 @@ const calculateDuration = (exec: any) => {
     if (exec.startTime && exec.endTime) {
 
         try {
-
             const start = new Date(exec.startTime);
-
             const end = new Date(exec.endTime);
-
             const seconds = differenceInSeconds(end, start);
-
             if (seconds < 60) return `${seconds}s`;
-
             const minutes = Math.floor(seconds / 60);
-
             const remainingSeconds = seconds % 60;
-
             return `${minutes}m ${remainingSeconds}s`;
-
         } catch (e) { return '-'; }
-
     }
-
     if (exec.status === 'RUNNING' && exec.startTime) {
-
-        try { return formatDistanceToNow(new Date(exec.startTime)).replace('about ', ''); } catch { return 'Running...'; }
-
+        try { 
+            return formatDistanceToNow(new Date(exec.startTime)).replace('about ', ''); 
+        } catch { 
+            return 'Running...'; }
     }
-
     return '-';
-
 };
 
 
@@ -142,19 +130,13 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
     };
 
     const getBaseUrl = () => {
+        if (execution.reportsBaseUrl) {
+            return execution.reportsBaseUrl.replace(/\/$/, '');
+        }
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             return 'http://localhost:3000';
         }
-
-        let url = execution.reportsBaseUrl || import.meta.env.VITE_API_BASE_URL;
-        
-        if (!url) {
-            url = window.location.hostname.includes('automation.keinar.com') 
-                ? 'https://api.automation.keinar.com' 
-                : 'http://localhost:3000';
-        }
-
-        return url.replace(/\/$/, '');
+        return 'https://api.automation.keinar.com';
     };
 
     const baseUrl = getBaseUrl();
