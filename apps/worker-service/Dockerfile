@@ -1,7 +1,6 @@
 # Use a lightweight Node image as this is only an orchestrator
 FROM node:20-slim
 
-# The manager needs to communicate with Docker, but doesn't need Playwright itself
 WORKDIR /app
 
 # Copy monorepo configuration

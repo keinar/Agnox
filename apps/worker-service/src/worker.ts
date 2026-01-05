@@ -100,29 +100,30 @@ async function startWorker() {
         let container: any = null;
 
         try {
-            console.log(`🚀 Orchestrating container for task: ${taskId} using image: ${image}`);
+            console.log(`Orchestrating container for task: ${taskId} using image: ${image}`);
 
             try {
                 console.log(`Attempting to pull image: ${image}...`);
                 await pullImage(image);
             } catch (pullError: any) {
-                console.warn(`⚠️ Could not pull image ${image}. Proceeding with local cache.`);
+                console.warn(`Could not pull image ${image}. Proceeding with local cache.`);
             }
 
-            const safeCommand = ['/bin/sh', '/app/entrypoint.sh', task.folder || 'all'];
             await ensureImageExists(image);
+            const agnosticCommand = ['/bin/sh', '/app/entrypoint.sh', task.folder || 'all'];
             container = await docker.createContainer({
                 Image: image,
                 Tty: true,
-                Cmd: safeCommand,
+                Cmd: agnosticCommand,
                 Env: [
                     `BASE_URL=${config.baseUrl || process.env.DEFAULT_BASE_URL}`,
                     `TASK_ID=${taskId}`,
                     `CI=true`,
+                    `FRAMEWORK_AGNOSTIC=true`,
                     ...(Object.entries(config.envVars || {}).map(([k, v]) => `${k}=${v}`))
                 ],
                 HostConfig: {
-                    AutoRemove: false // CRITICAL: Must be false so we can copy files after exit
+                    AutoRemove: false, // CRITICAL: Must be false so we can copy files after exit
                 },
                 WorkingDir: '/app'
             });
@@ -147,11 +148,10 @@ async function startWorker() {
             const status = result.StatusCode === 0 ? 'PASSED' : 'FAILED';
             const duration = new Date().getTime() - startTime.getTime();
 
-            console.log(`📦 Copying artifacts from container to ${baseTaskDir}...`);
-            const copyFolder = async (containerPath: string) => {
+            console.log(`Copying artifacts from container to ${baseTaskDir}...`);
+            const copyAndRenameFolder = async (containerPath: string, hostSubDir: string) => {
                 try {
                     const stream = await container.getArchive({ path: containerPath });
-
                     const extract = tar.extract(baseTaskDir);
                     stream.pipe(extract);
 
@@ -159,17 +159,31 @@ async function startWorker() {
                         extract.on('finish', resolve);
                         extract.on('error', reject);
                     });
-                    console.log(`   ✅ Copied ${containerPath}`);
+
+                    const originalFolderName = path.basename(containerPath);
+                    const fullPathOnHost = path.join(baseTaskDir, originalFolderName);
+                    const targetPathOnHost = path.join(baseTaskDir, hostSubDir);
+
+                    if (fs.existsSync(fullPathOnHost) && originalFolderName !== hostSubDir) {
+                        if (fs.existsSync(targetPathOnHost)) fs.rmSync(targetPathOnHost, { recursive: true });
+                        fs.renameSync(fullPathOnHost, targetPathOnHost);
+                        console.log(`Successfully mapped ${originalFolderName} to ${hostSubDir}`);
+                    }
                 } catch (e) {
-                    console.log(`   ⚠️ Could not copy ${containerPath} (might not exist)`);
                 }
             };
 
-            await copyFolder('/app/playwright-report');
+            const mappings = [
+                { path: '/app/playwright-report', alias: 'native-report' },
+                { path: '/app/pytest-report', alias: 'native-report' },
+                { path: '/app/mochawesome-report', alias: 'native-report' },
+                { path: '/app/allure-results', alias: 'allure-results' },
+                { path: '/app/allure-report', alias: 'allure-report' }
+            ];
 
-            await copyFolder('/app/allure-results');
-
-            await copyFolder('/app/allure-report');
+            for (const m of mappings) {
+                await copyAndRenameFolder(m.path, m.alias);
+            }
 
             await updatePerformanceMetrics(image, duration);
 

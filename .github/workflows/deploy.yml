@@ -6,10 +6,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Job 1: Quality Gate - Validates the code before deployment
+  # Job 1: Quality Gate
   quality-check:
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -29,7 +28,7 @@ jobs:
       - name: Linting
         run: npm run lint --if-present
 
-  # Job 2: Deployment - Runs only if quality-check passes
+  # Job 2: Deployment
   deploy:
     needs: quality-check
     runs-on: ubuntu-latest
@@ -41,34 +40,39 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd ~/playwright-full-stack-framework
+            cd ~/agnostic-automation-center
             
             git fetch origin main
             git reset --hard origin/main
             git clean -fd
             
-            echo "MONGODB_URL=${{ secrets.MONGO_URI }}" > .env
-            echo "MONGO_URI=${{ secrets.MONGO_URI }}" >> .env
-            echo "RABBITMQ_URL=${{ secrets.RABBITMQ_URL }}" >> .env
-            echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
-            echo "ADMIN_USER=${{ secrets.ADMIN_USER }}" >> .env
-            echo "ADMIN_PASS=${{ secrets.ADMIN_PASS }}" >> .env
-            echo "DEFAULT_TEST_IMAGE=${{ secrets.DEFAULT_TEST_IMAGE }}" >> .env
-            echo "DEFAULT_BASE_URL=${{ secrets.DEFAULT_BASE_URL }}" >> .env
-            echo "DEFAULT_TEST_FOLDER=${{ secrets.DEFAULT_TEST_FOLDER }}" >> .env
-            echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
-            echo "PUBLIC_API_URL=${{ secrets.PUBLIC_API_URL }}" >> .env
-            echo "INJECT_ENV_VARS=${{ secrets.INJECT_ENV_VARS }}" >> .env
+            cat <<EOF > .env
+            MONGODB_URL=${{ secrets.MONGO_URI }}
+            MONGO_URI=${{ secrets.MONGO_URI }}
+            RABBITMQ_URL=${{ secrets.RABBITMQ_URL }}
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            ADMIN_USER=${{ secrets.ADMIN_USER }}
+            ADMIN_PASS=${{ secrets.ADMIN_PASS }}
+            DEFAULT_TEST_IMAGE=${{ secrets.DEFAULT_TEST_IMAGE }}
+            DEFAULT_BASE_URL=${{ secrets.DEFAULT_BASE_URL }}
+            DEFAULT_TEST_FOLDER=${{ secrets.DEFAULT_TEST_FOLDER }}
+            VITE_API_URL=${{ secrets.VITE_API_URL }}
+            PUBLIC_API_URL=${{ secrets.PUBLIC_API_URL }}
+            INJECT_ENV_VARS=${{ secrets.INJECT_ENV_VARS }}
+            EOF
             
-            # 1. Pull the latest test image from Docker Hub
-            docker pull keinar101/my-automation-tests:latest
+            # 1. Pull the latest test image
+            docker pull ${{ secrets.DEFAULT_TEST_IMAGE }}
             
             # 2. Rebuild Infra Services
             docker compose -f docker-compose.prod.yml down --remove-orphans
-            docker rmi -f playwright-full-stack-framework-dashboard || true
-            docker compose -f docker-compose.prod.yml build --no-cache
             
-            # 3. Start Infrastructure
+            # Clean up old dashboard image
+            docker rmi -f agnostic-automation-center-dashboard || true
+            
+            # 3. Rebuild and Start Infrastructure
+            docker compose -f docker-compose.prod.yml build --no-cache
             docker compose -f docker-compose.prod.yml up -d
             
+            # Cleanup unused images
             docker image prune -f
