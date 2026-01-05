@@ -14,11 +14,10 @@ monitoring, live logs, and secure secret injection.
 ## The Agnostic Concept
 
 Unlike traditional frameworks, this system acts as a
-**Platform-as-a-Service (PaaS)** for automation. - **The Center:**
-Manages infrastructure, queues, and reporting. - **The Test Suite:**
-Provided by the user as a Docker Image. - **The Secret Sauce:** Dynamic
-environment injection via a "White List" (no hardcoded variables in the
-infrastructure).
+**Platform-as-a-Service (PaaS)** for automation. 
+- **The Center:** Manages infrastructure, queues, and reporting. 
+- **The Test Suite:** Provided by the user as a Docker Image. 
+- **The Secret Sauce:** Dynamic environment injection via a "White List" (no hardcoded variables in the infrastructure).
 
 ## Architecture
 
@@ -33,9 +32,9 @@ infrastructure).
 ## Case Study: Integrated Example
 
 This system is currently configured to validate the following full-stack
-project: - **Test Suite Repo:**
-https://github.com/keinar/Photographer-Gallery-Automation - **Target App
-Repo:** https://github.com/keinar/photographer-gallery
+project: 
+- **Test Suite Repo:** https://github.com/keinar/Photographer-Gallery-Automation 
+- **Target App Repo:** https://github.com/keinar/photographer-gallery
 
 ------------------------------------------------------------------------
 
@@ -43,13 +42,13 @@ Repo:** https://github.com/keinar/photographer-gallery
 
 To set up or use the system, follow these detailed guides:
 
-  Guide                     Content
-  ------------------------- ------------------------
-  Infrastructure Setup   [Infrastructure Setup](./docs/INFRASTRUCTURE.md)
-  Client Integration     [Client Guide](./docs/CLIENT_GUIDE.md)
-  CI/CD & Secrets        [CI-CD](./docs/CI_CD.md)
+| Guide | Content |
+| :--- | :--- |
+| [Infrastructure Setup](./docs/INFRASTRUCTURE.md) | Setting up the Server, Docker, and Databases. |
+| [Client Integration](./docs/CLIENT_GUIDE.md) | How to prepare your Test Repo to be "Agnostic-Ready". |
+| [CI/CD & Secrets](./docs/CI_CD.md) | Managing GitHub Actions and the Secret Injection Whitelist. |
 
-------------------------------------------------------------------------
+---
 
 ## License
 
