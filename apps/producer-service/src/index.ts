@@ -56,6 +56,14 @@ app.register(fastifyStatic, {
     decorateReply: false
 });
 
+app.get('/config/defaults', async (request, reply) => {
+    return reply.send({
+        image: process.env.DEFAULT_TEST_IMAGE || '',
+        baseUrl: process.env.DEFAULT_BASE_URL || '',
+        folder: process.env.DEFAULT_TEST_FOLDER || 'all'
+    });
+});
+
 app.get('/', async () => {
   return { message: 'Agnostic Producer Service is running!' };
 });

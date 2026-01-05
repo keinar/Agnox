@@ -16,22 +16,30 @@ export const Dashboard = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const [availableFolders, setAvailableFolders] = useState<string[]>([]);
+    const [defaults, setDefaults] = useState<any>(null);
 
     useEffect(() => {
-    fetch(`${API_URL}/tests-structure`)
-        .then(async res => {
-            const contentType = res.headers.get('content-type');
-            if (res.ok && contentType && contentType.includes('application/json')) {
-                return res.json();
-            }
-            return [];
-        })
-        .then(data => setAvailableFolders(Array.isArray(data) ? data : []))
-        .catch(() => {
-            console.warn('Using decoupled mode (local folders not found)');
-            setAvailableFolders([]);
-        });
-}, []);
+        fetch(`${API_URL}/tests-structure`)
+            .then(async res => {
+                const contentType = res.headers.get('content-type');
+                if (res.ok && contentType && contentType.includes('application/json')) {
+                    return res.json();
+                }
+                return [];
+            })
+            .then(data => setAvailableFolders(Array.isArray(data) ? data : []))
+            .catch(() => {
+                console.warn('Using decoupled mode (local folders not found)');
+                setAvailableFolders([]);
+            });
+    }, []);
+
+    useEffect(() => {
+        fetch(`${API_URL}/config/defaults`)
+            .then(res => res.json())
+            .then(data => setDefaults(data))
+            .catch(() => console.warn('Using hardcoded defaults'));
+    }, []);
 
     const toggleRow = (id: string) => {
         setExpandedRowId(expandedRowId === id ? null : id);
@@ -132,6 +140,7 @@ export const Dashboard = () => {
                 onClose={() => setIsModalOpen(false)}
                 onSubmit={handleRunTest}
                 availableFolders={availableFolders}
+                defaults={defaults}
             />
 
             <div className="table-container">

@@ -71,14 +71,14 @@ async function startWorker() {
         );
 
         // Notify start (Socket broadcast - with full details for instant UI update)
-        await notifyProducer({ 
-            taskId, 
-            status: 'RUNNING', 
+        await notifyProducer({
+            taskId,
+            status: 'RUNNING',
             startTime,
             image,
             command,
             config,
-            reportsBaseUrl: currentReportsBaseUrl 
+            reportsBaseUrl: currentReportsBaseUrl
         });
 
         let logsBuffer = "";
@@ -93,22 +93,20 @@ async function startWorker() {
             } catch (pullError: any) {
                 console.warn(`⚠️ Could not pull image ${image}. Proceeding with local cache.`);
             }
-            
-            const selectedFolder = config.folder || 'all';
 
+            const selectedFolder = config.folder || 'all';
+            const isCustomCommand = command !== `npx playwright test; npx allure generate allure-results --clean -o allure-report`
+                && !command.includes(selectedFolder);
             container = await docker.createContainer({
                 Image: image,
                 Tty: true,
-                Cmd: ['/bin/sh', '/app/entrypoint.sh', selectedFolder],
+                Cmd: isCustomCommand
+                    ? ['/bin/sh', '-c', command]
+                    : ['/bin/sh', '/app/entrypoint.sh', selectedFolder],
                 Env: [
-                    `BASE_URL=${config.baseUrl || process.env.BASE_URL}`,
+                    `BASE_URL=${config.baseUrl || process.env.DEFAULT_BASE_URL}`,
                     `TASK_ID=${taskId}`,
                     `CI=true`,
-                    `MONGO_URI=${process.env.MONGO_URI || ''}`,
-                    `MONGODB_URL=${process.env.MONGO_URI || ''}`,
-                    `GEMINI_API_KEY=${process.env.GEMINI_API_KEY || ''}`,
-                    `ADMIN_USER=${process.env.ADMIN_USER || ''}`,
-                    `ADMIN_PASS=${process.env.ADMIN_PASS || ''}`,
                     ...(Object.entries(config.envVars || {}).map(([k, v]) => `${k}=${v}`))
                 ],
                 HostConfig: {
@@ -121,7 +119,7 @@ async function startWorker() {
 
             // Logs streaming setup
             const logStream = await container.logs({ follow: true, stdout: true, stderr: true });
-            
+
             // Pipe logs to worker console (Restored feature)
             logStream.pipe(process.stdout);
 
@@ -136,15 +134,15 @@ async function startWorker() {
             const result = await container.wait();
             const status = result.StatusCode === 0 ? 'PASSED' : 'FAILED';
             const duration = new Date().getTime() - startTime.getTime();
-            
+
             console.log(`📦 Copying artifacts from container to ${baseTaskDir}...`);
             const copyFolder = async (containerPath: string) => {
                 try {
                     const stream = await container.getArchive({ path: containerPath });
-                    
-                    const extract = tar.extract(baseTaskDir); 
+
+                    const extract = tar.extract(baseTaskDir);
                     stream.pipe(extract);
-                    
+
                     await new Promise((resolve, reject) => {
                         extract.on('finish', resolve);
                         extract.on('error', reject);

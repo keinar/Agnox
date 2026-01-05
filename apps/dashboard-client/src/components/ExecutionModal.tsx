@@ -12,9 +12,14 @@ interface ExecutionModalProps {
         command: string;
     }) => void;
     availableFolders: string[];
+    defaults?: {
+        defaultImage: string;
+        defaultBaseUrl: string;
+        defaultFolder: string;
+    };
 }
 
-export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose, onSubmit, availableFolders }) => {
+export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose, onSubmit, availableFolders, defaults }) => {
     const [environment, setEnvironment] = useState('development');
     const [baseUrl, setBaseUrl] = useState(import.meta.env.BASE_URL);
     const [selectedFolder, setSelectedFolder] = useState('all');
@@ -24,16 +29,25 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
     const [image, setImage] = useState('your_dockerhub_username/my-automation-tests:latest');
     const [command, setCommand] = useState('npx playwright test; npx allure generate allure-results --clean -o allure-report');
 
+    useEffect(() => {
+        if (defaults) {
+            setBaseUrl(defaults.defaultBaseUrl);
+            setImage(defaults.defaultImage);
+            setSelectedFolder(defaults.defaultFolder);
+        }
+    }, [defaults, isOpen]);
+
     // Update command automatically when folder changes
     useEffect(() => {
+        // Only auto-update command if advanced view is closed (standard user mode)
+        if (showAdvanced) return;
         const allureCommand = 'npx allure generate allure-results --clean -o allure-report';
-
         if (selectedFolder === 'all') {
             setCommand(`npx playwright test; ${allureCommand}`);
         } else {
-            setCommand(`npx playwright test tests/${selectedFolder}; ${allureCommand}`);
+            setCommand(`npx playwright test ${selectedFolder}; ${allureCommand}`);
         }
-    }, [selectedFolder]);
+    }, [selectedFolder, showAdvanced]);
 
     if (!isOpen) return null;
 
