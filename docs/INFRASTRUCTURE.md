@@ -46,9 +46,10 @@ INJECT_ENV_VARS=ADMIN_USER,ADMIN_PASS,GEMINI_API_KEY,MONGO_URI
 
 ### Why the Whitelist Matters
 
-This design prevents: - Accidental credential leaks - Arbitrary
-environment access inside containers - Infrastructure coupling with test
-logic
+This design prevents: 
+- Accidental credential leaks 
+- Arbitrary environment access inside containers 
+- Infrastructure coupling with test logic
 
 ------------------------------------------------------------------------
 
@@ -60,9 +61,10 @@ Build and start the production stack:
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-Once deployed: - The **Dashboard** becomes accessible via browser - The
-**Producer** API handles job requests - The **Worker** pulls and
-executes test images securely
+Once deployed: 
+- The **Dashboard** becomes accessible via browser 
+- The **Producer** API handles job requests 
+- The **Worker** pulls and executes test images securely
 
 ------------------------------------------------------------------------
 
@@ -76,13 +78,11 @@ executes test images securely
 
 ## 5. Troubleshooting
 
-  Issue                         Resolution
-  ----------------------------- ------------------------------
-  Tests fail instantly          Verify `INJECT_ENV_VARS`
-  Container exits immediately   Check `entrypoint.sh`
-  Zod errors                    Missing env vars or defaults
-
-------------------------------------------------------------------------
+| Issue | Resolution |
+| --- | --- |
+| **Tests fail instantly** | Verify `INJECT_ENV_VARS` |
+| **Container exits immediately** | Check `entrypoint.sh` |
+| **Zod errors** | Missing env vars or defaults |
 
 ## Infrastructure Ready
 
