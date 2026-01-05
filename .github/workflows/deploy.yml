@@ -47,7 +47,8 @@ jobs:
             git reset --hard origin/main
             git clean -fd
             
-            echo "MONGO_URI=${{ secrets.MONGO_URI }}" > .env
+            echo "MONGODB_URL=${{ secrets.MONGO_URI }}" > .env
+            echo "MONGO_URI=${{ secrets.MONGO_URI }}" >> .env
             echo "RABBITMQ_URL=${{ secrets.RABBITMQ_URL }}" >> .env
             echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
             echo "ADMIN_USER=${{ secrets.ADMIN_USER }}" >> .env
@@ -57,7 +58,7 @@ jobs:
             echo "DEFAULT_TEST_FOLDER=${{ secrets.DEFAULT_TEST_FOLDER }}" >> .env
             echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
             echo "PUBLIC_API_URL=${{ secrets.PUBLIC_API_URL }}" >> .env
-            echo "INJECT_ENV_VARS=${{ secrets.PUBLIC_API_URL }}" >> .env
+            echo "INJECT_ENV_VARS=${{ secrets.INJECT_ENV_VARS }}" >> .env
             
             # 1. Pull the latest test image from Docker Hub
             docker pull keinar101/my-automation-tests:latest
