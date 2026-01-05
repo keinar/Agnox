@@ -13,9 +13,9 @@ interface ExecutionModalProps {
     }) => void;
     availableFolders: string[];
     defaults?: {
-        defaultImage: string;
-        defaultBaseUrl: string;
-        defaultFolder: string;
+        image: string;
+        baseUrl: string;
+        folder: string;
     };
 }
 
@@ -31,9 +31,9 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
 
     useEffect(() => {
         if (isOpen && defaults) {
-            setBaseUrl(defaults.defaultBaseUrl || '');
-            setImage(defaults.defaultImage || '');
-            setSelectedFolder(defaults.defaultFolder || 'all');
+            if (defaults.image) setImage(defaults.image);
+            if (defaults.baseUrl) setBaseUrl(defaults.baseUrl);
+            if (defaults.folder) setSelectedFolder(defaults.folder);
         }
     }, [defaults, isOpen]);
 
