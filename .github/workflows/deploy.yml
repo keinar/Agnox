@@ -33,7 +33,6 @@ jobs:
   deploy:
     needs: quality-check
     runs-on: ubuntu-latest
-    
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -44,12 +43,10 @@ jobs:
           script: |
             cd ~/playwright-full-stack-framework
             
-            # 1. Force update from Git (Destructive pull to fix your SSH sync issue)
             git fetch origin main
             git reset --hard origin/main
             git clean -fd
             
-            # 2. Recreate .env from GitHub Secrets
             echo "MONGO_URI=${{ secrets.MONGO_URI }}" > .env
             echo "RABBITMQ_URL=amqp://rabbitmq" >> .env
             echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
@@ -59,18 +56,15 @@ jobs:
             echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
             echo "PUBLIC_API_URL=${{ secrets.PUBLIC_API_URL }}" >> .env
             
-            # 3. Aggressive Rebuild
-            # Stop and remove everything
+            # 1. Pull the latest test image from Docker Hub
+            docker pull keinar101/my-automation-tests:latest
+            
+            # 2. Rebuild Infra Services
             docker compose -f docker-compose.prod.yml down --remove-orphans
-            
-            # Force remove old dashboard image to ensure ARG injection happens
             docker rmi -f playwright-full-stack-framework-dashboard || true
-            
-            # Build without cache
             docker compose -f docker-compose.prod.yml build --no-cache
             
-            # 4. Start
+            # 3. Start Infrastructure
             docker compose -f docker-compose.prod.yml up -d
             
-            # disk cleanup
             docker image prune -f
