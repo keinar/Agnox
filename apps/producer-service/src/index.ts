@@ -21,7 +21,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
 const app = fastify({ logger: true });
 
-const MONGO_URI = process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb://localhost:27017';
+const MONGO_URI = process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb://automation-mongodb:27017/automation_platform';
 const DB_NAME = 'automation_platform';
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
@@ -154,6 +154,30 @@ app.post('/execution-request', async (request, reply) => {
   try {
     const startTime = new Date();
 
+    const envVarsToInject: Record<string, string> = {};
+    
+    const varsToInject = (process.env.INJECT_ENV_VARS || '').split(',');
+
+    varsToInject.forEach(varName => {
+        const name = varName.trim();
+        if (name && process.env[name]) {
+            envVarsToInject[name] = process.env[name]!;
+        }
+    });
+
+    const enrichedConfig = {
+        ...config,
+        envVars: {
+            ...(config?.envVars || {}),
+            ...envVarsToInject
+        }
+    };
+
+    const taskData = {
+        ...parseResult.data,
+        config: enrichedConfig
+    };
+
     if (dbClient) {
         const collection = dbClient.db(DB_NAME).collection('executions');
         await collection.updateOne(
@@ -161,11 +185,11 @@ app.post('/execution-request', async (request, reply) => {
             { 
                 $set: { 
                     taskId,
-                    image,        // Saved to DB for traceability
-                    command,      // Saved to DB for traceability
+                    image,        
+                    command,      
                     status: 'PENDING',
                     startTime,
-                    config,
+                    config: enrichedConfig,
                     tests: tests || []
                 } 
             },
@@ -178,13 +202,12 @@ app.post('/execution-request', async (request, reply) => {
             startTime,
             image,
             command,
-            config,
+            config: enrichedConfig,
             tests: tests || []
         });
     }
 
-    // Send the full agnostic request to RabbitMQ
-    await rabbitMqService.sendToQueue(parseResult.data);
+    await rabbitMqService.sendToQueue(taskData);
     
     app.log.info(`Job ${taskId} queued using image: ${image}`);
     return reply.status(200).send({ status: 'Message queued successfully', taskId });
