@@ -19,9 +19,18 @@ export const Dashboard = () => {
 
     useEffect(() => {
         fetch(`${API_URL}/tests-structure`)
-            .then(res => res.json())
-            .then(data => setAvailableFolders(data))
-            .catch(err => console.error('Failed to fetch test folders', err));
+            .then(res => {
+                // Security check: if not JSON or not OK, return empty array
+                if (!res.ok || !res.headers.get('content-type')?.includes('application/json')) {
+                    throw new Error('Invalid response from server');
+                }
+                return res.json();
+            })
+            .then(data => setAvailableFolders(Array.isArray(data) ? data : []))
+            .catch(err => {
+                console.error('Failed to fetch test folders (Decoupled mode active):', err);
+                setAvailableFolders([]);
+            });
     }, []);
 
     const toggleRow = (id: string) => {

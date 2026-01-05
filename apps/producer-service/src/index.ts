@@ -202,11 +202,14 @@ app.delete('/executions/:id', async (request, reply) => {
 app.get('/tests-structure', async (request, reply) => {
     const testsPath = '/app/tests-source';
     try {
-        if (!fs.existsSync(testsPath)) return reply.send([]);
+        if (!fs.existsSync(testsPath)) {
+            return reply.send([]);
+        }
         const items = fs.readdirSync(testsPath, { withFileTypes: true });
         const folders = items.filter(item => item.isDirectory()).map(item => item.name);
         return reply.send(folders);
     } catch (error) {
+        app.log.error(error);
         return reply.send([]);
     }
 });
