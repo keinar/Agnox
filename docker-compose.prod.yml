@@ -49,6 +49,8 @@ services:
     volumes:
       - test_results:/app/reports
       - ./apps/worker-service/tests:/app/tests-source:ro
+    env_file:
+      - .env
     environment:
       - PORT=3000
       - RABBITMQ_URL=amqp://rabbitmq

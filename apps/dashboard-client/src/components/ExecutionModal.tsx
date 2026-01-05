@@ -30,10 +30,10 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
     const [command, setCommand] = useState('npx playwright test; npx allure generate allure-results --clean -o allure-report');
 
     useEffect(() => {
-        if (defaults) {
-            setBaseUrl(defaults.defaultBaseUrl);
-            setImage(defaults.defaultImage);
-            setSelectedFolder(defaults.defaultFolder);
+        if (isOpen && defaults) {
+            setBaseUrl(defaults.defaultBaseUrl || '');
+            setImage(defaults.defaultImage || '');
+            setSelectedFolder(defaults.defaultFolder || 'all');
         }
     }, [defaults, isOpen]);
 
@@ -168,19 +168,6 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
                                     onChange={(e) => setImage(e.target.value)}
                                     className="form-input"
                                     placeholder="e.g. mcr.microsoft.com/playwright"
-                                    style={{ fontSize: '0.8rem', fontFamily: 'monospace' }}
-                                />
-                            </div>
-                            <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">
-                                    <Terminal size={16} /> Shell Command
-                                </label>
-                                <input
-                                    type="text"
-                                    value={command}
-                                    onChange={(e) => setCommand(e.target.value)}
-                                    className="form-input"
-                                    placeholder="e.g. pytest"
                                     style={{ fontSize: '0.8rem', fontFamily: 'monospace' }}
                                 />
                             </div>

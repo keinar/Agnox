@@ -17,7 +17,8 @@ declare module 'fastify' {
   }
 }
 
-dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+console.log('🔍 Default Image from ENV:', process.env.DEFAULT_TEST_IMAGE);
 
 const app = fastify({ logger: true });
 

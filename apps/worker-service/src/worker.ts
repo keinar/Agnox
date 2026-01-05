@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as tar from 'tar-fs';
 import Redis from 'ioredis';
 
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+dotenv.config();
 
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 
@@ -94,15 +94,11 @@ async function startWorker() {
                 console.warn(`⚠️ Could not pull image ${image}. Proceeding with local cache.`);
             }
 
-            const selectedFolder = config.folder || 'all';
-            const isCustomCommand = command !== `npx playwright test; npx allure generate allure-results --clean -o allure-report`
-                && !command.includes(selectedFolder);
+            const safeCommand = ['/bin/sh', '/app/entrypoint.sh', task.folder || 'all'];
             container = await docker.createContainer({
                 Image: image,
                 Tty: true,
-                Cmd: isCustomCommand
-                    ? ['/bin/sh', '-c', command]
-                    : ['/bin/sh', '/app/entrypoint.sh', selectedFolder],
+                Cmd: safeCommand,
                 Env: [
                     `BASE_URL=${config.baseUrl || process.env.DEFAULT_BASE_URL}`,
                     `TASK_ID=${taskId}`,
