@@ -93,11 +93,13 @@ async function startWorker() {
             } catch (pullError: any) {
                 console.warn(`⚠️ Could not pull image ${image}. Proceeding with local cache.`);
             }
+            
+            const selectedFolder = config.folder || 'all';
 
             container = await docker.createContainer({
                 Image: image,
                 Tty: true,
-                Cmd: ['/bin/sh', '-c', command],
+                Cmd: ['/bin/sh', '/app/entrypoint.sh', selectedFolder],
                 Env: [
                     `BASE_URL=${config.baseUrl || process.env.BASE_URL}`,
                     `TASK_ID=${taskId}`,
