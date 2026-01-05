@@ -364,7 +364,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
 
                                 {metrics && (
                                     <div className="detail-item">
-                                        <label>Avg. Duration (Redis)</label>
+                                        <label>Avg. Duration</label>
                                         <span style={{
                                             color: metrics.isRegression ? '#f59e0b' : '#10b981',
                                             fontWeight: 'bold'

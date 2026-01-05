@@ -12,9 +12,9 @@ import * as fs from 'fs';
 import Redis from 'ioredis';
 
 declare module 'fastify' {
-  interface FastifyInstance {
-    io: Server;
-  }
+    interface FastifyInstance {
+        io: Server;
+    }
 }
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
@@ -29,8 +29,8 @@ const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 let dbClient: MongoClient;
 
 app.register(cors, {
-  origin: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    origin: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 });
 
 app.register(socketio, {
@@ -58,15 +58,22 @@ app.register(fastifyStatic, {
 });
 
 app.get('/config/defaults', async (request, reply) => {
+    const envMapping: Record<string, string> = {};
+
+    if (process.env.DEV_URL) envMapping.development = process.env.DEV_URL;
+    if (process.env.STAGING_URL) envMapping.staging = process.env.STAGING_URL;
+    if (process.env.PRODUCTION_URL) envMapping.production = process.env.PRODUCTION_URL;
+
     return reply.send({
         image: process.env.DEFAULT_TEST_IMAGE || '',
         baseUrl: process.env.DEFAULT_BASE_URL || '',
-        folder: process.env.DEFAULT_TEST_FOLDER || 'all'
+        folder: process.env.DEFAULT_TEST_FOLDER || 'all',
+        envMapping
     });
 });
 
 app.get('/', async () => {
-  return { message: 'Agnostic Producer Service is running!' };
+    return { message: 'Agnostic Producer Service is running!' };
 });
 
 /**
@@ -79,7 +86,7 @@ app.get('/metrics/:image', async (request, reply) => {
     try {
         // Fetch last 10 durations
         const durations = await redis.lrange(key, 0, -1);
-        
+
         if (durations.length === 0) {
             return { averageDuration: 0, status: 'NO_DATA' };
         }
@@ -108,7 +115,7 @@ app.post('/executions/update', async (request, reply) => {
 
 app.post('/executions/log', async (request, reply) => {
     const { taskId, log } = request.body as { taskId: string; log: string };
-    
+
     // Broadcast the log specifically to the dashboard
     // We use a specific event name 'execution-log'
     app.io.emit('execution-log', { taskId, log });
@@ -141,82 +148,82 @@ app.get('/executions', async (request, reply) => {
  * supports custom Docker images and commands
  */
 app.post('/execution-request', async (request, reply) => {
-  const parseResult = TestExecutionRequestSchema.safeParse(request.body);
-  
-  if (!parseResult.success) {
-      return reply.status(400).send({ 
-          error: 'Invalid payload', 
-          details: parseResult.error.format() 
-      });
-  }
-  
-  const { taskId, image, command, tests, config } = parseResult.data;
+    const parseResult = TestExecutionRequestSchema.safeParse(request.body);
 
-  try {
-    const startTime = new Date();
-
-    const envVarsToInject: Record<string, string> = {};
-    
-    const varsToInject = (process.env.INJECT_ENV_VARS || '').split(',');
-
-    varsToInject.forEach(varName => {
-        const name = varName.trim();
-        if (name && process.env[name]) {
-            envVarsToInject[name] = process.env[name]!;
-        }
-    });
-
-    const enrichedConfig = {
-        ...config,
-        envVars: {
-            ...(config?.envVars || {}),
-            ...envVarsToInject
-        }
-    };
-
-    const taskData = {
-        ...parseResult.data,
-        config: enrichedConfig
-    };
-
-    if (dbClient) {
-        const collection = dbClient.db(DB_NAME).collection('executions');
-        await collection.updateOne(
-            { taskId }, 
-            { 
-                $set: { 
-                    taskId,
-                    image,        
-                    command,      
-                    status: 'PENDING',
-                    startTime,
-                    config: enrichedConfig,
-                    tests: tests || []
-                } 
-            },
-            { upsert: true }
-        );
-        
-        app.io.emit('execution-updated', { 
-            taskId, 
-            status: 'PENDING', 
-            startTime,
-            image,
-            command,
-            config: enrichedConfig,
-            tests: tests || []
+    if (!parseResult.success) {
+        return reply.status(400).send({
+            error: 'Invalid payload',
+            details: parseResult.error.format()
         });
     }
 
-    await rabbitMqService.sendToQueue(taskData);
-    
-    app.log.info(`Job ${taskId} queued using image: ${image}`);
-    return reply.status(200).send({ status: 'Message queued successfully', taskId });
-    
-  } catch (error) {
-    app.log.error(error);
-    reply.status(500).send({ status: 'Failed to queue message' });
-  }
+    const { taskId, image, command, tests, config } = parseResult.data;
+
+    try {
+        const startTime = new Date();
+
+        const envVarsToInject: Record<string, string> = {};
+
+        const varsToInject = (process.env.INJECT_ENV_VARS || '').split(',');
+
+        varsToInject.forEach(varName => {
+            const name = varName.trim();
+            if (name && process.env[name]) {
+                envVarsToInject[name] = process.env[name]!;
+            }
+        });
+
+        const enrichedConfig = {
+            ...config,
+            envVars: {
+                ...(config?.envVars || {}),
+                ...envVarsToInject
+            }
+        };
+
+        const taskData = {
+            ...parseResult.data,
+            config: enrichedConfig
+        };
+
+        if (dbClient) {
+            const collection = dbClient.db(DB_NAME).collection('executions');
+            await collection.updateOne(
+                { taskId },
+                {
+                    $set: {
+                        taskId,
+                        image,
+                        command,
+                        status: 'PENDING',
+                        startTime,
+                        config: enrichedConfig,
+                        tests: tests || []
+                    }
+                },
+                { upsert: true }
+            );
+
+            app.io.emit('execution-updated', {
+                taskId,
+                status: 'PENDING',
+                startTime,
+                image,
+                command,
+                config: enrichedConfig,
+                tests: tests || []
+            });
+        }
+
+        await rabbitMqService.sendToQueue(taskData);
+
+        app.log.info(`Job ${taskId} queued using image: ${image}`);
+        return reply.status(200).send({ status: 'Message queued successfully', taskId });
+
+    } catch (error) {
+        app.log.error(error);
+        reply.status(500).send({ status: 'Failed to queue message' });
+    }
 });
 
 app.delete('/executions/:id', async (request, reply) => {
@@ -242,7 +249,7 @@ app.get('/tests-structure', async (request, reply) => {
         const folders = items
             .filter(item => item.isDirectory())
             .map(item => item.name);
-            
+
         return reply.header('Content-Type', 'application/json').send(folders);
     } catch (error) {
         app.log.error(error, "Error reading tests structure");
@@ -251,18 +258,18 @@ app.get('/tests-structure', async (request, reply) => {
 });
 
 const start = async () => {
-  try {
-    await rabbitMqService.connect();
-    await connectToMongo();
-    await app.listen({ port: 3000, host: '0.0.0.0' });
-    
-    app.io.on('connection', (socket) => {
-        app.log.info('Dashboard connected');
-    });
-  } catch (err) {
-    app.log.error(err);
-    process.exit(1);
-  }
+    try {
+        await rabbitMqService.connect();
+        await connectToMongo();
+        await app.listen({ port: 3000, host: '0.0.0.0' });
+
+        app.io.on('connection', (socket) => {
+            app.log.info('Dashboard connected');
+        });
+    } catch (err) {
+        app.log.error(err);
+        process.exit(1);
+    }
 };
 
 start();

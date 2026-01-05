@@ -16,18 +16,25 @@ interface ExecutionModalProps {
         image: string;
         baseUrl: string;
         folder: string;
+        envMapping?: Record<string, string>;
     };
 }
 
 export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose, onSubmit, availableFolders, defaults }) => {
     const [environment, setEnvironment] = useState('development');
-    const [baseUrl, setBaseUrl] = useState(import.meta.env.BASE_URL);
+    const [baseUrl, setBaseUrl] = useState('');
     const [selectedFolder, setSelectedFolder] = useState('all');
     const [showAdvanced, setShowAdvanced] = useState(false);
 
     // Agnostic defaults
     const [image, setImage] = useState('your_dockerhub_username/my-automation-tests:latest');
-    const [command, setCommand] = useState('npx playwright test; npx allure generate allure-results --clean -o allure-report');
+    const [command, setCommand] = useState('');
+
+    useEffect(() => {
+        if (defaults?.envMapping && defaults.envMapping[environment]) {
+            setBaseUrl(defaults.envMapping[environment]);
+        }
+    }, [environment, defaults]);
 
     useEffect(() => {
         if (isOpen && defaults) {
@@ -42,19 +49,23 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
         // Only auto-update command if advanced view is closed (standard user mode)
         if (showAdvanced) return;
         const allureCommand = 'npx allure generate allure-results --clean -o allure-report';
-        if (selectedFolder === 'all') {
-            setCommand(`npx playwright test; ${allureCommand}`);
-        } else {
-            setCommand(`npx playwright test ${selectedFolder}; ${allureCommand}`);
-        }
+        const getCorrectPath = (folder: string) => {
+            if (folder === 'all') return 'tests';
+            if (folder.startsWith('tests/')) return folder;
+            return `tests/${folder}`;
+        };
+        const targetPath = getCorrectPath(selectedFolder);
+        setCommand(`npx playwright test ${targetPath}; ${allureCommand}`);
     }, [selectedFolder, showAdvanced]);
 
     if (!isOpen) return null;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        const finalFolder = selectedFolder === 'all' ? 'tests' :
+            (selectedFolder.startsWith('tests/') ? selectedFolder : `tests/${selectedFolder}`);
         onSubmit({
-            folder: selectedFolder,
+            folder: finalFolder,
             environment,
             baseUrl,
             image,
@@ -111,9 +122,15 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
                             onChange={(e) => setEnvironment(e.target.value)}
                             className="form-select"
                         >
-                            <option value="development">🚧 Development (DEV)</option>
-                            <option value="staging">👀 Staging</option>
-                            <option value="production">🔥 Production</option>
+                            {!defaults?.envMapping ? (
+                                <option value="default">Default Environment</option>
+                            ) : (
+                                Object.keys(defaults.envMapping).map((envKey) => (
+                                    <option key={envKey} value={envKey}>
+                                        {envKey.toUpperCase()}
+                                    </option>
+                                ))
+                            )}
                         </select>
                     </div>
 

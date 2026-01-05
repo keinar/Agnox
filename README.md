@@ -13,11 +13,12 @@ monitoring, live logs, and secure secret injection.
 
 ## The Agnostic Concept
 
-Unlike traditional frameworks, this system acts as a
-**Platform-as-a-Service (PaaS)** for automation. 
+Unlike traditional frameworks, this system acts as a **Platform-as-a-Service (PaaS)** for automation. 
 - **The Center:** Manages infrastructure, queues, and reporting. 
 - **The Test Suite:** Provided by the user as a Docker Image. 
 - **The Secret Sauce:** Dynamic environment injection via a "White List" (no hardcoded variables in the infrastructure).
+- **Dynamic Environment Mapping**: Environments (Dev/Staging/Prod) are fully agnostic and defined via infrastructure ENV variables, with automatic URL switching in the UI.
+- **Smart Path Resolution**: Automatic detection and formatting of test paths to ensure consistent execution regardless of user input.
 
 ## Architecture
 

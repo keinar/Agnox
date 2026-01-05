@@ -18,8 +18,7 @@ Ensure the following are available before deployment:
 
 ## 2. Server Configuration (`.env`)
 
-The infrastructure relies on a central `.env` file.\
-This file acts as the **Source of Truth** for the entire platform.
+The system now supports dynamic environment mapping. The dropdown in the Dashboard will only show environments that are defined here.
 
 ``` env
 # Database & Queue (PaaS Infrastructure)
@@ -38,6 +37,12 @@ DEFAULT_TEST_FOLDER=all
 ADMIN_USER=admin@example.com
 ADMIN_PASS=secure_password
 GEMINI_API_KEY=ai_key_here
+
+# --- DYNAMIC ENVIRONMENTS (Optional) ---
+# Defining these variables will automatically enable them in the Dashboard UI
+DEV_URL=http://localhost:5173
+STAGING_URL=[https://staging.photographer.keinar.com](https://staging.photographer.keinar.com)
+PRODUCTION_URL=[https://photographer.keinar.com](https://photographer.keinar.com)
 
 # WHITE LIST
 # Only variables declared here are injected into the test container
