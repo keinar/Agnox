@@ -49,6 +49,21 @@ async function startWorker() {
     const db = mongoClient.db(DB_NAME);
     const executionsCollection = db.collection(COLLECTION_NAME);
 
+    async function ensureImageExists(image: string) {
+        try {
+            await docker.getImage(image).inspect();
+        } catch (e) {
+            console.log(`Image ${image} not found locally, pulling...`);
+            const stream = await docker.pull(image);
+            return new Promise((resolve, reject) => {
+                docker.modem.followProgress(stream, (err, res) => {
+                    if (err) reject(err);
+                    else resolve(res);
+                });
+            });
+        }
+    }
+
     channel.consume('test_queue', async (msg: ConsumeMessage | null) => {
         if (!msg) return;
 
@@ -95,6 +110,7 @@ async function startWorker() {
             }
 
             const safeCommand = ['/bin/sh', '/app/entrypoint.sh', task.folder || 'all'];
+            await ensureImageExists(image);
             container = await docker.createContainer({
                 Image: image,
                 Tty: true,
