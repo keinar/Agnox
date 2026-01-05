@@ -21,7 +21,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
     const [showAdvanced, setShowAdvanced] = useState(false);
     
     // Agnostic defaults
-    const [image, setImage] = useState('local-playwright-tests:latest');
+    const [image, setImage] = useState('your_dockerhub_username/my-automation-tests:latest');
     const [command, setCommand] = useState('npx playwright test; npx allure generate allure-results --clean -o allure-report');
 
     // Update command automatically when folder changes
