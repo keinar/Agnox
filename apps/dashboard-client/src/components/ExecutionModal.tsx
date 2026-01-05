@@ -4,9 +4,9 @@ import { X, Play, Folder, Server, Globe, Box, Terminal, ChevronDown, ChevronRigh
 interface ExecutionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (data: { 
-        folder: string; 
-        environment: string; 
+    onSubmit: (data: {
+        folder: string;
+        environment: string;
         baseUrl: string;
         image: string;
         command: string;
@@ -15,11 +15,11 @@ interface ExecutionModalProps {
 }
 
 export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose, onSubmit, availableFolders }) => {
-    const [environment, setEnvironment] = useState('development'); 
+    const [environment, setEnvironment] = useState('development');
     const [baseUrl, setBaseUrl] = useState(import.meta.env.BASE_URL);
     const [selectedFolder, setSelectedFolder] = useState('all');
     const [showAdvanced, setShowAdvanced] = useState(false);
-    
+
     // Agnostic defaults
     const [image, setImage] = useState('your_dockerhub_username/my-automation-tests:latest');
     const [command, setCommand] = useState('npx playwright test; npx allure generate allure-results --clean -o allure-report');
@@ -27,7 +27,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
     // Update command automatically when folder changes
     useEffect(() => {
         const allureCommand = 'npx allure generate allure-results --clean -o allure-report';
-        
+
         if (selectedFolder === 'all') {
             setCommand(`npx playwright test; ${allureCommand}`);
         } else {
@@ -39,9 +39,9 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSubmit({ 
-            folder: selectedFolder, 
-            environment, 
+        onSubmit({
+            folder: selectedFolder,
+            environment,
             baseUrl,
             image,
             command
@@ -60,33 +60,39 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
                         <X size={24} />
                     </button>
                 </div>
-                
+
                 <form onSubmit={handleSubmit} className="modal-body">
                     {/* Basic Config */}
                     <div className="form-group">
                         <label className="form-label">
-                            <Folder size={16} /> Test Suite
+                            <Folder size={16} /> Test Folder (Path)
                         </label>
-                        <select 
-                            value={selectedFolder}
-                            onChange={(e) => setSelectedFolder(e.target.value)}
-                            className="form-select"
-                        >
-                            <option value="all">🚀 Run All Tests (Full Suite)</option>
-                            <option disabled>──────────</option>
-                            {availableFolders.map(folder => (
-                                <option key={folder} value={folder}>
-                                    📂 {folder.toUpperCase()}
-                                </option>
-                            ))}
-                        </select>
+                        {availableFolders.length > 0 ? (
+                            <select
+                                value={selectedFolder}
+                                onChange={(e) => setSelectedFolder(e.target.value)}
+                                className="form-input"
+                            >
+                                <option value="all">Run All Tests</option>
+                                {availableFolders.map(f => <option key={f} value={f}>{f}</option>)}
+                            </select>
+                        ) : (
+                            <input
+                                type="text"
+                                className="form-input"
+                                placeholder="e.g. tests/ui or all"
+                                value={selectedFolder}
+                                onChange={(e) => setSelectedFolder(e.target.value)}
+                            />
+                        )}
+                        <p className="helper-text">Path inside the Docker image</p>
                     </div>
 
                     <div className="form-group">
                         <label className="form-label">
                             <Server size={16} /> Environment
                         </label>
-                        <select 
+                        <select
                             value={environment}
                             onChange={(e) => setEnvironment(e.target.value)}
                             className="form-select"
@@ -101,8 +107,8 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
                         <label className="form-label">
                             <Globe size={16} /> Target URL
                         </label>
-                        <input 
-                            type="url" 
+                        <input
+                            type="url"
                             required
                             value={baseUrl}
                             onChange={(e) => setBaseUrl(e.target.value)}
@@ -112,14 +118,14 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
                     </div>
 
                     {/* Advanced Configuration Toggle */}
-                    <div 
-                        className="advanced-toggle" 
+                    <div
+                        className="advanced-toggle"
                         onClick={() => setShowAdvanced(!showAdvanced)}
-                        style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '8px', 
-                            cursor: 'pointer', 
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            cursor: 'pointer',
                             color: '#94a3b8',
                             fontSize: '0.85rem',
                             marginTop: '1rem',
@@ -131,9 +137,9 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
                     </div>
 
                     {showAdvanced && (
-                        <div className="advanced-section" style={{ 
-                            padding: '12px', 
-                            backgroundColor: 'rgba(255,255,255,0.03)', 
+                        <div className="advanced-section" style={{
+                            padding: '12px',
+                            backgroundColor: 'rgba(255,255,255,0.03)',
                             borderRadius: '8px',
                             border: '1px solid rgba(255,255,255,0.05)',
                             marginTop: '8px'
@@ -142,7 +148,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
                                 <label className="form-label">
                                     <Box size={16} /> Docker Image
                                 </label>
-                                <input 
+                                <input
                                     type="text"
                                     value={image}
                                     onChange={(e) => setImage(e.target.value)}
@@ -155,7 +161,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
                                 <label className="form-label">
                                     <Terminal size={16} /> Shell Command
                                 </label>
-                                <input 
+                                <input
                                     type="text"
                                     value={command}
                                     onChange={(e) => setCommand(e.target.value)}
