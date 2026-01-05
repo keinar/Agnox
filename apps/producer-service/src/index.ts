@@ -203,14 +203,18 @@ app.get('/tests-structure', async (request, reply) => {
     const testsPath = '/app/tests-source';
     try {
         if (!fs.existsSync(testsPath)) {
-            return reply.send([]);
+            return reply.header('Content-Type', 'application/json').send([]);
         }
+
         const items = fs.readdirSync(testsPath, { withFileTypes: true });
-        const folders = items.filter(item => item.isDirectory()).map(item => item.name);
-        return reply.send(folders);
+        const folders = items
+            .filter(item => item.isDirectory())
+            .map(item => item.name);
+            
+        return reply.header('Content-Type', 'application/json').send(folders);
     } catch (error) {
-        app.log.error(error);
-        return reply.send([]);
+        app.log.error(error, "Error reading tests structure");
+        return reply.header('Content-Type', 'application/json').send([]);
     }
 });
 

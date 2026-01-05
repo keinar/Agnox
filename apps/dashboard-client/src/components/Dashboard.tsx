@@ -18,20 +18,20 @@ export const Dashboard = () => {
     const [availableFolders, setAvailableFolders] = useState<string[]>([]);
 
     useEffect(() => {
-        fetch(`${API_URL}/tests-structure`)
-            .then(res => {
-                // Security check: if not JSON or not OK, return empty array
-                if (!res.ok || !res.headers.get('content-type')?.includes('application/json')) {
-                    throw new Error('Invalid response from server');
-                }
+    fetch(`${API_URL}/tests-structure`)
+        .then(async res => {
+            const contentType = res.headers.get('content-type');
+            if (res.ok && contentType && contentType.includes('application/json')) {
                 return res.json();
-            })
-            .then(data => setAvailableFolders(Array.isArray(data) ? data : []))
-            .catch(err => {
-                console.error('Failed to fetch test folders (Decoupled mode active):', err);
-                setAvailableFolders([]);
-            });
-    }, []);
+            }
+            return [];
+        })
+        .then(data => setAvailableFolders(Array.isArray(data) ? data : []))
+        .catch(() => {
+            console.warn('Using decoupled mode (local folders not found)');
+            setAvailableFolders([]);
+        });
+}, []);
 
     const toggleRow = (id: string) => {
         setExpandedRowId(expandedRowId === id ? null : id);
