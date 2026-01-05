@@ -143,7 +143,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
     };
 
     const baseUrl = getBaseUrl();
-    const playwrightReportUrl = `${baseUrl}/reports/${execution.taskId}/playwright-report/index.html`;
+    const htmlReportUrl = `${baseUrl}/reports/${execution.taskId}/native-report/index.html`;
     const allureReportUrl = `${baseUrl}/reports/${execution.taskId}/allure-report/index.html`;
 
     const isFinished = execution.status === 'PASSED' || execution.status === 'FAILED';
@@ -234,7 +234,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
                         <div style={{ fontSize: '0.7rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
                             <Box size={10} />
                             <span style={{ fontFamily: 'monospace' }}>
-                                {execution.image?.split('/').pop() || 'playwright'}
+                                {execution.image?.split('/').pop() || 'container'}
                             </span>
                         </div>
                     </div>
@@ -297,10 +297,10 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
                                 ) : (
                                     <>
                                         <a
-                                            href={playwrightReportUrl}
+                                            href={htmlReportUrl}
                                             target="_blank"
                                             rel="noreferrer"
-                                            title="Playwright Report"
+                                            title="View HTML Report"
                                             className="icon-link blue"
                                             onClick={(e) => e.stopPropagation()}
                                         >
@@ -310,7 +310,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
                                             href={allureReportUrl}
                                             target="_blank"
                                             rel="noreferrer"
-                                            title="Allure Dashboard"
+                                            title="View Allure Report"
                                             className="icon-link green"
                                             onClick={(e) => e.stopPropagation()}
                                         >

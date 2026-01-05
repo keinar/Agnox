@@ -1,9 +1,6 @@
-# Agnostic Automation Center (Playwright)
+# Agnostic Automation Center
 
-A high-performance, microservices-based test automation platform
-designed to be **completely agnostic**. It allows you to run any
-Dockerized automation suite on a remote server with real-time
-monitoring, live logs, and secure secret injection.
+A high-performance, microservices-based test automation platform designed to be **language and framework agnostic**. It allows you to run any containerized automation suite (Playwright, Pytest, JUnit, etc.) on a remote server with real-time monitoring, live logs, and secure secret injection.
 
 ![Architecture](https://img.shields.io/badge/Architecture-Microservices-blue?style=flat-square)
 ![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-green?style=flat-square)

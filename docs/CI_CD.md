@@ -21,7 +21,7 @@ The pipeline ensures that every push to `main` updates the server without losing
         uses: appleboy/ssh-action@v1.0.3
         with:
           script: |
-            cd ~/playwright-full-stack-framework
+            cd ~/agnostic-automation-center
             
             # Recreate .env using a HEREDOC to prevent data loss or stale values
             cat <<EOF > .env

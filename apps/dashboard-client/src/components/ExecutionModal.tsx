@@ -44,18 +44,20 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
         }
     }, [defaults, isOpen]);
 
-    // Update command automatically when folder changes
     useEffect(() => {
-        // Only auto-update command if advanced view is closed (standard user mode)
+        // If showAdvanced is on, we don't overwrite manual changes
         if (showAdvanced) return;
-        const allureCommand = 'npx allure generate allure-results --clean -o allure-report';
-        const getCorrectPath = (folder: string) => {
-            if (folder === 'all') return 'tests';
-            if (folder.startsWith('tests/')) return folder;
-            return `tests/${folder}`;
+
+        const getCleanPath = (folder: string) => {
+            if (folder === 'all' || !folder) return 'all';
+            return folder.replace(/^tests\//, '');
         };
-        const targetPath = getCorrectPath(selectedFolder);
-        setCommand(`npx playwright test ${targetPath}; ${allureCommand}`);
+
+        const targetFolder = getCleanPath(selectedFolder);
+
+        // This is just for UI display/preview. 
+        // The backend will ignore this string and use its internal agnostic logic.
+        setCommand(`Agnostic Execution Mode: Running [${targetFolder}] via entrypoint.sh`);
     }, [selectedFolder, showAdvanced]);
 
     if (!isOpen) return null;
@@ -146,6 +148,23 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
                             className="form-input"
                             placeholder="https://example.com"
                         />
+                    </div>
+
+                    <div className="form-group" style={{ marginTop: '1rem' }}>
+                        <label className="form-label">
+                            <Terminal size={16} /> Execution Strategy
+                        </label>
+                        <div style={{
+                            padding: '10px',
+                            backgroundColor: '#0f172a',
+                            borderRadius: '6px',
+                            border: '1px solid #1e293b',
+                            color: '#38bdf8',
+                            fontFamily: 'monospace',
+                            fontSize: '0.8rem'
+                        }}>
+                            {command}
+                        </div>
                     </div>
 
                     {/* Advanced Configuration Toggle */}

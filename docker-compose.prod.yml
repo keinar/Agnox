@@ -1,3 +1,5 @@
+name: agnostic-automation-center
+
 services:
   # -------------------------
   # Infrastructure
@@ -48,7 +50,6 @@ services:
     restart: always
     volumes:
       - test_results:/app/reports
-      - ./apps/worker-service/tests:/app/tests-source:ro
     env_file:
       - .env
     environment:
@@ -73,16 +74,13 @@ services:
     environment:
       - RABBITMQ_URL=amqp://rabbitmq
       - MONGO_URI=${MONGO_URI}
-      - MONGODB_URL=${MONGO_URI}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - BASE_URL=${BASE_URL}
       - PRODUCER_URL=http://producer:3000
-      - ADMIN_USER=${ADMIN_USER}
-      - ADMIN_PASS=${ADMIN_PASS}
-      - CI=true
       - REPORTS_DIR=/app/reports
       - PUBLIC_API_URL=${PUBLIC_API_URL}
       - REDIS_URL=redis://redis:6379
+      - CI=true
     volumes:
       - test_results:/app/reports
       - /var/run/docker.sock:/var/run/docker.sock 
