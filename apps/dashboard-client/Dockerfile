@@ -1,5 +1,7 @@
 FROM node:20-slim AS builder
 
+ARG VITE_API_URL
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -13,6 +15,7 @@ RUN rm package-lock.json
 RUN npm install --legacy-peer-deps
 
 WORKDIR /app/apps/dashboard-client
+ENV VITE_API_URL=$VITE_API_URL
 RUN npx vite build
 
 FROM nginx:alpine
