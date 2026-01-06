@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Play, Folder, Server, Globe, Box, Terminal, ChevronDown, ChevronRight } from 'lucide-react';
+import { Info, X, Play, Folder, Server, Globe, Box, Terminal, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface ExecutionModalProps {
     isOpen: boolean;
@@ -64,8 +64,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const finalFolder = selectedFolder === 'all' ? 'tests' :
-            (selectedFolder.startsWith('tests/') ? selectedFolder : `tests/${selectedFolder}`);
+        const finalFolder = selectedFolder;
         onSubmit({
             folder: finalFolder,
             environment,
@@ -116,16 +115,22 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">
+                        <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <Server size={16} /> Environment
+                            <span title="Environments are mapped from system ENV variables (e.g. STAGING_URL)">
+                                <Info size={14} style={{ cursor: 'help', color: '#94a3b8' }} />
+                            </span>
                         </label>
                         <select
                             value={environment}
                             onChange={(e) => setEnvironment(e.target.value)}
                             className="form-select"
                         >
-                            {!defaults?.envMapping ? (
-                                <option value="default">Default Environment</option>
+                            {!defaults?.envMapping || Object.keys(defaults.envMapping).length === 0 ? (
+                                <>
+                                    <option value="development">Development (Default)</option>
+                                    <option value="custom">Custom URL</option>
+                                </>
                             ) : (
                                 Object.keys(defaults.envMapping).map((envKey) => (
                                     <option key={envKey} value={envKey}>
