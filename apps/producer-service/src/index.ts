@@ -153,7 +153,7 @@ app.post('/execution-request', async (request, reply) => {
     if (!parseResult.success) {
         return reply.status(400).send({
             error: 'Invalid payload',
-            details: parseResult.error.format()
+            details: parseResult.error.format
         });
     }
 
@@ -184,7 +184,9 @@ app.post('/execution-request', async (request, reply) => {
         const taskData = {
             ...parseResult.data,
             folder: folder || 'all',
-            config: enrichedConfig
+            config: {
+            ...enrichedConfig
+        }
         };
 
         if (dbClient) {
