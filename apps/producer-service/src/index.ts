@@ -60,7 +60,7 @@ app.register(fastifyStatic, {
 app.get('/config/defaults', async (request, reply) => {
     const envMapping: Record<string, string> = {};
 
-    if (process.env.DEV_URL) envMapping.development = process.env.DEV_URL;
+    if (process.env.DEFAULT_BASE_URL) envMapping.development = process.env.DEFAULT_BASE_URL;
     if (process.env.STAGING_URL) envMapping.staging = process.env.STAGING_URL;
     if (process.env.PRODUCTION_URL) envMapping.production = process.env.PRODUCTION_URL;
 
@@ -157,7 +157,7 @@ app.post('/execution-request', async (request, reply) => {
         });
     }
 
-    const { taskId, image, command, tests, config } = parseResult.data;
+    const { taskId, image, command, tests, config, folder } = parseResult.data;
 
     try {
         const startTime = new Date();
@@ -183,6 +183,7 @@ app.post('/execution-request', async (request, reply) => {
 
         const taskData = {
             ...parseResult.data,
+            folder: folder || 'all',
             config: enrichedConfig
         };
 
@@ -196,6 +197,7 @@ app.post('/execution-request', async (request, reply) => {
                         image,
                         command,
                         status: 'PENDING',
+                        folder: folder || 'all',
                         startTime,
                         config: enrichedConfig,
                         tests: tests || []
