@@ -53,14 +53,12 @@ export const Dashboard = () => {
         command: string;
     }) => {
         try {
-            // Mapping UI selection to internal test paths array
-            const testsToRun = formData.folder === 'all' ? ['tests'] : [`tests/${formData.folder}`];
-
             const payload = {
                 taskId: `run-${Date.now()}`,
-                image: formData.image,    // New agnostic field
-                command: formData.command, // New agnostic field
-                tests: testsToRun,
+                image: formData.image,
+                command: formData.command,
+                folder: formData.folder,
+                tests: [formData.folder],
                 config: {
                     environment: formData.environment,
                     baseUrl: formData.baseUrl,
@@ -76,7 +74,6 @@ export const Dashboard = () => {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error('Server Error:', errorData);
                 throw new Error(errorData.error || 'Server validation failed');
             }
 
