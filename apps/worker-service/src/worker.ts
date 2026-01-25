@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as tar from 'tar-fs';
 import Redis from 'ioredis';
+import { analyzeTestFailure } from './analysisService';
 
 dotenv.config();
 
@@ -16,6 +17,52 @@ const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
 const DB_NAME = 'automation_platform';
 const COLLECTION_NAME = 'executions';
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+
+function resolveHostForDocker(url: string | undefined): string {
+    if (!url) return '';
+    if (process.env.RUNNING_IN_DOCKER === 'true' && (url.includes('localhost') || url.includes('127.0.0.1'))) {
+        return url.replace(/localhost|127\.0.0.1/, 'host.docker.internal');
+    }
+    return url;
+}
+
+function getMergedEnvVars(configEnv: any = {}) {
+    const localKeysToInject = [
+        'API_USER', 
+        'API_PASSWORD', 
+        'BASE_URL', 
+        'SECRET_KEY',
+        'DB_USER',
+        'DB_PASS',
+        'MONGO_URI',
+        'MONGODB_URL',
+        'REDIS_URL',
+        'GEMINI_API_KEY'
+    ];
+
+    const injectedEnv: string[] = [];
+
+    Object.entries(configEnv).forEach(([k, v]) => {
+        let value = v as string;
+        if (['BASE_URL', 'MONGO_URI', 'MONGODB_URL'].includes(k)) {
+            value = resolveHostForDocker(value);
+        }
+        injectedEnv.push(`${k}=${value}`);
+    });
+
+    localKeysToInject.forEach(key => {
+        if (!configEnv[key] && process.env[key]) {
+            console.log(`[Worker] Injecting local env var: ${key}`);
+            let value = process.env[key]!;
+            if (['BASE_URL', 'MONGO_URI', 'MONGODB_URL'].includes(key)) {
+                value = resolveHostForDocker(value);
+            }
+            injectedEnv.push(`${key}=${value}`);
+        }
+    });
+
+    return injectedEnv;
+}
 
 async function updatePerformanceMetrics(testName: string, durationMs: number) {
     const key = `metrics:test:${testName}`;
@@ -54,13 +101,7 @@ async function startWorker() {
             await docker.getImage(image).inspect();
         } catch (e) {
             console.log(`Image ${image} not found locally, pulling...`);
-            const stream = await docker.pull(image);
-            return new Promise((resolve, reject) => {
-                docker.modem.followProgress(stream, (err, res) => {
-                    if (err) reject(err);
-                    else resolve(res);
-                });
-            });
+            await pullImage(image);
         }
     }
 
@@ -99,7 +140,7 @@ async function startWorker() {
         let logsBuffer = "";
         let container: any = null;
 
-        try {
+  try {
             console.log(`Orchestrating container for task: ${taskId} using image: ${image}`);
 
             try {
@@ -111,19 +152,21 @@ async function startWorker() {
 
             await ensureImageExists(image);
             const agnosticCommand = ['/bin/sh', '/app/entrypoint.sh', task.folder || 'all'];
+            const targetBaseUrl = resolveHostForDocker(config.baseUrl || process.env.BASE_URL || 'http://host.docker.internal:3000');
             container = await docker.createContainer({
                 Image: image,
                 Tty: true,
                 Cmd: agnosticCommand,
                 Env: [
-                    `BASE_URL=${config.baseUrl || process.env.DEFAULT_BASE_URL}`,
+                    `BASE_URL=${targetBaseUrl}`,
                     `TASK_ID=${taskId}`,
                     `CI=true`,
                     `FRAMEWORK_AGNOSTIC=true`,
-                    ...(Object.entries(config.envVars || {}).map(([k, v]) => `${k}=${v}`))
+                    ...getMergedEnvVars(config.envVars)
                 ],
                 HostConfig: {
                     AutoRemove: false, // CRITICAL: Must be false so we can copy files after exit
+                    ExtraHosts: process.platform === 'linux' ? ['host.docker.internal:host-gateway'] : undefined
                 },
                 WorkingDir: '/app'
             });
@@ -133,7 +176,7 @@ async function startWorker() {
             // Logs streaming setup
             const logStream = await container.logs({ follow: true, stdout: true, stderr: true });
 
-            // Pipe logs to worker console (Restored feature)
+            // Pipe logs to worker console
             logStream.pipe(process.stdout);
 
             logStream.on('data', (chunk: Buffer) => {
@@ -143,10 +186,58 @@ async function startWorker() {
                 sendLogToProducer(taskId, cleanLine).catch(() => { });
             });
 
-            // Wait for execution to finish
+            // 1. Wait for execution to finish
             const result = await container.wait();
-            const status = result.StatusCode === 0 ? 'PASSED' : 'FAILED';
+            let finalStatus = result.StatusCode === 0 ? 'PASSED' : 'FAILED';
+            const logsString = logsBuffer;
+            const hasFailures = logsString.includes('failed') || logsString.includes('✘');
+            const hasRetries = logsString.includes('retry #');
+            
+            if (finalStatus === 'PASSED') {
+                if (hasFailures && !hasRetries) {
+                    console.warn(`[Worker] ⚠️ Exit code 0 but failures detected. Marking as FAILED.`);
+                    finalStatus = 'FAILED';
+                } else if (hasRetries) {
+                    console.warn(`[Worker] ⚠️ Retries detected. Marking as UNSTABLE.`);
+                    finalStatus = 'UNSTABLE'; 
+                }
+            } else {
+                finalStatus = 'FAILED';
+            }
+
             const duration = new Date().getTime() - startTime.getTime();
+
+            // --- AI ANALYSIS START ---
+            let analysis = '';
+            if (finalStatus === 'FAILED' || finalStatus === 'UNSTABLE') {
+                console.log(`[Worker] Task status is ${finalStatus}. Reporting analysis start...`);
+
+                await executionsCollection.updateOne(
+                    { taskId }, 
+                    { $set: { status: 'ANALYZING', output: logsBuffer } } 
+                );
+                await notifyProducer({
+                    taskId,
+                    status: 'ANALYZING',
+                    output: logsBuffer,
+                    reportsBaseUrl: currentReportsBaseUrl,
+                    image
+                });
+
+                if (!logsBuffer || logsBuffer.length < 50) {
+                     analysis = "AI Analysis skipped: Insufficient logs.";
+                } else {
+                    try {
+                        const context = finalStatus === 'UNSTABLE' ? "Note: The test passed after retries (Flaky)." : "";
+                        analysis = await analyzeTestFailure(logsBuffer + "\n" + context, image);
+                        console.log(`[Worker] AI Analysis completed (${analysis.length} chars).`);
+                    } catch (aiError: any) {
+                        console.error('[Worker] AI Analysis CRASHED:', aiError.message);
+                        analysis = `AI Analysis Failed: ${aiError.message}`;
+                    }
+                }
+            }
+            // --- AI ANALYSIS END ---
 
             console.log(`Copying artifacts from container to ${baseTaskDir}...`);
             const copyAndRenameFolder = async (containerPath: string, hostSubDir: string) => {
@@ -170,6 +261,7 @@ async function startWorker() {
                         console.log(`Successfully mapped ${originalFolderName} to ${hostSubDir}`);
                     }
                 } catch (e) {
+                    // Ignore specific missing folders errors
                 }
             };
 
@@ -188,19 +280,21 @@ async function startWorker() {
             await updatePerformanceMetrics(image, duration);
 
             const endTime = new Date();
+            
             const updateData = {
                 taskId,
-                status,
+                status: finalStatus,
                 endTime,
                 output: logsBuffer,
                 reportsBaseUrl: currentReportsBaseUrl,
                 image,
-                command
+                command,
+                analysis: analysis
             };
 
             await executionsCollection.updateOne({ taskId }, { $set: updateData });
             await notifyProducer(updateData);
-            console.log(`✅ Task ${taskId} finished with status: ${status}`);
+            console.log(`✅ Task ${taskId} finished with status: ${finalStatus}`);
 
         } catch (error: any) {
             console.error(`❌ Container orchestration failure for task ${taskId}:`, error.message);

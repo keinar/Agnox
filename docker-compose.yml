@@ -9,7 +9,7 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -41,6 +41,14 @@ services:
       - MONGODB_URL=${MONGO_URI}
       - REPORTS_DIR=/app/reports
       - REDIS_URL=redis://redis:6379
+      - INJECT_ENV_VARS=ADMIN_USER,ADMIN_PASS
+      - ADMIN_USER=${ADMIN_USER}
+      - ADMIN_PASS=${ADMIN_PASS}
+      - DEFAULT_TEST_IMAGE=${DEFAULT_TEST_IMAGE}
+      - DEFAULT_BASE_URL=${DEFAULT_BASE_URL}
+      - STAGING_URL=${STAGING_URL}
+      - PRODUCTION_URL=${PRODUCTION_URL}
+      - DEFAULT_TEST_FOLDER=${DEFAULT_TEST_FOLDER}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -54,6 +62,7 @@ services:
     container_name: automation-worker
     ipc: host
     environment:
+      - RUNNING_IN_DOCKER=true
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
       - MONGO_URI=${MONGO_URI}
       - MONGODB_URL=${MONGO_URI}
@@ -64,6 +73,7 @@ services:
       - REPORTS_DIR=/app/reports
       - PUBLIC_API_URL=http://localhost:3000
       - REDIS_URL=redis://redis:6379
+      - GITHUB_COPILOT_API_KEY=${GITHUB_COPILOT_API_KEY}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - test_results:/app/reports
@@ -74,6 +84,8 @@ services:
         condition: service_started
     networks:
       - app-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   dashboard:
     build:
