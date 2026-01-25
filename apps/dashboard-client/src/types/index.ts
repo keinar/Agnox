@@ -7,11 +7,12 @@ export interface ExecutionConfig {
 export interface Execution {
     _id: string;
     taskId: string;
-    status: 'RUNNING' | 'PASSED' | 'FAILED';
+    status: 'RUNNING' | 'PASSED' | 'FAILED' | 'ERROR' | 'UNSTABLE' | 'ANALYZING';
     startTime: string;
     endTime?: string;
     tests: string[];
     output?: string;
     error?: string;
+    analysis?: string;
     config: ExecutionConfig;
 }

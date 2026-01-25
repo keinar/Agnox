@@ -26,6 +26,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@github/copilot-sdk": "^0.1.16",
     "@google/generative-ai": "^0.24.1",
     "@types/uuid": "^10.0.0",
     "amqplib": "^0.10.9",

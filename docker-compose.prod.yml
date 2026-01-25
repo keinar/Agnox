@@ -72,6 +72,7 @@ services:
     container_name: automation-worker
     restart: always
     environment:
+      - RUNNING_IN_DOCKER=true
       - RABBITMQ_URL=amqp://rabbitmq
       - MONGO_URI=${MONGO_URI}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
@@ -81,6 +82,7 @@ services:
       - PUBLIC_API_URL=${PUBLIC_API_URL}
       - REDIS_URL=redis://redis:6379
       - CI=true
+      - GITHUB_COPILOT_API_KEY=${GITHUB_COPILOT_API_KEY}
     volumes:
       - test_results:/app/reports
       - /var/run/docker.sock:/var/run/docker.sock 
@@ -90,6 +92,8 @@ services:
       - redis
     networks:
       - app-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   dashboard:
     build:
