@@ -69,3 +69,9 @@ Thumbs.db
 # 8. Docker (Local volumes/dev)
 # ---------------------------------
 docker-data/
+
+
+# Nginx Proxy Manager Data
+npm-data/
+npm-letsencrypt/
+npm-data/
