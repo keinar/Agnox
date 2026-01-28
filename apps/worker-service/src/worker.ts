@@ -198,7 +198,8 @@ async function startWorker() {
                 let logLine = chunk.toString();
                 const cleanLine = stripAnsi(logLine);
                 logsBuffer += cleanLine;
-                sendLogToProducer(taskId, cleanLine).catch(() => { });
+                // Multi-tenant: Include organizationId in log broadcasts
+                sendLogToProducer(taskId, cleanLine, organizationId).catch(() => { });
             });
 
             // 1. Wait for execution to finish
@@ -351,13 +352,14 @@ function stripAnsi(text: string) {
     return text.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
 }
 
-async function sendLogToProducer(taskId: string, log: string) {
+async function sendLogToProducer(taskId: string, log: string, organizationId: string) {
     const PRODUCER_URL = process.env.PRODUCER_URL || 'http://producer:3000';
     try {
         await fetch(`${PRODUCER_URL}/executions/log`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ taskId, log })
+            // Multi-tenant: Include organizationId for room-based broadcasting
+            body: JSON.stringify({ taskId, log, organizationId })
         });
     } catch (e) { }
 }

@@ -12,6 +12,7 @@ import * as fs from 'fs';
 import Redis from 'ioredis';
 import { authRoutes } from './routes/auth.js';
 import { authMiddleware } from './middleware/auth.js';
+import { verifyToken } from './utils/jwt.js';
 
 declare module 'fastify' {
     interface FastifyInstance {
@@ -113,16 +114,35 @@ app.get('/api/metrics/:image', async (request, reply) => {
 
 app.post('/executions/update', async (request, reply) => {
     const updateData = request.body as any;
-    app.io.emit('execution-updated', updateData);
+
+    // Multi-tenant: Broadcast only to the organization's room
+    if (updateData.organizationId) {
+        const orgRoom = `org:${updateData.organizationId}`;
+        app.io.to(orgRoom).emit('execution-updated', updateData);
+        app.log.info(`📡 Broadcast execution-updated to room ${orgRoom} (taskId: ${updateData.taskId})`);
+    } else {
+        // Fallback: Global broadcast (for backwards compatibility during transition)
+        app.io.emit('execution-updated', updateData);
+        app.log.warn(`⚠️  Execution update missing organizationId (taskId: ${updateData.taskId}), broadcasting globally`);
+    }
+
     return { status: 'broadcasted' };
 });
 
 app.post('/executions/log', async (request, reply) => {
-    const { taskId, log } = request.body as { taskId: string; log: string };
+    const { taskId, log, organizationId } = request.body as { taskId: string; log: string; organizationId?: string };
 
-    // Broadcast the log specifically to the dashboard
-    // We use a specific event name 'execution-log'
-    app.io.emit('execution-log', { taskId, log });
+    // Multi-tenant: Broadcast only to the organization's room
+    if (organizationId) {
+        const orgRoom = `org:${organizationId}`;
+        app.io.to(orgRoom).emit('execution-log', { taskId, log });
+        // Don't log every line (too verbose), only log if needed for debugging
+        // app.log.debug(`📡 Broadcast log to room ${orgRoom} (taskId: ${taskId})`);
+    } else {
+        // Fallback: Global broadcast (for backwards compatibility during transition)
+        app.io.emit('execution-log', { taskId, log });
+        app.log.warn(`⚠️  Log broadcast missing organizationId (taskId: ${taskId}), broadcasting globally`);
+    }
 
     return { status: 'ok' };
 });
@@ -228,7 +248,9 @@ app.post('/api/execution-request', async (request, reply) => {
                 { upsert: true }
             );
 
-            app.io.emit('execution-updated', {
+            // Multi-tenant: Broadcast only to the organization's room
+            const orgRoom = `org:${organizationId.toString()}`;
+            app.io.to(orgRoom).emit('execution-updated', {
                 taskId,
                 organizationId: organizationId.toString(),  // Include in broadcast
                 status: 'PENDING',
@@ -238,6 +260,7 @@ app.post('/api/execution-request', async (request, reply) => {
                 config: enrichedConfig,
                 tests: tests || []
             });
+            app.log.info(`📡 Broadcast execution-updated to room ${orgRoom} (taskId: ${taskId}, status: PENDING)`);
         }
 
         await rabbitMqService.sendToQueue(taskData);
@@ -335,8 +358,46 @@ const start = async () => {
 
         await app.listen({ port: 3000, host: '0.0.0.0' });
 
+        // Socket.io connection with JWT authentication and room-based broadcasting
         app.io.on('connection', (socket) => {
-            app.log.info('Dashboard connected');
+            // Extract JWT token from handshake
+            const token = socket.handshake.auth?.token;
+
+            if (!token) {
+                app.log.warn(`Socket connection rejected: No token provided (socket: ${socket.id})`);
+                socket.emit('auth-error', { error: 'Authentication required' });
+                socket.disconnect();
+                return;
+            }
+
+            // Verify JWT token
+            const payload = verifyToken(token);
+
+            if (!payload) {
+                app.log.warn(`Socket connection rejected: Invalid token (socket: ${socket.id})`);
+                socket.emit('auth-error', { error: 'Invalid or expired token' });
+                socket.disconnect();
+                return;
+            }
+
+            // Multi-tenant: Join organization-specific room
+            const orgRoom = `org:${payload.organizationId}`;
+            socket.join(orgRoom);
+
+            app.log.info(`✅ Socket ${socket.id} connected for user ${payload.userId} (${payload.role}) in organization ${payload.organizationId}`);
+            app.log.info(`   Joined room: ${orgRoom}`);
+
+            // Send confirmation to client
+            socket.emit('auth-success', {
+                message: 'Connected to organization channel',
+                organizationId: payload.organizationId,
+                userId: payload.userId,
+                role: payload.role
+            });
+
+            socket.on('disconnect', () => {
+                app.log.info(`Socket ${socket.id} disconnected from room ${orgRoom}`);
+            });
         });
 
         app.log.info('🚀 Producer Service started successfully');
