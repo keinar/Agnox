@@ -1,7 +1,7 @@
 import fastify from 'fastify';
 import socketio from 'fastify-socket.io';
 import cors from '@fastify/cors';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { rabbitMqService } from './rabbitmq.js';
@@ -83,7 +83,9 @@ app.get('/', async () => {
  */
 app.get('/api/metrics/:image', async (request, reply) => {
     const { image } = request.params as { image: string };
-    const key = `metrics:test:${image}`;
+    // Scope Redis keys by organization for multi-tenant isolation
+    const organizationId = request.user?.organizationId || 'global';
+    const key = `metrics:${organizationId}:test:${image}`;
 
     try {
         // Fetch last 10 durations
@@ -138,8 +140,18 @@ async function connectToMongo() {
 app.get('/api/executions', async (request, reply) => {
     try {
         if (!dbClient) return reply.status(500).send({ error: 'Database not connected' });
+
+        // Multi-tenant data isolation: Filter by organizationId from JWT
+        const organizationId = new ObjectId(request.user!.organizationId);
+
         const collection = dbClient.db(DB_NAME).collection('executions');
-        return await collection.find({}).sort({ startTime: -1 }).limit(50).toArray();
+        const executions = await collection
+            .find({ organizationId })
+            .sort({ startTime: -1 })
+            .limit(50)
+            .toArray();
+
+        return executions;
     } catch (error) {
         return reply.status(500).send({ error: 'Failed to fetch data' });
     }
@@ -183,8 +195,12 @@ app.post('/api/execution-request', async (request, reply) => {
             }
         };
 
+        // Multi-tenant data isolation: Include organizationId from JWT
+        const organizationId = new ObjectId(request.user!.organizationId);
+
         const taskData = {
             ...parseResult.data,
+            organizationId: organizationId.toString(),  // Include organizationId for worker
             folder: folder || 'all',
             config: {
             ...enrichedConfig
@@ -192,12 +208,14 @@ app.post('/api/execution-request', async (request, reply) => {
         };
 
         if (dbClient) {
+
             const collection = dbClient.db(DB_NAME).collection('executions');
             await collection.updateOne(
                 { taskId },
                 {
                     $set: {
                         taskId,
+                        organizationId,  // Add organizationId for multi-tenant isolation
                         image,
                         command,
                         status: 'PENDING',
@@ -212,6 +230,7 @@ app.post('/api/execution-request', async (request, reply) => {
 
             app.io.emit('execution-updated', {
                 taskId,
+                organizationId: organizationId.toString(),  // Include in broadcast
                 status: 'PENDING',
                 startTime,
                 image,
@@ -236,9 +255,25 @@ app.delete('/api/executions/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
     try {
         if (!dbClient) return reply.status(500).send({ error: 'Database not connected' });
+
+        // Multi-tenant data isolation: Verify ownership by filtering with organizationId
+        const organizationId = new ObjectId(request.user!.organizationId);
+
         const collection = dbClient.db(DB_NAME).collection('executions');
-        await collection.deleteOne({ taskId: id });
-        return { status: 'Deleted successfully' };
+        const result = await collection.deleteOne({
+            taskId: id,
+            organizationId  // Only delete if belongs to this organization
+        });
+
+        // Return 404 instead of 403 to prevent leaking information about other orgs
+        if (result.deletedCount === 0) {
+            return reply.status(404).send({
+                success: false,
+                error: 'Execution not found'
+            });
+        }
+
+        return { success: true, message: 'Execution deleted successfully' };
     } catch (error) {
         return reply.status(500).send({ error: 'Failed to delete' });
     }
