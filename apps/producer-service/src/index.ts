@@ -10,6 +10,8 @@ import fastifyStatic from '@fastify/static';
 import type { Server } from 'socket.io';
 import * as fs from 'fs';
 import Redis from 'ioredis';
+import { authRoutes } from './routes/auth.js';
+import { authMiddleware } from './middleware/auth.js';
 
 declare module 'fastify' {
     interface FastifyInstance {
@@ -79,7 +81,7 @@ app.get('/', async () => {
 /**
  * GET Performance insights for a specific image/suite
  */
-app.get('/metrics/:image', async (request, reply) => {
+app.get('/api/metrics/:image', async (request, reply) => {
     const { image } = request.params as { image: string };
     const key = `metrics:test:${image}`;
 
@@ -133,7 +135,7 @@ async function connectToMongo() {
     }
 }
 
-app.get('/executions', async (request, reply) => {
+app.get('/api/executions', async (request, reply) => {
     try {
         if (!dbClient) return reply.status(500).send({ error: 'Database not connected' });
         const collection = dbClient.db(DB_NAME).collection('executions');
@@ -147,7 +149,7 @@ app.get('/executions', async (request, reply) => {
  * Agnostic Execution Request
  * supports custom Docker images and commands
  */
-app.post('/execution-request', async (request, reply) => {
+app.post('/api/execution-request', async (request, reply) => {
     const parseResult = TestExecutionRequestSchema.safeParse(request.body);
 
     if (!parseResult.success) {
@@ -230,7 +232,7 @@ app.post('/execution-request', async (request, reply) => {
     }
 });
 
-app.delete('/executions/:id', async (request, reply) => {
+app.delete('/api/executions/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
     try {
         if (!dbClient) return reply.status(500).send({ error: 'Database not connected' });
@@ -242,7 +244,7 @@ app.delete('/executions/:id', async (request, reply) => {
     }
 });
 
-app.get('/tests-structure', async (request, reply) => {
+app.get('/api/tests-structure', async (request, reply) => {
     const testsPath = '/app/tests-source';
     try {
         if (!fs.existsSync(testsPath)) {
@@ -265,11 +267,45 @@ const start = async () => {
     try {
         await rabbitMqService.connect();
         await connectToMongo();
+
+        // Register authentication routes
+        await authRoutes(app, dbClient);
+
+        // Global authentication middleware
+        // Apply auth to all /api/* routes except auth endpoints
+        app.addHook('preHandler', async (request, reply) => {
+            // Public routes - no authentication required
+            const publicRoutes = [
+                '/',
+                '/api/auth/signup',
+                '/api/auth/login',
+                '/config/defaults',
+                '/executions/update',  // Internal worker callback
+                '/executions/log'      // Internal worker callback
+            ];
+
+            // Static files (reports) - no auth
+            if (request.url.startsWith('/reports/')) {
+                return;
+            }
+
+            // Check if route is public
+            if (publicRoutes.includes(request.url)) {
+                return;
+            }
+
+            // Apply auth middleware to all other routes
+            await authMiddleware(request, reply);
+        });
+
         await app.listen({ port: 3000, host: '0.0.0.0' });
 
         app.io.on('connection', (socket) => {
             app.log.info('Dashboard connected');
         });
+
+        app.log.info('🚀 Producer Service started successfully');
+        app.log.info('📍 Listening on port 3000');
     } catch (err) {
         app.log.error(err);
         process.exit(1);
