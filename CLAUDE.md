@@ -3,51 +3,52 @@
 ## Project Overview
 A microservices-based test automation platform that is language and framework agnostic. Currently transforming from single-tenant to multi-tenant SaaS.
 
+**Important:** This project runs entirely via Docker Compose. No local npm build needed.
+
 ## Tech Stack
 
 ### Backend Services
 - **Producer Service**: Fastify + TypeScript + MongoDB
-  - Location: `apps/producer/`
+  - Location: `apps/producer-service/`
   - Purpose: API server, queue management, database operations
-  - Port: 3000
+  - Port: 3000 (internal)
 
 - **Worker Service**: Node.js + TypeScript + Docker
-  - Location: `apps/worker/`
+  - Location: `apps/worker-service/`
   - Purpose: Container orchestration, test execution, AI analysis
   - Communicates via: RabbitMQ
 
 ### Frontend
-- **Dashboard**: React 18 + Vite + TypeScript + Tailwind CSS
-  - Location: `apps/dashboard/`
+- **Dashboard Client**: React 18 + Vite + TypeScript + Tailwind CSS
+  - Location: `apps/dashboard-client/`
   - Real-time: Socket.io
-  - Port: 5173 (dev)
+  - Port: 8080 (exposed)
 
 ### Shared Code
 - **Shared Types**: `packages/shared-types/`
   - Contains: TypeScript interfaces shared between services
 
-### Infrastructure
-- **Database**: MongoDB 6.0+
-- **Cache/Queue**: Redis 7.0+
-- **Message Queue**: RabbitMQ 3.12+
-- **Container Runtime**: Docker
+### Infrastructure (via Docker Compose)
+- **Database**: MongoDB
+- **Cache/Queue**: Redis
+- **Message Queue**: RabbitMQ
 - **AI**: Google Gemini API
 
 ## Directory Structure
 ```
 Agnostic-Automation-Center/
 ├── apps/
-│   ├── producer/
+│   ├── producer-service/
 │   │   └── src/
 │   │       ├── routes/        # Fastify route handlers
 │   │       ├── models/        # MongoDB schemas (if exist)
 │   │       ├── services/      # Business logic
 │   │       └── utils/         # Helpers
-│   ├── worker/
+│   ├── worker-service/
 │   │   └── src/
 │   │       ├── services/      # Docker orchestration
 │   │       └── utils/         # AI analysis, logging
-│   └── dashboard/
+│   └── dashboard-client/
 │       └── src/
 │           ├── components/    # React components
 │           ├── pages/         # Route pages
@@ -57,8 +58,33 @@ Agnostic-Automation-Center/
 │   └── shared-types/
 │       └── src/               # Shared TypeScript interfaces
 ├── docs/                      # Documentation
-└── migrations/                # Database migration scripts
+├── migrations/                # Database migration scripts (NEW)
+├── docker-compose.yml         # Local development
+└── docker-compose.prod.yml    # Production
 ```
+
+## Running the Project
+
+### Local Development
+```bash
+# Start all services
+docker-compose up --build
+
+# Start in background
+docker-compose up --build -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+```
+
+### Access Points (Local)
+- Dashboard: http://localhost:8080
+- Producer API: http://localhost:3000 (internal)
+- MongoDB: localhost:27017
+- RabbitMQ Management: http://localhost:15672
 
 ## Code Conventions
 
@@ -109,12 +135,12 @@ Agnostic-Automation-Center/
 5. Filter all queries by organizationId
 
 ### Key Files to Create/Modify
-- `apps/producer/src/models/organization.ts` (NEW)
-- `apps/producer/src/models/user.ts` (NEW)
-- `apps/producer/src/models/invitation.ts` (NEW)
-- `apps/producer/src/routes/auth.ts` (NEW)
-- `apps/producer/src/middleware/auth.ts` (NEW)
-- `apps/producer/src/utils/jwt.ts` (NEW)
+- `apps/producer-service/src/models/organization.ts` (NEW)
+- `apps/producer-service/src/models/user.ts` (NEW)
+- `apps/producer-service/src/models/invitation.ts` (NEW)
+- `apps/producer-service/src/routes/auth.ts` (NEW)
+- `apps/producer-service/src/middleware/auth.ts` (NEW)
+- `apps/producer-service/src/utils/jwt.ts` (NEW)
 - `packages/shared-types/src/index.ts` (MODIFY)
 - Existing models: Add `organizationId` field
 
@@ -124,60 +150,35 @@ Agnostic-Automation-Center/
 
 ## Environment Variables
 
-### Required for Phase 1
-```bash
-# Database
-MONGODB_URI=mongodb://localhost:27017/automation_db
-
-# Authentication (NEW)
-JWT_SECRET=<64-char-random-string>
-JWT_EXPIRY=24h
-PASSWORD_SALT_ROUNDS=10
-
-# Existing
-RABBITMQ_URL=amqp://localhost:5672
-REDIS_URL=redis://localhost:6379
-GEMINI_API_KEY=<your-key>
+### Required for Phase 1 (add to docker-compose.yml)
+```yaml
+# Producer Service environment
+JWT_SECRET: <64-char-random-string>
+JWT_EXPIRY: 24h
+PASSWORD_SALT_ROUNDS: 10
 ```
 
-## Testing Commands
-```bash
-# Run all tests
-npm test
-
-# Run specific service tests
-npm run test --workspace=apps/producer
-
-# Build check
-npm run build
-
-# Lint
-npm run lint
+### Existing (already in docker-compose)
+```yaml
+MONGODB_URI: mongodb://mongodb:27017/automation_db
+RABBITMQ_URL: amqp://rabbitmq:5672
+REDIS_URL: redis://redis:6379
+GEMINI_API_KEY: <your-key>
 ```
 
-## Common Tasks
+## Testing After Changes
 
-### Adding a New API Route (Producer)
-1. Create route file in `apps/producer/src/routes/`
-2. Register in main server file
-3. Add types to `packages/shared-types/`
-4. Update tests
-
-### Adding a New MongoDB Model
-1. Create interface in `packages/shared-types/`
-2. Create model file in `apps/producer/src/models/`
-3. Add indexes in migration script
-4. Update related services
-
-### Running Locally
 ```bash
-# Start infrastructure
-docker-compose up -d mongodb redis rabbitmq
+# Rebuild and test
+docker-compose down
+docker-compose up --build
 
-# Start services (separate terminals)
-npm run dev --workspace=apps/producer
-npm run dev --workspace=apps/worker
-npm run dev --workspace=apps/dashboard
+# Check logs for errors
+docker-compose logs producer-service
+docker-compose logs worker-service
+
+# Access dashboard to verify UI
+# http://localhost:8080
 ```
 
 ## Git Workflow
@@ -187,8 +188,10 @@ npm run dev --workspace=apps/dashboard
 - Always create PR for review before merging to main
 
 ## Notes for Claude Code
+- This project uses Docker Compose - no local npm commands needed
 - Always check existing patterns before creating new code
 - Preserve existing code style
-- Run `npm run build` after changes to verify TypeScript compiles
-- Test migrations in dry-run mode first
+- Test changes by running `docker-compose up --build`
+- Check container logs for errors: `docker-compose logs <service-name>`
 - Commit frequently with descriptive messages
+- Migration scripts run OUTSIDE Docker (need local Node.js or run in container)

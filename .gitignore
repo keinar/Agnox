@@ -75,3 +75,4 @@ docker-data/
 npm-data/
 npm-letsencrypt/
 npm-data/
+backups/
