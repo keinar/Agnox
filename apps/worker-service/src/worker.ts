@@ -120,13 +120,20 @@ async function startWorker() {
         }
         const orgId = new ObjectId(organizationId);
 
+        // Multi-tenant: Scope report storage by organization
         const reportsDir = process.env.REPORTS_DIR || path.join(process.cwd(), 'test-results');
-        const baseTaskDir = path.join(reportsDir, taskId);
+        const orgReportsDir = path.join(reportsDir, organizationId);
+        const baseTaskDir = path.join(orgReportsDir, taskId);
 
-        if (!fs.existsSync(baseTaskDir)) fs.mkdirSync(baseTaskDir, { recursive: true });
+        if (!fs.existsSync(baseTaskDir)) {
+            fs.mkdirSync(baseTaskDir, { recursive: true });
+            console.log(`[Worker] Created org-scoped report directory: ${baseTaskDir}`);
+        }
 
         const startTime = new Date();
-        const currentReportsBaseUrl = process.env.PUBLIC_API_URL || 'http://localhost:3000';
+        // Multi-tenant: Include organizationId in report URLs
+        const apiBaseUrl = process.env.PUBLIC_API_URL || 'http://localhost:3000';
+        const currentReportsBaseUrl = `${apiBaseUrl}/reports/${organizationId}`;
 
         // Notify start (DB update) - Multi-tenant: Filter by organizationId
         await executionsCollection.updateOne(
