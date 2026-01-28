@@ -1,5 +1,5 @@
 import amqp, { Channel, ConsumeMessage } from 'amqplib';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import Docker from 'dockerode';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -64,11 +64,12 @@ function getMergedEnvVars(configEnv: any = {}) {
     return injectedEnv;
 }
 
-async function updatePerformanceMetrics(testName: string, durationMs: number) {
-    const key = `metrics:test:${testName}`;
+async function updatePerformanceMetrics(testName: string, durationMs: number, organizationId: string) {
+    // Multi-tenant: Scope Redis keys by organization
+    const key = `metrics:${organizationId}:test:${testName}`;
     await redis.lpush(key, durationMs);
     await redis.ltrim(key, 0, 9);
-    console.log(`[Redis] Updated metrics for ${testName}. Duration: ${durationMs}ms`);
+    console.log(`[Redis] Updated metrics for ${testName} (org: ${organizationId}). Duration: ${durationMs}ms`);
 }
 
 async function startWorker() {
@@ -109,7 +110,15 @@ async function startWorker() {
         if (!msg) return;
 
         const task = JSON.parse(msg.content.toString());
-        const { taskId, image, command, config } = task;
+        const { taskId, image, command, config, organizationId } = task;
+
+        // Multi-tenant: Convert organizationId string to ObjectId for MongoDB queries
+        if (!organizationId) {
+            console.error(`[Worker] ERROR: Task ${taskId} missing organizationId. Rejecting message.`);
+            channel!.nack(msg, false, false); // Don't requeue
+            return;
+        }
+        const orgId = new ObjectId(organizationId);
 
         const reportsDir = process.env.REPORTS_DIR || path.join(process.cwd(), 'test-results');
         const baseTaskDir = path.join(reportsDir, taskId);
@@ -119,9 +128,9 @@ async function startWorker() {
         const startTime = new Date();
         const currentReportsBaseUrl = process.env.PUBLIC_API_URL || 'http://localhost:3000';
 
-        // Notify start (DB update)
+        // Notify start (DB update) - Multi-tenant: Filter by organizationId
         await executionsCollection.updateOne(
-            { taskId },
+            { taskId, organizationId: orgId },
             { $set: { status: 'RUNNING', startTime, config, reportsBaseUrl: currentReportsBaseUrl } },
             { upsert: true }
         );
@@ -129,6 +138,7 @@ async function startWorker() {
         // Notify start (Socket broadcast - with full details for instant UI update)
         await notifyProducer({
             taskId,
+            organizationId,  // Include for room-based broadcasting
             status: 'RUNNING',
             startTime,
             image,
@@ -153,7 +163,12 @@ async function startWorker() {
             await ensureImageExists(image);
             const agnosticCommand = ['/bin/sh', '/app/entrypoint.sh', task.folder || 'all'];
             const targetBaseUrl = resolveHostForDocker(config.baseUrl || process.env.BASE_URL || 'http://host.docker.internal:3000');
+
+            // Multi-tenant: Include organizationId in container name for isolation
+            const containerName = `org_${organizationId}_task_${taskId}`;
+
             container = await docker.createContainer({
+                name: containerName,
                 Image: image,
                 Tty: true,
                 Cmd: agnosticCommand,
@@ -212,12 +227,14 @@ async function startWorker() {
             if (finalStatus === 'FAILED' || finalStatus === 'UNSTABLE') {
                 console.log(`[Worker] Task status is ${finalStatus}. Reporting analysis start...`);
 
+                // Multi-tenant: Filter by organizationId
                 await executionsCollection.updateOne(
-                    { taskId }, 
-                    { $set: { status: 'ANALYZING', output: logsBuffer } } 
+                    { taskId, organizationId: orgId },
+                    { $set: { status: 'ANALYZING', output: logsBuffer } }
                 );
                 await notifyProducer({
                     taskId,
+                    organizationId,  // Include for room-based broadcasting
                     status: 'ANALYZING',
                     output: logsBuffer,
                     reportsBaseUrl: currentReportsBaseUrl,
@@ -277,12 +294,14 @@ async function startWorker() {
                 await copyAndRenameFolder(m.path, m.alias);
             }
 
-            await updatePerformanceMetrics(image, duration);
+            // Multi-tenant: Pass organizationId to scope metrics by org
+            await updatePerformanceMetrics(image, duration, organizationId);
 
             const endTime = new Date();
-            
+
             const updateData = {
                 taskId,
+                organizationId,  // Include for room-based broadcasting
                 status: finalStatus,
                 endTime,
                 output: logsBuffer,
@@ -292,20 +311,29 @@ async function startWorker() {
                 analysis: analysis
             };
 
-            await executionsCollection.updateOne({ taskId }, { $set: updateData });
+            // Multi-tenant: Filter by organizationId
+            await executionsCollection.updateOne(
+                { taskId, organizationId: orgId },
+                { $set: updateData }
+            );
             await notifyProducer(updateData);
-            console.log(`✅ Task ${taskId} finished with status: ${finalStatus}`);
+            console.log(`✅ Task ${taskId} (org: ${organizationId}) finished with status: ${finalStatus}`);
 
         } catch (error: any) {
-            console.error(`❌ Container orchestration failure for task ${taskId}:`, error.message);
+            console.error(`❌ Container orchestration failure for task ${taskId} (org: ${organizationId}):`, error.message);
             const errorData = {
                 taskId,
+                organizationId,  // Include for room-based broadcasting
                 status: 'ERROR',
                 error: error.message,
                 output: logsBuffer,
                 endTime: new Date()
             };
-            await executionsCollection.updateOne({ taskId }, { $set: errorData });
+            // Multi-tenant: Filter by organizationId
+            await executionsCollection.updateOne(
+                { taskId, organizationId: orgId },
+                { $set: errorData }
+            );
             await notifyProducer(errorData);
         } finally {
             // Manual cleanup since AutoRemove is false
