@@ -124,141 +124,207 @@ export const Dashboard = () => {
     return (
         <div className="container">
             {/* Header with Auth Info */}
-            <div style={{
-                backgroundColor: 'white',
-                borderBottom: '1px solid #e2e8f0', // slate-200
-                padding: '0 24px',
-                height: '64px',
-                marginBottom: '24px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
-            }}>
-                {/* Left side - Logo and Organization */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                        width: '32px',
-                        height: '32px',
-                        backgroundColor: '#2563eb', // blue-600
-                        borderRadius: '6px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white',
-                        fontWeight: 'bold',
-                        fontSize: '14px'
-                    }}>
-                        AAC
-                    </div>
+            <>
+                <style>
+                    {`
+                    .dashboard-header {
+                        background-color: white;
+                        border-bottom: 1px solid #e2e8f0;
+                        padding: 0 24px;
+                        height: 72px;
+                        margin-bottom: 24px;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+                    }
                     
-                    <div style={{ width: '1px', height: '24px', backgroundColor: '#e2e8f0' }}></div>
+                    .header-left {
+                        display: flex;
+                        align-items: center;
+                        gap: 16px;
+                    }
 
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ 
-                            fontSize: '14px', 
-                            fontWeight: '600', 
-                            color: '#1e293b' // slate-800
-                        }}>
-                            {user?.organizationName}
-                        </span>
-                        <span style={{ 
-                            fontSize: '11px', 
-                            color: '#64748b', // slate-500
-                            textTransform: 'uppercase',
-                            fontWeight: '600',
-                            letterSpacing: '0.05em'
-                        }}>
-                            Organization
-                        </span>
-                    </div>
-                </div>
+                    .header-right {
+                        display: flex;
+                        align-items: center;
+                        gap: 20px;
+                    }
 
-                {/* Right side - User info and logout */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                    {/* User Profile */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ textAlign: 'right' }}>
-                            <div style={{ 
-                                fontSize: '14px', 
-                                fontWeight: '500', 
-                                color: '#334155' // slate-700
+                    .user-details {
+                        text-align: right;
+                        display: block;
+                    }
+
+                    .divider {
+                        height: 24px;
+                        width: 1px;
+                        background-color: #e2e8f0;
+                        display: block;
+                    }
+
+                    @media (max-width: 768px) {
+                        .dashboard-header {
+                            height: auto;
+                            flex-direction: column;
+                            padding: 16px;
+                            gap: 16px;
+                            align-items: stretch;
+                        }
+
+                        .header-left {
+                            justify-content: space-between;
+                            width: 100%;
+                            border-bottom: 1px solid #f1f5f9;
+                            padding-bottom: 12px;
+                        }
+
+                        .header-right {
+                            justify-content: space-between;
+                            width: 100%;
+                            gap: 12px;
+                        }
+
+                        .user-details {
+                            text-align: left;
+                            display: flex;
+                            flex-direction: column;
+                        }
+
+                        .divider {
+                            display: none;
+                        }
+                    }
+                    `}
+                </style>
+
+                <div className="dashboard-header">
+                    {/* Left side - Logo and Organization */}
+                    <div className="header-left">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{
+                                width: '36px',
+                                height: '36px',
+                                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'white',
+                                fontWeight: '800',
+                                fontSize: '14px',
+                                boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)'
                             }}>
-                                {user?.name}
+                                AAC
                             </div>
-                            <div style={{ 
-                                fontSize: '12px', 
-                                color: '#94a3b8' // slate-400
-                            }}>
-                                {user?.email}
+                            <div className="divider"></div>
+                            <div>
+                                <h2 style={{ 
+                                    fontSize: '15px', 
+                                    fontWeight: '600', 
+                                    color: '#1e293b', 
+                                    margin: 0,
+                                    lineHeight: '1.2'
+                                }}>
+                                    {user?.organizationName}
+                                </h2>
+                                <span style={{ 
+                                    fontSize: '11px', 
+                                    color: '#64748b', 
+                                    textTransform: 'uppercase', 
+                                    fontWeight: '600', 
+                                    letterSpacing: '0.05em' 
+                                }}>
+                                    Organization
+                                </span>
                             </div>
                         </div>
-                        
-                        <div style={{
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '50%',
-                            backgroundColor: '#f1f5f9', // slate-100
-                            color: '#475569', // slate-600
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: '600',
-                            border: '1px solid #e2e8f0'
-                        }}>
-                            {user?.name?.charAt(0).toUpperCase()}
-                        </div>
                     </div>
 
-                    {/* Role Badge */}
-                    <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        padding: '4px 12px',
-                        borderRadius: '9999px',
-                        fontSize: '11px',
-                        fontWeight: '600',
-                        textTransform: 'uppercase',
-                        backgroundColor: '#eff6ff', // blue-50
-                        color: '#2563eb', // blue-600
-                        border: '1px solid #dbeafe'
-                    }}>
-                        {user?.role}
-                    </span>
+                    {/* Right side - User info and logout */}
+                    <div className="header-right">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                            <div style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '50%',
+                                backgroundColor: '#f1f5f9',
+                                border: '2px solid #fff',
+                                boxShadow: '0 0 0 1px #e2e8f0',
+                                color: '#475569',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: '600',
+                                fontSize: '16px'
+                            }}>
+                                {user?.name?.charAt(0).toUpperCase()}
+                            </div>
+                            
+                            <div className="user-details">
+                                <div style={{ fontSize: '14px', fontWeight: '600', color: '#334155' }}>
+                                    {user?.name}
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+                                    {user?.email}
+                                </div>
+                            </div>
+                        </div>
 
-                    {/* Logout Button */}
-                    <button
-                        onClick={logout}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            fontSize: '13px',
-                            color: '#ef4444', // red-500
-                            fontWeight: '500',
-                            backgroundColor: 'white',
-                            border: '1px solid #fee2e2', // red-100
-                            cursor: 'pointer',
-                            padding: '6px 14px',
-                            borderRadius: '6px',
-                            transition: 'all 0.2s ease',
-                            height: '32px'
-                        }}
-                        onMouseOver={(e) => {
-                            e.currentTarget.style.backgroundColor = '#fef2f2';
-                            e.currentTarget.style.borderColor = '#fecaca';
-                        }}
-                        onMouseOut={(e) => {
-                            e.currentTarget.style.backgroundColor = 'white';
-                            e.currentTarget.style.borderColor = '#fee2e2';
-                        }}
-                    >
-                        <LogOut size={14} />
-                        Logout
-                    </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                textTransform: 'uppercase',
+                                backgroundColor: '#eff6ff',
+                                color: '#2563eb',
+                                border: '1px solid #dbeafe',
+                                letterSpacing: '0.025em'
+                            }}>
+                                {user?.role}
+                            </span>
+
+                            <button
+                                onClick={logout}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '8px',
+                                    fontSize: '13px',
+                                    color: '#ef4444',
+                                    fontWeight: '500',
+                                    backgroundColor: 'white',
+                                    border: '1px solid #fee2e2',
+                                    cursor: 'pointer',
+                                    padding: '8px 16px',
+                                    borderRadius: '8px',
+                                    transition: 'all 0.2s ease',
+                                    height: '36px',
+                                    whiteSpace: 'nowrap'
+                                }}
+                                onMouseOver={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#fef2f2';
+                                    e.currentTarget.style.borderColor = '#fecaca';
+                                    e.currentTarget.style.transform = 'translateY(-1px)';
+                                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(239, 68, 68, 0.1)';
+                                }}
+                                onMouseOut={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'white';
+                                    e.currentTarget.style.borderColor = '#fee2e2';
+                                    e.currentTarget.style.transform = 'none';
+                                    e.currentTarget.style.boxShadow = 'none';
+                                }}
+                            >
+                                <LogOut size={16} />
+                                <span className="logout-text">Logout</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-
+            </>
             {/* Main Header with Title and Run Test Button */}
             <div className="header">
                 <div className="title">
