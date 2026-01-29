@@ -161,8 +161,8 @@ app.get('/api/executions', async (request, reply) => {
     try {
         if (!dbClient) return reply.status(500).send({ error: 'Database not connected' });
 
-        // Multi-tenant data isolation: Filter by organizationId from JWT
-        const organizationId = new ObjectId(request.user!.organizationId);
+        // Multi-tenant data isolation: Filter by organizationId from JWT (as STRING)
+        const organizationId = request.user!.organizationId;
 
         const collection = dbClient.db(DB_NAME).collection('executions');
         const executions = await collection
@@ -171,7 +171,7 @@ app.get('/api/executions', async (request, reply) => {
             .limit(50)
             .toArray();
 
-        return executions;
+        return { success: true, data: executions };
     } catch (error) {
         return reply.status(500).send({ error: 'Failed to fetch data' });
     }
@@ -215,12 +215,12 @@ app.post('/api/execution-request', async (request, reply) => {
             }
         };
 
-        // Multi-tenant data isolation: Include organizationId from JWT
-        const organizationId = new ObjectId(request.user!.organizationId);
+        // Multi-tenant data isolation: Include organizationId from JWT (as STRING)
+        const organizationId = request.user!.organizationId;
 
         const taskData = {
             ...parseResult.data,
-            organizationId: organizationId.toString(),  // Include organizationId for worker
+            organizationId,  // Include organizationId for worker
             folder: folder || 'all',
             config: {
             ...enrichedConfig
@@ -235,7 +235,7 @@ app.post('/api/execution-request', async (request, reply) => {
                 {
                     $set: {
                         taskId,
-                        organizationId,  // Add organizationId for multi-tenant isolation
+                        organizationId,  // Add organizationId for multi-tenant isolation (as STRING)
                         image,
                         command,
                         status: 'PENDING',
@@ -249,10 +249,10 @@ app.post('/api/execution-request', async (request, reply) => {
             );
 
             // Multi-tenant: Broadcast only to the organization's room
-            const orgRoom = `org:${organizationId.toString()}`;
+            const orgRoom = `org:${organizationId}`;
             app.io.to(orgRoom).emit('execution-updated', {
                 taskId,
-                organizationId: organizationId.toString(),  // Include in broadcast
+                organizationId,  // Include in broadcast
                 status: 'PENDING',
                 startTime,
                 image,
@@ -279,8 +279,8 @@ app.delete('/api/executions/:id', async (request, reply) => {
     try {
         if (!dbClient) return reply.status(500).send({ error: 'Database not connected' });
 
-        // Multi-tenant data isolation: Verify ownership by filtering with organizationId
-        const organizationId = new ObjectId(request.user!.organizationId);
+        // Multi-tenant data isolation: Verify ownership by filtering with organizationId (as STRING)
+        const organizationId = request.user!.organizationId;
 
         const collection = dbClient.db(DB_NAME).collection('executions');
         const result = await collection.deleteOne({
@@ -332,6 +332,11 @@ const start = async () => {
         // Global authentication middleware
         // Apply auth to all /api/* routes except auth endpoints
         app.addHook('preHandler', async (request, reply) => {
+            // Socket.io handshake - skip auth middleware (handled separately in Socket.io connection handler)
+            if (request.url.startsWith('/socket.io/')) {
+                return;
+            }
+
             // Public routes - no authentication required
             const publicRoutes = [
                 '/',
