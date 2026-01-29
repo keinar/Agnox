@@ -1,11 +1,12 @@
 import React from 'react';
-import { 
-    Trash2, ChevronDown, ChevronRight, CheckCircle, XCircle, 
-    Clock, PlayCircle, FileText, BarChart2, Laptop, Server, 
+import {
+    Trash2, ChevronDown, ChevronRight, CheckCircle, XCircle,
+    Clock, PlayCircle, FileText, BarChart2, Laptop, Server,
     Turtle, Zap, Box, Sparkles, Loader2, AlertTriangle
 } from 'lucide-react';
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns';
 import AIAnalysisView from './AIAnalysisView';
+import { useAuth } from '../context/AuthContext';
 
 interface ExecutionRowProps {
     execution: any;
@@ -46,21 +47,26 @@ const calculateDuration = (exec: any) => {
 export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpanded, onToggle, onDelete }) => {
     const [metrics, setMetrics] = React.useState<any>(null);
     const [showAI, setShowAI] = React.useState(false);
+    const { token } = useAuth();
 
     React.useEffect(() => {
         const isFinished = ['PASSED', 'FAILED', 'UNSTABLE'].includes(execution.status);
-        if (isFinished && execution.image) {
+        if (isFinished && execution.image && token) {
             const isProd = window.location.hostname.includes('.com');
             const API_URL = isProd ? import.meta.env.VITE_API_URL : 'http://localhost:3000';
-            
+
             setTimeout(() => {
-                fetch(`${API_URL}/metrics/${encodeURIComponent(execution.image)}`)
+                fetch(`${API_URL}/api/metrics/${encodeURIComponent(execution.image)}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                })
                     .then(res => res.json())
                     .then(data => setMetrics(data))
                     .catch(err => console.error("Metrics fetch failed", err));
             }, 500);
         }
-    }, [execution.status, execution.image]);
+    }, [execution.status, execution.image, token]);
 
     const renderPerformanceInsight = () => {
         if (!metrics || metrics.status === 'NO_DATA') return null;
@@ -107,8 +113,9 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
     };
 
     const baseUrl = getBaseUrl();
-    const htmlReportUrl = `${baseUrl}/reports/${execution.taskId}/native-report/index.html`;
-    const allureReportUrl = `${baseUrl}/reports/${execution.taskId}/allure-report/index.html`;
+    // baseUrl already includes /reports/{organizationId}, so just append /{taskId}/...
+    const htmlReportUrl = `${baseUrl}/${execution.taskId}/native-report/index.html`;
+    const allureReportUrl = `${baseUrl}/${execution.taskId}/allure-report/index.html`;
 
     const isFinished = ['PASSED', 'FAILED', 'UNSTABLE'].includes(execution.status);
     const isRunLocal = execution.reportsBaseUrl?.includes('localhost') || execution.reportsBaseUrl?.includes('127.0.0.1');

@@ -112,13 +112,12 @@ async function startWorker() {
         const task = JSON.parse(msg.content.toString());
         const { taskId, image, command, config, organizationId } = task;
 
-        // Multi-tenant: Convert organizationId string to ObjectId for MongoDB queries
+        // Multi-tenant: Use organizationId as STRING (matches JWT and backend)
         if (!organizationId) {
             console.error(`[Worker] ERROR: Task ${taskId} missing organizationId. Rejecting message.`);
             channel!.nack(msg, false, false); // Don't requeue
             return;
         }
-        const orgId = new ObjectId(organizationId);
 
         // Multi-tenant: Scope report storage by organization
         const reportsDir = process.env.REPORTS_DIR || path.join(process.cwd(), 'test-results');
@@ -137,7 +136,7 @@ async function startWorker() {
 
         // Notify start (DB update) - Multi-tenant: Filter by organizationId
         await executionsCollection.updateOne(
-            { taskId, organizationId: orgId },
+            { taskId, organizationId },
             { $set: { status: 'RUNNING', startTime, config, reportsBaseUrl: currentReportsBaseUrl } },
             { upsert: true }
         );
@@ -237,7 +236,7 @@ async function startWorker() {
 
                 // Multi-tenant: Filter by organizationId
                 await executionsCollection.updateOne(
-                    { taskId, organizationId: orgId },
+                    { taskId, organizationId },
                     { $set: { status: 'ANALYZING', output: logsBuffer } }
                 );
                 await notifyProducer({
@@ -321,7 +320,7 @@ async function startWorker() {
 
             // Multi-tenant: Filter by organizationId
             await executionsCollection.updateOne(
-                { taskId, organizationId: orgId },
+                { taskId, organizationId },
                 { $set: updateData }
             );
             await notifyProducer(updateData);
@@ -339,7 +338,7 @@ async function startWorker() {
             };
             // Multi-tenant: Filter by organizationId
             await executionsCollection.updateOne(
-                { taskId, organizationId: orgId },
+                { taskId, organizationId },
                 { $set: errorData }
             );
             await notifyProducer(errorData);
