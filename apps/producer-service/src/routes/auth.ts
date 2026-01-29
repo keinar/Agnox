@@ -148,7 +148,7 @@ export async function authRoutes(app: FastifyInstance, mongoClient: MongoClient)
       });
 
     } catch (error: any) {
-      app.log.error('Signup error:', error);
+      app.log.error(`Signup error: ${error?.message || error}`);
       return reply.code(500).send({
         success: false,
         error: 'Signup failed',
@@ -249,7 +249,7 @@ export async function authRoutes(app: FastifyInstance, mongoClient: MongoClient)
       });
 
     } catch (error: any) {
-      app.log.error('Login error:', error);
+      app.log.error(`Login error: ${error?.message || error}`);
       return reply.code(500).send({
         success: false,
         error: 'Login failed',
@@ -312,7 +312,7 @@ export async function authRoutes(app: FastifyInstance, mongoClient: MongoClient)
       });
 
     } catch (error: any) {
-      app.log.error('Get user error:', error);
+      app.log.error(`Get user error: ${error?.message || error}`);
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch user info',

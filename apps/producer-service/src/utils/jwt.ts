@@ -41,11 +41,11 @@ export function signToken(payload: Omit<IJWTPayload, 'iat' | 'exp'>): string {
     throw new Error('JWT payload must include userId, organizationId, and role');
   }
 
-  return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRY,
+  return jwt.sign(payload as object, JWT_SECRET, {
+    expiresIn: JWT_EXPIRY as string,
     issuer: 'agnostic-automation-center',
     audience: 'aac-api'
-  });
+  } as jwt.SignOptions);
 }
 
 /**
