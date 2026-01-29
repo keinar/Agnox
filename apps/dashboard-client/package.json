@@ -11,12 +11,14 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.12",
+    "@types/react-router-dom": "^5.3.3",
     "ansi-to-react": "^6.1.6",
     "axios": "^1.13.2",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.562.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-router-dom": "^7.13.0",
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {

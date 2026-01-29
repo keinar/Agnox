@@ -1,5 +1,5 @@
 import amqp, { Channel, ConsumeMessage } from 'amqplib';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import Docker from 'dockerode';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -64,11 +64,12 @@ function getMergedEnvVars(configEnv: any = {}) {
     return injectedEnv;
 }
 
-async function updatePerformanceMetrics(testName: string, durationMs: number) {
-    const key = `metrics:test:${testName}`;
+async function updatePerformanceMetrics(testName: string, durationMs: number, organizationId: string) {
+    // Multi-tenant: Scope Redis keys by organization
+    const key = `metrics:${organizationId}:test:${testName}`;
     await redis.lpush(key, durationMs);
     await redis.ltrim(key, 0, 9);
-    console.log(`[Redis] Updated metrics for ${testName}. Duration: ${durationMs}ms`);
+    console.log(`[Redis] Updated metrics for ${testName} (org: ${organizationId}). Duration: ${durationMs}ms`);
 }
 
 async function startWorker() {
@@ -109,19 +110,33 @@ async function startWorker() {
         if (!msg) return;
 
         const task = JSON.parse(msg.content.toString());
-        const { taskId, image, command, config } = task;
+        const { taskId, image, command, config, organizationId } = task;
 
+        // Multi-tenant: Use organizationId as STRING (matches JWT and backend)
+        if (!organizationId) {
+            console.error(`[Worker] ERROR: Task ${taskId} missing organizationId. Rejecting message.`);
+            channel!.nack(msg, false, false); // Don't requeue
+            return;
+        }
+
+        // Multi-tenant: Scope report storage by organization
         const reportsDir = process.env.REPORTS_DIR || path.join(process.cwd(), 'test-results');
-        const baseTaskDir = path.join(reportsDir, taskId);
+        const orgReportsDir = path.join(reportsDir, organizationId);
+        const baseTaskDir = path.join(orgReportsDir, taskId);
 
-        if (!fs.existsSync(baseTaskDir)) fs.mkdirSync(baseTaskDir, { recursive: true });
+        if (!fs.existsSync(baseTaskDir)) {
+            fs.mkdirSync(baseTaskDir, { recursive: true });
+            console.log(`[Worker] Created org-scoped report directory: ${baseTaskDir}`);
+        }
 
         const startTime = new Date();
-        const currentReportsBaseUrl = process.env.PUBLIC_API_URL || 'http://localhost:3000';
+        // Multi-tenant: Include organizationId in report URLs
+        const apiBaseUrl = process.env.PUBLIC_API_URL || 'http://localhost:3000';
+        const currentReportsBaseUrl = `${apiBaseUrl}/reports/${organizationId}`;
 
-        // Notify start (DB update)
+        // Notify start (DB update) - Multi-tenant: Filter by organizationId
         await executionsCollection.updateOne(
-            { taskId },
+            { taskId, organizationId },
             { $set: { status: 'RUNNING', startTime, config, reportsBaseUrl: currentReportsBaseUrl } },
             { upsert: true }
         );
@@ -129,6 +144,7 @@ async function startWorker() {
         // Notify start (Socket broadcast - with full details for instant UI update)
         await notifyProducer({
             taskId,
+            organizationId,  // Include for room-based broadcasting
             status: 'RUNNING',
             startTime,
             image,
@@ -153,7 +169,12 @@ async function startWorker() {
             await ensureImageExists(image);
             const agnosticCommand = ['/bin/sh', '/app/entrypoint.sh', task.folder || 'all'];
             const targetBaseUrl = resolveHostForDocker(config.baseUrl || process.env.BASE_URL || 'http://host.docker.internal:3000');
+
+            // Multi-tenant: Include organizationId in container name for isolation
+            const containerName = `org_${organizationId}_task_${taskId}`;
+
             container = await docker.createContainer({
+                name: containerName,
                 Image: image,
                 Tty: true,
                 Cmd: agnosticCommand,
@@ -183,7 +204,8 @@ async function startWorker() {
                 let logLine = chunk.toString();
                 const cleanLine = stripAnsi(logLine);
                 logsBuffer += cleanLine;
-                sendLogToProducer(taskId, cleanLine).catch(() => { });
+                // Multi-tenant: Include organizationId in log broadcasts
+                sendLogToProducer(taskId, cleanLine, organizationId).catch(() => { });
             });
 
             // 1. Wait for execution to finish
@@ -212,12 +234,14 @@ async function startWorker() {
             if (finalStatus === 'FAILED' || finalStatus === 'UNSTABLE') {
                 console.log(`[Worker] Task status is ${finalStatus}. Reporting analysis start...`);
 
+                // Multi-tenant: Filter by organizationId
                 await executionsCollection.updateOne(
-                    { taskId }, 
-                    { $set: { status: 'ANALYZING', output: logsBuffer } } 
+                    { taskId, organizationId },
+                    { $set: { status: 'ANALYZING', output: logsBuffer } }
                 );
                 await notifyProducer({
                     taskId,
+                    organizationId,  // Include for room-based broadcasting
                     status: 'ANALYZING',
                     output: logsBuffer,
                     reportsBaseUrl: currentReportsBaseUrl,
@@ -277,12 +301,14 @@ async function startWorker() {
                 await copyAndRenameFolder(m.path, m.alias);
             }
 
-            await updatePerformanceMetrics(image, duration);
+            // Multi-tenant: Pass organizationId to scope metrics by org
+            await updatePerformanceMetrics(image, duration, organizationId);
 
             const endTime = new Date();
-            
+
             const updateData = {
                 taskId,
+                organizationId,  // Include for room-based broadcasting
                 status: finalStatus,
                 endTime,
                 output: logsBuffer,
@@ -292,20 +318,29 @@ async function startWorker() {
                 analysis: analysis
             };
 
-            await executionsCollection.updateOne({ taskId }, { $set: updateData });
+            // Multi-tenant: Filter by organizationId
+            await executionsCollection.updateOne(
+                { taskId, organizationId },
+                { $set: updateData }
+            );
             await notifyProducer(updateData);
-            console.log(`✅ Task ${taskId} finished with status: ${finalStatus}`);
+            console.log(`✅ Task ${taskId} (org: ${organizationId}) finished with status: ${finalStatus}`);
 
         } catch (error: any) {
-            console.error(`❌ Container orchestration failure for task ${taskId}:`, error.message);
+            console.error(`❌ Container orchestration failure for task ${taskId} (org: ${organizationId}):`, error.message);
             const errorData = {
                 taskId,
+                organizationId,  // Include for room-based broadcasting
                 status: 'ERROR',
                 error: error.message,
                 output: logsBuffer,
                 endTime: new Date()
             };
-            await executionsCollection.updateOne({ taskId }, { $set: errorData });
+            // Multi-tenant: Filter by organizationId
+            await executionsCollection.updateOne(
+                { taskId, organizationId },
+                { $set: errorData }
+            );
             await notifyProducer(errorData);
         } finally {
             // Manual cleanup since AutoRemove is false
@@ -323,13 +358,14 @@ function stripAnsi(text: string) {
     return text.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
 }
 
-async function sendLogToProducer(taskId: string, log: string) {
+async function sendLogToProducer(taskId: string, log: string, organizationId: string) {
     const PRODUCER_URL = process.env.PRODUCER_URL || 'http://producer:3000';
     try {
         await fetch(`${PRODUCER_URL}/executions/log`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ taskId, log })
+            // Multi-tenant: Include organizationId for room-based broadcasting
+            body: JSON.stringify({ taskId, log, organizationId })
         });
     } catch (e) { }
 }
