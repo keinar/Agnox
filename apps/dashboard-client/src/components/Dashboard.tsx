@@ -12,7 +12,7 @@ const API_URL = isProduction
     : 'http://localhost:3000';
 
 export const Dashboard = () => {
-    const { user, logout } = useAuth();
+    const { user, token, logout } = useAuth();
     const { executions, loading, error, setExecutions } = useExecutions();
     const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,7 +21,13 @@ export const Dashboard = () => {
     const [defaults, setDefaults] = useState<any>(null);
 
     useEffect(() => {
-        fetch(`${API_URL}/tests-structure`)
+        if (!token) return;
+
+        fetch(`${API_URL}/tests-structure`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
             .then(async res => {
                 const contentType = res.headers.get('content-type');
                 if (res.ok && contentType && contentType.includes('application/json')) {
@@ -34,14 +40,20 @@ export const Dashboard = () => {
                 console.warn('Using decoupled mode (local folders not found)');
                 setAvailableFolders([]);
             });
-    }, []);
+    }, [token]);
 
     useEffect(() => {
-        fetch(`${API_URL}/config/defaults`)
+        if (!token) return;
+
+        fetch(`${API_URL}/config/defaults`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
             .then(res => res.json())
             .then(data => setDefaults(data))
             .catch(() => console.warn('Using hardcoded defaults'));
-    }, []);
+    }, [token]);
 
     const toggleRow = (id: string) => {
         setExpandedRowId(expandedRowId === id ? null : id);
@@ -68,9 +80,12 @@ export const Dashboard = () => {
                 }
             };
 
-            const response = await fetch(`${API_URL}/execution-request`, {
+            const response = await fetch(`${API_URL}/api/execution-request`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
                 body: JSON.stringify(payload)
             });
 
@@ -92,7 +107,12 @@ export const Dashboard = () => {
     const handleDelete = async (taskId: string) => {
         if (!window.confirm('Delete this execution?')) return;
         try {
-            await fetch(`${API_URL}/executions/${taskId}`, { method: 'DELETE' });
+            await fetch(`${API_URL}/api/executions/${taskId}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
             setExecutions((old) => old.filter((exec) => exec.taskId !== taskId));
         } catch (err) {
             alert('Delete failed');
