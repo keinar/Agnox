@@ -23,7 +23,7 @@ export const Dashboard = () => {
     useEffect(() => {
         if (!token) return;
 
-        fetch(`${API_URL}/tests-structure`, {
+        fetch(`${API_URL}/api/tests-structure`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }

@@ -56,16 +56,23 @@ export const useExecutions = () => {
         socket.on('execution-updated', (updatedTask: Partial<Execution>) => {
             console.log('Real-time update received:', updatedTask);
 
-            queryClient.setQueryData(['executions'], (oldData: Execution[] | undefined) => {
-                if (!oldData) return [updatedTask as Execution];
+            queryClient.setQueryData(['executions', token], (oldData: Execution[] | undefined) => {
+                // Safely handle empty cache
+                if (!oldData || !Array.isArray(oldData)) {
+                    return [updatedTask as Execution];
+                }
 
                 const index = oldData.findIndex(ex => ex.taskId === updatedTask.taskId);
 
                 if (index !== -1) {
+                    // Update existing execution
                     const newData = [...oldData];
                     newData[index] = { ...newData[index], ...updatedTask };
                     return newData;
                 } else {
+                    // Add new execution (prevent duplicates by checking taskId first)
+                    const exists = oldData.some(ex => ex.taskId === updatedTask.taskId);
+                    if (exists) return oldData;
                     return [updatedTask as Execution, ...oldData];
                 }
             });
@@ -73,8 +80,9 @@ export const useExecutions = () => {
 
         // Real-time log streaming listener
         socket.on('execution-log', (data: { taskId: string; log: string }) => {
-            queryClient.setQueryData(['executions'], (oldData: Execution[] | undefined) => {
-                if (!oldData) return [];
+            queryClient.setQueryData(['executions', token], (oldData: Execution[] | undefined) => {
+                // Safely handle empty cache
+                if (!oldData || !Array.isArray(oldData)) return [];
 
                 return oldData.map(exec => {
                     if (exec.taskId === data.taskId) {
@@ -97,7 +105,7 @@ export const useExecutions = () => {
     const errorMessage = error instanceof Error ? error.message : error ? String(error) : null;
 
     const setExecutionsManual = (updater: (old: Execution[]) => Execution[]) => {
-        queryClient.setQueryData(['executions'], updater);
+        queryClient.setQueryData(['executions', token], updater);
     };
 
     return {
