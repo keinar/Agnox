@@ -126,66 +126,134 @@ export const Dashboard = () => {
             {/* Header with Auth Info */}
             <div style={{
                 backgroundColor: 'white',
-                borderBottom: '1px solid #e2e8f0',
-                padding: '16px 24px',
+                borderBottom: '1px solid #e2e8f0', // slate-200
+                padding: '0 24px',
+                height: '64px',
                 marginBottom: '24px',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
             }}>
                 {/* Left side - Logo and Organization */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#3b82f6', margin: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                        width: '32px',
+                        height: '32px',
+                        backgroundColor: '#2563eb', // blue-600
+                        borderRadius: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        fontSize: '14px'
+                    }}>
                         AAC
-                    </h1>
-                    <span style={{ color: '#cbd5e0' }}>|</span>
-                    <span style={{ fontSize: '18px', fontWeight: '500', color: '#1e293b' }}>
-                        {user?.organizationName}
-                    </span>
+                    </div>
+                    
+                    <div style={{ width: '1px', height: '24px', backgroundColor: '#e2e8f0' }}></div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ 
+                            fontSize: '14px', 
+                            fontWeight: '600', 
+                            color: '#1e293b' // slate-800
+                        }}>
+                            {user?.organizationName}
+                        </span>
+                        <span style={{ 
+                            fontSize: '11px', 
+                            color: '#64748b', // slate-500
+                            textTransform: 'uppercase',
+                            fontWeight: '600',
+                            letterSpacing: '0.05em'
+                        }}>
+                            Organization
+                        </span>
+                    </div>
                 </div>
 
                 {/* Right side - User info and logout */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>
-                            {user?.name}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    {/* User Profile */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{ 
+                                fontSize: '14px', 
+                                fontWeight: '500', 
+                                color: '#334155' // slate-700
+                            }}>
+                                {user?.name}
+                            </div>
+                            <div style={{ 
+                                fontSize: '12px', 
+                                color: '#94a3b8' // slate-400
+                            }}>
+                                {user?.email}
+                            </div>
                         </div>
-                        <div style={{ fontSize: '12px', color: '#64748b' }}>
-                            {user?.email}
+                        
+                        <div style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '50%',
+                            backgroundColor: '#f1f5f9', // slate-100
+                            color: '#475569', // slate-600
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: '600',
+                            border: '1px solid #e2e8f0'
+                        }}>
+                            {user?.name?.charAt(0).toUpperCase()}
                         </div>
                     </div>
+
+                    {/* Role Badge */}
                     <span style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        padding: '4px 10px',
+                        padding: '4px 12px',
                         borderRadius: '9999px',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        backgroundColor: '#dbeafe',
-                        color: '#1e40af'
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        textTransform: 'uppercase',
+                        backgroundColor: '#eff6ff', // blue-50
+                        color: '#2563eb', // blue-600
+                        border: '1px solid #dbeafe'
                     }}>
                         {user?.role}
                     </span>
+
+                    {/* Logout Button */}
                     <button
                         onClick={logout}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '6px',
-                            fontSize: '14px',
-                            color: '#dc2626',
+                            gap: '8px',
+                            fontSize: '13px',
+                            color: '#ef4444', // red-500
                             fontWeight: '500',
-                            backgroundColor: 'transparent',
-                            border: 'none',
+                            backgroundColor: 'white',
+                            border: '1px solid #fee2e2', // red-100
                             cursor: 'pointer',
-                            padding: '6px 12px',
+                            padding: '6px 14px',
                             borderRadius: '6px',
-                            transition: 'background-color 0.2s'
+                            transition: 'all 0.2s ease',
+                            height: '32px'
                         }}
-                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
-                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor = '#fef2f2';
+                            e.currentTarget.style.borderColor = '#fecaca';
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = 'white';
+                            e.currentTarget.style.borderColor = '#fee2e2';
+                        }}
                     >
-                        <LogOut size={16} />
+                        <LogOut size={14} />
                         Logout
                     </button>
                 </div>
