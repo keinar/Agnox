@@ -49,6 +49,11 @@ services:
       - STAGING_URL=${STAGING_URL}
       - PRODUCTION_URL=${PRODUCTION_URL}
       - DEFAULT_TEST_FOLDER=${DEFAULT_TEST_FOLDER}
+      # Authentication & JWT Configuration
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-CHANGE-IN-PRODUCTION-min-64-chars-required}
+      - JWT_EXPIRY=${JWT_EXPIRY:-24h}
+      - PASSWORD_SALT_ROUNDS=${PASSWORD_SALT_ROUNDS:-10}
+      - DASHBOARD_URL=${DASHBOARD_URL:-http://localhost:8080}
     depends_on:
       rabbitmq:
         condition: service_healthy
