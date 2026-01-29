@@ -3,7 +3,8 @@ import { useExecutions } from '../hooks/useExecutions';
 import { StatsGrid } from './StatsGrid';
 import { ExecutionRow } from './ExecutionRow';
 import { ExecutionModal } from './ExecutionModal';
-import { Play } from 'lucide-react';
+import { Play, LogOut } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
 const API_URL = isProduction
@@ -11,6 +12,7 @@ const API_URL = isProduction
     : 'http://localhost:3000';
 
 export const Dashboard = () => {
+    const { user, logout } = useAuth();
     const { executions, loading, error, setExecutions } = useExecutions();
     const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -101,6 +103,75 @@ export const Dashboard = () => {
 
     return (
         <div className="container">
+            {/* Header with Auth Info */}
+            <div style={{
+                backgroundColor: 'white',
+                borderBottom: '1px solid #e2e8f0',
+                padding: '16px 24px',
+                marginBottom: '24px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+            }}>
+                {/* Left side - Logo and Organization */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <h1 style={{ fontSize: '24px', fontWeight: 'bold', color: '#3b82f6', margin: 0 }}>
+                        AAC
+                    </h1>
+                    <span style={{ color: '#cbd5e0' }}>|</span>
+                    <span style={{ fontSize: '18px', fontWeight: '500', color: '#1e293b' }}>
+                        {user?.organizationName}
+                    </span>
+                </div>
+
+                {/* Right side - User info and logout */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>
+                            {user?.name}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#64748b' }}>
+                            {user?.email}
+                        </div>
+                    </div>
+                    <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '4px 10px',
+                        borderRadius: '9999px',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        backgroundColor: '#dbeafe',
+                        color: '#1e40af'
+                    }}>
+                        {user?.role}
+                    </span>
+                    <button
+                        onClick={logout}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            fontSize: '14px',
+                            color: '#dc2626',
+                            fontWeight: '500',
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            transition: 'background-color 0.2s'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                        <LogOut size={16} />
+                        Logout
+                    </button>
+                </div>
+            </div>
+
+            {/* Main Header with Title and Run Test Button */}
             <div className="header">
                 <div className="title">
                     <h1>Automation Center</h1>
