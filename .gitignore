@@ -76,3 +76,4 @@ npm-data/
 npm-letsencrypt/
 npm-data/
 backups/
+.claude/
