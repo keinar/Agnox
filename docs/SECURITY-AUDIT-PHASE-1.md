@@ -532,6 +532,34 @@ app.addHook('onSend', async (request, reply) => {
 
 ---
 
+### 11. External AI Data Privacy & Disclosure
+
+**Severity:** 🟡 **MEDIUM**
+
+**Issue:** Failure logs are sent to an external provider (Google Gemini) for analysis without explicit per-tenant opt-out mechanism.
+
+**Status:** ⚠️ **RECOMMENDED ENHANCEMENT**
+
+**Strengths:**
+- ✅ Use of Gemini 2.5 Flash via API (Standard Enterprise terms usually exclude training on API data)
+- ✅ Logs are truncated and sanitized before transmission
+
+**Recommendations:**
+- ⚠️ **Implement Opt-out:** Add a mandatory organization-level toggle to disable AI analysis.
+- ⚠️ **Data Minimization:** Implement a pre-processing filter to strip PII (Personal Identifiable Information) or secrets from logs before sending to the AI.
+- ⚠️ **Transparency:** Add a "Data Processing Disclosure" in the UI to inform users that logs are analyzed by an external AI model.
+
+**Suggested Logic Update:**
+```typescript
+// apps/worker-service/src/worker.ts
+if (orgSettings.aiAnalysisEnabled && (finalStatus === 'FAILED' || finalStatus === 'UNSTABLE')) {
+    analysis = await analyzeTestFailure(logsBuffer, image);
+} else {
+    analysis = 'AI Analysis skipped: Disabled by organization policy.';
+}
+
+---
+
 ### 10. Logging & Monitoring
 
 **Severity:** 🟢 **LOW (Enhancement)**
