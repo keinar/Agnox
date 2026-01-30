@@ -221,6 +221,18 @@ So that I can control access levels as the team evolves
 
 ---
 
+**Story 1.4: AI Analysis Control**
+```
+As an organization admin I want to enable or disable AI-powered failure analysis So that I can control whether our logs are sent to external AI providers based on our company's security policy
+```
+**Acceptance Criteria:**
+- Toggle switch in Organization Settings -> Security tab
+- Disabling AI stops all log transmission to Gemini immediately
+- Visual indicator (AI badge) in test runs changes state based on this setting
+- Audit log records when AI analysis is enabled/disabled
+
+---
+
 ### Epic 2: Authentication & Authorization
 
 **Story 2.1: User Login**
@@ -589,7 +601,8 @@ GET    /api/auth/me            # Get current user info
   settings: {
     logo: "https://cdn.example.com/logo.png",
     allowAutoJoin: true,            // Allow users with same email domain to auto-join
-    defaultUserRole: "viewer"       // Role for auto-joined users
+    defaultUserRole: "viewer",      // Role for auto-joined users
+    aiAnalysisEnabled: true
   },
   createdAt: "2025-12-15T10:30:00Z",
   updatedAt: "2026-01-20T14:22:00Z"
@@ -1558,6 +1571,8 @@ db.users.createIndex({ organizationId: 1 });
    - Auto-join settings (allow users with domain to join)
    - Default role for auto-joined users
    - Two-factor authentication (future)
+   - **AI Privacy Control:** Toggle switch to "Enable AI Root Cause Analysis"
+   - **AI Disclosure Notice:** Text explaining that logs are processed by Gemini 2.5 Flash and not used for training
    
 4. **Integrations**
    - API keys (future)
