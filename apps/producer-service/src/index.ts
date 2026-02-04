@@ -13,6 +13,7 @@ import Redis from 'ioredis';
 import { authRoutes } from './routes/auth.js';
 import { invitationRoutes } from './routes/invitations.js';
 import { userRoutes } from './routes/users.js';
+import { organizationRoutes } from './routes/organization.js';
 import { authMiddleware } from './middleware/auth.js';
 import { verifyToken } from './utils/jwt.js';
 
@@ -336,6 +337,9 @@ const start = async () => {
 
         // Register user management routes
         await userRoutes(app, dbClient);
+
+        // Register organization routes
+        await organizationRoutes(app, dbClient);
 
         // Global authentication middleware
         // Apply auth to all /api/* routes except auth endpoints
