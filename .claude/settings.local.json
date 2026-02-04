@@ -5,7 +5,9 @@
       "Bash(npm install:*)",
       "Bash(npx tsx:*)",
       "Bash(find:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
