@@ -59,6 +59,11 @@ jobs:
             VITE_API_URL=${{ secrets.VITE_API_URL }}
             PUBLIC_API_URL=${{ secrets.PUBLIC_API_URL }}
             INJECT_ENV_VARS=${{ secrets.INJECT_ENV_VARS }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            JWT_EXPIRY=24h
+            PASSWORD_SALT_ROUNDS=10
+            NODE_ENV=production
+            ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
             EOF
             
             # 1. Pull the latest test image
