@@ -53,7 +53,7 @@ app.register(cors, {
             callback(null, true);
         } else {
             app.log.warn({ event: 'CORS_BLOCKED', origin, allowed: ALLOWED_ORIGINS });
-            callback(new Error('Not allowed by CORS'));
+            return callback(null, false);
         }
     },
     credentials: true,
