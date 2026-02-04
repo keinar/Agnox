@@ -36,7 +36,7 @@ let dbClient: MongoClient;
 
 app.register(cors, {
     origin: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
 });
 
 app.register(socketio, {
