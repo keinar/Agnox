@@ -96,6 +96,7 @@ async function startWorker() {
 
     const db = mongoClient.db(DB_NAME);
     const executionsCollection = db.collection(COLLECTION_NAME);
+    const organizationsCollection = db.collection('organizations');
 
     async function ensureImageExists(image: string) {
         try {
@@ -134,10 +135,28 @@ async function startWorker() {
         const apiBaseUrl = process.env.PUBLIC_API_URL || 'http://localhost:3000';
         const currentReportsBaseUrl = `${apiBaseUrl}/reports/${organizationId}`;
 
+        // Fetch organization AI settings at start (for audit trail)
+        let initialAiAnalysisEnabled = false;
+        try {
+            const organization = await organizationsCollection.findOne({
+                _id: new ObjectId(organizationId)
+            });
+            initialAiAnalysisEnabled = organization?.aiAnalysisEnabled !== false;
+        } catch (e) {
+            console.warn(`[Worker] Could not fetch org settings at start. Defaulting AI to disabled.`);
+            initialAiAnalysisEnabled = false;
+        }
+
         // Notify start (DB update) - Multi-tenant: Filter by organizationId
         await executionsCollection.updateOne(
             { taskId, organizationId },
-            { $set: { status: 'RUNNING', startTime, config, reportsBaseUrl: currentReportsBaseUrl } },
+            { $set: {
+                status: 'RUNNING',
+                startTime,
+                config,
+                reportsBaseUrl: currentReportsBaseUrl,
+                aiAnalysisEnabled: initialAiAnalysisEnabled  // Record AI setting at execution start
+            } },
             { upsert: true }
         );
 
@@ -150,7 +169,8 @@ async function startWorker() {
             image,
             command,
             config,
-            reportsBaseUrl: currentReportsBaseUrl
+            reportsBaseUrl: currentReportsBaseUrl,
+            aiAnalysisEnabled: initialAiAnalysisEnabled
         });
 
         let logsBuffer = "";
@@ -231,13 +251,34 @@ async function startWorker() {
 
             // --- AI ANALYSIS START ---
             let analysis = '';
-            if (finalStatus === 'FAILED' || finalStatus === 'UNSTABLE') {
-                console.log(`[Worker] Task status is ${finalStatus}. Reporting analysis start...`);
+            let aiAnalysisEnabled = false;
+
+            // Fetch organization settings to check AI toggle (Worker-side enforcement)
+            try {
+                const organization = await organizationsCollection.findOne({
+                    _id: new ObjectId(organizationId)
+                });
+
+                if (organization) {
+                    // Default to true if not explicitly set to false
+                    aiAnalysisEnabled = organization.aiAnalysisEnabled !== false;
+                    console.log(`[Worker] Organization ${organizationId} AI Analysis: ${aiAnalysisEnabled ? 'ENABLED' : 'DISABLED'}`);
+                } else {
+                    console.warn(`[Worker] Organization ${organizationId} not found. Defaulting AI Analysis to DISABLED for security.`);
+                    aiAnalysisEnabled = false;
+                }
+            } catch (orgError: any) {
+                console.error(`[Worker] Failed to fetch organization settings: ${orgError.message}`);
+                aiAnalysisEnabled = false; // Fail closed: disable AI if can't fetch settings
+            }
+
+            if ((finalStatus === 'FAILED' || finalStatus === 'UNSTABLE') && aiAnalysisEnabled) {
+                console.log(`[Worker] Task status is ${finalStatus}. AI Analysis ENABLED. Reporting analysis start...`);
 
                 // Multi-tenant: Filter by organizationId
                 await executionsCollection.updateOne(
                     { taskId, organizationId },
-                    { $set: { status: 'ANALYZING', output: logsBuffer } }
+                    { $set: { status: 'ANALYZING', output: logsBuffer, aiAnalysisEnabled } }
                 );
                 await notifyProducer({
                     taskId,
@@ -245,7 +286,8 @@ async function startWorker() {
                     status: 'ANALYZING',
                     output: logsBuffer,
                     reportsBaseUrl: currentReportsBaseUrl,
-                    image
+                    image,
+                    aiAnalysisEnabled
                 });
 
                 if (!logsBuffer || logsBuffer.length < 50) {
@@ -260,6 +302,9 @@ async function startWorker() {
                         analysis = `AI Analysis Failed: ${aiError.message}`;
                     }
                 }
+            } else if ((finalStatus === 'FAILED' || finalStatus === 'UNSTABLE') && !aiAnalysisEnabled) {
+                console.log(`[Worker] Task status is ${finalStatus}. AI Analysis DISABLED by organization settings. Skipping analysis.`);
+                analysis = "AI Analysis disabled for this organization.";
             }
             // --- AI ANALYSIS END ---
 
@@ -315,7 +360,8 @@ async function startWorker() {
                 reportsBaseUrl: currentReportsBaseUrl,
                 image,
                 command,
-                analysis: analysis
+                analysis: analysis,
+                aiAnalysisEnabled  // Audit trail: Record whether AI was enabled for this execution
             };
 
             // Multi-tenant: Filter by organizationId
@@ -328,13 +374,26 @@ async function startWorker() {
 
         } catch (error: any) {
             console.error(`❌ Container orchestration failure for task ${taskId} (org: ${organizationId}):`, error.message);
+
+            // Fetch AI setting even for errors (for audit trail)
+            let aiAnalysisEnabledForError = false;
+            try {
+                const organization = await organizationsCollection.findOne({
+                    _id: new ObjectId(organizationId)
+                });
+                aiAnalysisEnabledForError = organization?.aiAnalysisEnabled !== false;
+            } catch (e) {
+                aiAnalysisEnabledForError = false;
+            }
+
             const errorData = {
                 taskId,
                 organizationId,  // Include for room-based broadcasting
                 status: 'ERROR',
                 error: error.message,
                 output: logsBuffer,
-                endTime: new Date()
+                endTime: new Date(),
+                aiAnalysisEnabled: aiAnalysisEnabledForError  // Audit trail
             };
             // Multi-tenant: Filter by organizationId
             await executionsCollection.updateOne(
