@@ -464,29 +464,39 @@ export const Dashboard = () => {
 
                 {/* Mobile dropdown menu */}
                 <div className={`mobile-dropdown ${mobileMenuOpen ? 'open' : ''}`}>
-                    {/* Organization info */}
+                    {/* Organization info & Role Badge Container */}
                     <div style={{ 
                         padding: '8px 0', 
                         borderBottom: '1px solid #f1f5f9',
                         marginBottom: '4px'
                     }}>
-                        <span style={{ 
-                            fontSize: '11px', 
-                            color: '#94a3b8', 
-                            textTransform: 'uppercase', 
-                            fontWeight: 600,
-                            letterSpacing: '0.05em'
-                        }}>
-                            Organization
-                        </span>
-                        <h3 style={{ 
-                            margin: '4px 0 0 0', 
-                            fontSize: '17px', 
-                            fontWeight: 600, 
-                            color: '#1e293b' 
-                        }}>
-                            {user?.organizationName || 'Organization'}
-                        </h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            {/* Left Side: Organization Name */}
+                            <div>
+                                <span style={{ 
+                                    fontSize: '11px', 
+                                    color: '#94a3b8', 
+                                    textTransform: 'uppercase', 
+                                    fontWeight: 600, 
+                                    letterSpacing: '0.05em'
+                                }}>
+                                    Organization
+                                </span>
+                                <h3 style={{ 
+                                    margin: '4px 0 0 0', 
+                                    fontSize: '17px', 
+                                    fontWeight: 600, 
+                                    color: '#1e293b' 
+                                }}>
+                                    {user?.organizationName || 'Organization'}
+                                </h3>
+                            </div>
+
+                            {/* Right Side: Role Badge (Moved Here) */}
+                            <span className="role-badge">
+                                {user?.role || 'user'}
+                            </span>
+                        </div>
                     </div>
 
                     {/* User card */}
@@ -516,7 +526,7 @@ export const Dashboard = () => {
                                 {user?.email || 'email@example.com'}
                             </div>
                         </div>
-                        <span className="role-badge">{user?.role || 'user'}</span>
+                        {/* Role Badge removed from here */}
                     </div>
 
                     {/* Settings Link */}
