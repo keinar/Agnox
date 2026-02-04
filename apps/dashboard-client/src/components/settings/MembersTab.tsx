@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { InviteModal } from './InviteModal';
+import { MemberTable } from './members/MemberTable';
+import { MemberCards } from './members/MemberCards';
+import { InvitationList } from './members/InvitationList';
 import axios from 'axios';
-import { UserPlus, Trash2, Mail, Clock, Shield, User as UserIcon } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -58,97 +61,14 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.2s ease',
   } as React.CSSProperties,
-
-  tableContainer: {
-    overflowX: 'auto',
-    borderRadius: '8px',
-    border: '1px solid #f1f5f9',
-  } as React.CSSProperties,
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse' as const,
-    minWidth: '600px',
-  } as React.CSSProperties,
-  th: {
-    textAlign: 'left' as const,
+  errorMessage: {
     padding: '12px 16px',
-    fontSize: '13px',
-    fontWeight: 600,
-    color: '#6b7280',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.5px',
-    borderBottom: '2px solid #f3f4f6',
-    background: '#f8fafc',
-  } as React.CSSProperties,
-  td: {
-    padding: '16px',
-    fontSize: '14px',
-    color: '#374151',
-    borderBottom: '1px solid #f3f4f6',
-    verticalAlign: 'middle',
-  } as React.CSSProperties,
-
-  cardsContainer: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '16px',
-  } as React.CSSProperties,
-  card: {
-    background: '#ffffff',
-    border: '1px solid #e2e8f0',
-    borderRadius: '12px',
-    padding: '16px',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '12px',
-  } as React.CSSProperties,
-  cardHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  } as React.CSSProperties,
-  cardRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '14px',
-    color: '#4b5563',
-  } as React.CSSProperties,
-  
-  select: {
-    padding: '6px 12px',
-    fontSize: '14px',
-    border: '1px solid #e5e7eb',
-    borderRadius: '6px',
-    outline: 'none',
-    cursor: 'pointer',
-    background: '#ffffff',
-    width: '100%',
-  } as React.CSSProperties,
-  deleteButton: {
-    padding: '8px 12px',
-    fontSize: '13px',
-    color: '#dc2626',
     background: '#fef2f2',
     border: '1px solid #fecaca',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '6px',
-    width: '100%',
-  } as React.CSSProperties,
-  revokeButton: {
-    padding: '6px 12px',
-    fontSize: '13px',
+    borderRadius: '8px',
     color: '#dc2626',
-    background: '#fef2f2',
-    border: '1px solid #fecaca',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
+    fontSize: '14px',
+    marginBottom: '16px',
   } as React.CSSProperties,
   badge: {
     padding: '4px 10px',
@@ -161,15 +81,6 @@ const styles = {
   adminBadge: { background: '#f0f4ff', color: '#667eea', border: '1px solid #c7d2fe' },
   developerBadge: { background: '#f0fdf4', color: '#16a34a', border: '1px solid #86efac' },
   viewerBadge: { background: '#f3f4f6', color: '#6b7280', border: '1px solid #d1d5db' },
-  errorMessage: {
-    padding: '12px 16px',
-    background: '#fef2f2',
-    border: '1px solid #fecaca',
-    borderRadius: '8px',
-    color: '#dc2626',
-    fontSize: '14px',
-    marginBottom: '16px',
-  } as React.CSSProperties,
 };
 
 function useIsMobile() {
@@ -274,196 +185,32 @@ export function MembersTab() {
 
   const getRoleBadgeStyle = (role: string) => {
     switch (role) {
-      case 'admin': return { ...styles.badge, ...styles.adminBadge };
-      case 'developer': return { ...styles.badge, ...styles.developerBadge };
-      case 'viewer': return { ...styles.badge, ...styles.viewerBadge };
-      default: return styles.badge;
+      case 'admin':
+        return { ...styles.badge, ...styles.adminBadge };
+      case 'developer':
+        return { ...styles.badge, ...styles.developerBadge };
+      case 'viewer':
+        return { ...styles.badge, ...styles.viewerBadge };
+      default:
+        return styles.badge;
     }
   };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
     });
   };
 
-  if (loading) return <div style={{ color: '#6b7280', fontSize: '14px' }}>Loading team members...</div>;
-
-  const renderUsersList = () => {
-    if (isMobile) {
-      // --- Mobile View (Cards) ---
-      return (
-        <div style={styles.cardsContainer}>
-          {users.map((u) => (
-            <div key={u.id} style={styles.card}>
-              <div style={styles.cardHeader}>
-                <div>
-                  <div style={{ fontWeight: 600, color: '#1e293b' }}>{u.name} {u.id === user?.id && '(You)'}</div>
-                  <div style={{ fontSize: '13px', color: '#64748b' }}>{u.email}</div>
-                </div>
-                {/* Role Badge (Non-Admin View) */}
-                {(!isAdmin || u.id === user?.id) && (
-                  <span style={getRoleBadgeStyle(u.role)}>{u.role}</span>
-                )}
-              </div>
-
-              <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
-                <div style={styles.cardRow}>
-                  <Clock size={14} /> Joined {formatDate(u.createdAt)}
-                </div>
-              </div>
-
-              {/* Admin Actions */}
-              {isAdmin && u.id !== user?.id && (
-                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                  <div style={{ flex: 1 }}>
-                    <select
-                      value={u.role}
-                      onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                      style={styles.select}
-                    >
-                      <option value="admin">Admin</option>
-                      <option value="developer">Developer</option>
-                      <option value="viewer">Viewer</option>
-                    </select>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <button
-                      onClick={() => handleRemoveUser(u.id, u.name)}
-                      style={styles.deleteButton}
-                    >
-                      <Trash2 size={14} /> Remove
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    // --- Desktop View (Table) ---
+  if (loading) {
     return (
-      <div style={styles.tableContainer}>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>Name</th>
-              <th style={styles.th}>Email</th>
-              <th style={styles.th}>Role</th>
-              <th style={styles.th}>Joined</th>
-              {isAdmin && <th style={styles.th}>Actions</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id}>
-                <td style={styles.td}>
-                  <strong>{u.name}</strong>
-                  {u.id === user?.id && <span style={{ marginLeft: '8px', color: '#6b7280', fontSize: '12px' }}>(You)</span>}
-                </td>
-                <td style={styles.td}>{u.email}</td>
-                <td style={styles.td}>
-                  {isAdmin && u.id !== user?.id ? (
-                    <select
-                      value={u.role}
-                      onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                      style={{ ...styles.select, width: 'auto' }}
-                    >
-                      <option value="admin">Admin</option>
-                      <option value="developer">Developer</option>
-                      <option value="viewer">Viewer</option>
-                    </select>
-                  ) : (
-                    <span style={getRoleBadgeStyle(u.role)}>{u.role}</span>
-                  )}
-                </td>
-                <td style={styles.td}>{formatDate(u.createdAt)}</td>
-                {isAdmin && (
-                  <td style={styles.td}>
-                    <button
-                      onClick={() => handleRemoveUser(u.id, u.name)}
-                      disabled={u.id === user?.id}
-                      style={{ ...styles.deleteButton, width: 'auto', opacity: u.id === user?.id ? 0.5 : 1 }}
-                    >
-                      <Trash2 size={14} /> Remove
-                    </button>
-                  </td>
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div style={{ color: '#6b7280', fontSize: '14px' }}>
+        Loading team members...
       </div>
     );
-  };
-
-  const renderInvitationsList = () => {
-    if (invitations.length === 0) return null;
-
-    if (isMobile) {
-        // Mobile Invitations
-        return (
-            <div style={styles.cardsContainer}>
-                {invitations.map((inv) => (
-                    <div key={inv.id} style={styles.card}>
-                        <div style={styles.cardHeader}>
-                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 500 }}>
-                                <Mail size={16} color="#6b7280" />
-                                {inv.email}
-                             </div>
-                             <span style={getRoleBadgeStyle(inv.role)}>{inv.role}</span>
-                        </div>
-                        <div style={{ fontSize: '13px', color: '#64748b' }}>
-                            Invited by {inv.invitedByName} • Expires {formatDate(inv.expiresAt)}
-                        </div>
-                        <button onClick={() => handleRevokeInvitation(inv.id)} style={styles.deleteButton}>
-                            Revoke Invitation
-                        </button>
-                    </div>
-                ))}
-            </div>
-        )
-    }
-
-    // Desktop Invitations
-    return (
-        <div style={styles.tableContainer}>
-        <table style={styles.table}>
-            <thead>
-            <tr>
-                <th style={styles.th}>Email</th>
-                <th style={styles.th}>Role</th>
-                <th style={styles.th}>Invited By</th>
-                <th style={styles.th}>Expires</th>
-                <th style={styles.th}>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            {invitations.map((inv) => (
-                <tr key={inv.id}>
-                <td style={styles.td}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Mail size={16} color="#6b7280" />
-                    {inv.email}
-                    </div>
-                </td>
-                <td style={styles.td}><span style={getRoleBadgeStyle(inv.role)}>{inv.role}</span></td>
-                <td style={styles.td}>{inv.invitedByName}</td>
-                <td style={styles.td}>{formatDate(inv.expiresAt)}</td>
-                <td style={styles.td}>
-                    <button onClick={() => handleRevokeInvitation(inv.id)} style={styles.revokeButton}>
-                    Revoke
-                    </button>
-                </td>
-                </tr>
-            ))}
-            </tbody>
-        </table>
-        </div>
-    );
-  };
+  }
 
   return (
     <div style={styles.container}>
@@ -479,18 +226,48 @@ export function MembersTab() {
       </div>
 
       {users.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '32px', color: '#9ca3af' }}>No team members found</div>
-      ) : (
-          renderUsersList()
-      )}
-
-      {isAdmin && invitations.length > 0 && (
-        <div style={{ marginTop: '48px' }}>
-          <h2 style={{ ...styles.title, marginBottom: '16px' }}>Pending Invitations ({invitations.length})</h2>
-          {renderInvitationsList()}
+        <div style={{ textAlign: 'center', padding: '32px', color: '#9ca3af' }}>
+          No team members found
         </div>
+      ) : (
+        <>
+          {/* Desktop: Table, Mobile: Cards */}
+          {isMobile ? (
+            <MemberCards
+              users={users}
+              currentUserId={user?.id}
+              isAdmin={isAdmin}
+              onRoleChange={handleRoleChange}
+              onRemove={handleRemoveUser}
+              formatDate={formatDate}
+              getRoleBadgeStyle={getRoleBadgeStyle}
+            />
+          ) : (
+            <MemberTable
+              users={users}
+              currentUserId={user?.id}
+              isAdmin={isAdmin}
+              onRoleChange={handleRoleChange}
+              onRemove={handleRemoveUser}
+              formatDate={formatDate}
+              getRoleBadgeStyle={getRoleBadgeStyle}
+            />
+          )}
+        </>
       )}
 
+      {/* Pending Invitations */}
+      {isAdmin && (
+        <InvitationList
+          invitations={invitations}
+          isMobile={isMobile}
+          onRevoke={handleRevokeInvitation}
+          formatDate={formatDate}
+          getRoleBadgeStyle={getRoleBadgeStyle}
+        />
+      )}
+
+      {/* Invite Modal */}
       {isInviteModalOpen && (
         <InviteModal
           onClose={() => setIsInviteModalOpen(false)}
