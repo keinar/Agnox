@@ -19,7 +19,7 @@ A microservices-based test automation platform that is language and framework ag
   - Communicates via: RabbitMQ
 
 ### Frontend
-- **Dashboard Client**: React 18 + Vite + TypeScript + Tailwind CSS
+- **Dashboard Client**: React 19 + Vite + TypeScript + Tailwind CSS
   - Location: `apps/dashboard-client/`
   - Real-time: Socket.io
   - Port: 8080 (exposed)
