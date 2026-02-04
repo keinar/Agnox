@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { OrganizationTab } from '../components/settings/OrganizationTab';
 import { MembersTab } from '../components/settings/MembersTab';
 import { SecurityTab } from '../components/settings/SecurityTab';
@@ -14,11 +16,31 @@ const styles = {
   } as React.CSSProperties,
   header: {
     marginBottom: '32px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+  } as React.CSSProperties,
+  backButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 16px',
+    fontSize: '14px',
+    fontWeight: 500,
+    color: '#64748b',
+    textDecoration: 'none',
+    background: '#f8fafc',
+    border: '1px solid #e2e8f0',
+    borderRadius: '8px',
+    transition: 'all 0.2s ease',
+  } as React.CSSProperties,
+  headerText: {
+    flex: 1,
   } as React.CSSProperties,
   title: {
     fontSize: '32px',
     fontWeight: 700,
-    color: '#1a1a2e',
+    color: '#1e293b',
     margin: '0 0 8px 0',
   } as React.CSSProperties,
   subtitle: {
@@ -77,10 +99,27 @@ export function Settings() {
     <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
-        <h1 style={styles.title}>Settings</h1>
-        <p style={styles.subtitle}>
-          Manage your organization, team members, and preferences
-        </p>
+        <Link
+          to="/dashboard"
+          style={styles.backButton}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = '#f1f5f9';
+            e.currentTarget.style.color = '#475569';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = '#f8fafc';
+            e.currentTarget.style.color = '#64748b';
+          }}
+        >
+          <ArrowLeft size={18} />
+          Back to Dashboard
+        </Link>
+        <div style={styles.headerText}>
+          <h1 style={styles.title}>Settings</h1>
+          <p style={styles.subtitle}>
+            Manage your organization, team members, and preferences
+          </p>
+        </div>
       </div>
 
       {/* Settings Card */}
