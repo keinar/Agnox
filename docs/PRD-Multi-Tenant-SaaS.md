@@ -2383,7 +2383,7 @@ aws s3 sync s3://automation-dashboard-prod-backup/ s3://automation-dashboard-pro
 
 ### Frontend
 - **Language:** TypeScript
-- **Framework:** React 18
+- **Framework:** React 19
 - **Build Tool:** Vite
 - **Styling:** Tailwind CSS
 - **State Management:** React Context + useState
