@@ -15,7 +15,7 @@
  * - Plan limits enforcement
  */
 
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { MongoClient, ObjectId } from 'mongodb';
 import { authMiddleware, adminOnly } from '../middleware/auth.js';
 
@@ -81,7 +81,11 @@ async function calculateStorageUsage(
   return 0;
 }
 
-export async function organizationRoutes(app: FastifyInstance, mongoClient: MongoClient) {
+export async function organizationRoutes(
+  app: FastifyInstance,
+  mongoClient: MongoClient,
+  apiRateLimit: (request: FastifyRequest, reply: FastifyReply) => Promise<void>
+) {
   const db = mongoClient.db(DB_NAME);
   const orgsCollection = db.collection('organizations');
   const usersCollection = db.collection('users');
@@ -105,7 +109,7 @@ export async function organizationRoutes(app: FastifyInstance, mongoClient: Mong
    * - 500: Failed to fetch organization
    */
   app.get('/api/organization', {
-    preHandler: authMiddleware
+    preHandler: [authMiddleware, apiRateLimit]
   }, async (request, reply) => {
     try {
       const currentUser = request.user!;
@@ -180,7 +184,7 @@ export async function organizationRoutes(app: FastifyInstance, mongoClient: Mong
    * - 500: Failed to update organization
    */
   app.patch('/api/organization', {
-    preHandler: [authMiddleware, adminOnly]
+    preHandler: [authMiddleware, adminOnly, apiRateLimit]
   }, async (request, reply) => {
     const { name, aiAnalysisEnabled } = request.body as any;
     const currentUser = request.user!;
@@ -339,7 +343,7 @@ export async function organizationRoutes(app: FastifyInstance, mongoClient: Mong
    * - 500: Failed to fetch usage
    */
   app.get('/api/organization/usage', {
-    preHandler: authMiddleware
+    preHandler: [authMiddleware, apiRateLimit]
   }, async (request, reply) => {
     try {
       const currentUser = request.user!;

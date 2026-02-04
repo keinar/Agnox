@@ -17,7 +17,7 @@
  * - Returns 404 for users in other organizations (tenant isolation)
  */
 
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { MongoClient, ObjectId } from 'mongodb';
 import { authMiddleware, adminOnly } from '../middleware/auth.js';
 
@@ -62,7 +62,11 @@ async function logAuditEvent(
   }
 }
 
-export async function userRoutes(app: FastifyInstance, mongoClient: MongoClient) {
+export async function userRoutes(
+  app: FastifyInstance,
+  mongoClient: MongoClient,
+  strictRateLimit: (request: FastifyRequest, reply: FastifyReply) => Promise<void>
+) {
   const db = mongoClient.db(DB_NAME);
   const usersCollection = db.collection('users');
 
@@ -204,7 +208,7 @@ export async function userRoutes(app: FastifyInstance, mongoClient: MongoClient)
    * - 500: Failed to update role
    */
   app.patch('/api/users/:id/role', {
-    preHandler: [authMiddleware, adminOnly]
+    preHandler: [authMiddleware, adminOnly, strictRateLimit]
   }, async (request, reply) => {
     const { id } = request.params as any;
     const { role } = request.body as any;
@@ -344,7 +348,7 @@ export async function userRoutes(app: FastifyInstance, mongoClient: MongoClient)
    * - 500: Failed to delete user
    */
   app.delete('/api/users/:id', {
-    preHandler: [authMiddleware, adminOnly]
+    preHandler: [authMiddleware, adminOnly, strictRateLimit]
   }, async (request, reply) => {
     const { id } = request.params as any;
     const currentUser = request.user!;

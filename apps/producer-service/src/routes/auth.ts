@@ -10,8 +10,9 @@
  * - POST /api/auth/logout - Logout (client-side token removal, placeholder for token blacklist)
  */
 
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { MongoClient, ObjectId } from 'mongodb';
+import Redis from 'ioredis';
 import { hashPassword, comparePassword, validatePasswordStrength } from '../utils/password.js';
 import { signToken } from '../utils/jwt.js';
 import { authMiddleware } from '../middleware/auth.js';
@@ -19,7 +20,12 @@ import { hashInvitationToken, isValidInvitationTokenFormat, isInvitationExpired 
 
 const DB_NAME = 'automation_platform';
 
-export async function authRoutes(app: FastifyInstance, mongoClient: MongoClient) {
+export async function authRoutes(
+  app: FastifyInstance,
+  mongoClient: MongoClient,
+  authRateLimit: (request: FastifyRequest, reply: FastifyReply) => Promise<void>,
+  redis: Redis
+) {
   const db = mongoClient.db(DB_NAME);
   const usersCollection = db.collection('users');
   const orgsCollection = db.collection('organizations');
@@ -45,8 +51,9 @@ export async function authRoutes(app: FastifyInstance, mongoClient: MongoClient)
    * - 400: Missing fields, invalid email, weak password, invalid invitation
    * - 409: Email already registered
    * - 500: Signup failed
+   * - 429: Rate limit exceeded (5 attempts per minute)
    */
-  app.post('/api/auth/signup', async (request, reply) => {
+  app.post('/api/auth/signup', { preHandler: authRateLimit }, async (request, reply) => {
     const { email, password, name, organizationName, inviteToken } = request.body as any;
 
     // Validation
@@ -290,9 +297,10 @@ export async function authRoutes(app: FastifyInstance, mongoClient: MongoClient)
    * - 400: Missing credentials
    * - 401: Invalid credentials
    * - 403: Account suspended
+   * - 429: Rate limit exceeded (5 attempts per minute)
    * - 500: Login failed
    */
-  app.post('/api/auth/login', async (request, reply) => {
+  app.post('/api/auth/login', { preHandler: authRateLimit }, async (request, reply) => {
     const { email, password } = request.body as any;
 
     if (!email || !password) {
@@ -304,25 +312,91 @@ export async function authRoutes(app: FastifyInstance, mongoClient: MongoClient)
     }
 
     try {
+      const normalizedEmail = email.toLowerCase();
+
+      // Task 4.3: Check if account is locked due to failed login attempts
+      const lockKey = `login_lock:${normalizedEmail}`;
+      const isLocked = await redis.exists(lockKey);
+
+      if (isLocked) {
+        const ttl = await redis.ttl(lockKey);
+        const minutesRemaining = Math.ceil(ttl / 60);
+
+        app.log.warn({
+          event: 'LOGIN_ATTEMPT_WHILE_LOCKED',
+          email: normalizedEmail,
+          ip: request.ip,
+          minutesRemaining
+        });
+
+        return reply.code(429).send({
+          success: false,
+          error: 'Account temporarily locked',
+          message: `Too many failed login attempts. Please try again in ${minutesRemaining} minute(s).`,
+          retryAfter: ttl
+        });
+      }
+
       // Find user
-      const user = await usersCollection.findOne({ email: email.toLowerCase() });
+      const user = await usersCollection.findOne({ email: normalizedEmail });
       if (!user) {
+        // Task 4.3: Track failed attempt (invalid email)
+        const failKey = `login_failures:${normalizedEmail}`;
+        const failedAttempts = await redis.incr(failKey);
+        await redis.expire(failKey, 900); // 15 minute window
+
+        // Lock account after 5 failed attempts
+        if (failedAttempts >= 5) {
+          await redis.setex(lockKey, 900, '1'); // Lock for 15 minutes
+
+          app.log.warn({
+            event: 'ACCOUNT_LOCKED',
+            email: normalizedEmail,
+            ip: request.ip,
+            attempts: failedAttempts
+          });
+        }
+
         return reply.code(401).send({
           success: false,
           error: 'Invalid credentials',
-          message: 'Email or password is incorrect'
+          message: 'Email or password is incorrect',
+          attemptsRemaining: Math.max(0, 5 - failedAttempts)
         });
       }
 
       // Verify password
       const isValidPassword = await comparePassword(password, user.hashedPassword as string);
       if (!isValidPassword) {
+        // Task 4.3: Track failed attempt (invalid password)
+        const failKey = `login_failures:${normalizedEmail}`;
+        const failedAttempts = await redis.incr(failKey);
+        await redis.expire(failKey, 900); // 15 minute window
+
+        // Lock account after 5 failed attempts
+        if (failedAttempts >= 5) {
+          await redis.setex(lockKey, 900, '1'); // Lock for 15 minutes
+
+          app.log.warn({
+            event: 'ACCOUNT_LOCKED',
+            email: normalizedEmail,
+            ip: request.ip,
+            attempts: failedAttempts
+          });
+        }
+
         return reply.code(401).send({
           success: false,
           error: 'Invalid credentials',
-          message: 'Email or password is incorrect'
+          message: 'Email or password is incorrect',
+          attemptsRemaining: Math.max(0, 5 - failedAttempts)
         });
       }
+
+      // Task 4.3: Successful login - clear failed attempts
+      const failKey = `login_failures:${normalizedEmail}`;
+      await redis.del(failKey);
+      await redis.del(lockKey);
 
       // Check user status
       if (user.status === 'suspended') {
@@ -349,7 +423,12 @@ export async function authRoutes(app: FastifyInstance, mongoClient: MongoClient)
         { $set: { lastLoginAt: new Date() } }
       );
 
-      app.log.info(`User logged in: ${user.email} (${user._id})`);
+      app.log.info({
+        event: 'LOGIN_SUCCESS',
+        email: user.email,
+        userId: user._id.toString(),
+        ip: request.ip
+      });
 
       return reply.send({
         success: true,

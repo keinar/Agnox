@@ -17,7 +17,7 @@
  * - 7-day token expiration
  */
 
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { MongoClient, ObjectId } from 'mongodb';
 import { authMiddleware, adminOnly } from '../middleware/auth.js';
 import {
@@ -33,7 +33,11 @@ import { sendInvitationEmail } from '../utils/email.js';
 
 const DB_NAME = 'automation_platform';
 
-export async function invitationRoutes(app: FastifyInstance, mongoClient: MongoClient) {
+export async function invitationRoutes(
+  app: FastifyInstance,
+  mongoClient: MongoClient,
+  strictRateLimit: (request: FastifyRequest, reply: FastifyReply) => Promise<void>
+) {
   const db = mongoClient.db(DB_NAME);
   const invitationsCollection = db.collection('invitations');
   const usersCollection = db.collection('users');
@@ -60,7 +64,7 @@ export async function invitationRoutes(app: FastifyInstance, mongoClient: MongoC
    * - 500: Failed to send invitation
    */
   app.post('/api/invitations', {
-    preHandler: [authMiddleware, adminOnly]
+    preHandler: [authMiddleware, adminOnly, strictRateLimit]
   }, async (request, reply) => {
     const { email, role } = request.body as any;
     const currentUser = request.user!;
