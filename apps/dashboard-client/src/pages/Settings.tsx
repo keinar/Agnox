@@ -9,76 +9,85 @@ import { UsageTab } from '../components/settings/UsageTab';
 
 const styles = {
   container: {
-    padding: '24px',
+    padding: '16px',
     maxWidth: '1200px',
     margin: '0 auto',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif',
   } as React.CSSProperties,
   header: {
-    marginBottom: '32px',
+    marginBottom: '24px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+  } as React.CSSProperties,
+  headerTopRow: {
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: '16px',
   } as React.CSSProperties,
   backButton: {
-    display: 'flex',
+    display: 'inline-flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '10px 16px',
+    padding: '8px 12px',
     fontSize: '14px',
     fontWeight: 500,
-    color: '#64748b',
+    color: '#1e293b',
     textDecoration: 'none',
-    background: '#f8fafc',
-    border: '1px solid #e2e8f0',
+    background: '#f1f5f9',
+    border: 'none',
     borderRadius: '8px',
-    transition: 'all 0.2s ease',
-  } as React.CSSProperties,
-  headerText: {
-    flex: 1,
+    transition: 'all 0.2s',
   } as React.CSSProperties,
   title: {
-    fontSize: '32px',
+    fontSize: '24px',
     fontWeight: 700,
-    color: '#1e293b',
-    margin: '0 0 8px 0',
+    color: '#ffffff',
+    margin: 0,
+    lineHeight: 1.2,
   } as React.CSSProperties,
   subtitle: {
-    fontSize: '16px',
-    color: '#6b7280',
+    fontSize: '14px',
+    color: '#cbd5e1',
+    marginTop: '4px',
     margin: 0,
   } as React.CSSProperties,
   card: {
     background: '#ffffff',
     borderRadius: '16px',
-    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
     overflow: 'hidden',
   } as React.CSSProperties,
   tabNav: {
     display: 'flex',
-    borderBottom: '2px solid #f3f4f6',
-    padding: '0 24px',
-    gap: '8px',
+    borderBottom: '1px solid #f1f5f9',
+    padding: '0 16px',
+    overflowX: 'auto',
+    whiteSpace: 'nowrap',
+    scrollbarWidth: 'none',
+    gap: '24px',
   } as React.CSSProperties,
   tab: {
-    padding: '16px 20px',
-    fontSize: '15px',
+    padding: '16px 4px',
+    fontSize: '14px',
     fontWeight: 600,
-    color: '#6b7280',
-    background: 'transparent',
+    color: '#64748b',
+    background: 'none',
     border: 'none',
-    borderBottom: '3px solid transparent',
+    borderBottom: '2px solid transparent',
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    position: 'relative' as const,
-    marginBottom: '-2px',
+    transition: 'all 0.2s',
+    marginBottom: '-1px',
+    whiteSpace: 'nowrap',
   } as React.CSSProperties,
   tabActive: {
-    color: '#667eea',
-    borderBottomColor: '#667eea',
+    color: '#4f46e5',
+    borderBottomColor: '#4f46e5',
   } as React.CSSProperties,
-  tabContent: {
-    padding: '32px 24px',
+  content: {
+    padding: '24px',
   } as React.CSSProperties,
 };
 
@@ -89,8 +98,8 @@ export function Settings() {
   const tabs = [
     { id: 'organization' as const, label: 'Organization', component: OrganizationTab },
     { id: 'members' as const, label: 'Team Members', component: MembersTab },
-    { id: 'security' as const, label: 'Security & Privacy', component: SecurityTab },
-    { id: 'usage' as const, label: 'Usage & Limits', component: UsageTab },
+    { id: 'security' as const, label: 'Security', component: SecurityTab },
+    { id: 'usage' as const, label: 'Usage', component: UsageTab },
   ];
 
   const ActiveTabComponent = tabs.find(t => t.id === activeTab)?.component || OrganizationTab;
@@ -99,22 +108,20 @@ export function Settings() {
     <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
-        <Link
-          to="/dashboard"
-          style={styles.backButton}
-          onMouseOver={(e) => {
-            e.currentTarget.style.background = '#f1f5f9';
-            e.currentTarget.style.color = '#475569';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.background = '#f8fafc';
-            e.currentTarget.style.color = '#64748b';
-          }}
-        >
-          <ArrowLeft size={18} />
-          Back to Dashboard
-        </Link>
-        <div style={styles.headerText}>
+        <div style={styles.headerTopRow}>
+          <Link
+            to="/dashboard"
+            style={styles.backButton}
+          >
+            <ArrowLeft size={18} />
+            Back
+          </Link>
+          <div style={{ flex: 1 }}>
+
+          </div>
+        </div>
+        
+        <div>
           <h1 style={styles.title}>Settings</h1>
           <p style={styles.subtitle}>
             Manage your organization, team members, and preferences
@@ -125,7 +132,7 @@ export function Settings() {
       {/* Settings Card */}
       <div style={styles.card}>
         {/* Tab Navigation */}
-        <nav style={styles.tabNav}>
+        <nav style={styles.tabNav} className="scrollbar-hide">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -134,16 +141,6 @@ export function Settings() {
                 ...styles.tab,
                 ...(activeTab === tab.id ? styles.tabActive : {}),
               }}
-              onMouseOver={(e) => {
-                if (activeTab !== tab.id) {
-                  e.currentTarget.style.color = '#334155';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (activeTab !== tab.id) {
-                  e.currentTarget.style.color = '#6b7280';
-                }
-              }}
             >
               {tab.label}
             </button>
@@ -151,7 +148,7 @@ export function Settings() {
         </nav>
 
         {/* Tab Content */}
-        <div style={styles.tabContent}>
+        <div style={styles.content}>
           <ActiveTabComponent />
         </div>
       </div>

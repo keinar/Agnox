@@ -23,6 +23,7 @@ const styles = {
     color: '#6b7280',
     marginBottom: '20px',
     lineHeight: '1.6',
+    maxWidth: '800px',
   } as React.CSSProperties,
   toggleContainer: {
     display: 'flex',
@@ -32,22 +33,26 @@ const styles = {
     background: '#f9fafb',
     borderRadius: '8px',
     marginBottom: '16px',
+    flexWrap: 'wrap',
   } as React.CSSProperties,
   toggle: {
     position: 'relative' as const,
     width: '48px',
     height: '28px',
-    background: '#e5e7eb',
-    borderRadius: '14px',
+    borderRadius: '9999px',
+    transition: 'background-color 0.2s',
     cursor: 'pointer',
-    transition: 'background 0.2s ease',
+    border: 'none',
+    padding: 0,
+    flexShrink: 0,
   } as React.CSSProperties,
   toggleActive: {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    backgroundColor: '#4f46e5',
   } as React.CSSProperties,
   toggleDisabled: {
-    cursor: 'not-allowed',
     opacity: 0.5,
+    cursor: 'not-allowed',
+    backgroundColor: '#e5e7eb',
   } as React.CSSProperties,
   toggleSlider: {
     position: 'absolute' as const,
@@ -55,75 +60,73 @@ const styles = {
     left: '2px',
     width: '24px',
     height: '24px',
-    background: '#ffffff',
+    backgroundColor: 'white',
     borderRadius: '50%',
-    transition: 'transform 0.2s ease',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+    transition: 'transform 0.2s',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
   } as React.CSSProperties,
   toggleSliderActive: {
     transform: 'translateX(20px)',
   } as React.CSSProperties,
   toggleLabel: {
-    fontSize: '15px',
+    fontSize: '14px',
     fontWeight: 500,
-    color: '#1e293b',
+    color: '#374151',
+    userSelect: 'none' as const,
   } as React.CSSProperties,
   alert: {
-    padding: '12px 16px',
+    display: 'flex',
+    gap: '12px',
+    padding: '16px',
     borderRadius: '8px',
     fontSize: '14px',
-    marginBottom: '16px',
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '10px',
-    lineHeight: '1.6',
+    lineHeight: '1.5',
+    marginBottom: '24px',
   } as React.CSSProperties,
   alertInfo: {
-    background: '#f0f4ff',
-    border: '1px solid #c7d2fe',
-    color: '#667eea',
+    backgroundColor: '#eff6ff',
+    border: '1px solid #dbeafe',
+    color: '#1e40af',
   } as React.CSSProperties,
   alertWarning: {
-    background: '#fffbeb',
-    border: '1px solid #fde68a',
-    color: '#d97706',
+    backgroundColor: '#fffbeb',
+    border: '1px solid #fef3c7',
+    color: '#92400e',
   } as React.CSSProperties,
   alertDisabled: {
-    background: '#f3f4f6',
-    border: '1px solid #d1d5db',
-    color: '#6b7280',
+    backgroundColor: '#f9fafb',
+    border: '1px solid #e5e7eb',
+    color: '#4b5563',
   } as React.CSSProperties,
   disclosure: {
-    padding: '20px',
-    background: '#fafafa',
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
-    marginTop: '24px',
+    marginTop: '32px',
+    paddingTop: '24px',
+    borderTop: '1px solid #f1f5f9',
   } as React.CSSProperties,
   disclosureTitle: {
-    fontSize: '15px',
+    fontSize: '14px',
     fontWeight: 600,
     color: '#1e293b',
-    marginBottom: '8px',
+    marginBottom: '12px',
   } as React.CSSProperties,
   disclosureText: {
-    fontSize: '14px',
-    color: '#6b7280',
+    fontSize: '13px',
+    color: '#64748b',
     lineHeight: '1.6',
+    margin: 0,
   } as React.CSSProperties,
   link: {
-    color: '#667eea',
-    fontWeight: 600,
+    color: '#4f46e5',
     textDecoration: 'none',
   } as React.CSSProperties,
   errorMessage: {
-    padding: '12px 16px',
-    background: '#fef2f2',
+    marginBottom: '24px',
+    padding: '16px',
+    backgroundColor: '#fef2f2',
     border: '1px solid #fecaca',
     borderRadius: '8px',
-    color: '#dc2626',
+    color: '#991b1b',
     fontSize: '14px',
-    marginBottom: '16px',
   } as React.CSSProperties,
 };
 
@@ -161,7 +164,6 @@ export function SecurityTab() {
     if (!isAdmin || updating) return;
 
     const newValue = !aiAnalysisEnabled;
-
     setUpdating(true);
     setError(null);
 
@@ -191,7 +193,6 @@ export function SecurityTab() {
     <div>
       {error && <div style={styles.errorMessage}>{error}</div>}
 
-      {/* AI Analysis Section */}
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>
           <Shield size={20} />
@@ -204,15 +205,15 @@ export function SecurityTab() {
 
         {isAdmin ? (
           <>
-            {/* Toggle */}
             <div style={styles.toggleContainer}>
-              <div
+              <button
                 onClick={handleToggleAiAnalysis}
                 style={{
                   ...styles.toggle,
-                  ...(aiAnalysisEnabled ? styles.toggleActive : {}),
+                  ...(aiAnalysisEnabled ? styles.toggleActive : { backgroundColor: '#e5e7eb' }),
                   ...(updating ? styles.toggleDisabled : {}),
                 }}
+                disabled={updating}
               >
                 <div
                   style={{
@@ -220,7 +221,7 @@ export function SecurityTab() {
                     ...(aiAnalysisEnabled ? styles.toggleSliderActive : {}),
                   }}
                 />
-              </div>
+              </button>
               <label style={styles.toggleLabel}>
                 {updating
                   ? 'Updating...'
@@ -230,14 +231,12 @@ export function SecurityTab() {
               </label>
             </div>
 
-            {/* Status Message */}
             {aiAnalysisEnabled ? (
               <div style={{ ...styles.alert, ...styles.alertInfo }}>
                 <Info size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div>
                   <strong>AI analysis is active.</strong> Failed and unstable test runs will be automatically
-                  analyzed to help identify issues faster. This helps reduce debugging time and improves test
-                  reliability.
+                  analyzed to help identify issues faster.
                 </div>
               </div>
             ) : (
@@ -245,7 +244,7 @@ export function SecurityTab() {
                 <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div>
                   <strong>AI analysis is currently disabled.</strong> Test failures will not receive AI-powered
-                  insights. You can enable this setting at any time to start receiving intelligent failure analysis.
+                  insights.
                 </div>
               </div>
             )}
@@ -261,25 +260,14 @@ export function SecurityTab() {
           </div>
         )}
 
-        {/* Data Processing Disclosure */}
         <div style={styles.disclosure}>
           <h3 style={styles.disclosureTitle}>Data Processing & Privacy</h3>
           <p style={styles.disclosureText}>
             When AI analysis is enabled, test failure logs and relevant diagnostic information are sent to Google's
-            Gemini API for processing. The data is analyzed in real-time and is not stored by Google beyond the
-            duration of the API call. No personal information or sensitive credentials are included in the analysis
-            request.
+            Gemini API for processing. The data is analyzed in real-time and is not stored by Google.
           </p>
           <p style={{ ...styles.disclosureText, marginTop: '12px' }}>
-            All data transmission is encrypted using TLS 1.3. You can review our full{' '}
-            <a href="/privacy" style={styles.link}>
-              Privacy Policy
-            </a>{' '}
-            and{' '}
-            <a href="/terms" style={styles.link}>
-              Terms of Service
-            </a>{' '}
-            for more details on how we handle your data.
+            All data transmission is encrypted using TLS 1.3. See our <a href="#" style={styles.link}>Privacy Policy</a> for details.
           </p>
         </div>
       </div>

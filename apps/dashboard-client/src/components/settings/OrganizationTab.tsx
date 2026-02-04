@@ -45,75 +45,47 @@ const styles = {
   input: {
     width: '100%',
     maxWidth: '400px',
-    padding: '10px 14px',
-    fontSize: '15px',
-    border: '2px solid #e5e7eb',
-    borderRadius: '8px',
-    outline: 'none',
-    transition: 'border-color 0.2s ease',
-  } as React.CSSProperties,
-  inputDisabled: {
-    backgroundColor: '#f9fafb',
-    color: '#9ca3af',
-    cursor: 'not-allowed',
-  } as React.CSSProperties,
-  planBadge: {
-    display: 'inline-block',
-    padding: '8px 16px',
-    borderRadius: '8px',
+    padding: '10px 12px',
     fontSize: '14px',
-    fontWeight: 600,
-    textTransform: 'uppercase' as const,
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: '#ffffff',
-    letterSpacing: '0.5px',
+    border: '1px solid #e2e8f0',
+    borderRadius: '6px',
+    outline: 'none',
+    transition: 'border-color 0.2s',
   } as React.CSSProperties,
   button: {
     marginTop: '12px',
-    padding: '10px 24px',
+    padding: '10px 20px',
     fontSize: '14px',
     fontWeight: 600,
     color: '#ffffff',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    background: 'linear-gradient(to right, #4f46e5, #7c3aed)',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '6px',
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
+    transition: 'opacity 0.2s',
   } as React.CSSProperties,
-  buttonDisabled: {
-    opacity: 0.5,
-    cursor: 'not-allowed',
-  } as React.CSSProperties,
-  infoText: {
-    fontSize: '13px',
-    color: '#6b7280',
-    fontFamily: 'monospace',
-  } as React.CSSProperties,
-  upgradeLink: {
+  planBadge: {
     display: 'inline-block',
-    marginTop: '8px',
-    fontSize: '14px',
-    color: '#667eea',
-    fontWeight: 600,
-    textDecoration: 'none',
+    padding: '4px 12px',
+    borderRadius: '6px',
+    fontSize: '12px',
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    background: 'linear-gradient(to right, #4f46e5, #7c3aed)',
+    color: 'white',
+    letterSpacing: '0.05em',
   } as React.CSSProperties,
-  successMessage: {
-    padding: '12px 16px',
-    background: '#d1fae5',
-    border: '1px solid #6ee7b7',
-    borderRadius: '8px',
-    color: '#047857',
-    fontSize: '14px',
-    marginBottom: '16px',
+  limitsGrid: {
+    display: 'grid',
+
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+    gap: '16px',
   } as React.CSSProperties,
-  errorMessage: {
-    padding: '12px 16px',
-    background: '#fef2f2',
-    border: '1px solid #fecaca',
+  limitCard: {
+    background: '#f8fafc',
+    padding: '16px',
     borderRadius: '8px',
-    color: '#dc2626',
-    fontSize: '14px',
-    marginBottom: '16px',
+    border: '1px solid #f1f5f9',
   } as React.CSSProperties,
 };
 
@@ -168,8 +140,6 @@ export function OrganizationTab() {
       if (response.data.success) {
         setOrganization((prev) => (prev ? { ...prev, name: name.trim() } : null));
         setMessage({ type: 'success', text: 'Organization name updated successfully' });
-
-        // Clear success message after 3 seconds
         setTimeout(() => setMessage(null), 3000);
       }
     } catch (error: any) {
@@ -183,32 +153,31 @@ export function OrganizationTab() {
     }
   }
 
-  if (loading) {
-    return <div style={{ color: '#6b7280', fontSize: '14px' }}>Loading organization details...</div>;
-  }
-
-  if (!organization) {
-    return <div style={{ color: '#dc2626', fontSize: '14px' }}>Failed to load organization details</div>;
-  }
+  if (loading) return <div style={{ color: '#6b7280', fontSize: '14px' }}>Loading organization details...</div>;
+  if (!organization) return <div style={{ color: '#dc2626', fontSize: '14px' }}>Failed to load organization details</div>;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+      year: 'numeric', month: 'long', day: 'numeric',
     });
   };
 
   return (
     <div>
-      {/* Success/Error Messages */}
       {message && (
-        <div style={message.type === 'success' ? styles.successMessage : styles.errorMessage}>
+        <div style={{
+          padding: '12px 16px',
+          borderRadius: '8px',
+          marginBottom: '16px',
+          fontSize: '14px',
+          background: message.type === 'success' ? '#ecfdf5' : '#fef2f2',
+          color: message.type === 'success' ? '#047857' : '#b91c1c',
+          border: `1px solid ${message.type === 'success' ? '#a7f3d0' : '#fecaca'}`,
+        }}>
           {message.text}
         </div>
       )}
 
-      {/* Organization Name */}
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>Organization Details</h2>
 
@@ -220,17 +189,11 @@ export function OrganizationTab() {
             onChange={(e) => setName(e.target.value)}
             style={{
               ...styles.input,
-              ...(isAdmin ? {} : styles.inputDisabled),
+              borderColor: isAdmin ? '#e2e8f0' : '#e2e8f0',
+              background: isAdmin ? '#fff' : '#f9fafb',
+              cursor: isAdmin ? 'text' : 'not-allowed',
             }}
             disabled={!isAdmin}
-            onFocus={(e) => {
-              if (isAdmin) {
-                e.target.style.borderColor = '#667eea';
-              }
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '#e5e7eb';
-            }}
           />
           {isAdmin && (
             <button
@@ -238,87 +201,52 @@ export function OrganizationTab() {
               disabled={saving || !name.trim() || name === organization.name}
               style={{
                 ...styles.button,
-                ...(saving || !name.trim() || name === organization.name ? styles.buttonDisabled : {}),
-              }}
-              onMouseOver={(e) => {
-                if (!saving && name.trim() && name !== organization.name) {
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
-                }
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
+                opacity: saving || !name.trim() || name === organization.name ? 0.5 : 1,
+                cursor: saving || !name.trim() || name === organization.name ? 'not-allowed' : 'pointer',
               }}
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
           )}
-          {!isAdmin && (
-            <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '8px' }}>
-              Only administrators can change the organization name.
-            </p>
-          )}
         </div>
 
-        {/* Current Plan */}
         <div style={styles.fieldGroup}>
           <label style={styles.label}>Current Plan</label>
           <div style={styles.planBadge}>{organization.plan}</div>
-          {organization.plan === 'free' && (
-            <a href="/billing/upgrade" style={styles.upgradeLink}>
-              Upgrade to Team Plan →
-            </a>
-          )}
         </div>
 
-        {/* Organization ID */}
         <div style={styles.fieldGroup}>
           <label style={styles.label}>Organization ID</label>
-          <code style={styles.infoText}>{organization.id}</code>
+          <code style={{ fontSize: '13px', color: '#4b5563', background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px', wordBreak: 'break-all' }}>
+            {organization.id}
+          </code>
         </div>
 
-        {/* Created Date */}
         <div style={styles.fieldGroup}>
           <label style={styles.label}>Created</label>
-          <span style={{ fontSize: '14px', color: '#374151' }}>
-            {formatDate(organization.createdAt)}
-          </span>
+          <span style={{ fontSize: '14px', color: '#374151' }}>{formatDate(organization.createdAt)}</span>
         </div>
       </div>
 
-      {/* Plan Limits */}
+      {/* Plan Limits - Responsive Grid */}
       <div style={styles.section}>
         <h2 style={styles.sectionTitle}>Plan Limits</h2>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-          <div>
-            <label style={styles.label}>Test Runs / Month</label>
-            <div style={{ fontSize: '20px', fontWeight: 600, color: '#1e293b' }}>
-              {organization.limits.maxTestRuns.toLocaleString()}
+        <div style={styles.limitsGrid}>
+          {[
+            { label: 'Test Runs / Month', value: organization.limits.maxTestRuns.toLocaleString() },
+            { label: 'Team Members', value: organization.limits.maxUsers },
+            { label: 'Concurrent Runs', value: organization.limits.maxConcurrentRuns },
+            { label: 'Projects', value: organization.limits.maxProjects },
+          ].map((item, i) => (
+            <div key={i} style={styles.limitCard}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: '#64748b', marginBottom: '4px' }}>
+                {item.label}
+              </label>
+              <div style={{ fontSize: '20px', fontWeight: 600, color: '#1e293b' }}>
+                {item.value}
+              </div>
             </div>
-          </div>
-
-          <div>
-            <label style={styles.label}>Team Members</label>
-            <div style={{ fontSize: '20px', fontWeight: 600, color: '#1e293b' }}>
-              {organization.limits.maxUsers}
-            </div>
-          </div>
-
-          <div>
-            <label style={styles.label}>Concurrent Runs</label>
-            <div style={{ fontSize: '20px', fontWeight: 600, color: '#1e293b' }}>
-              {organization.limits.maxConcurrentRuns}
-            </div>
-          </div>
-
-          <div>
-            <label style={styles.label}>Projects</label>
-            <div style={{ fontSize: '20px', fontWeight: 600, color: '#1e293b' }}>
-              {organization.limits.maxProjects}
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </div>

@@ -37,9 +37,12 @@ let dbClient: MongoClient;
 
 // Task 4.4: CORS Production Configuration
 // Per Security Audit Recommendation: Restrict origins based on environment
-const ALLOWED_ORIGINS = process.env.NODE_ENV === 'production'
-    ? (process.env.ALLOWED_ORIGINS || '').split(',').map(origin => origin.trim())
-    : ['http://localhost:8080', 'http://localhost:5173', 'http://localhost:3000'];
+const rawAllowedOrigins = process.env.ALLOWED_ORIGINS || '';
+const defaultDevOrigins = ['http://localhost:8080', 'http://localhost:5173', 'http://localhost:3000'];
+
+const ALLOWED_ORIGINS = rawAllowedOrigins 
+    ? rawAllowedOrigins.split(',').map(origin => origin.trim())
+    : defaultDevOrigins;
 
 app.register(cors, {
     origin: (origin, callback) => {

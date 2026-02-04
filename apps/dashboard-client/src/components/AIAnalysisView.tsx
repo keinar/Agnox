@@ -16,7 +16,6 @@ const AIAnalysisView: React.FC<AIAnalysisViewProps> = ({
     onClose 
 }) => {
     
-    // מעבד את הטקסט למרכיבי React (כמו שעשינו קודם)
     const formattedContent = useMemo(() => {
         if (!analysis) return <div className="text-gray-500 italic p-4 text-center">No analysis content available.</div>;
 
@@ -65,7 +64,6 @@ const AIAnalysisView: React.FC<AIAnalysisViewProps> = ({
 
     if (!isVisible) return null;
 
-    // משתמשים באותה תבנית כמו ExecutionModal
     return createPortal(
         <div className="modal-overlay">
             <div className="modal-container" style={{ maxWidth: '800px', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
@@ -94,7 +92,7 @@ const AIAnalysisView: React.FC<AIAnalysisViewProps> = ({
                     flex: 1, 
                     overflowY: 'auto', 
                     padding: '20px', 
-                    backgroundColor: '#0f172a', // תואם לרקע הכהה של הקוד
+                    backgroundColor: '#0f172a',
                     fontSize: '0.9rem' 
                 }}>
                     {formattedContent}

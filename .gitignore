@@ -16,7 +16,6 @@ coverage/
 # ---------------------------------
 # 3. Environment Variables (SECRETS!)
 # ---------------------------------
-# חשוב מאוד לא להעלות סיסמאות לגיט
 .env
 .env.local
 .env.development.local
@@ -26,20 +25,18 @@ coverage/
 *.pem
 .env.server
 
-# אבל כן נרצה להעלות קובץ דוגמה אם קיים
 !.env.example
 
 # ---------------------------------
 # 4. Playwright & Testing
 # ---------------------------------
-# תוצאות של טסטים, וידאו ותמונות שנכשלו
 test-results/
 playwright-report/
 blob-report/
 playwright/.cache/
 
 # ---------------------------------
-# 5. Allure Reports (אם נשתמש בעתיד)
+# 5. Allure Reports
 # ---------------------------------
 allure-results/
 allure-report/
