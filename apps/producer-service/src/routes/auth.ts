@@ -15,6 +15,7 @@ import { MongoClient, ObjectId } from 'mongodb';
 import { hashPassword, comparePassword, validatePasswordStrength } from '../utils/password.js';
 import { signToken } from '../utils/jwt.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { hashInvitationToken, isValidInvitationTokenFormat, isInvitationExpired } from '../utils/invitation.js';
 
 const DB_NAME = 'automation_platform';
 
@@ -22,16 +23,18 @@ export async function authRoutes(app: FastifyInstance, mongoClient: MongoClient)
   const db = mongoClient.db(DB_NAME);
   const usersCollection = db.collection('users');
   const orgsCollection = db.collection('organizations');
+  const invitationsCollection = db.collection('invitations');
 
   /**
    * POST /api/auth/signup
-   * Register new user and create organization
+   * Register new user and create organization (or join via invitation)
    *
    * Request Body:
    * - email: string (valid email format)
    * - password: string (min 8 chars, uppercase, lowercase, number, special char)
    * - name: string (user's full name)
-   * - organizationName: string (organization name)
+   * - organizationName?: string (organization name - required ONLY if no inviteToken)
+   * - inviteToken?: string (optional - for invited users)
    *
    * Response (201):
    * - success: true
@@ -39,19 +42,28 @@ export async function authRoutes(app: FastifyInstance, mongoClient: MongoClient)
    * - user: { id, email, name, role, organizationId, organizationName }
    *
    * Errors:
-   * - 400: Missing fields, invalid email, weak password
+   * - 400: Missing fields, invalid email, weak password, invalid invitation
    * - 409: Email already registered
    * - 500: Signup failed
    */
   app.post('/api/auth/signup', async (request, reply) => {
-    const { email, password, name, organizationName } = request.body as any;
+    const { email, password, name, organizationName, inviteToken } = request.body as any;
 
     // Validation
-    if (!email || !password || !name || !organizationName) {
+    if (!email || !password || !name) {
       return reply.code(400).send({
         success: false,
         error: 'Missing required fields',
-        message: 'Email, password, name, and organization name are required'
+        message: 'Email, password, and name are required'
+      });
+    }
+
+    // If no inviteToken, organizationName is required
+    if (!inviteToken && !organizationName) {
+      return reply.code(400).send({
+        success: false,
+        error: 'Missing required fields',
+        message: 'Organization name is required when not using an invitation'
       });
     }
 
@@ -85,67 +97,171 @@ export async function authRoutes(app: FastifyInstance, mongoClient: MongoClient)
     }
 
     try {
-      // Create organization
-      const orgId = new ObjectId();
-      const slug = organizationName
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '');
+      let orgId: ObjectId;
+      let userRole: string;
+      let orgName: string;
 
-      await orgsCollection.insertOne({
-        _id: orgId,
-        name: organizationName,
-        slug,
-        plan: 'free',
-        limits: {
-          maxProjects: 1,
-          maxTestRuns: 100,
-          maxUsers: 3,
-          maxConcurrentRuns: 1
-        },
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+      // INVITATION FLOW: User signing up with invitation token
+      if (inviteToken) {
+        // Validate token format
+        if (!isValidInvitationTokenFormat(inviteToken)) {
+          return reply.code(400).send({
+            success: false,
+            error: 'Invalid invitation token format'
+          });
+        }
 
-      // Create user
-      const userId = new ObjectId();
-      const hashedPassword = await hashPassword(password);
+        // Hash token to look up in database
+        const tokenHash = hashInvitationToken(inviteToken);
 
-      await usersCollection.insertOne({
-        _id: userId,
-        email: email.toLowerCase(),
-        name,
-        hashedPassword,
-        organizationId: orgId,
-        role: 'admin',
-        status: 'active',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+        // Find invitation
+        const invitation = await invitationsCollection.findOne({
+          tokenHash,
+          email: email.toLowerCase(),
+          status: 'pending'
+        });
 
-      // Generate JWT token
-      const token = signToken({
-        userId: userId.toString(),
-        organizationId: orgId.toString(),
-        role: 'admin'
-      });
+        if (!invitation) {
+          return reply.code(400).send({
+            success: false,
+            error: 'Invalid or expired invitation',
+            message: 'The invitation token is invalid or has already been used'
+          });
+        }
 
-      app.log.info(`New organization created: ${organizationName} (${orgId})`);
-      app.log.info(`New user registered: ${email} (${userId})`);
+        // Check if expired
+        if (isInvitationExpired(invitation.expiresAt as Date)) {
+          await invitationsCollection.updateOne(
+            { _id: invitation._id },
+            { $set: { status: 'expired' } }
+          );
 
-      return reply.code(201).send({
-        success: true,
-        token,
-        user: {
-          id: userId.toString(),
+          return reply.code(400).send({
+            success: false,
+            error: 'Invitation has expired',
+            message: 'This invitation has expired. Please request a new invitation.'
+          });
+        }
+
+        // Use invitation's organization and role
+        orgId = new ObjectId(invitation.organizationId as string);
+        userRole = invitation.role as string;
+
+        // Get organization name
+        const org = await orgsCollection.findOne({ _id: orgId });
+        orgName = org?.name || 'Unknown Organization';
+
+        // Create user
+        const userId = new ObjectId();
+        const hashedPassword = await hashPassword(password);
+
+        await usersCollection.insertOne({
+          _id: userId,
           email: email.toLowerCase(),
           name,
-          role: 'admin',
+          hashedPassword,
+          organizationId: orgId,
+          role: userRole,
+          status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+
+        // Mark invitation as accepted
+        await invitationsCollection.updateOne(
+          { _id: invitation._id },
+          {
+            $set: {
+              status: 'accepted',
+              acceptedAt: new Date()
+            }
+          }
+        );
+
+        // Generate JWT token
+        const token = signToken({
+          userId: userId.toString(),
           organizationId: orgId.toString(),
-          organizationName
-        }
-      });
+          role: userRole
+        });
+
+        app.log.info(`User accepted invitation: ${email} joined ${orgName} as ${userRole}`);
+
+        return reply.code(201).send({
+          success: true,
+          token,
+          user: {
+            id: userId.toString(),
+            email: email.toLowerCase(),
+            name,
+            role: userRole,
+            organizationId: orgId.toString(),
+            organizationName: orgName
+          }
+        });
+      } else {
+        // REGULAR FLOW: Create new organization
+        orgId = new ObjectId();
+        const slug = organizationName
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-|-$/g, '');
+
+        await orgsCollection.insertOne({
+          _id: orgId,
+          name: organizationName,
+          slug,
+          plan: 'free',
+          limits: {
+            maxProjects: 1,
+            maxTestRuns: 100,
+            maxUsers: 3,
+            maxConcurrentRuns: 1
+          },
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+
+        // Create user
+        const userId = new ObjectId();
+        const hashedPassword = await hashPassword(password);
+
+        await usersCollection.insertOne({
+          _id: userId,
+          email: email.toLowerCase(),
+          name,
+          hashedPassword,
+          organizationId: orgId,
+          role: 'admin',
+          status: 'active',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+
+        // Generate JWT token
+        const token = signToken({
+          userId: userId.toString(),
+          organizationId: orgId.toString(),
+          role: 'admin'
+        });
+
+        app.log.info(`New organization created: ${organizationName} (${orgId})`);
+        app.log.info(`New user registered: ${email} (${userId})`);
+
+        return reply.code(201).send({
+          success: true,
+          token,
+          user: {
+            id: userId.toString(),
+            email: email.toLowerCase(),
+            name,
+            role: 'admin',
+            organizationId: orgId.toString(),
+            organizationName
+          }
+        });
+      }
 
     } catch (error: any) {
       app.log.error(`Signup error: ${error?.message || error}`);
@@ -292,6 +408,18 @@ export async function authRoutes(app: FastifyInstance, mongoClient: MongoClient)
         });
       }
 
+      // Count active users in organization
+      const userCount = await usersCollection.countDocuments({
+        organizationId: orgId
+      });
+
+      // Calculate user limit based on plan
+      const userLimit = org.limits?.maxUsers || (
+        org.plan === 'free' ? 3 :
+        org.plan === 'team' ? 20 :
+        999 // enterprise
+      );
+
       return reply.send({
         success: true,
         data: {
@@ -306,7 +434,10 @@ export async function authRoutes(app: FastifyInstance, mongoClient: MongoClient)
             name: org.name,
             slug: org.slug,
             plan: org.plan,
-            limits: org.limits
+            limits: org.limits,
+            userCount,      // NEW: current active users
+            userLimit,      // NEW: max users allowed
+            aiAnalysisEnabled: org.aiAnalysisEnabled !== false  // NEW: default true
           }
         }
       });
