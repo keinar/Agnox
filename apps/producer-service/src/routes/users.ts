@@ -34,7 +34,7 @@ interface IAuditLogEntry {
   targetId: string;
   details?: Record<string, any>;
   ip?: string;
-  timestamp: Date;
+  timestamp?: Date;
 }
 
 /**

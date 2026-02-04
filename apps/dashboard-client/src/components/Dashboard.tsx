@@ -3,7 +3,8 @@ import { useExecutions } from '../hooks/useExecutions';
 import { StatsGrid } from './StatsGrid';
 import { ExecutionRow } from './ExecutionRow';
 import { ExecutionModal } from './ExecutionModal';
-import { Play, LogOut, Menu, X } from 'lucide-react';
+import { Play, LogOut, Menu, X, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
@@ -386,6 +387,35 @@ export const Dashboard = () => {
 
                     {/* Right side - Desktop */}
                     <div className="header-right">
+                        <Link
+                            to="/settings"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 16px',
+                                fontSize: '14px',
+                                fontWeight: 500,
+                                color: '#64748b',
+                                textDecoration: 'none',
+                                background: '#f8fafc',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '8px',
+                                transition: 'all 0.2s ease',
+                            }}
+                            onMouseOver={(e) => {
+                                e.currentTarget.style.background = '#f1f5f9';
+                                e.currentTarget.style.color = '#475569';
+                            }}
+                            onMouseOut={(e) => {
+                                e.currentTarget.style.background = '#f8fafc';
+                                e.currentTarget.style.color = '#64748b';
+                            }}
+                        >
+                            <Settings size={18} />
+                            Settings
+                        </Link>
+
                         <div className="user-section">
                             <div style={{
                                 width: '40px',
@@ -488,6 +518,29 @@ export const Dashboard = () => {
                         </div>
                         <span className="role-badge">{user?.role || 'user'}</span>
                     </div>
+
+                    {/* Settings Link */}
+                    <Link
+                        to="/settings"
+                        onClick={() => setMobileMenuOpen(false)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '14px 16px',
+                            fontSize: '15px',
+                            fontWeight: 600,
+                            color: '#334155',
+                            textDecoration: 'none',
+                            background: '#f8fafc',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '10px',
+                            transition: 'all 0.2s ease',
+                        }}
+                    >
+                        <Settings size={18} />
+                        <span>Settings</span>
+                    </Link>
 
                     {/* Logout button */}
                     <button
