@@ -11,6 +11,8 @@ import type { Server } from 'socket.io';
 import * as fs from 'fs';
 import Redis from 'ioredis';
 import { authRoutes } from './routes/auth.js';
+import { invitationRoutes } from './routes/invitations.js';
+import { userRoutes } from './routes/users.js';
 import { authMiddleware } from './middleware/auth.js';
 import { verifyToken } from './utils/jwt.js';
 
@@ -329,6 +331,12 @@ const start = async () => {
         // Register authentication routes
         await authRoutes(app, dbClient);
 
+        // Register invitation routes
+        await invitationRoutes(app, dbClient);
+
+        // Register user management routes
+        await userRoutes(app, dbClient);
+
         // Global authentication middleware
         // Apply auth to all /api/* routes except auth endpoints
         app.addHook('preHandler', async (request, reply) => {
@@ -346,6 +354,11 @@ const start = async () => {
                 '/executions/update',  // Internal worker callback
                 '/executions/log'      // Internal worker callback
             ];
+
+            // Invitation validation endpoint (public)
+            if (request.url.startsWith('/api/invitations/validate/')) {
+                return;
+            }
 
             // Static files (reports) - no auth
             if (request.url.startsWith('/reports/')) {
