@@ -11,8 +11,12 @@ import type { Server } from 'socket.io';
 import * as fs from 'fs';
 import Redis from 'ioredis';
 import { authRoutes } from './routes/auth.js';
+import { invitationRoutes } from './routes/invitations.js';
+import { userRoutes } from './routes/users.js';
+import { organizationRoutes } from './routes/organization.js';
 import { authMiddleware } from './middleware/auth.js';
 import { verifyToken } from './utils/jwt.js';
+import { createAuthRateLimiter, createApiRateLimiter, createStrictRateLimiter } from './middleware/rateLimiter.js';
 
 declare module 'fastify' {
     interface FastifyInstance {
@@ -31,9 +35,29 @@ const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
 let dbClient: MongoClient;
 
+// Task 4.4: CORS Production Configuration
+// Per Security Audit Recommendation: Restrict origins based on environment
+const ALLOWED_ORIGINS = process.env.NODE_ENV === 'production'
+    ? (process.env.ALLOWED_ORIGINS || '').split(',').map(origin => origin.trim())
+    : ['http://localhost:8080', 'http://localhost:5173', 'http://localhost:3000'];
+
 app.register(cors, {
-    origin: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    origin: (origin, callback) => {
+        // Allow requests with no origin (e.g., mobile apps, Postman, server-to-server)
+        if (!origin) {
+            return callback(null, true);
+        }
+
+        // Check if origin is in allowed list
+        if (ALLOWED_ORIGINS.includes(origin)) {
+            callback(null, true);
+        } else {
+            app.log.warn({ event: 'CORS_BLOCKED', origin, allowed: ALLOWED_ORIGINS });
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 });
 
 app.register(socketio, {
@@ -41,6 +65,30 @@ app.register(socketio, {
         origin: "*",
         methods: ["GET", "POST"]
     }
+});
+
+// Security Headers (Task 4.2 - Security Enhancements)
+// Per Security Audit Recommendation: Add security headers to all responses
+app.addHook('onSend', async (request, reply) => {
+    // Prevent MIME type sniffing
+    reply.header('X-Content-Type-Options', 'nosniff');
+
+    // Prevent clickjacking attacks
+    reply.header('X-Frame-Options', 'DENY');
+
+    // Enable XSS protection in legacy browsers
+    reply.header('X-XSS-Protection', '1; mode=block');
+
+    // Control referrer information
+    reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+    // Enforce HTTPS in production (HSTS)
+    if (process.env.NODE_ENV === 'production') {
+        reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
+
+    // Content-Security-Policy can be added later based on needs
+    // reply.header('Content-Security-Policy', "default-src 'self'");
 });
 
 const REPORTS_DIR = process.env.REPORTS_DIR || path.join(process.cwd(), 'reports');
@@ -326,8 +374,22 @@ const start = async () => {
         await rabbitMqService.connect();
         await connectToMongo();
 
-        // Register authentication routes
-        await authRoutes(app, dbClient);
+        // Create rate limiter instances
+        const authRateLimit = createAuthRateLimiter(redis);
+        const apiRateLimit = createApiRateLimiter(redis);
+        const strictRateLimit = createStrictRateLimiter(redis);
+
+        // Register authentication routes (with auth rate limiter and Redis for login tracking)
+        await authRoutes(app, dbClient, authRateLimit, redis);
+
+        // Register invitation routes (with strict rate limiter for admin actions)
+        await invitationRoutes(app, dbClient, strictRateLimit);
+
+        // Register user management routes (with strict rate limiter for admin actions)
+        await userRoutes(app, dbClient, strictRateLimit);
+
+        // Register organization routes (with API rate limiter)
+        await organizationRoutes(app, dbClient, apiRateLimit);
 
         // Global authentication middleware
         // Apply auth to all /api/* routes except auth endpoints
@@ -347,6 +409,11 @@ const start = async () => {
                 '/executions/log'      // Internal worker callback
             ];
 
+            // Invitation validation endpoint (public)
+            if (request.url.startsWith('/api/invitations/validate/')) {
+                return;
+            }
+
             // Static files (reports) - no auth
             if (request.url.startsWith('/reports/')) {
                 return;
@@ -359,6 +426,12 @@ const start = async () => {
 
             // Apply auth middleware to all other routes
             await authMiddleware(request, reply);
+
+            // Apply rate limiting after authentication (uses organizationId from request.user)
+            // Skip rate limiting for internal worker callbacks
+            if (!request.url.startsWith('/executions/')) {
+                await apiRateLimit(request, reply);
+            }
         });
 
         await app.listen({ port: 3000, host: '0.0.0.0' });

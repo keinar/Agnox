@@ -76,8 +76,8 @@ export interface IInvitation {
     organizationId: ObjectId;
     email: string;
     role: 'admin' | 'developer' | 'viewer';
-    token: string; // Secure random token for signup link
-    status: 'pending' | 'accepted' | 'expired' | 'revoked';
+    tokenHash: string; // SHA-256 hash of invitation token (SECURITY: never store plain token)
+    status: 'pending' | 'accepted' | 'expired';
     invitedBy: ObjectId;
     expiresAt: Date;
     createdAt: Date;
@@ -196,11 +196,62 @@ export interface IUserInfoResponse {
 }
 
 // ============================================================================
+// INVITATION API REQUEST/RESPONSE TYPES (Phase 2)
+// ============================================================================
+
+/**
+ * Invitation request payload
+ */
+export interface IInvitationRequest {
+    email: string;
+    role: 'admin' | 'developer' | 'viewer';
+}
+
+/**
+ * Invitation response
+ */
+export interface IInvitationResponse {
+    id: string;
+    email: string;
+    role: string;
+    status: 'pending' | 'accepted' | 'expired';
+    invitedBy: string;
+    invitedByName?: string; // For UI display
+    expiresAt: string;
+    createdAt: string;
+    acceptedAt?: string;
+}
+
+/**
+ * User list response
+ */
+export interface IUserListResponse {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    status: string;
+    lastLoginAt?: string;
+    createdAt: string;
+}
+
+/**
+ * Invitation validation response
+ */
+export interface IInvitationValidationResponse {
+    valid: boolean;
+    organizationName?: string;
+    role?: string;
+    inviterName?: string;
+    userExists?: boolean; // Indicates if user should signup or login
+}
+
+// ============================================================================
 // TYPE EXPORTS FOR CONVENIENCE
 // ============================================================================
 
 export type UserRole = 'admin' | 'developer' | 'viewer';
 export type UserStatus = 'active' | 'invited' | 'suspended';
-export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
+export type InvitationStatus = 'pending' | 'accepted' | 'expired';
 export type OrganizationPlan = 'free' | 'team' | 'enterprise';
 export type ExecutionStatus = 'PENDING' | 'RUNNING' | 'PASSED' | 'FAILED' | 'ERROR' | 'UNSTABLE' | 'ANALYZING';
