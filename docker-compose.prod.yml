@@ -36,6 +36,8 @@ services:
     restart: always
     expose:
       - "6379"
+    volumes:
+      - redis_data:/data
     networks:
       - app-network
 
@@ -115,3 +117,4 @@ networks:
 volumes:
   test_results:
     driver: local
+    redis_data:
