@@ -13,6 +13,7 @@ import { verifyToken, extractTokenFromHeader } from '../utils/jwt';
  */
 export interface IUserContext {
   userId: string;
+  email: string;
   organizationId: string;
   role: 'admin' | 'developer' | 'viewer';
 }
@@ -68,6 +69,7 @@ export async function authMiddleware(
   // Inject user context into request
   request.user = {
     userId: payload.userId,
+    email: payload.email,
     organizationId: payload.organizationId,
     role: payload.role as 'admin' | 'developer' | 'viewer'
   };
@@ -188,6 +190,7 @@ export async function optionalAuth(
     // Valid token - inject user context
     request.user = {
       userId: payload.userId,
+      email: payload.email,
       organizationId: payload.organizationId,
       role: payload.role as 'admin' | 'developer' | 'viewer'
     };

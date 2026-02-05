@@ -17,6 +17,7 @@ const JWT_EXPIRY = process.env.JWT_EXPIRY || '24h';
  */
 export interface IJWTPayload {
   userId: string;
+  email: string;
   organizationId: string;
   role: string;
   iat?: number; // Issued at (auto-added by jwt.sign)
@@ -37,8 +38,8 @@ export interface IJWTPayload {
  * });
  */
 export function signToken(payload: Omit<IJWTPayload, 'iat' | 'exp'>): string {
-  if (!payload.userId || !payload.organizationId || !payload.role) {
-    throw new Error('JWT payload must include userId, organizationId, and role');
+  if (!payload.userId || !payload.email || !payload.organizationId || !payload.role) {
+    throw new Error('JWT payload must include userId, email, organizationId, and role');
   }
 
   return jwt.sign(payload as object, JWT_SECRET, {
@@ -70,7 +71,7 @@ export function verifyToken(token: string): IJWTPayload | null {
     }) as IJWTPayload;
 
     // Validate required fields
-    if (!decoded.userId || !decoded.organizationId || !decoded.role) {
+    if (!decoded.userId || !decoded.email || !decoded.organizationId || !decoded.role) {
       console.error('JWT payload missing required fields');
       return null;
     }

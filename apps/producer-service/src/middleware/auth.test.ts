@@ -106,6 +106,7 @@ async function runTests() {
   console.log('Test 3: authMiddleware - Valid token (admin)');
   const adminToken = signToken({
     userId: 'user123',
+    email: 'admin@example.com',
     organizationId: 'org456',
     role: 'admin'
   });
@@ -144,6 +145,7 @@ async function runTests() {
   const req4 = new MockRequest() as unknown as FastifyRequest;
   req4.user = {
     userId: 'user123',
+    email: 'admin@example.com',
     organizationId: 'org456',
     role: 'admin'
   };
@@ -165,6 +167,7 @@ async function runTests() {
   const req5 = new MockRequest() as unknown as FastifyRequest;
   req5.user = {
     userId: 'user456',
+    email: 'dev@example.com',
     organizationId: 'org456',
     role: 'developer'
   };
@@ -189,6 +192,7 @@ async function runTests() {
   const req6 = new MockRequest() as unknown as FastifyRequest;
   req6.user = {
     userId: 'user456',
+    email: 'dev@example.com',
     organizationId: 'org456',
     role: 'developer'
   };
@@ -210,6 +214,7 @@ async function runTests() {
   const req7 = new MockRequest() as unknown as FastifyRequest;
   req7.user = {
     userId: 'user789',
+    email: 'viewer@example.com',
     organizationId: 'org456',
     role: 'viewer'
   };
@@ -230,19 +235,19 @@ async function runTests() {
   const multiRoleMiddleware = requireRole('admin', 'developer', 'viewer');
 
   const req8a = new MockRequest() as unknown as FastifyRequest;
-  req8a.user = { userId: 'u1', organizationId: 'o1', role: 'admin' };
+  req8a.user = { userId: 'u1', email: 'u1@example.com', organizationId: 'o1', role: 'admin' };
   const reply8a = new MockReply() as unknown as FastifyReply;
   await multiRoleMiddleware(req8a, reply8a);
   assert((reply8a as any).statusCode === 200, 'Admin should be allowed');
 
   const req8b = new MockRequest() as unknown as FastifyRequest;
-  req8b.user = { userId: 'u2', organizationId: 'o1', role: 'developer' };
+  req8b.user = { userId: 'u2', email: 'u2@example.com', organizationId: 'o1', role: 'developer' };
   const reply8b = new MockReply() as unknown as FastifyReply;
   await multiRoleMiddleware(req8b, reply8b);
   assert((reply8b as any).statusCode === 200, 'Developer should be allowed');
 
   const req8c = new MockRequest() as unknown as FastifyRequest;
-  req8c.user = { userId: 'u3', organizationId: 'o1', role: 'viewer' };
+  req8c.user = { userId: 'u3', email: 'u3@example.com', organizationId: 'o1', role: 'viewer' };
   const reply8c = new MockReply() as unknown as FastifyReply;
   await multiRoleMiddleware(req8c, reply8c);
   assert((reply8c as any).statusCode === 200, 'Viewer should be allowed');
@@ -256,7 +261,8 @@ async function runTests() {
   const token9 = signToken({
     userId: 'user999',
     organizationId: 'org999',
-    role: 'developer'
+    role: 'developer',
+    email: 'test@example.com'
   });
 
   const req9 = new MockRequest(`Bearer ${token9}`) as unknown as FastifyRequest;
@@ -331,6 +337,7 @@ async function runTests() {
     const reqAdmin = new MockRequest() as unknown as FastifyRequest;
     reqAdmin.user = {
       userId: 'test',
+      email: 'test@example.com',
       organizationId: 'test',
       role: testCase.role as any
     };
@@ -346,6 +353,7 @@ async function runTests() {
     const reqDev = new MockRequest() as unknown as FastifyRequest;
     reqDev.user = {
       userId: 'test',
+      email: 'test@example.com',
       organizationId: 'test',
       role: testCase.role as any
     };
@@ -367,12 +375,14 @@ async function runTests() {
   console.log('Test 13: Token with different organizations');
   const org1Token = signToken({
     userId: 'user1',
+    email: 'user1@org1.com',
     organizationId: 'org1',
     role: 'admin'
   });
 
   const org2Token = signToken({
     userId: 'user2',
+    email: 'user2@org2.com',
     organizationId: 'org2',
     role: 'admin'
   });

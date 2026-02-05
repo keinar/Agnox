@@ -302,8 +302,8 @@ export async function billingRoutes(
           stripeSubscription = await stripe.subscriptions.retrieve(
             org.billing.stripeSubscriptionId
           );
-        } catch (error) {
-          app.log.error('Failed to fetch Stripe subscription:', error);
+        } catch (error: any) {
+          app.log.error(`Failed to fetch Stripe subscription: ${error.message}`);
         }
       }
 
