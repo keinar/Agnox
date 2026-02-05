@@ -103,6 +103,10 @@ services:
     build:
       context: .
       dockerfile: apps/dashboard-client/Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:3000
+        - VITE_STRIPE_TEAM_PRICE_ID=${STRIPE_TEAM_PRICE_ID:-}
+        - VITE_STRIPE_ENTERPRISE_PRICE_ID=${STRIPE_ENTERPRISE_PRICE_ID:-}
     container_name: automation-dashboard
     ports:
       - "8080:80"

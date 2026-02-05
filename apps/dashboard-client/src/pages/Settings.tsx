@@ -6,6 +6,7 @@ import { OrganizationTab } from '../components/settings/OrganizationTab';
 import { MembersTab } from '../components/settings/MembersTab';
 import { SecurityTab } from '../components/settings/SecurityTab';
 import { UsageTab } from '../components/settings/UsageTab';
+import { BillingTab } from '../components/settings/BillingTab';
 
 const styles = {
   container: {
@@ -92,12 +93,13 @@ const styles = {
 };
 
 export function Settings() {
-  const [activeTab, setActiveTab] = useState<'organization' | 'members' | 'security' | 'usage'>('organization');
+  const [activeTab, setActiveTab] = useState<'organization' | 'members' | 'billing' | 'security' | 'usage'>('organization');
   const { user } = useAuth();
 
   const tabs = [
     { id: 'organization' as const, label: 'Organization', component: OrganizationTab },
     { id: 'members' as const, label: 'Team Members', component: MembersTab },
+    { id: 'billing' as const, label: 'Billing & Plans', component: BillingTab },
     { id: 'security' as const, label: 'Security', component: SecurityTab },
     { id: 'usage' as const, label: 'Usage', component: UsageTab },
   ];
