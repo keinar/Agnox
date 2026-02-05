@@ -2,7 +2,7 @@
 
 > Modern React-based UI for the Agnostic Automation Center
 
-Built with React 18, TypeScript, Vite, and Tailwind CSS. Provides real-time test monitoring, team management, and organization settings.
+Built with React 19, TypeScript, Vite, and Pure CSS. Provides real-time test monitoring, team management, and organization settings.
 
 ---
 
@@ -25,7 +25,7 @@ Built with React 18, TypeScript, Vite, and Tailwind CSS. Provides real-time test
 - Security settings
 
 ### Mobile Responsive
-- Tailwind CSS responsive design
+- Pure CSS responsive design (inline styles + custom CSS)
 - Mobile-first approach
 - Tablet and desktop optimizations
 
@@ -33,10 +33,10 @@ Built with React 18, TypeScript, Vite, and Tailwind CSS. Provides real-time test
 
 ## 🛠️ Technology Stack
 
-- **React 18** - UI framework
+- **React 19** - UI framework
 - **TypeScript** - Type safety
 - **Vite** - Build tool (lightning fast HMR)
-- **Tailwind CSS** - Utility-first styling
+- **Pure CSS** - Inline styles + custom CSS modules
 - **Socket.io Client** - Real-time WebSocket
 - **React Router** - Client-side routing
 - **Axios** - HTTP client
@@ -137,44 +137,77 @@ socket.on('execution-log', ({ taskId, log }) => {
 
 ---
 
-## 🎨 Styling with Tailwind CSS
+## 🎨 Styling with Pure CSS
 
-### Responsive Breakpoints
+### Styling Approach
 
-```javascript
-// Mobile first (default)
-className="text-sm p-4"
+This project uses **Pure CSS** (inline styles + custom CSS files) for maximum control and performance.
 
-// Tablet (640px+)
-className="sm:text-base sm:p-6"
-
-// Desktop (1024px+)
-className="lg:text-lg lg:p-8"
-```
-
-### Component Patterns
-
-**Responsive Grid:**
+**Inline Styles (Preferred for component-specific styling):**
 ```tsx
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-  {/* Cards */}
+<div style={{
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+  padding: '16px',
+  backgroundColor: '#1e293b',
+  borderRadius: '8px'
+}}>
+  {/* Component content */}
 </div>
 ```
 
-**Responsive Text:**
+**Custom CSS Classes (Shared styles in App.css):**
 ```tsx
-<h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">
-  Title
-</h1>
+// App.css
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+// Component
+<span className="badge passed">PASSED</span>
 ```
 
-**Horizontal Scroll (Mobile):**
+### Responsive Design Patterns
+
+**Media Queries (CSS):**
+```css
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+```
+
+**Responsive Hook (TypeScript):**
 ```tsx
-<div className="overflow-x-auto">
-  <table className="min-w-full">
-    {/* Table content */}
-  </table>
-</div>
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return isMobile;
+}
+
+// Usage
+const isMobile = useIsMobile();
+{isMobile ? <MobileView /> : <DesktopView />}
 ```
 
 ---
@@ -301,19 +334,24 @@ export default defineConfig({
 })
 ```
 
-### Tailwind Config
+### CSS Variables
 
-See `tailwind.config.js` for styling configuration:
-```javascript
-export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
-  theme: {
-    extend: {},
-  },
-  plugins: [],
+Global CSS variables are defined in `App.css`:
+```css
+:root {
+  --bg-color: #0f172a;       /* Slate 900 */
+  --card-bg: #1e293b;        /* Slate 800 */
+  --text-primary: #f8fafc;   /* Slate 50 */
+  --text-secondary: #94a3b8; /* Slate 400 */
+  --accent-blue: #3b82f6;    /* Blue 500 */
+  --border-color: #334155;   /* Slate 700 */
+}
+
+/* Usage */
+.stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 ```
 
@@ -372,11 +410,13 @@ npm run build
 When contributing to the dashboard:
 
 1. Follow the existing component structure
-2. Use Tailwind CSS for styling (no inline styles)
-3. Maintain mobile-responsive design (mobile-first)
+2. Use Pure CSS (inline styles preferred, shared styles in App.css)
+3. Maintain mobile-responsive design (mobile-first with useIsMobile hook)
 4. Use TypeScript for type safety
 5. Test on multiple screen sizes
+6. Prefer inline styles for component-specific styling
+7. Use CSS classes for shared/reusable styles
 
 ---
 
-**Built with React + Vite + Tailwind CSS**
+**Built with React 19 + Vite + Pure CSS**

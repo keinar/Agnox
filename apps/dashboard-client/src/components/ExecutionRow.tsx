@@ -73,10 +73,18 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
         const avg = (metrics.averageDuration / 1000).toFixed(1);
 
         if (metrics.isRegression) {
-            return <div title={`Slower than average (${avg}s)`} className="flex items-center text-amber-500 ml-1.5"><Turtle size={14} /></div>;
+            return (
+                <div title={`Slower than average (${avg}s)`} style={{ display: 'flex', alignItems: 'center', color: '#f59e0b', marginLeft: '6px' }}>
+                    <Turtle size={14} />
+                </div>
+            );
         }
         if (metrics.lastRunDuration < metrics.averageDuration * 0.8) {
-            return <div title={`Faster than average (${avg}s)`} className="flex items-center text-emerald-500 ml-1.5"><Zap size={14} /></div>;
+            return (
+                <div title={`Faster than average (${avg}s)`} style={{ display: 'flex', alignItems: 'center', color: '#10b981', marginLeft: '6px' }}>
+                    <Zap size={14} />
+                </div>
+            );
         }
         return null;
     };
@@ -96,10 +104,10 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
         switch (status) {
             case 'PASSED': return <CheckCircle size={16} />;
             case 'FAILED': return <XCircle size={16} />;
-            case 'UNSTABLE': return <AlertTriangle size={16} className="text-yellow-500" />;
-            case 'ANALYZING': return <Sparkles size={16} className="animate-pulse text-purple-400" />;
-            case 'RUNNING': return <PlayCircle size={16} className="animate-spin-slow" />;
-            case 'PENDING': return <Clock size={16} className="animate-pulse" />;
+            case 'UNSTABLE': return <AlertTriangle size={16} style={{ color: '#eab308' }} />;
+            case 'ANALYZING': return <Sparkles size={16} style={{ color: '#c084fc', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }} />;
+            case 'RUNNING': return <PlayCircle size={16} style={{ animation: 'spin 3s linear infinite' }} />;
+            case 'PENDING': return <Clock size={16} style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }} />;
             default: return <Clock size={16} />;
         }
     };
@@ -187,8 +195,18 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
                         )}
 
                         {execution.status === 'ANALYZING' && (
-                            <div title="AI Analysis in progress..." className="flex items-center gap-2 px-3 py-1 bg-purple-500/10 text-purple-400 rounded-full border border-purple-500/20 text-xs">
-                                <Loader2 size={14} className="animate-spin" />
+                            <div title="AI Analysis in progress..." style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '4px 12px',
+                                backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                                color: '#c084fc',
+                                borderRadius: '9999px',
+                                border: '1px solid rgba(168, 85, 247, 0.2)',
+                                fontSize: '12px'
+                            }}>
+                                <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
                                 <span>Analyzing...</span>
                             </div>
                         )}

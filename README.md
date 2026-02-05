@@ -51,12 +51,12 @@ Complete isolation and security for multiple organizations.
 
 ### 🎨 Interactive Dashboard
 
-Modern React-based UI built with Vite + Tailwind CSS.
+Modern React-based UI built with Vite + Pure CSS.
 
 - **Manual Triggers:** Launch tests directly from UI using Execution Modal
 - **Dynamic Configuration:** Select environments (Dev/Staging/Prod), folders, Docker images on-the-fly
 - **Live Monitoring:** Watch console logs stream in real-time via WebSockets
-- **Mobile Responsive:** Full mobile and tablet support with Tailwind responsive design
+- **Mobile Responsive:** Full mobile and tablet support with responsive Pure CSS
 - **Settings Management:** Manage team members, organization settings, usage quotas
 
 ### 🔐 Enterprise-Grade Security
@@ -86,7 +86,7 @@ Framework-agnostic environment configuration.
 ```mermaid
 graph TB
     subgraph "Client Layer"
-        UI[Dashboard Client<br/>React + Vite + Tailwind]
+        UI[Dashboard Client<br/>React + Vite + Pure CSS]
     end
 
     subgraph "API Layer"
@@ -133,7 +133,7 @@ graph TB
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
-| **Dashboard Client** | React 18 + TypeScript + Vite + Tailwind | User interface for test management |
+| **Dashboard Client** | React 19 + TypeScript + Vite + Pure CSS | User interface for test management |
 | **Producer Service** | Fastify + TypeScript | RESTful API, authentication, WebSocket server |
 | **Worker Service** | Node.js + Docker SDK | Test execution orchestration |
 | **MongoDB** | NoSQL Database | Multi-tenant data storage |
@@ -144,50 +144,157 @@ graph TB
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start: Integrate Your Automation Project
 
-### Prerequisites
+### Step 1: Create Your Account
 
-- **Docker & Docker Compose** (for local development)
-- **Node.js 18+** (for running database migrations)
-- **MongoDB** (Atlas or local instance)
-- **Secure JWT secret** (generate with: `openssl rand -hex 64`)
+1. **Sign up** at the dashboard (contact: info@digital-solution.co.il for access)
+2. **Your organization is created automatically**
+3. **You're the admin** - invite team members via Settings → Team Members
 
-### Local Development Setup
+### Step 2: Get Your API Credentials
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd Agnostic-Automation-Center
-   ```
+1. Login to the dashboard
+2. Navigate to **Settings → Security**
+3. Copy your **API URL** and **JWT Token** (after login)
 
-2. **Generate JWT Secret**
-   ```bash
-   openssl rand -hex 64
-   ```
+### Step 3: Configure Your Test Project
 
-3. **Create .env file**
-   ```bash
-   cp .env.example .env
-   # Edit .env and add your JWT_SECRET, MONGO_URI, and other variables
-   ```
+The platform works with **any containerized test framework**. Here's how to integrate:
 
-4. **Start services**
-   ```bash
-   docker-compose up --build
-   ```
+#### Option A: Use the API Directly
 
-5. **Access the dashboard**
-   - Open http://localhost:8080
-   - Create account → organization created automatically
-   - Start running tests!
+Send test execution requests to the API:
 
-### First Login
+```bash
+curl -X POST https://api.yourinstance.com/api/execution-request \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -d '{
+    "taskId": "run-'$(date +%s)'",
+    "image": "mcr.microsoft.com/playwright:v1.40.0",
+    "command": "npx playwright test",
+    "folder": "tests/e2e",
+    "config": {
+      "environment": "staging",
+      "baseUrl": "https://staging.yourapp.com"
+    }
+  }'
+```
 
-1. **Signup:** Create your account at http://localhost:8080/signup
-2. **Organization Created:** Your organization is automatically created
-3. **You're Admin:** First user is always organization admin
-4. **Invite Team:** Navigate to Settings → Team Members → Invite
+#### Option B: Integrate with CI/CD
+
+**GitHub Actions Example:**
+
+```yaml
+name: Run E2E Tests
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Trigger Tests on Agnostic Platform
+        run: |
+          curl -X POST ${{ secrets.AUTOMATION_API_URL }}/api/execution-request \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.AUTOMATION_JWT_TOKEN }}" \
+            -d '{
+              "taskId": "ci-run-${{ github.run_id }}",
+              "image": "mcr.microsoft.com/playwright:v1.40.0",
+              "command": "npm test",
+              "folder": "tests",
+              "config": {
+                "environment": "production",
+                "baseUrl": "${{ secrets.PROD_URL }}"
+              }
+            }'
+```
+
+**GitLab CI Example:**
+
+```yaml
+e2e-tests:
+  stage: test
+  script:
+    - |
+      curl -X POST $AUTOMATION_API_URL/api/execution-request \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer $AUTOMATION_JWT_TOKEN" \
+        -d '{
+          "taskId": "gitlab-'$CI_PIPELINE_ID'",
+          "image": "cypress/included:13.6.0",
+          "command": "cypress run",
+          "folder": "cypress/e2e",
+          "config": {
+            "environment": "staging"
+          }
+        }'
+```
+
+#### Option C: Node.js Integration
+
+```javascript
+const axios = require('axios');
+
+async function runTests() {
+  const response = await axios.post(
+    'https://api.yourinstance.com/api/execution-request',
+    {
+      taskId: `run-${Date.now()}`,
+      image: 'mcr.microsoft.com/playwright:v1.40.0',
+      command: 'npx playwright test',
+      folder: 'tests/integration',
+      config: {
+        environment: 'staging',
+        baseUrl: 'https://staging.yourapp.com',
+      },
+    },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.AUTOMATION_JWT_TOKEN}`,
+      },
+    }
+  );
+
+  console.log('Test execution started:', response.data.taskId);
+}
+
+runTests();
+```
+
+### Step 4: Monitor Test Execution
+
+1. **Live Dashboard:** Watch tests execute in real-time at the dashboard
+2. **WebSocket Updates:** See logs stream live via Socket.io
+3. **AI Analysis:** If tests fail, AI automatically analyzes root cause
+4. **Reports:** Access HTML and Allure reports via the dashboard
+
+---
+
+## 🖥️ Supported Test Frameworks
+
+The platform is **framework-agnostic** - any Docker-based test framework works:
+
+| Framework | Docker Image Example | Command Example |
+|-----------|---------------------|----------------|
+| **Playwright** | `mcr.microsoft.com/playwright:v1.40.0` | `npx playwright test` |
+| **Cypress** | `cypress/included:13.6.0` | `cypress run` |
+| **Selenium** | `selenium/standalone-chrome:latest` | `pytest tests/` |
+| **Pytest** | `python:3.11-slim` | `pytest --html=report.html` |
+| **JUnit** | `openjdk:17-slim` | `mvn test` |
+| **Custom** | Any Docker image | Any command |
+
+---
+
+## 🛠️ Self-Hosting
+
+**Want to self-host?** This platform can be deployed on your own infrastructure.
+
+See the [Self-Hosting Guide](docs/internal/self-hosting.md) for deployment instructions.
 
 ---
 
@@ -282,10 +389,10 @@ graph TB
 ## 🛠️ Technology Stack
 
 ### Frontend
-- **React 18** - Modern UI framework
+- **React 19** - Modern UI framework
 - **TypeScript** - Type safety
 - **Vite** - Lightning-fast build tool
-- **Tailwind CSS** - Utility-first styling, mobile-responsive
+- **Pure CSS** - Inline styles and custom CSS, mobile-responsive
 - **Socket.io Client** - Real-time WebSocket connections
 
 ### Backend
@@ -448,7 +555,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Documentation:** [/docs/](docs/)
 - **Issues:** [GitHub Issues](https://github.com/your-org/agnostic-automation-center/issues)
 - **Discussions:** [GitHub Discussions](https://github.com/your-org/agnostic-automation-center/discussions)
-- **Email:** support@agnosticautomation.com _(if applicable)_
+- **Email:** info@digital-solution.co.il
 
 ---
 
