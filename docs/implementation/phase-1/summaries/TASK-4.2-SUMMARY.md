@@ -29,7 +29,7 @@ Created a full-featured Login page component that allows users to authenticate w
 - ✅ Error display for login failures
 - ✅ Redirect to /dashboard on success
 - ✅ Link to signup page
-- ✅ Responsive design with Tailwind CSS
+- ✅ Responsive design with Pure CSS
 - ✅ Accessible form labels and inputs
 
 ---
@@ -246,7 +246,7 @@ async function handleSubmit(e: React.FormEvent) {
 
 ## Styling
 
-### Tailwind CSS Classes
+### Pure CSS Classes
 
 **Container:**
 ```css
@@ -708,7 +708,7 @@ describe('Login', () => {
 **Optimization:**
 - Already using code splitting (Vite handles this)
 - No heavy dependencies added
-- Tailwind CSS purged in production
+- Pure CSS purged in production
 
 ---
 

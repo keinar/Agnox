@@ -55,7 +55,7 @@ graph TB
 ## Component Responsibilities
 
 ### Dashboard Client (`apps/dashboard-client/`)
-**Technology:** React 19 + TypeScript + Vite + Tailwind CSS
+**Technology:** React 19 + TypeScript + Vite + Pure CSS
 
 **Responsibilities:**
 - User interface for test execution, monitoring, and management
@@ -64,7 +64,7 @@ graph TB
 - Team member invitations and role management
 
 **Key Features:**
-- Mobile-responsive design (Tailwind CSS)
+- Mobile-responsive design (Pure CSS with inline styles)
 - Real-time WebSocket connection with JWT authentication
 - Auth context for global authentication state
 - Settings pages (Organization, Members, Security, Usage)
@@ -400,7 +400,7 @@ services:
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
 | **Frontend** | React 19 + TypeScript + Vite | User interface |
-| **Styling** | Tailwind CSS | Mobile-responsive design |
+| **Styling** | Pure CSS (inline + custom) | Mobile-responsive design |
 | **Backend API** | Fastify + TypeScript | RESTful API server |
 | **Real-time** | Socket.io | WebSocket connections |
 | **Database** | MongoDB | Multi-tenant data storage |

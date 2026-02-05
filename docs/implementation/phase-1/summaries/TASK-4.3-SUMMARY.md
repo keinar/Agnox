@@ -32,7 +32,7 @@ Created a comprehensive Signup page component that allows new users to create an
 - ✅ Error display for signup failures
 - ✅ Redirect to /dashboard on success
 - ✅ Link to login page for existing users
-- ✅ Responsive design with Tailwind CSS
+- ✅ Responsive design with Pure CSS
 - ✅ Accessible form labels and inputs
 
 ---
@@ -686,7 +686,7 @@ User sees dashboard immediately (no need to login again)
 
 ## Styling
 
-### Tailwind CSS Classes
+### Pure CSS Classes
 
 **Same as Login page:**
 - Centered card layout
