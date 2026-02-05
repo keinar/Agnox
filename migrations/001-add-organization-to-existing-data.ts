@@ -205,15 +205,27 @@ async function migrate() {
         log('✓ Invitations collection already exists', colors.green);
       }
 
-      // Create indexes
-      await invitationsCollection.createIndex({ token: 1 }, { unique: true });
-      log('✓ Created unique index on token', colors.green);
+      // Drop old index if exists (from pre-refactoring)
+      try {
+        await invitationsCollection.dropIndex('token_1');
+        log('✓ Dropped old index: token_1', colors.green);
+      } catch (error: any) {
+        if (error.code === 27 || error.codeName === 'IndexNotFound') {
+          log('  Old index token_1 not found (OK)', colors.blue);
+        } else {
+          log(`⚠️  Warning dropping old index: ${error.message}`, colors.yellow);
+        }
+      }
+
+      // Create new indexes (using tokenHash, not token)
+      await invitationsCollection.createIndex({ tokenHash: 1 }, { unique: true });
+      log('✓ Created unique index on tokenHash', colors.green);
 
       await invitationsCollection.createIndex({ organizationId: 1, status: 1 });
       log('✓ Created compound index on organizationId + status', colors.green);
 
       await invitationsCollection.createIndex({ email: 1, organizationId: 1 });
-      log('✓ Created compound index on email + organizationId', colors.yellow);
+      log('✓ Created compound index on email + organizationId', colors.green);
     } else {
       log('[DRY RUN] Would create invitations collection', colors.yellow);
       log('[DRY RUN] Would create indexes on token, organizationId, email', colors.yellow);
