@@ -488,6 +488,82 @@ npm test
 
 ---
 
+## 🧪 Testing
+
+Comprehensive test suite for Phase 2 multi-tenant features.
+
+### Integration Tests
+
+**Invitation System Tests** (`tests/invitations.test.ts`):
+```bash
+npx tsx tests/invitations.test.ts
+```
+
+Tests:
+- Admin can send invitations
+- Non-admin forbidden (RBAC)
+- Duplicate email validation
+- User limit enforcement
+- **CRITICAL:** Token hashing security (SHA-256)
+- Existing vs new user email flow
+- Invitation acceptance flows
+- Expired/revoked token handling
+- Status transitions (pending → accepted)
+
+**User Management Tests** (`tests/users.test.ts`):
+```bash
+npx tsx tests/users.test.ts
+```
+
+Tests:
+- List users (all roles)
+- Change user roles (admin only)
+- Sole admin protection
+- Last admin protection
+- User removal
+- RBAC enforcement per matrix
+- Cross-organization isolation
+
+### E2E Test
+
+**Full Invitation Flow** (`tests/invitation-flow.e2e.test.ts`):
+```bash
+npx tsx tests/invitation-flow.e2e.test.ts
+```
+
+Complete user journey validation (15 steps):
+1. **New User Signup Flow** - Admin invites, user signs up with token
+2. **RBAC Enforcement** - Verify permissions (admin/developer/viewer)
+3. **Existing User Join** - User accepts invitation to new organization
+4. **Role Management** - Admin changes roles, permissions update
+5. **User Removal** - Admin removes user, access revoked
+
+### Test Configuration
+
+Environment variables (optional):
+```bash
+# API endpoint (default: http://localhost:3000)
+export API_URL=http://localhost:3000
+
+# MongoDB connection (default: localhost)
+export MONGODB_URL=mongodb://localhost:27017/automation_platform
+```
+
+### Multi-Org Isolation Tests
+
+Legacy multi-tenant isolation validation:
+```bash
+npx tsx tests/multi-org-isolation.test.ts
+```
+
+Verifies:
+- Organizations created independently
+- Data completely isolated between orgs
+- Cross-organization access prevented
+- Socket.io connections scoped to organizations
+
+---
+
 ## 🤝 Contributing
 
 We welcome contributions! Here's how to get started:
@@ -507,11 +583,18 @@ Please read our [Contributing Guide](CONTRIBUTING.md) _(coming soon)_ for detail
 | Phase | Status | Completion |
 |-------|--------|------------|
 | **Phase 1:** Multi-Tenant Foundation | ✅ Complete | 100% |
-| **Phase 2:** User Management UI & Security | 🚧 In Progress | 60% |
+| **Phase 2:** User Management UI & Security | ✅ Complete | 100% |
 | **Phase 3:** Advanced Dashboard | 📋 Planned | 0% |
 | **Phase 4:** Enterprise Features | 📋 Planned | 0% |
 
-**Current Focus:** Phase 2 - Sprint 5 (Usage Tracking & Quotas)
+**Current Focus:** Phase 3 planning and advanced features
+
+**Phase 2 Completed:** 🎉
+- ✅ Invitation system with secure token hashing
+- ✅ User management routes with RBAC
+- ✅ Organization settings (AI toggle, usage tracking)
+- ✅ Security enhancements (rate limiting, audit logging)
+- ✅ Comprehensive test coverage (unit + E2E)
 
 ---
 
@@ -519,8 +602,8 @@ Please read our [Contributing Guide](CONTRIBUTING.md) _(coming soon)_ for detail
 
 ### Q1 2026
 - ✅ Phase 1: Multi-tenant foundation
-- 🚧 Phase 2: User management UI and security enhancements
-- 🎯 Phase 2 completion: Usage tracking and quotas
+- ✅ Phase 2: User management UI and security enhancements
+- 🎯 Phase 3: Advanced dashboard features and analytics
 
 ### Q2 2026
 - 📋 Phase 3: Advanced analytics and insights
