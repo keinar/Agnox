@@ -54,6 +54,13 @@ services:
       - JWT_EXPIRY=${JWT_EXPIRY:-24h}
       - PASSWORD_SALT_ROUNDS=${PASSWORD_SALT_ROUNDS:-10}
       - DASHBOARD_URL=${DASHBOARD_URL:-http://localhost:8080}
+      # Stripe Billing Configuration (Phase 3)
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+      - STRIPE_TEAM_PRICE_ID=${STRIPE_TEAM_PRICE_ID:-}
+      - STRIPE_ENTERPRISE_PRICE_ID=${STRIPE_ENTERPRISE_PRICE_ID:-}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:8080}
     depends_on:
       rabbitmq:
         condition: service_healthy
