@@ -18,6 +18,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { MongoClient, ObjectId } from 'mongodb';
 import { authMiddleware, adminOnly } from '../middleware/auth.js';
+import { checkUsageAlerts } from '../utils/usageAlerts.js';
 
 const DB_NAME = 'automation_platform';
 
@@ -389,6 +390,9 @@ export async function organizationRoutes(
       // Calculate percent used
       const percentUsed = Math.round((executionCount / testRunLimit) * 100);
 
+      // Get usage alerts (warnings and critical notifications)
+      const alerts = await checkUsageAlerts(db, currentUser.organizationId);
+
       return reply.send({
         success: true,
         usage: {
@@ -409,7 +413,8 @@ export async function organizationRoutes(
             usedBytes: storageUsed,
             limitBytes: storageLimit
           }
-        }
+        },
+        alerts // NEW: Include usage alerts for dashboard
       });
 
     } catch (error: any) {

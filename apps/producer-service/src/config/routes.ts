@@ -9,6 +9,7 @@ import { invitationRoutes } from '../routes/invitations.js';
 import { userRoutes } from '../routes/users.js';
 import { organizationRoutes } from '../routes/organization.js';
 import { billingRoutes } from '../routes/billing.js';
+import { createTestRunLimitMiddleware } from '../middleware/planLimits.js';
 import { getDbName } from './server.js';
 
 const DB_NAME = getDbName();
@@ -38,6 +39,10 @@ export async function setupRoutes(
 
     // Billing routes (Stripe integration)
     await billingRoutes(app, dbClient, apiRateLimit);
+
+    // Create plan enforcement middleware
+    const db = dbClient.db(DB_NAME);
+    const enforceTestRunLimit = createTestRunLimitMiddleware(db);
 
     // Public: Default configuration endpoint
     app.get('/config/defaults', async (request, reply) => {
@@ -150,7 +155,9 @@ export async function setupRoutes(
     });
 
     // Create new execution request
-    app.post('/api/execution-request', async (request, reply) => {
+    app.post('/api/execution-request', {
+        preHandler: [enforceTestRunLimit] // NEW: Check plan limits before queuing
+    }, async (request, reply) => {
         const parseResult = TestExecutionRequestSchema.safeParse(request.body);
 
         if (!parseResult.success) {
