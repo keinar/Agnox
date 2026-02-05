@@ -17,31 +17,51 @@ const AIAnalysisView: React.FC<AIAnalysisViewProps> = ({
 }) => {
     
     const formattedContent = useMemo(() => {
-        if (!analysis) return <div className="text-gray-500 italic p-4 text-center">No analysis content available.</div>;
+        if (!analysis) {
+            return (
+                <div style={{ color: '#6b7280', fontStyle: 'italic', padding: '16px', textAlign: 'center' }}>
+                    No analysis content available.
+                </div>
+            );
+        }
 
         return analysis.split('\n').map((line, i) => {
             if (line.startsWith('## ')) {
                 const title = line.replace('## ', '').replace(/\*\*/g, '');
                 const isRootCause = title.toLowerCase().includes('root cause');
                 const isFix = title.toLowerCase().includes('fix') || title.toLowerCase().includes('solution');
-                
+
                 return (
-                    <div key={i} className="mt-6 mb-3 border-b border-gray-700 pb-2">
-                        <h3 className="text-lg font-bold flex items-center gap-2" 
-                            style={{ color: isRootCause ? '#fca5a5' : isFix ? '#86efac' : '#e2e8f0' }}>
-                            {isRootCause && <AlertTriangle size={18} className="text-red-400" />}
-                            {isFix && <Sparkles size={18} className="text-green-400" />}
+                    <div key={i} style={{ marginTop: '24px', marginBottom: '12px', borderBottom: '1px solid #374151', paddingBottom: '8px' }}>
+                        <h3 style={{
+                            fontSize: '18px',
+                            fontWeight: 'bold',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            color: isRootCause ? '#fca5a5' : isFix ? '#86efac' : '#e2e8f0'
+                        }}>
+                            {isRootCause && <AlertTriangle size={18} style={{ color: '#f87171' }} />}
+                            {isFix && <Sparkles size={18} style={{ color: '#4ade80' }} />}
                             {title}
                         </h3>
                     </div>
                 );
             }
-            
+
             if (line.trim().startsWith('* ')) {
                 return (
-                    <div key={i} className="flex gap-3 mb-2 pl-2">
-                        <div className="mt-2 min-w-[6px] h-[6px] rounded-full bg-blue-500"></div>
-                        <p className="text-gray-300 text-sm leading-relaxed">{line.replace('* ', '').replace(/\*\*/g, '')}</p>
+                    <div key={i} style={{ display: 'flex', gap: '12px', marginBottom: '8px', paddingLeft: '8px' }}>
+                        <div style={{
+                            marginTop: '8px',
+                            minWidth: '6px',
+                            height: '6px',
+                            borderRadius: '50%',
+                            backgroundColor: '#3b82f6'
+                        }}></div>
+                        <p style={{ color: '#d1d5db', fontSize: '14px', lineHeight: '1.625' }}>
+                            {line.replace('* ', '').replace(/\*\*/g, '')}
+                        </p>
                     </div>
                 );
             }
@@ -49,16 +69,26 @@ const AIAnalysisView: React.FC<AIAnalysisViewProps> = ({
             if (line.includes('**')) {
                 const parts = line.split('**');
                 return (
-                    <p key={i} className="text-gray-300 mb-3 text-sm leading-relaxed">
-                        {parts.map((part, index) => 
-                            index % 2 === 1 ? <span key={index} className="text-white font-semibold bg-white/10 px-1 rounded">{part}</span> : part
+                    <p key={i} style={{ color: '#d1d5db', marginBottom: '12px', fontSize: '14px', lineHeight: '1.625' }}>
+                        {parts.map((part, index) =>
+                            index % 2 === 1 ? (
+                                <span key={index} style={{
+                                    color: '#ffffff',
+                                    fontWeight: 600,
+                                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                    padding: '0 4px',
+                                    borderRadius: '4px'
+                                }}>
+                                    {part}
+                                </span>
+                            ) : part
                         )}
                     </p>
                 );
             }
 
-            if (line.trim() === '') return <div key={i} className="h-2"></div>;
-            return <p key={i} className="text-gray-300 mb-3 text-sm leading-relaxed">{line}</p>;
+            if (line.trim() === '') return <div key={i} style={{ height: '8px' }}></div>;
+            return <p key={i} style={{ color: '#d1d5db', marginBottom: '12px', fontSize: '14px', lineHeight: '1.625' }}>{line}</p>;
         });
     }, [analysis]);
 
@@ -71,13 +101,18 @@ const AIAnalysisView: React.FC<AIAnalysisViewProps> = ({
                 {/* Header */}
                 <div className="modal-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div className={`p-2 rounded-lg ${status === 'UNSTABLE' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+                        <div style={{
+                            padding: '8px',
+                            borderRadius: '8px',
+                            backgroundColor: status === 'UNSTABLE' ? 'rgba(234, 179, 8, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                            color: status === 'UNSTABLE' ? '#facc15' : '#f87171'
+                        }}>
                             <Bot size={24} />
                         </div>
                         <div>
                             <h3 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 AI Root Cause Analysis
-                                <Sparkles size={16} className="text-blue-400 animate-pulse" />
+                                <Sparkles size={16} style={{ color: '#60a5fa', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }} />
                             </h3>
                             <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>Powered by Gemini 2.5 Flash</p>
                         </div>
