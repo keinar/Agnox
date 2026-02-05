@@ -15,11 +15,13 @@
  */
 
 import axios from 'axios';
-import { MongoClient, Db } from 'mongodb';
-import * as crypto from 'crypto';
+import { MongoClient, Db, ObjectId } from 'mongodb';
+import crypto from 'crypto';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 const API_URL = process.env.API_URL || 'http://localhost:3000';
-const MONGODB_URL = process.env.MONGODB_URL || 'mongodb://mongodb:27017/automation_platform';
+const MONGODB_URL = process.env.MONGODB_URL || 'mongodb://localhost:27017/automation_platform';
 
 // Colors for console output
 const colors = {
@@ -57,6 +59,46 @@ async function connectToMongoDB(): Promise<Db> {
   return db;
 }
 
+// Helper: Create test user directly in database (bypasses invitation system for testing)
+async function createTestUserInDB(email: string, password: string, name: string, orgId: string, role: string): Promise<string> {
+  const db = await connectToMongoDB();
+  const usersCollection = db.collection('users');
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const userId = new ObjectId();
+
+  await usersCollection.insertOne({
+    _id: userId,
+    email: email.toLowerCase(),
+    name,
+    hashedPassword,
+    organizationId: orgId,
+    role,
+    status: 'active',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  });
+
+  return userId.toString();
+}
+
+// Helper: Generate JWT for test user (bypasses login for testing)
+async function generateTestJWT(userId: string, organizationId: string, role: string): Promise<string> {
+  const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-change-in-production';
+
+  const token = jwt.sign(
+    {
+      userId,
+      organizationId,
+      role
+    },
+    JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+
+  return token;
+}
+
 async function disconnectFromMongoDB() {
   if (dbClient) {
     await dbClient.close();
@@ -74,6 +116,10 @@ function hashToken(token: string): string {
 async function testInvitationSystem() {
   log('\n🧪 Invitation System Integration Test Suite', colors.bold + colors.blue);
   log('Testing Phase 2 Sprint 1 - Multi-Tenant Invitation System\n', colors.blue);
+
+  // Generate unique identifiers for this test run
+  const timestamp = Date.now();
+  const testRunId = `test-${timestamp}`;
 
   let adminToken: string = '';
   let developerToken: string = '';
@@ -95,12 +141,12 @@ async function testInvitationSystem() {
     logSection('Setup: Create Test Organization');
 
     try {
-      // Create admin user
+      // Create admin user with unique org name
       const adminSignup = await axios.post(`${API_URL}/api/auth/signup`, {
-        email: `invitation-admin-${Date.now()}@test.local`,
+        email: `invitation-admin-${timestamp}@test.local`,
         password: 'TestPass123!',
         name: 'Invitation Admin',
-        organizationName: 'Invitation Test Org'
+        organizationName: `Invitation Test Org ${timestamp}`
       });
 
       adminToken = adminSignup.data.token;
@@ -112,19 +158,24 @@ async function testInvitationSystem() {
       log(`   Organization ID: ${orgId}`, colors.blue);
       log(`   Admin: ${adminSignup.data.user.email} (role: ${adminSignup.data.user.role})`, colors.blue);
 
-      // Create developer user (for non-admin tests)
-      const devSignup = await axios.post(`${API_URL}/api/auth/signup`, {
-        email: `invitation-dev-${Date.now()}@test.local`,
-        password: 'TestPass123!',
-        name: 'Test Developer',
-        organizationName: 'Dev Org'
-      });
+      // Create developer user IN THE SAME ORGANIZATION (for RBAC testing)
+      // NOTE: We create this directly in DB to bypass invitation system
+      const developerEmail = `invitation-dev-${timestamp}@test.local`;
+      developerUserId = await createTestUserInDB(
+        developerEmail,
+        'TestPass123!',
+        'Test Developer',
+        orgId,
+        'developer'  // Real developer role, not admin!
+      );
 
-      developerToken = devSignup.data.token;
-      developerUserId = devSignup.data.user.id;
-      testUsers.push(devSignup.data.user.email);
+      // Generate JWT for developer
+      developerToken = await generateTestJWT(developerUserId, orgId, 'developer');
+      testUsers.push(developerEmail);
 
-      log('✅ Developer user created (for non-admin tests)', colors.green);
+      log('✅ Developer user created in same org (for RBAC tests)', colors.green);
+      log(`   Developer: ${developerEmail} (role: developer)`, colors.blue);
+      log(`   Same org as admin: ${orgId}`, colors.blue);
     } catch (error: any) {
       log(`❌ Setup failed: ${error.message}`, colors.red);
       throw error;
@@ -419,12 +470,12 @@ async function testInvitationSystem() {
 
     try {
       // Create an existing user
-      const existingUserEmail = `existing-user-${Date.now()}@test.local`;
+      const existingUserEmail = `existing-user-${timestamp}@test.local`;
       const existingUserSignup = await axios.post(`${API_URL}/api/auth/signup`, {
         email: existingUserEmail,
         password: 'TestPass123!',
         name: 'Existing User',
-        organizationName: 'Existing User Org'
+        organizationName: `Existing User Org ${timestamp}`
       });
 
       testUsers.push(existingUserEmail);
@@ -577,12 +628,12 @@ async function testInvitationSystem() {
 
     try {
       // Create existing user in different org
-      const existingUserEmail = `join-with-token-${Date.now()}@test.local`;
+      const existingUserEmail = `join-with-token-${timestamp}@test.local`;
       const userSignup = await axios.post(`${API_URL}/api/auth/signup`, {
         email: existingUserEmail,
         password: 'TestPass123!',
         name: 'Joining User',
-        organizationName: 'Original Org'
+        organizationName: `Original Org ${timestamp}`
       });
 
       const existingUserToken = userSignup.data.token;
@@ -928,15 +979,14 @@ async function testInvitationSystem() {
 }
 
 // Run the test suite
-if (require.main === module) {
-  testInvitationSystem()
-    .then(() => {
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('Fatal error:', error);
-      process.exit(1);
-    });
-}
+// ES modules: Run directly when file is executed
+testInvitationSystem()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('Fatal error:', error);
+    process.exit(1);
+  });
 
 export { testInvitationSystem };
