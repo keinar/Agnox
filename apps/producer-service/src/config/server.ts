@@ -2,6 +2,7 @@ import fastify, { FastifyInstance } from 'fastify';
 import socketio from 'fastify-socket.io';
 import cors from '@fastify/cors';
 import fastifyStatic from '@fastify/static';
+import rawBody from 'fastify-raw-body';
 import { MongoClient } from 'mongodb';
 import type { Server } from 'socket.io';
 import * as fs from 'fs';
@@ -11,6 +12,9 @@ import { verifyToken } from '../utils/jwt.js';
 declare module 'fastify' {
     interface FastifyInstance {
         io: Server;
+    }
+    interface FastifyRequest {
+        rawBody?: Buffer;
     }
 }
 
@@ -47,6 +51,14 @@ export function getDbName(): string {
  */
 export function createServer(): FastifyInstance {
     const app = fastify({ logger: true });
+
+    // Raw Body Parser (required for Stripe webhook signature verification)
+    app.register(rawBody, {
+        field: 'rawBody', // Store raw body in request.rawBody
+        global: false, // Only apply to routes that explicitly request it
+        encoding: 'utf8',
+        runFirst: true
+    });
 
     // CORS Configuration (Task 4.4: Production CORS)
     const rawAllowedOrigins = process.env.ALLOWED_ORIGINS || '';

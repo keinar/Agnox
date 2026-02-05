@@ -9,6 +9,7 @@ import { invitationRoutes } from '../routes/invitations.js';
 import { userRoutes } from '../routes/users.js';
 import { organizationRoutes } from '../routes/organization.js';
 import { billingRoutes } from '../routes/billing.js';
+import { webhookRoutes } from '../routes/webhooks.js';
 import { createTestRunLimitMiddleware } from '../middleware/planLimits.js';
 import { getDbName } from './server.js';
 
@@ -39,6 +40,9 @@ export async function setupRoutes(
 
     // Billing routes (Stripe integration)
     await billingRoutes(app, dbClient, apiRateLimit);
+
+    // Webhook routes (Stripe events - no auth, signature verified)
+    await webhookRoutes(app, dbClient);
 
     // Create plan enforcement middleware
     const db = dbClient.db(DB_NAME);
