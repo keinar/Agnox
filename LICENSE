@@ -1,21 +1,152 @@
-MIT License
+PROPRIETARY SOFTWARE LICENSE
 
-Copyright (c) 2025 Keinar Elkayam
+Copyright (c) 2025-2026 Keinar Elkayam / Digital Solution
+All Rights Reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+═══════════════════════════════════════════════════════════════════════════════
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+IMPORTANT: READ CAREFULLY BEFORE USING THIS SOFTWARE
+
+This software and associated documentation files (the "Software") are proprietary
+and confidential. This license grants limited rights while maintaining exclusive
+commercial ownership.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+## 1. DEFINITIONS
+
+- "Software" means the Agnostic Automation Center codebase, including all source
+  code, documentation, binaries, and related materials.
+- "Commercial Use" means any use intended for commercial advantage or monetary
+  compensation, including but not limited to SaaS offerings, consulting services,
+  or competitive products.
+- "Authorized Use" means use explicitly permitted by this license or a separate
+  commercial agreement.
+
+## 2. LICENSE GRANT
+
+Subject to the terms below, you are granted a limited, non-exclusive,
+non-transferable, revocable license to:
+
+### ✅ PERMITTED USES:
+
+1. **Personal Use**: Use the Software for personal, non-commercial projects
+2. **Educational Use**: Use the Software for learning and educational purposes
+3. **Code Review**: View and study the source code for transparency and security audit
+4. **Contributing**: Submit bug fixes, improvements, and feature contributions via
+   pull requests (all contributions become property of the copyright holder)
+5. **Internal Testing**: Use the Software internally for testing and evaluation
+   (non-production environments only)
+
+### ❌ PROHIBITED USES:
+
+The following actions are **STRICTLY FORBIDDEN** without explicit written permission:
+
+1. **Commercial Use**: Using the Software for any commercial purpose, including:
+   - Offering SaaS or hosted services based on this Software
+   - Integrating the Software into a commercial product or service
+   - Using the Software in a production environment for business operations
+   - Providing consulting or support services based on this Software
+
+2. **Redistribution**: Distributing, sublicensing, selling, renting, or leasing the
+   Software or any portion thereof
+
+3. **Derivative Works**: Creating derivative products or competing services based on
+   this Software
+
+4. **Modification for Distribution**: Modifying the Software for redistribution
+   (modifications for personal use or contributions are allowed)
+
+5. **Removal of Notices**: Removing or altering any copyright notices, license
+   information, or attribution from the Software
+
+6. **Reverse Engineering for Competition**: Reverse engineering the Software to
+   create competing products or services
+
+## 3. COMMERCIAL LICENSING
+
+For commercial use, including:
+- Production deployments
+- SaaS offerings
+- Commercial self-hosting
+- Integration into commercial products
+- Consulting or support services
+
+You must obtain a separate commercial license. Contact:
+
+**Email:** info@digital-solution.co.il
+**Subject:** Commercial License Request - Agnostic Automation Center
+
+## 4. CONTRIBUTIONS
+
+By submitting code, documentation, or any other materials to this project:
+
+1. You grant the copyright holder perpetual, worldwide, non-exclusive, royalty-free
+   rights to use, modify, and distribute your contribution
+2. You certify that you have the right to submit the contribution
+3. You agree that your contribution may be incorporated into commercial versions
+   of the Software
+4. You retain authorship credit but not ownership of merged contributions
+
+## 5. INTELLECTUAL PROPERTY
+
+- The Software is protected by copyright, trade secret, and other intellectual
+  property laws
+- All rights not explicitly granted in this license are reserved
+- No ownership or proprietary interest in the Software is transferred
+
+## 6. NO WARRANTY
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING
+FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+
+## 7. DISCLAIMER OF LIABILITY
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW:
+
+- The copyright holder shall not be liable for any direct, indirect, incidental,
+  special, exemplary, or consequential damages
+- Use of the Software is at your own risk
+- The copyright holder provides no support, maintenance, or updates unless
+  explicitly agreed in a separate agreement
+
+## 8. TERMINATION
+
+This license terminates automatically if you violate any of its terms. Upon
+termination, you must immediately cease all use and delete all copies of the
+Software.
+
+## 9. GOVERNING LAW
+
+This license is governed by the laws of Israel, without regard to conflict
+of law principles.
+
+## 10. ENTIRE AGREEMENT
+
+This license constitutes the entire agreement between you and the copyright
+holder regarding the Software and supersedes all prior agreements.
+
+## 11. SEVERABILITY
+
+If any provision of this license is found to be unenforceable, the remaining
+provisions shall remain in full force and effect.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+For questions about this license, contact:
+**Email:** info@digital-solution.co.il
+
+For commercial licensing, partnerships, or custom agreements:
+**Email:** info@digital-solution.co.il
+**Subject:** Commercial License Inquiry
+
+═══════════════════════════════════════════════════════════════════════════════
+
+**Last Updated:** February 5, 2026
+**Version:** 1.0
