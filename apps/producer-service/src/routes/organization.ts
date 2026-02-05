@@ -7,6 +7,7 @@
  * - GET /api/organization - Get organization details (All roles)
  * - PATCH /api/organization - Update organization settings (Admin only)
  * - GET /api/organization/usage - Get usage statistics (All roles)
+ * - GET /api/organization/usage/alerts - Get usage alerts (All roles)
  *
  * Features:
  * - Multi-tenant isolation enforced
@@ -427,8 +428,50 @@ export async function organizationRoutes(
     }
   });
 
+  /**
+   * GET /api/organization/usage/alerts
+   * Get usage alerts for current organization (All roles can view)
+   *
+   * Response (200):
+   * - success: true
+   * - alerts: Array<{
+   *     type: 'info' | 'warning' | 'critical',
+   *     resource: string,
+   *     message: string,
+   *     percentUsed: number
+   *   }>
+   *
+   * Errors:
+   * - 401: Authentication required
+   * - 500: Failed to fetch alerts
+   */
+  app.get('/api/organization/usage/alerts', {
+    preHandler: [authMiddleware, apiRateLimit]
+  }, async (request, reply) => {
+    try {
+      const currentUser = request.user!;
+
+      // Get usage alerts (warnings and critical notifications)
+      const alerts = await checkUsageAlerts(db, currentUser.organizationId);
+
+      return reply.send({
+        success: true,
+        alerts
+      });
+
+    } catch (error: any) {
+      app.log.error(`Get usage alerts error: ${error?.message || error}`);
+      return reply.code(500).send({
+        success: false,
+        error: 'Failed to fetch usage alerts',
+        message: error.message
+      });
+    }
+  });
+
   app.log.info('✅ Organization routes registered');
   app.log.info('  - GET /api/organization (All roles)');
   app.log.info('  - PATCH /api/organization (Admin only)');
   app.log.info('  - GET /api/organization/usage (All roles)');
+  app.log.info('  - GET /api/organization/usage/alerts (All roles)');
 }
