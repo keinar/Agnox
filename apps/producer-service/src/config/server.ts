@@ -14,7 +14,7 @@ declare module 'fastify' {
         io: Server;
     }
     interface FastifyRequest {
-        rawBody?: Buffer;
+        rawBody?: string | Buffer;
     }
 }
 

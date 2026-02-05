@@ -21,6 +21,7 @@ console.log('\n🧪 Testing JWT Utilities...\n');
 console.log('Test 1: Sign Token');
 const token = signToken({
   userId: '507f1f77bcf86cd799439011',
+  email: 'admin@example.com',
   organizationId: '507f191e810c19729de860ea',
   role: 'admin'
 });
@@ -77,11 +78,13 @@ try {
 console.log('Test 8: Multiple Tokens (different users)');
 const token1 = signToken({
   userId: 'user1',
+  email: 'user1@example.com',
   organizationId: 'org1',
   role: 'admin'
 });
 const token2 = signToken({
   userId: 'user2',
+  email: 'user2@example.com',
   organizationId: 'org2',
   role: 'developer'
 });

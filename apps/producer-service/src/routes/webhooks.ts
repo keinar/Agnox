@@ -116,8 +116,7 @@ export async function webhookRoutes(
 
     try {
       // Verify webhook signature
-      // @ts-ignore - rawBody is added by Fastify plugin
-      const rawBody = request.rawBody || request.body;
+      const rawBody = (request.rawBody as string | Buffer) || (request.body as string);
       event = stripe.webhooks.constructEvent(
         rawBody,
         signature,
@@ -162,8 +161,8 @@ export async function webhookRoutes(
           await updateOrganizationSubscription(db, organizationId, {
             stripeSubscriptionId: subscription.id,
             status: subscription.status,
-            currentPeriodStart: new Date(subscription.current_period_start * 1000),
-            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+            currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
+            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
             planId
           });
 
@@ -286,7 +285,7 @@ export async function webhookRoutes(
       return reply.send({ received: true });
 
     } catch (error: any) {
-      app.log.error(`Webhook processing error: ${error.message}`, error);
+      app.log.error(`Webhook processing error: ${error.message}`);
       await logWebhookEvent(db, event, organizationId, 'error', error.message);
 
       // Always return 200 to Stripe to prevent retries for processing errors

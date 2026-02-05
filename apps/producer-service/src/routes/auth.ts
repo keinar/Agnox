@@ -188,6 +188,7 @@ export async function authRoutes(
         // Generate JWT token
         const token = signToken({
           userId: userId.toString(),
+          email: email.toLowerCase(),
           organizationId: orgId.toString(),
           role: userRole
         });
@@ -249,6 +250,7 @@ export async function authRoutes(
         // Generate JWT token
         const token = signToken({
           userId: userId.toString(),
+          email: email.toLowerCase(),
           organizationId: orgId.toString(),
           role: 'admin'
         });
@@ -413,6 +415,7 @@ export async function authRoutes(
       // Generate JWT token
       const token = signToken({
         userId: user._id.toString(),
+        email: user.email,
         organizationId: (user.organizationId as ObjectId).toString(),
         role: user.role as string
       });
