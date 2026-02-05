@@ -20,6 +20,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { MongoClient, ObjectId } from 'mongodb';
 import { authMiddleware, adminOnly } from '../middleware/auth.js';
+import { createUserLimitMiddleware } from '../middleware/planLimits.js';
 import {
   generateInvitationToken,
   hashInvitationToken,
@@ -43,6 +44,9 @@ export async function invitationRoutes(
   const usersCollection = db.collection('users');
   const orgsCollection = db.collection('organizations');
 
+  // Create plan enforcement middleware
+  const enforceUserLimit = createUserLimitMiddleware(db);
+
   /**
    * POST /api/invitations
    * Send invitation to join organization (Admin only)
@@ -64,7 +68,7 @@ export async function invitationRoutes(
    * - 500: Failed to send invitation
    */
   app.post('/api/invitations', {
-    preHandler: [authMiddleware, adminOnly, strictRateLimit]
+    preHandler: [authMiddleware, adminOnly, enforceUserLimit, strictRateLimit]
   }, async (request, reply) => {
     const { email, role } = request.body as any;
     const currentUser = request.user!;
@@ -137,20 +141,7 @@ export async function invitationRoutes(
         });
       }
 
-      // Check plan limits (user count)
-      const currentUserCount = await usersCollection.countDocuments({
-        organizationId: currentUser.organizationId
-      });
-
-      const userLimit = org.limits?.maxUsers || 3;
-
-      if (currentUserCount >= userLimit) {
-        return reply.code(403).send({
-          success: false,
-          error: 'User limit reached',
-          message: `Your plan allows up to ${userLimit} users. Please upgrade to invite more members.`
-        });
-      }
+      // Plan limit enforcement handled by middleware (enforceUserLimit)
 
       // Check if user exists in ANY organization (multi-tenant logic)
       const existingUser = await usersCollection.findOne({
