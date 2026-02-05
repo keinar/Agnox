@@ -51,12 +51,12 @@ Complete isolation and security for multiple organizations.
 
 ### 🎨 Interactive Dashboard
 
-Modern React-based UI built with Vite + Tailwind CSS.
+Modern React-based UI built with Vite + Pure CSS.
 
 - **Manual Triggers:** Launch tests directly from UI using Execution Modal
 - **Dynamic Configuration:** Select environments (Dev/Staging/Prod), folders, Docker images on-the-fly
 - **Live Monitoring:** Watch console logs stream in real-time via WebSockets
-- **Mobile Responsive:** Full mobile and tablet support with Tailwind responsive design
+- **Mobile Responsive:** Full mobile and tablet support with responsive Pure CSS
 - **Settings Management:** Manage team members, organization settings, usage quotas
 
 ### 🔐 Enterprise-Grade Security
@@ -86,7 +86,7 @@ Framework-agnostic environment configuration.
 ```mermaid
 graph TB
     subgraph "Client Layer"
-        UI[Dashboard Client<br/>React + Vite + Tailwind]
+        UI[Dashboard Client<br/>React + Vite + Pure CSS]
     end
 
     subgraph "API Layer"
@@ -133,7 +133,7 @@ graph TB
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
-| **Dashboard Client** | React 18 + TypeScript + Vite + Tailwind | User interface for test management |
+| **Dashboard Client** | React 19 + TypeScript + Vite + Pure CSS | User interface for test management |
 | **Producer Service** | Fastify + TypeScript | RESTful API, authentication, WebSocket server |
 | **Worker Service** | Node.js + Docker SDK | Test execution orchestration |
 | **MongoDB** | NoSQL Database | Multi-tenant data storage |
@@ -282,10 +282,10 @@ graph TB
 ## 🛠️ Technology Stack
 
 ### Frontend
-- **React 18** - Modern UI framework
+- **React 19** - Modern UI framework
 - **TypeScript** - Type safety
 - **Vite** - Lightning-fast build tool
-- **Tailwind CSS** - Utility-first styling, mobile-responsive
+- **Pure CSS** - Inline styles and custom CSS, mobile-responsive
 - **Socket.io Client** - Real-time WebSocket connections
 
 ### Backend
