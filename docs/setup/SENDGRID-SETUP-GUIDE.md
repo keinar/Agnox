@@ -375,7 +375,7 @@ After completing this setup:
 - Chat: Available in dashboard (Pro+ plans)
 
 ### Platform Support
-- Issues: https://github.com/your-repo/issues
+- Issues: https://github.com/keinar/Agnostic-Automation-Center/issues
 - Email: info@digital-solution.co.il
 
 ---
