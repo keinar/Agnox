@@ -61,6 +61,7 @@ services:
       - MONGODB_URL=${MONGO_URI}
       - REPORTS_DIR=/app/reports
       - REDIS_URL=redis://redis:6379
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
     depends_on:
       - rabbitmq
       - redis
@@ -103,6 +104,8 @@ services:
       dockerfile: apps/dashboard-client/Dockerfile
       args:
         - VITE_API_URL=${VITE_API_URL}
+        - VITE_STRIPE_TEAM_PRICE_ID=${STRIPE_TEAM_PRICE_ID}
+        - VITE_STRIPE_ENTERPRISE_PRICE_ID=${STRIPE_ENTERPRISE_PRICE_ID}
     container_name: automation-dashboard
     restart: always
     depends_on:
