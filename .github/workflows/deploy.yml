@@ -71,6 +71,7 @@ jobs:
             SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}
             FROM_EMAIL=${{ secrets.FROM_EMAIL }}
             FROM_NAME=${{ secrets.FROM_NAME }}
+            FRONTEND_URL=${{ secrets.FRONTEND_URL }}
             EOF
             
             # 1. Pull the latest test image
