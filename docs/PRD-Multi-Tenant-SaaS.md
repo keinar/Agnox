@@ -2455,8 +2455,8 @@ DOCKER_REGISTRY=registry.example.com
 
 ### Dashboard
 ```bash
-VITE_API_URL=https://automation.keinar.com
-VITE_SOCKET_URL=wss://automation.keinar.com
+VITE_API_URL=https://api.automation.keinar.com
+VITE_SOCKET_URL=wss://api.automation.keinar.com
 ```
 
 ---
