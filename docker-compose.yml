@@ -61,6 +61,15 @@ services:
       - STRIPE_TEAM_PRICE_ID=${STRIPE_TEAM_PRICE_ID:-}
       - STRIPE_ENTERPRISE_PRICE_ID=${STRIPE_ENTERPRISE_PRICE_ID:-}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:8080}
+      # SendGrid Email Configuration (Phase 5)
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
+      - FROM_EMAIL=${FROM_EMAIL:-noreply@automation.keinar.com}
+      - FROM_NAME=${FROM_NAME:-Agnostic Automation Center}
+      - EMAIL_RETRY_MAX_ATTEMPTS=${EMAIL_RETRY_MAX_ATTEMPTS:-3}
+      - EMAIL_RETRY_INITIAL_DELAY=${EMAIL_RETRY_INITIAL_DELAY:-1000}
+      - EMAIL_TRACKING_ENABLED=${EMAIL_TRACKING_ENABLED:-true}
+      - EMAIL_OPEN_TRACKING=${EMAIL_OPEN_TRACKING:-true}
+      - EMAIL_CLICK_TRACKING=${EMAIL_CLICK_TRACKING:-true}
     depends_on:
       rabbitmq:
         condition: service_healthy

@@ -17,6 +17,7 @@ import { hashPassword, comparePassword, validatePasswordStrength } from '../util
 import { signToken } from '../utils/jwt.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { hashInvitationToken, isValidInvitationTokenFormat, isInvitationExpired } from '../utils/invitation.js';
+import { sendWelcomeEmail } from '../utils/email.js';
 
 const DB_NAME = 'automation_platform';
 
@@ -195,6 +196,17 @@ export async function authRoutes(
 
         app.log.info(`User accepted invitation: ${email} joined ${orgName} as ${userRole}`);
 
+        // Send welcome email (non-blocking)
+        sendWelcomeEmail(
+          email.toLowerCase(),
+          name,
+          orgName,
+          userRole as 'admin' | 'developer' | 'viewer',
+          false // joining existing organization
+        ).catch(error => {
+          app.log.error(`Failed to send welcome email to ${email}:`, error);
+        });
+
         return reply.code(201).send({
           success: true,
           token,
@@ -257,6 +269,17 @@ export async function authRoutes(
 
         app.log.info(`New organization created: ${organizationName} (${orgId})`);
         app.log.info(`New user registered: ${email} (${userId})`);
+
+        // Send welcome email (non-blocking)
+        sendWelcomeEmail(
+          email.toLowerCase(),
+          name,
+          organizationName,
+          'admin',
+          true // new organization
+        ).catch(error => {
+          app.log.error(`Failed to send welcome email to ${email}:`, error);
+        });
 
         return reply.code(201).send({
           success: true,
