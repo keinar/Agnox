@@ -203,8 +203,8 @@ export async function authRoutes(
           orgName,
           userRole as 'admin' | 'developer' | 'viewer',
           false // joining existing organization
-        ).catch(error => {
-          app.log.error(`Failed to send welcome email to ${email}:`, error);
+        ).catch((error: any) => {
+          app.log.error(`Failed to send welcome email to ${email}: ${error?.message || error}`);
         });
 
         return reply.code(201).send({
@@ -277,8 +277,8 @@ export async function authRoutes(
           organizationName,
           'admin',
           true // new organization
-        ).catch(error => {
-          app.log.error(`Failed to send welcome email to ${email}:`, error);
+        ).catch((error: any) => {
+          app.log.error(`Failed to send welcome email to ${email}: ${error?.message || error}`);
         });
 
         return reply.code(201).send({

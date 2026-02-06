@@ -224,12 +224,12 @@ export async function webhookRoutes(
               recipientName: admin.name,
               organizationName: org.name,
               plan: previousPlan as 'team' | 'enterprise',
-              canceledAt: new Date(subscription.canceled_at ? subscription.canceled_at * 1000 : Date.now()),
-              effectiveDate: new Date(subscription.current_period_end * 1000),
-              cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
+              canceledAt: new Date(((subscription as any).canceled_at || Date.now() / 1000) * 1000),
+              effectiveDate: new Date(((subscription as any).current_period_end || Date.now() / 1000) * 1000),
+              cancelAtPeriodEnd: (subscription as any).cancel_at_period_end || false,
               feedbackUrl: `${process.env.FRONTEND_URL || 'https://automation.keinar.com'}/feedback`
-            }).catch(error => {
-              app.log.error(`Failed to send cancellation email to ${admin.email}:`, error);
+            }).catch((error: any) => {
+              app.log.error(`Failed to send cancellation email to ${admin.email}: ${error?.message || error}`);
             });
           }
 
@@ -267,26 +267,29 @@ export async function webhookRoutes(
           );
 
           // Send payment success emails to admins
-          const subscription = invoice.subscription
-            ? await stripe.subscriptions.retrieve(invoice.subscription as string)
-            : null;
+          const invoiceSubscription = (invoice as any).subscription;
+          if (invoiceSubscription && typeof invoiceSubscription === 'string') {
+            try {
+              const subscription = await stripe.subscriptions.retrieve(invoiceSubscription);
+              const admins = await getAdminUsers(db, organizationId);
 
-          if (subscription) {
-            const admins = await getAdminUsers(db, organizationId);
-            for (const admin of admins) {
-              sendPaymentSuccessEmail({
-                recipientEmail: admin.email,
-                recipientName: admin.name,
-                organizationName: org.name,
-                plan: org.plan as 'team' | 'enterprise',
-                amount: invoice.amount_paid / 100,
-                currency: invoice.currency,
-                periodStart: new Date(subscription.current_period_start * 1000),
-                periodEnd: new Date(subscription.current_period_end * 1000),
-                invoiceUrl: invoice.hosted_invoice_url || `${process.env.FRONTEND_URL || 'https://automation.keinar.com'}/settings?tab=billing`
-              }).catch(error => {
-                app.log.error(`Failed to send payment success email to ${admin.email}:`, error);
-              });
+              for (const admin of admins) {
+                sendPaymentSuccessEmail({
+                  recipientEmail: admin.email,
+                  recipientName: admin.name,
+                  organizationName: org.name,
+                  plan: org.plan as 'team' | 'enterprise',
+                  amount: invoice.amount_paid / 100,
+                  currency: invoice.currency,
+                  periodStart: new Date(((subscription as any).current_period_start || Date.now() / 1000) * 1000),
+                  periodEnd: new Date(((subscription as any).current_period_end || Date.now() / 1000) * 1000),
+                  invoiceUrl: invoice.hosted_invoice_url || `${process.env.FRONTEND_URL || 'https://automation.keinar.com'}/settings?tab=billing`
+                }).catch((error: any) => {
+                  app.log.error(`Failed to send payment success email to ${admin.email}: ${error?.message || error}`);
+                });
+              }
+            } catch (error: any) {
+              app.log.warn(`Failed to retrieve subscription for payment success email: ${error?.message || error}`);
             }
           }
 
@@ -328,11 +331,23 @@ export async function webhookRoutes(
           );
 
           // Send payment failed emails to admins
-          const subscription = invoice.subscription
-            ? await stripe.subscriptions.retrieve(invoice.subscription as string)
-            : null;
-
           const admins = await getAdminUsers(db, organizationId);
+
+          // Try to get subscription details for retry date
+          let retryDate: Date | null = null;
+          const invoiceSubscription = (invoice as any).subscription;
+          if (invoiceSubscription && typeof invoiceSubscription === 'string') {
+            try {
+              const subscription = await stripe.subscriptions.retrieve(invoiceSubscription);
+              const nextInvoice = (subscription as any).next_pending_invoice_item_invoice;
+              if (nextInvoice && typeof nextInvoice === 'number') {
+                retryDate = new Date(nextInvoice * 1000);
+              }
+            } catch (error: any) {
+              app.log.warn(`Failed to retrieve subscription for payment failed email: ${error?.message || error}`);
+            }
+          }
+
           for (const admin of admins) {
             sendPaymentFailedEmail({
               recipientEmail: admin.email,
@@ -341,12 +356,10 @@ export async function webhookRoutes(
               plan: org.plan as 'team' | 'enterprise',
               amount: invoice.amount_due / 100,
               failureReason: invoice.last_finalization_error?.message || 'Payment declined',
-              retryDate: subscription?.next_pending_invoice_item_invoice
-                ? new Date(subscription.next_pending_invoice_item_invoice as number * 1000)
-                : null,
+              retryDate,
               updatePaymentUrl: `${process.env.FRONTEND_URL || 'https://automation.keinar.com'}/settings?tab=billing`
-            }).catch(error => {
-              app.log.error(`Failed to send payment failed email to ${admin.email}:`, error);
+            }).catch((error: any) => {
+              app.log.error(`Failed to send payment failed email to ${admin.email}: ${error?.message || error}`);
             });
           }
 
