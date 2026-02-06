@@ -120,4 +120,4 @@ networks:
 volumes:
   test_results:
     driver: local
-    redis_data:
+  redis_data:
