@@ -28,6 +28,11 @@ import {
   updateOrganizationSubscription,
   downgradeToFreePlan
 } from '../utils/subscription.js';
+import {
+  sendPaymentSuccessEmail,
+  sendPaymentFailedEmail,
+  sendSubscriptionCanceledEmail
+} from '../utils/email.js';
 
 const DB_NAME = 'automation_platform';
 
@@ -38,6 +43,18 @@ function getPlanFromPriceId(priceId: string): string {
   if (priceId === STRIPE_CONFIG.priceIds.team) return 'team';
   if (priceId === STRIPE_CONFIG.priceIds.enterprise) return 'enterprise';
   return 'free';
+}
+
+/**
+ * Get admin users for an organization
+ */
+async function getAdminUsers(db: any, organizationId: string) {
+  const usersCollection = db.collection('users');
+  return await usersCollection.find({
+    organizationId: new ObjectId(organizationId),
+    role: 'admin',
+    status: 'active'
+  }).toArray();
 }
 
 /**
@@ -191,10 +208,30 @@ export async function webhookRoutes(
 
           organizationId = org._id.toString();
 
+          // Get plan before downgrading
+          const previousPlan = org.plan;
+
           // Downgrade to free plan
           await downgradeToFreePlan(db, organizationId);
 
           app.log.info(`✅ Subscription canceled: org=${organizationId} downgraded to free plan`);
+
+          // Send cancellation emails to admins
+          const admins = await getAdminUsers(db, organizationId);
+          for (const admin of admins) {
+            sendSubscriptionCanceledEmail({
+              recipientEmail: admin.email,
+              recipientName: admin.name,
+              organizationName: org.name,
+              plan: previousPlan as 'team' | 'enterprise',
+              canceledAt: new Date(subscription.canceled_at ? subscription.canceled_at * 1000 : Date.now()),
+              effectiveDate: new Date(subscription.current_period_end * 1000),
+              cancelAtPeriodEnd: subscription.cancel_at_period_end || false,
+              feedbackUrl: `${process.env.FRONTEND_URL || 'https://automation.keinar.com'}/feedback`
+            }).catch(error => {
+              app.log.error(`Failed to send cancellation email to ${admin.email}:`, error);
+            });
+          }
 
           await logWebhookEvent(db, event, organizationId, 'success');
           break;
@@ -228,6 +265,30 @@ export async function webhookRoutes(
               }
             }
           );
+
+          // Send payment success emails to admins
+          const subscription = invoice.subscription
+            ? await stripe.subscriptions.retrieve(invoice.subscription as string)
+            : null;
+
+          if (subscription) {
+            const admins = await getAdminUsers(db, organizationId);
+            for (const admin of admins) {
+              sendPaymentSuccessEmail({
+                recipientEmail: admin.email,
+                recipientName: admin.name,
+                organizationName: org.name,
+                plan: org.plan as 'team' | 'enterprise',
+                amount: invoice.amount_paid / 100,
+                currency: invoice.currency,
+                periodStart: new Date(subscription.current_period_start * 1000),
+                periodEnd: new Date(subscription.current_period_end * 1000),
+                invoiceUrl: invoice.hosted_invoice_url || `${process.env.FRONTEND_URL || 'https://automation.keinar.com'}/settings?tab=billing`
+              }).catch(error => {
+                app.log.error(`Failed to send payment success email to ${admin.email}:`, error);
+              });
+            }
+          }
 
           app.log.info(
             `✅ Payment succeeded: org=${organizationId}, ` +
@@ -265,6 +326,29 @@ export async function webhookRoutes(
               }
             }
           );
+
+          // Send payment failed emails to admins
+          const subscription = invoice.subscription
+            ? await stripe.subscriptions.retrieve(invoice.subscription as string)
+            : null;
+
+          const admins = await getAdminUsers(db, organizationId);
+          for (const admin of admins) {
+            sendPaymentFailedEmail({
+              recipientEmail: admin.email,
+              recipientName: admin.name,
+              organizationName: org.name,
+              plan: org.plan as 'team' | 'enterprise',
+              amount: invoice.amount_due / 100,
+              failureReason: invoice.last_finalization_error?.message || 'Payment declined',
+              retryDate: subscription?.next_pending_invoice_item_invoice
+                ? new Date(subscription.next_pending_invoice_item_invoice as number * 1000)
+                : null,
+              updatePaymentUrl: `${process.env.FRONTEND_URL || 'https://automation.keinar.com'}/settings?tab=billing`
+            }).catch(error => {
+              app.log.error(`Failed to send payment failed email to ${admin.email}:`, error);
+            });
+          }
 
           app.log.warn(
             `⚠️  Payment failed: org=${organizationId}, ` +
