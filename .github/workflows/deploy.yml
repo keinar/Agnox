@@ -68,6 +68,9 @@ jobs:
             STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }}
             STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
             VITE_SOCKET_URL=${{ secrets.VITE_SOCKET_URL }}
+            SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}
+            FROM_EMAIL=${{ secrets.FROM_EMAIL }}
+            FROM_NAME=${{ secrets.FROM_NAME }}
             EOF
             
             # 1. Pull the latest test image
