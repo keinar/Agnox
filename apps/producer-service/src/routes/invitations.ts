@@ -179,8 +179,12 @@ export async function invitationRoutes(
       // Log invitation (audit trail)
       logInvitationCreated(email, currentUser.organizationId, role);
 
+      // Debug logging for invitation emails (especially admin role)
+      app.log.info(`📧 Sending invitation email...`);
+      app.log.info(`   To: ${email}, Role: ${role}, ActionType: ${actionType}`);
+
       // Send invitation email (console logging in dev mode, SendGrid in Phase 3)
-      await sendInvitationEmail({
+      const emailResult = await sendInvitationEmail({
         recipientEmail: email,
         organizationName: org.name,
         inviterName: inviter?.name || 'Admin',
@@ -189,6 +193,11 @@ export async function invitationRoutes(
         expiresAt,
         actionType
       });
+
+      app.log.info(`✅ Invitation email result: success=${emailResult.success}, messageId=${emailResult.messageId || 'N/A'}`);
+      if (!emailResult.success) {
+        app.log.warn(`⚠️ Invitation email may have failed: ${emailResult.error || 'Unknown error'}`);
+      }
 
       return reply.code(201).send({
         success: true,

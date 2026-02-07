@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import { TrendingUp, Users, HardDrive, Calendar, AlertTriangle } from 'lucide-react';
@@ -167,6 +168,7 @@ const styles = {
 
 export function UsageTab() {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -377,7 +379,7 @@ export function UsageTab() {
           <button
             style={styles.upgradeButton}
             onClick={() => {
-              window.location.href = '/billing/upgrade';
+              navigate('/settings?tab=billing');
             }}
             onMouseOver={(e) => {
               e.currentTarget.style.transform = 'translateY(-2px)';

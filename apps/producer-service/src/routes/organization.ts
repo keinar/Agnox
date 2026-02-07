@@ -127,9 +127,12 @@ export async function organizationRoutes(
         });
       }
 
-      // Count active users
+      // Count active users (use $or to handle both string and ObjectId types)
       const userCount = await usersCollection.countDocuments({
-        organizationId: currentUser.organizationId
+        $or: [
+          { organizationId: currentUser.organizationId },
+          { organizationId: orgId }
+        ]
       });
 
       // Calculate user limit

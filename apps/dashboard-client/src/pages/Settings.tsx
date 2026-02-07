@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { OrganizationTab } from '../components/settings/OrganizationTab';
 import { MembersTab } from '../components/settings/MembersTab';
@@ -92,17 +91,33 @@ const styles = {
   } as React.CSSProperties,
 };
 
-export function Settings() {
-  const [activeTab, setActiveTab] = useState<'organization' | 'members' | 'billing' | 'security' | 'usage'>('organization');
-  const { user } = useAuth();
+type TabId = 'organization' | 'members' | 'billing' | 'security' | 'usage';
 
-  const tabs = [
+export function Settings() {
+  const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const allTabs = [
     { id: 'organization' as const, label: 'Organization', component: OrganizationTab },
     { id: 'members' as const, label: 'Team Members', component: MembersTab },
     { id: 'billing' as const, label: 'Billing & Plans', component: BillingTab },
     { id: 'security' as const, label: 'Security', component: SecurityTab },
     { id: 'usage' as const, label: 'Usage', component: UsageTab },
   ];
+
+  // Filter billing tab for non-admins to prevent 403 errors
+  const tabs = user?.role === 'admin'
+    ? allTabs
+    : allTabs.filter(t => t.id !== 'billing');
+
+  // Get active tab from URL, validate, and default to 'organization'
+  const tabParam = searchParams.get('tab') as TabId | null;
+  const validTabIds = tabs.map(t => t.id);
+  const activeTab: TabId = tabParam && validTabIds.includes(tabParam) ? tabParam : 'organization';
+
+  const handleTabChange = (tabId: TabId) => {
+    setSearchParams({ tab: tabId });
+  };
 
   const ActiveTabComponent = tabs.find(t => t.id === activeTab)?.component || OrganizationTab;
 
@@ -122,7 +137,7 @@ export function Settings() {
 
           </div>
         </div>
-        
+
         <div>
           <h1 style={styles.title}>Settings</h1>
           <p style={styles.subtitle}>
@@ -138,7 +153,7 @@ export function Settings() {
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               style={{
                 ...styles.tab,
                 ...(activeTab === tab.id ? styles.tabActive : {}),

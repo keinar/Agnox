@@ -20,6 +20,7 @@ function App() {
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/join" element={<Signup />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
 
             {/* Protected routes */}
