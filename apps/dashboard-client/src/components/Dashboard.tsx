@@ -153,28 +153,39 @@ export const Dashboard = () => {
 
         <button
           onClick={() => setIsModalOpen(true)}
+          disabled={user?.role === 'viewer'}
+          title={user?.role === 'viewer' ? 'Viewers cannot run tests' : 'Run a new test'}
           style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: user?.role === 'viewer'
+              ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
+              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             color: 'white',
             border: 'none',
             padding: '12px 24px',
             borderRadius: '10px',
             fontWeight: 600,
-            cursor: 'pointer',
+            cursor: user?.role === 'viewer' ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.35)',
+            boxShadow: user?.role === 'viewer'
+              ? 'none'
+              : '0 4px 12px rgba(102, 126, 234, 0.35)',
             transition: 'all 0.2s ease',
-            fontSize: '14px'
+            fontSize: '14px',
+            opacity: user?.role === 'viewer' ? 0.6 : 1
           }}
           onMouseOver={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.45)';
+            if (user?.role !== 'viewer') {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.45)';
+            }
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.35)';
+            if (user?.role !== 'viewer') {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.35)';
+            }
           }}
         >
           <Play size={18} /> Run New Test
