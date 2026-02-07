@@ -135,8 +135,8 @@ export async function organizationRoutes(
       // Calculate user limit
       const userLimit = org.limits?.maxUsers || (
         org.plan === 'free' ? 3 :
-        org.plan === 'team' ? 20 :
-        999 // enterprise
+          org.plan === 'team' ? 20 :
+            999 // enterprise
       );
 
       return reply.send({
@@ -367,17 +367,25 @@ export async function organizationRoutes(
       const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
       // Count executions in current month
+      // Note: organizationId may be stored as string or ObjectId depending on source
+      // Use $or to match both formats for consistency
       const executionCount = await executionsCollection.countDocuments({
-        organizationId: currentUser.organizationId,
+        $or: [
+          { organizationId: currentUser.organizationId },
+          { organizationId: orgId }
+        ],
         createdAt: {
           $gte: startDate,
           $lte: endDate
         }
       });
 
-      // Count active users
+      // Count active users (users collection stores organizationId as ObjectId)
       const userCount = await usersCollection.countDocuments({
-        organizationId: currentUser.organizationId
+        $or: [
+          { organizationId: currentUser.organizationId },
+          { organizationId: orgId }
+        ]
       });
 
       // Get limits

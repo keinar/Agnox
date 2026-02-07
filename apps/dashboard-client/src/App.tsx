@@ -6,6 +6,7 @@ import { Dashboard } from './components/Dashboard';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Settings } from './pages/Settings';
+import { PrivacyPolicy } from './components/legal/PrivacyPolicy';
 import './App.css';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
 
             {/* Protected routes */}
             <Route

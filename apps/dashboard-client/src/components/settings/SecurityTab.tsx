@@ -226,8 +226,8 @@ export function SecurityTab() {
                 {updating
                   ? 'Updating...'
                   : aiAnalysisEnabled
-                  ? 'AI Analysis Enabled'
-                  : 'AI Analysis Disabled'}
+                    ? 'AI Analysis Enabled'
+                    : 'AI Analysis Disabled'}
               </label>
             </div>
 
@@ -267,7 +267,7 @@ export function SecurityTab() {
             Gemini API for processing. The data is analyzed in real-time and is not stored by Google.
           </p>
           <p style={{ ...styles.disclosureText, marginTop: '12px' }}>
-            All data transmission is encrypted using TLS 1.3. See our <a href="#" style={styles.link}>Privacy Policy</a> for details.
+            All data transmission is encrypted using TLS 1.3. See our <a href="/privacy" style={styles.link}>Privacy Policy</a> for details.
           </p>
         </div>
       </div>

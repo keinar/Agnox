@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const styles = {
   container: {
@@ -158,8 +161,38 @@ export function Signup() {
   const [isLoading, setIsLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
+  // Invitation flow state
+  const [searchParams] = useSearchParams();
+  const invitationToken = searchParams.get('token');
+  const [invitedOrgName, setInvitedOrgName] = useState<string | null>(null);
+  const [isValidatingInvite, setIsValidatingInvite] = useState(false);
+
   const { signup } = useAuth();
   const navigate = useNavigate();
+
+  // Validate invitation token on mount
+  useEffect(() => {
+    if (invitationToken) {
+      setIsValidatingInvite(true);
+      axios.get(`${API_URL}/api/invitations/validate/${invitationToken}`)
+        .then(response => {
+          if (response.data.valid) {
+            setInvitedOrgName(response.data.organizationName);
+            setEmail(response.data.email || '');
+          } else {
+            setError('This invitation link is invalid or has expired.');
+          }
+        })
+        .catch(err => {
+          console.error('Failed to validate invitation:', err);
+          setError('Failed to validate invitation. Please try again or contact support.');
+        })
+        .finally(() => {
+          setIsValidatingInvite(false);
+        });
+    }
+  }, [invitationToken]);
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -167,7 +200,8 @@ export function Signup() {
     setIsLoading(true);
 
     try {
-      await signup(email, password, name, organizationName);
+      // Pass invitationToken if present, otherwise use entered organization name
+      await signup(email, password, name, invitationToken ? '' : organizationName, invitationToken || undefined);
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Signup failed');
@@ -196,9 +230,49 @@ export function Signup() {
         {/* Card */}
         <div style={styles.card}>
           <div style={styles.header}>
-            <h2 style={styles.title}>Create Account</h2>
-            <p style={styles.subtitle}>Start automating your tests today</p>
+            <h2 style={styles.title}>{invitedOrgName ? 'Join Organization' : 'Create Account'}</h2>
+            <p style={styles.subtitle}>
+              {invitedOrgName
+                ? `You're invited to join ${invitedOrgName}`
+                : 'Start automating your tests today'}
+            </p>
           </div>
+
+          {/* Loading state for invitation validation */}
+          {isValidatingInvite && (
+            <div style={{
+              padding: '12px 16px',
+              background: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              borderRadius: '12px',
+              marginBottom: '24px',
+              color: '#1e40af',
+              fontSize: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span>⏳</span> Validating invitation...
+            </div>
+          )}
+
+          {/* Invitation banner */}
+          {invitedOrgName && !isValidatingInvite && (
+            <div style={{
+              padding: '12px 16px',
+              background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+              border: '1px solid #a7f3d0',
+              borderRadius: '12px',
+              marginBottom: '24px',
+              color: '#047857',
+              fontSize: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span>🎉</span> You're joining <strong style={{ marginLeft: '4px' }}>{invitedOrgName}</strong>
+            </div>
+          )}
 
           {error && (
             <div style={styles.errorBox}>
@@ -271,25 +345,28 @@ export function Signup() {
               </span>
             </div>
 
-            <div style={styles.fieldGroup}>
-              <label style={styles.label}>Organization Name</label>
-              <div style={styles.inputWrapper}>
-                <svg style={styles.inputIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                <input
-                  type="text"
-                  value={organizationName}
-                  onChange={(e) => setOrganizationName(e.target.value)}
-                  onFocus={() => setFocusedField('org')}
-                  onBlur={() => setFocusedField(null)}
-                  style={getInputStyle('org')}
-                  placeholder="Your Company"
-                  required
-                  disabled={isLoading}
-                />
+            {/* Only show Organization Name field if NOT using invitation */}
+            {!invitationToken && (
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>Organization Name</label>
+                <div style={styles.inputWrapper}>
+                  <svg style={styles.inputIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={organizationName}
+                    onChange={(e) => setOrganizationName(e.target.value)}
+                    onFocus={() => setFocusedField('org')}
+                    onBlur={() => setFocusedField(null)}
+                    style={getInputStyle('org')}
+                    placeholder="Your Company"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             <button
               type="submit"

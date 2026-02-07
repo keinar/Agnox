@@ -16,7 +16,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string, orgName: string) => Promise<void>;
+  signup: (email: string, password: string, name: string, orgName: string, invitationToken?: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -84,13 +84,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     password: string,
     name: string,
-    organizationName: string
+    organizationName: string,
+    invitationToken?: string
   ) {
     const response = await axios.post(`${API_URL}/api/auth/signup`, {
       email,
       password,
       name,
-      organizationName
+      organizationName,
+      inviteToken: invitationToken
     });
 
     if (response.data.success) {
