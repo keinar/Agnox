@@ -521,8 +521,8 @@ export async function authRoutes(
       // Calculate user limit based on plan
       const userLimit = org.limits?.maxUsers || (
         org.plan === 'free' ? 3 :
-        org.plan === 'team' ? 20 :
-        999 // enterprise
+          org.plan === 'team' ? 20 :
+            999 // enterprise
       );
 
       return reply.send({
@@ -552,6 +552,99 @@ export async function authRoutes(
       return reply.code(500).send({
         success: false,
         error: 'Failed to fetch user info',
+        message: error.message
+      });
+    }
+  });
+
+  /**
+   * PATCH /api/auth/profile
+   * Update current user's profile (name only)
+   *
+   * Headers:
+   * - Authorization: Bearer <token>
+   *
+   * Request Body:
+   * - name: string (user's new name)
+   *
+   * Response (200):
+   * - success: true
+   * - message: string
+   * - user: { id, name, email, role }
+   *
+   * Errors:
+   * - 400: Missing or invalid name
+   * - 401: Authentication required
+   * - 500: Failed to update profile
+   */
+  app.patch('/api/auth/profile', { preHandler: authMiddleware }, async (request, reply) => {
+    const { name } = request.body as { name?: string };
+    const currentUser = request.user!;
+
+    try {
+      // Validate name
+      if (!name || typeof name !== 'string') {
+        return reply.code(400).send({
+          success: false,
+          error: 'Missing required field',
+          message: 'Name is required'
+        });
+      }
+
+      const trimmedName = name.trim();
+      if (trimmedName.length === 0) {
+        return reply.code(400).send({
+          success: false,
+          error: 'Invalid name',
+          message: 'Name cannot be empty'
+        });
+      }
+
+      if (trimmedName.length > 100) {
+        return reply.code(400).send({
+          success: false,
+          error: 'Invalid name',
+          message: 'Name cannot exceed 100 characters'
+        });
+      }
+
+      // Update user in database
+      const result = await usersCollection.updateOne(
+        { _id: new ObjectId(currentUser.userId) },
+        {
+          $set: {
+            name: trimmedName,
+            updatedAt: new Date()
+          }
+        }
+      );
+
+      if (result.modifiedCount === 0) {
+        return reply.code(500).send({
+          success: false,
+          error: 'Update failed',
+          message: 'Failed to update profile'
+        });
+      }
+
+      app.log.info(`Profile updated: ${currentUser.userId} changed name to "${trimmedName}"`);
+
+      return reply.send({
+        success: true,
+        message: 'Profile updated successfully',
+        user: {
+          id: currentUser.userId,
+          name: trimmedName,
+          email: currentUser.email,
+          role: currentUser.role
+        }
+      });
+
+    } catch (error: any) {
+      app.log.error(`Profile update error: ${error?.message || error}`);
+      return reply.code(500).send({
+        success: false,
+        error: 'Failed to update profile',
         message: error.message
       });
     }

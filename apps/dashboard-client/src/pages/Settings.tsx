@@ -1,6 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { ProfileTab } from '../components/settings/ProfileTab';
 import { OrganizationTab } from '../components/settings/OrganizationTab';
 import { MembersTab } from '../components/settings/MembersTab';
 import { SecurityTab } from '../components/settings/SecurityTab';
@@ -91,13 +92,14 @@ const styles = {
   } as React.CSSProperties,
 };
 
-type TabId = 'organization' | 'members' | 'billing' | 'security' | 'usage';
+type TabId = 'profile' | 'organization' | 'members' | 'billing' | 'security' | 'usage';
 
 export function Settings() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const allTabs = [
+    { id: 'profile' as const, label: 'My Profile', component: ProfileTab },
     { id: 'organization' as const, label: 'Organization', component: OrganizationTab },
     { id: 'members' as const, label: 'Team Members', component: MembersTab },
     { id: 'billing' as const, label: 'Billing & Plans', component: BillingTab },
