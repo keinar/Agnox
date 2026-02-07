@@ -89,8 +89,15 @@ export async function userRoutes(
       const currentUser = request.user!;
 
       // Fetch all users in organization (tenant isolation)
+      // Use $or to handle both String and ObjectId storage types
+      const orgId = new ObjectId(currentUser.organizationId);
       const users = await usersCollection
-        .find({ organizationId: currentUser.organizationId })
+        .find({
+          $or: [
+            { organizationId: currentUser.organizationId },
+            { organizationId: orgId }
+          ]
+        })
         .sort({ createdAt: -1 })
         .toArray();
 
@@ -149,10 +156,14 @@ export async function userRoutes(
         });
       }
 
-      // Find user (with tenant isolation)
+      // Find user (with tenant isolation, handle both String and ObjectId)
+      const orgId = new ObjectId(currentUser.organizationId);
       const user = await usersCollection.findOne({
         _id: new ObjectId(id),
-        organizationId: currentUser.organizationId
+        $or: [
+          { organizationId: currentUser.organizationId },
+          { organizationId: orgId }
+        ]
       });
 
       // Return 404 if not found (don't leak info about other orgs)
@@ -250,10 +261,14 @@ export async function userRoutes(
         });
       }
 
-      // Find target user (with tenant isolation)
+      // Find target user (with tenant isolation, handle both String and ObjectId)
+      const orgId = new ObjectId(currentUser.organizationId);
       const targetUser = await usersCollection.findOne({
         _id: new ObjectId(id),
-        organizationId: currentUser.organizationId
+        $or: [
+          { organizationId: currentUser.organizationId },
+          { organizationId: orgId }
+        ]
       });
 
       if (!targetUser) {
@@ -266,7 +281,10 @@ export async function userRoutes(
       // If removing admin role, ensure at least one admin remains
       if (targetUser.role === 'admin' && role !== 'admin') {
         const adminCount = await usersCollection.countDocuments({
-          organizationId: currentUser.organizationId,
+          $or: [
+            { organizationId: currentUser.organizationId },
+            { organizationId: orgId }
+          ],
           role: 'admin'
         });
 
@@ -371,10 +389,14 @@ export async function userRoutes(
         });
       }
 
-      // Find target user (with tenant isolation)
+      // Find target user (with tenant isolation, handle both String and ObjectId)
+      const orgId = new ObjectId(currentUser.organizationId);
       const targetUser = await usersCollection.findOne({
         _id: new ObjectId(id),
-        organizationId: currentUser.organizationId
+        $or: [
+          { organizationId: currentUser.organizationId },
+          { organizationId: orgId }
+        ]
       });
 
       if (!targetUser) {
@@ -387,7 +409,10 @@ export async function userRoutes(
       // If deleting an admin, ensure at least one admin remains
       if (targetUser.role === 'admin') {
         const adminCount = await usersCollection.countDocuments({
-          organizationId: currentUser.organizationId,
+          $or: [
+            { organizationId: currentUser.organizationId },
+            { organizationId: orgId }
+          ],
           role: 'admin'
         });
 
