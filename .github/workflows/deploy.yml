@@ -31,16 +31,16 @@ jobs:
       - name: System Sanity Tests
         run: npm run test:system
         env:
-          # --- Database Configuration (Fixes EAI_AGAIN & ECONNREFUSED) ---
-          # We provide BOTH variable names used by Producer and Worker
-          # and point them to the SERVICE name 'mongodb'
-          MONGODB_URL: "mongodb://mongodb:27017/test_db"
-          MONGO_URI: "mongodb://mongodb:27017/test_db"
+          # --- Database Configuration ---
+          # Must match docker-compose.yml service name and database name
+          MONGODB_URL: "mongodb://mongodb:27017/automation_platform"
+          MONGO_URI: "mongodb://mongodb:27017/automation_platform"
           
           # --- Infrastructure Services ---
-          RABBITMQ_URL: "amqp://user:password@rabbitmq:5672"
+          # Must match docker-compose.yml service names and credentials
+          RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
           REDIS_URL: "redis://redis:6379"
-          API_URL: "http://localhost:3000"
+          API_URL: "http://producer:3000"
           
           # --- App Config ---
           NODE_ENV: production
@@ -48,7 +48,7 @@ jobs:
           ADMIN_PASS: "TestPass123!"
           
           # --- Mock Secrets (Bypass strict production checks) ---
-          JWT_SECRET: "ci-test-jwt-secret-123456"
+          JWT_SECRET: "ci-test-jwt-secret-for-pipeline-testing-64chars-minimum-required"
           STRIPE_SECRET_KEY: "sk_test_mock_key"
           STRIPE_PUBLISHABLE_KEY: "pk_test_mock_key"
           STRIPE_WEBHOOK_SECRET: "whsec_mock"
