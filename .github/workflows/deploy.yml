@@ -31,18 +31,29 @@ jobs:
       - name: System Sanity Tests
         run: npm run test:system
         env:
-          # Mock Secrets for Testing (Pass strict production checks)
-          JWT_SECRET: "test-jwt-secret-for-ci-pipeline-only-123456"
-          STRIPE_SECRET_KEY: "sk_test_mock_stripe_key_for_sanity"
-          STRIPE_PUBLISHABLE_KEY: "pk_test_mock_stripe_key"
-          STRIPE_WEBHOOK_SECRET: "whsec_mock_secret"
-          GEMINI_API_KEY: "mock_gemini_key"
-          SENDGRID_API_KEY: "SG.mock_sendgrid_key"
-          # App Config
+          # --- Database Configuration (Fixes EAI_AGAIN & ECONNREFUSED) ---
+          # We provide BOTH variable names used by Producer and Worker
+          # and point them to the SERVICE name 'mongodb'
+          MONGODB_URL: "mongodb://mongodb:27017/test_db"
+          MONGO_URI: "mongodb://mongodb:27017/test_db"
+          
+          # --- Infrastructure Services ---
+          RABBITMQ_URL: "amqp://user:password@rabbitmq:5672"
+          REDIS_URL: "redis://redis:6379"
+          API_URL: "http://localhost:3000"
+          
+          # --- App Config ---
           NODE_ENV: production
           ADMIN_USER: "admin@test.com"
           ADMIN_PASS: "TestPass123!"
-          API_URL: "http://localhost:3000"
+          
+          # --- Mock Secrets (Bypass strict production checks) ---
+          JWT_SECRET: "ci-test-jwt-secret-123456"
+          STRIPE_SECRET_KEY: "sk_test_mock_key"
+          STRIPE_PUBLISHABLE_KEY: "pk_test_mock_key"
+          STRIPE_WEBHOOK_SECRET: "whsec_mock"
+          GEMINI_API_KEY: "mock_gemini"
+          SENDGRID_API_KEY: "SG.mock_sendgrid"
 
   # Job 2: Deployment
   deploy:
