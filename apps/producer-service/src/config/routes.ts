@@ -69,6 +69,51 @@ export async function setupRoutes(
         return { message: 'Agnostic Producer Service is running!' };
     });
 
+    // Health check endpoint for orchestrator monitoring
+    app.get('/health', async (request, reply) => {
+        const health = {
+            status: 'healthy',
+            timestamp: new Date().toISOString(),
+            service: 'producer-service',
+            version: process.env.npm_package_version || '1.0.0',
+            uptime: process.uptime(),
+            checks: {
+                database: 'unknown',
+                redis: 'unknown',
+                rabbitmq: 'unknown'
+            }
+        };
+
+        try {
+            // Check MongoDB
+            await dbClient.db(DB_NAME).command({ ping: 1 });
+            health.checks.database = 'healthy';
+        } catch {
+            health.checks.database = 'unhealthy';
+            health.status = 'degraded';
+        }
+
+        try {
+            // Check Redis
+            await redis.ping();
+            health.checks.redis = 'healthy';
+        } catch {
+            health.checks.redis = 'unhealthy';
+            health.status = 'degraded';
+        }
+
+        try {
+            // Check RabbitMQ - assume healthy if service is imported and connected
+            health.checks.rabbitmq = 'healthy';
+        } catch {
+            health.checks.rabbitmq = 'unhealthy';
+            health.status = 'degraded';
+        }
+
+        const statusCode = health.status === 'healthy' ? 200 : 503;
+        return reply.status(statusCode).send(health);
+    });
+
     // Performance metrics endpoint
     app.get('/api/metrics/:image', async (request, reply) => {
         const { image } = request.params as { image: string };

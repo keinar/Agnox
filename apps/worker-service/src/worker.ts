@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as tar from 'tar-fs';
 import Redis from 'ioredis';
 import { analyzeTestFailure } from './analysisService';
+import { logger } from './utils/logger.js';
 
 dotenv.config();
 
@@ -28,9 +29,9 @@ function resolveHostForDocker(url: string | undefined): string {
 
 function getMergedEnvVars(configEnv: any = {}) {
     const localKeysToInject = [
-        'API_USER', 
-        'API_PASSWORD', 
-        'BASE_URL', 
+        'API_USER',
+        'API_PASSWORD',
+        'BASE_URL',
         'SECRET_KEY',
         'DB_USER',
         'DB_PASS',
@@ -52,7 +53,7 @@ function getMergedEnvVars(configEnv: any = {}) {
 
     localKeysToInject.forEach(key => {
         if (!configEnv[key] && process.env[key]) {
-            console.log(`[Worker] Injecting local env var: ${key}`);
+            logger.debug({ key }, 'Injecting local env var');
             let value = process.env[key]!;
             if (['BASE_URL', 'MONGO_URI', 'MONGODB_URL'].includes(key)) {
                 value = resolveHostForDocker(value);
@@ -69,7 +70,7 @@ async function updatePerformanceMetrics(testName: string, durationMs: number, or
     const key = `metrics:${organizationId}:test:${testName}`;
     await redis.lpush(key, durationMs);
     await redis.ltrim(key, 0, 9);
-    console.log(`[Redis] Updated metrics for ${testName} (org: ${organizationId}). Duration: ${durationMs}ms`);
+    logger.info({ testName, organizationId, durationMs }, 'Updated metrics');
 }
 
 async function startWorker() {
@@ -80,15 +81,15 @@ async function startWorker() {
     try {
         mongoClient = new MongoClient(MONGO_URI);
         await mongoClient.connect();
-        console.log('👷 Worker: Connected to MongoDB');
+        logger.info('Connected to MongoDB');
 
         connection = await amqp.connect(RABBITMQ_URL);
         channel = await connection.createChannel();
         await channel.assertQueue('test_queue', { durable: true });
         await channel.prefetch(1);
-        console.log('👷 Worker: Connected to RabbitMQ, waiting for jobs...');
+        logger.info('Connected to RabbitMQ, waiting for jobs');
     } catch (error) {
-        console.error('Critical Failure:', error);
+        logger.error({ error: String(error) }, 'Critical Failure');
         process.exit(1);
     }
 
@@ -150,13 +151,15 @@ async function startWorker() {
         // Notify start (DB update) - Multi-tenant: Filter by organizationId
         await executionsCollection.updateOne(
             { taskId, organizationId },
-            { $set: {
-                status: 'RUNNING',
-                startTime,
-                config,
-                reportsBaseUrl: currentReportsBaseUrl,
-                aiAnalysisEnabled: initialAiAnalysisEnabled  // Record AI setting at execution start
-            } },
+            {
+                $set: {
+                    status: 'RUNNING',
+                    startTime,
+                    config,
+                    reportsBaseUrl: currentReportsBaseUrl,
+                    aiAnalysisEnabled: initialAiAnalysisEnabled  // Record AI setting at execution start
+                }
+            },
             { upsert: true }
         );
 
@@ -176,7 +179,7 @@ async function startWorker() {
         let logsBuffer = "";
         let container: any = null;
 
-  try {
+        try {
             console.log(`Orchestrating container for task: ${taskId} using image: ${image}`);
 
             try {
@@ -234,14 +237,14 @@ async function startWorker() {
             const logsString = logsBuffer;
             const hasFailures = logsString.includes('failed') || logsString.includes('✘');
             const hasRetries = logsString.includes('retry #');
-            
+
             if (finalStatus === 'PASSED') {
                 if (hasFailures && !hasRetries) {
                     console.warn(`[Worker] ⚠️ Exit code 0 but failures detected. Marking as FAILED.`);
                     finalStatus = 'FAILED';
                 } else if (hasRetries) {
                     console.warn(`[Worker] ⚠️ Retries detected. Marking as UNSTABLE.`);
-                    finalStatus = 'UNSTABLE'; 
+                    finalStatus = 'UNSTABLE';
                 }
             } else {
                 finalStatus = 'FAILED';
@@ -291,7 +294,7 @@ async function startWorker() {
                 });
 
                 if (!logsBuffer || logsBuffer.length < 50) {
-                     analysis = "AI Analysis skipped: Insufficient logs.";
+                    analysis = "AI Analysis skipped: Insufficient logs.";
                 } else {
                     try {
                         const context = finalStatus === 'UNSTABLE' ? "Note: The test passed after retries (Flaky)." : "";

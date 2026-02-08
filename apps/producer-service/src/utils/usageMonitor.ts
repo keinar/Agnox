@@ -105,7 +105,7 @@ export async function checkUsageAlerts(
     // Mark alert as sent
     await markAlertSent(db, alertKey);
 
-    console.log(`✅ Usage alert sent: org=${organizationId}, resource=${resource}, ${percentage.toFixed(1)}%`);
+    // Alert sent successfully
 
   } catch (error: any) {
     console.error(`Error checking usage alerts:`, error);
@@ -210,5 +210,4 @@ async function markAlertSent(db: Db, alertKey: string): Promise<void> {
   });
 }
 
-console.log('📊 Usage Monitor Utility Loaded');
-console.log('   Thresholds: 50% (info), 80% (warning), 90% (critical), 100% (blocked)');
+// Usage monitor utility loaded

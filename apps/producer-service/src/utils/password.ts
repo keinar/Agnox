@@ -297,14 +297,4 @@ export function generateSecurePassword(length: number = 16): string {
   return password.split('').sort(() => Math.random() - 0.5).join('');
 }
 
-// Log configuration on module load
-console.log('🔒 Password Configuration:');
-console.log(`  - Salt Rounds: ${SALT_ROUNDS}`);
-console.log(`  - Min Length: ${PASSWORD_MIN_LENGTH} chars`);
-console.log(`  - Max Length: ${PASSWORD_MAX_LENGTH} chars`);
-console.log(`  - Requirements: Uppercase, lowercase, number, special char`);
-
-// Warn if using low salt rounds
-if (SALT_ROUNDS < 10) {
-  console.warn(`⚠️  WARNING: Salt rounds (${SALT_ROUNDS}) is lower than recommended (10+)`);
-}
+// Password utility module loaded - security config not logged for production

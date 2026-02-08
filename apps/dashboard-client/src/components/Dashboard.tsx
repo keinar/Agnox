@@ -63,8 +63,7 @@ export const Dashboard = () => {
         throw new Error(errorData.error || 'Server validation failed');
       }
 
-      const data = await response.json();
-      console.log('Job Queued:', data.taskId);
+      await response.json();
       setIsModalOpen(false);
 
     } catch (err: any) {

@@ -55,7 +55,6 @@ export const useExecutions = () => {
         });
 
         socket.on('execution-updated', (updatedTask: Partial<Execution>) => {
-            console.log('Real-time update received:', updatedTask);
 
             queryClient.setQueryData(['executions', token], (oldData: Execution[] | undefined) => {
                 // Safely handle empty cache

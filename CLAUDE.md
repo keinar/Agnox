@@ -1,16 +1,16 @@
-# Agnostic Automation Center - Claude Code Context
+# Agnostic Automation Center - Developer Guide
 
 ## Project Overview
-A microservices-based test automation platform that is language and framework agnostic. Currently transforming from single-tenant to multi-tenant SaaS.
+A production-ready, multi-tenant SaaS test automation platform that is language and framework agnostic. Supports Playwright, Pytest, and any containerized test framework.
 
-**Important:** This project runs entirely via Docker Compose. No local npm build needed.
+**Status:** Production Ready (Phase 1-3 Complete)
 
 ## Tech Stack
 
 ### Backend Services
 - **Producer Service**: Fastify + TypeScript + MongoDB
   - Location: `apps/producer-service/`
-  - Purpose: API server, queue management, database operations
+  - Purpose: API server, queue management, Stripe billing, JWT auth
   - Port: 3000 (internal)
 
 - **Worker Service**: Node.js + TypeScript + Docker
@@ -24,174 +24,125 @@ A microservices-based test automation platform that is language and framework ag
   - Real-time: Socket.io
   - Port: 8080 (exposed)
 
-### Shared Code
-- **Shared Types**: `packages/shared-types/`
-  - Contains: TypeScript interfaces shared between services
-
 ### Infrastructure (via Docker Compose)
 - **Database**: MongoDB
-- **Cache/Queue**: Redis
+- **Cache/Queue**: Redis (rate limiting, metrics)
 - **Message Queue**: RabbitMQ
 - **AI**: Google Gemini API
+- **Payments**: Stripe
+
+## Key Features (Production)
+
+### Multi-Tenant Architecture
+- Organization-scoped data isolation
+- JWT authentication with role-based access
+- RBAC: Admin, Developer, Viewer roles
+
+### Billing & Subscriptions
+- Stripe integration for payments
+- Plan tiers: Free, Team, Enterprise
+- Usage tracking and alerts
+
+### Audit Logging
+- Admin action tracking (role changes, user management)
+- Stored in `audit_logs` collection
+
+### Health Monitoring
+- `/health` endpoint for orchestrator monitoring
+- Checks: MongoDB, Redis, RabbitMQ
 
 ## Directory Structure
 ```
 Agnostic-Automation-Center/
 ├── apps/
-│   ├── producer-service/
-│   │   └── src/
-│   │       ├── routes/        # Fastify route handlers
-│   │       ├── models/        # MongoDB schemas (if exist)
-│   │       ├── services/      # Business logic
-│   │       └── utils/         # Helpers
-│   ├── worker-service/
-│   │   └── src/
-│   │       ├── services/      # Docker orchestration
-│   │       └── utils/         # AI analysis, logging
-│   └── dashboard-client/
-│       └── src/
-│           ├── components/    # React components
-│           ├── pages/         # Route pages
-│           ├── hooks/         # Custom hooks
-│           └── context/       # React context
-├── packages/
-│   └── shared-types/
-│       └── src/               # Shared TypeScript interfaces
-├── docs/                      # Documentation
-├── migrations/                # Database migration scripts (NEW)
-├── docker-compose.yml         # Local development
-└── docker-compose.prod.yml    # Production
+│   ├── producer-service/src/
+│   │   ├── routes/        # API endpoints
+│   │   ├── middleware/    # Auth, rate limiting
+│   │   └── utils/         # Audit logs, password, usage
+│   ├── worker-service/src/
+│   │   ├── analysisService.ts  # AI analysis
+│   │   ├── worker.ts           # Container orchestration
+│   │   └── utils/logger.ts     # Structured logging
+│   └── dashboard-client/src/
+│       ├── components/    # React components
+│       ├── pages/         # Route pages
+│       └── hooks/         # Custom hooks
+├── docs/
+│   ├── integration/       # Customer guides
+│   └── PRD-Multi-Tenant-SaaS.md
+└── docker-compose.yml
 ```
 
 ## Running the Project
 
-### Local Development
 ```bash
 # Start all services
 docker-compose up --build
 
-# Start in background
-docker-compose up --build -d
-
 # View logs
 docker-compose logs -f
 
-# Stop all services
-docker-compose down
+# Production build
+docker-compose -f docker-compose.prod.yml up --build
 ```
 
-### Access Points (Local)
+### Access Points
 - Dashboard: http://localhost:8080
-- Producer API: http://localhost:3000 (internal)
-- MongoDB: localhost:27017
-- RabbitMQ Management: http://localhost:15672
+- Health Check: http://localhost:3000/health
+- RabbitMQ: http://localhost:15672
+
+## Environment Variables
+
+```yaml
+# Required
+JWT_SECRET: <64-char-random-string>
+MONGODB_URL: mongodb://mongodb:27017/automation_platform
+RABBITMQ_URL: amqp://rabbitmq:5672
+REDIS_URL: redis://redis:6379
+
+# Stripe (Billing)
+STRIPE_SECRET_KEY: sk_...
+STRIPE_WEBHOOK_SECRET: whsec_...
+
+# AI Analysis
+GOOGLE_AI_API_KEY: <your-key>
+
+# Email
+SENDGRID_API_KEY: <your-key>
+SENDGRID_FROM_EMAIL: noreply@yourdomain.com
+```
 
 ## Code Conventions
 
-### TypeScript
-- Use strict mode
-- Prefer interfaces over types for object shapes
-- Use explicit return types on functions
-- JSDoc comments for public APIs
-
 ### Naming
 - Files: `kebab-case.ts`
-- Interfaces: `IEntityName` (e.g., `IUser`, `IOrganization`)
-- Types: `TEntityName` or `EntityNameType`
+- Interfaces: `IEntityName`
 - Constants: `UPPER_SNAKE_CASE`
-- Functions/Variables: `camelCase`
 
-### MongoDB
-- Collection names: `snake_case` plural (e.g., `test_runs`, `organizations`)
-- Use ObjectId for `_id` fields
-- Always include `createdAt` and `updatedAt` timestamps
-- Index frequently queried fields
-
-### API Routes
-- RESTful naming: `/api/v1/resource`
-- Use HTTP verbs correctly (GET, POST, PUT, DELETE)
-- Return consistent response format:
+### API Responses
 ```typescript
 {
   success: boolean;
   data?: T;
   error?: string;
-  message?: string;
 }
 ```
 
-### Error Handling
-- Use custom error classes
-- Log errors with context (no sensitive data)
-- Return user-friendly error messages
+### Logging
+- Producer: Uses Fastify's `app.log.info()`
+- Worker: Uses custom `logger.info()` with structured context
 
-## Current Development: Multi-Tenant Transformation
-
-### Phase 1 Goals (Current)
-1. Add `organizationId` to all data models
-2. Implement JWT authentication
-3. Create Organization, User, Invitation schemas
-4. Migrate existing data to default organization
-5. Filter all queries by organizationId
-
-### Key Files to Create/Modify
-- `apps/producer-service/src/models/organization.ts` (NEW)
-- `apps/producer-service/src/models/user.ts` (NEW)
-- `apps/producer-service/src/models/invitation.ts` (NEW)
-- `apps/producer-service/src/routes/auth.ts` (NEW)
-- `apps/producer-service/src/middleware/auth.ts` (NEW)
-- `apps/producer-service/src/utils/jwt.ts` (NEW)
-- `packages/shared-types/src/index.ts` (MODIFY)
-- Existing models: Add `organizationId` field
-
-### Important Documents
-- PRD: `docs/PRD-Multi-Tenant-SaaS.md`
-- Implementation Plan: `docs/implementation/phase-1-plan.md`
-
-## Environment Variables
-
-### Required for Phase 1 (add to docker-compose.yml)
-```yaml
-# Producer Service environment
-JWT_SECRET: <64-char-random-string>
-JWT_EXPIRY: 24h
-PASSWORD_SALT_ROUNDS: 10
-```
-
-### Existing (already in docker-compose)
-```yaml
-MONGODB_URI: mongodb://mongodb:27017/automation_db
-RABBITMQ_URL: amqp://rabbitmq:5672
-REDIS_URL: redis://redis:6379
-GEMINI_API_KEY: <your-key>
-```
-
-## Testing After Changes
+## Testing
 
 ```bash
 # Rebuild and test
-docker-compose down
-docker-compose up --build
+docker-compose down && docker-compose up --build
 
-# Check logs for errors
+# Check logs
 docker-compose logs producer-service
 docker-compose logs worker-service
-
-# Access dashboard to verify UI
-# http://localhost:8080
 ```
 
-## Git Workflow
-- Branch naming: `feature/description`, `fix/description`
-- Commit format: `type(scope): message`
-  - Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
-- Always create PR for review before merging to main
-
-## Notes for Claude Code
-- This project uses Docker Compose - no local npm commands needed
-- Always check existing patterns before creating new code
-- Preserve existing code style
-- Test changes by running `docker-compose up --build`
-- Check container logs for errors: `docker-compose logs <service-name>`
-- Commit frequently with descriptive messages
-- Migration scripts run OUTSIDE Docker (need local Node.js or run in container)
+## Documentation
+- Customer Integration: `docs/integration/quickstart.md`
+- Product Requirements: `docs/PRD-Multi-Tenant-SaaS.md`

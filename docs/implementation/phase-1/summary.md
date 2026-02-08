@@ -223,7 +223,7 @@ Phase 1 established the foundational multi-tenant architecture with:
 - **Client Guide:** How to integrate test suites with the platform
 
 ### Implementation Records:
-- 16 detailed sprint/task summaries (preserved in `/phase-1/summaries/`)
+- Implementation history consolidated in `docs/system/project-history-archive.md`
 - Bug fix reports (critical bugfixes, manual testing rounds)
 - Integration testing results
 
@@ -339,7 +339,7 @@ See `phase-2-plan.md` for detailed sprint breakdown.
 - **Security Audit:** `docs/SECURITY-AUDIT-PHASE-1.md`
 - **Deployment Guide:** `docs/DEPLOYMENT-GUIDE-PHASE-1.md`
 - **Phase 1 Plan:** `docs/implementation/phase-1/phase-1-plan.md`
-- **Individual Sprint Summaries:** `docs/implementation/phase-1/summaries/`
+- **Project History:** `docs/system/project-history-archive.md`
 
 ---
 

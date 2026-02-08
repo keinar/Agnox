@@ -99,11 +99,9 @@ export function createServer(): FastifyInstance {
     const REPORTS_DIR = process.env.REPORTS_DIR || path.join(process.cwd(), 'reports');
 
     if (!fs.existsSync(REPORTS_DIR)) {
-        console.log(`⚠️ Reports directory not found at ${REPORTS_DIR}, creating it...`);
         fs.mkdirSync(REPORTS_DIR, { recursive: true });
     }
 
-    console.log(`📂 Serving static reports from: ${REPORTS_DIR}`);
 
     app.register(fastifyStatic, {
         root: REPORTS_DIR,

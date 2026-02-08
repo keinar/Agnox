@@ -9,7 +9,6 @@ import { createAuthRateLimiter, createApiRateLimiter, createStrictRateLimiter } 
 
 // Load environment variables
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
-console.log('🔍 Default Image from ENV:', process.env.DEFAULT_TEST_IMAGE);
 
 // Initialize Redis client
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
