@@ -31,8 +31,18 @@ jobs:
       - name: System Sanity Tests
         run: npm run test:system
         env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          # Mock Secrets for Testing (Pass strict production checks)
+          JWT_SECRET: "test-jwt-secret-for-ci-pipeline-only-123456"
+          STRIPE_SECRET_KEY: "sk_test_mock_stripe_key_for_sanity"
+          STRIPE_PUBLISHABLE_KEY: "pk_test_mock_stripe_key"
+          STRIPE_WEBHOOK_SECRET: "whsec_mock_secret"
+          GEMINI_API_KEY: "mock_gemini_key"
+          SENDGRID_API_KEY: "SG.mock_sendgrid_key"
+          # App Config
+          NODE_ENV: production
+          ADMIN_USER: "admin@test.com"
+          ADMIN_PASS: "TestPass123!"
+          API_URL: "http://localhost:3000"
 
   # Job 2: Deployment
   deploy:
