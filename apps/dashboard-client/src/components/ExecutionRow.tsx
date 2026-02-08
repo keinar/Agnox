@@ -44,7 +44,7 @@ const calculateDuration = (exec: any) => {
     return '-';
 };
 
-export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpanded, onToggle, onDelete }) => {
+export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function ExecutionRow({ execution, isExpanded, onToggle, onDelete }) {
     const [metrics, setMetrics] = React.useState<any>(null);
     const [showAI, setShowAI] = React.useState(false);
     const { token } = useAuth();
@@ -89,15 +89,15 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
         return null;
     };
 
-    const statusColors = { 
-        PASSED: 'passed', 
-        FAILED: 'failed', 
-        RUNNING: 'running', 
+    const statusColors = {
+        PASSED: 'passed',
+        FAILED: 'failed',
+        RUNNING: 'running',
         PENDING: 'running',
         ANALYZING: 'running', // Visualy similar to running but with different icon
         UNSTABLE: 'warning'
     };
-    
+
     const statusClass = statusColors[execution.status as keyof typeof statusColors] || '';
 
     const getStatusIcon = (status: string) => {
@@ -117,7 +117,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
         const envBaseUrl = import.meta.env.VITE_API_URL;
         if (envBaseUrl) return envBaseUrl.replace(/\/$/, '');
         return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'http://localhost:3000' : `https://api.${window.location.hostname}`;
+            ? 'http://localhost:3000' : `https://api.${window.location.hostname}`;
     };
 
     const baseUrl = getBaseUrl();
@@ -181,7 +181,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
                 <td style={{ fontWeight: 500 }}>{calculateDuration(execution)}</td>
                 <td>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                        
+
                         {/* 🌟 AI Analysis Icon Button 🌟 */}
                         {(execution.status === 'FAILED' || execution.status === 'UNSTABLE') && execution.analysis && (
                             <button
@@ -264,12 +264,12 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = ({ execution, isExpande
                 </tr>
             )}
 
-            <AIAnalysisView 
-                analysis={execution.analysis} 
+            <AIAnalysisView
+                analysis={execution.analysis}
                 status={execution.status}
-                isVisible={showAI} 
-                onClose={() => setShowAI(false)} 
+                isVisible={showAI}
+                onClose={() => setShowAI(false)}
             />
         </>
     );
-};
+});

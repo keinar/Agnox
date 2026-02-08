@@ -50,7 +50,8 @@ export const useExecutions = () => {
         const socket = io(API_URL, {
             auth: {
                 token // Send JWT token for authentication
-            }
+            },
+            transports: ['websocket'] // Force WebSocket, skip HTTP long-polling
         });
 
         socket.on('execution-updated', (updatedTask: Partial<Execution>) => {

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -6,7 +7,9 @@ import { OrganizationTab } from '../components/settings/OrganizationTab';
 import { MembersTab } from '../components/settings/MembersTab';
 import { SecurityTab } from '../components/settings/SecurityTab';
 import { UsageTab } from '../components/settings/UsageTab';
-import { BillingTab } from '../components/settings/BillingTab';
+
+// Lazy load BillingTab (largest component - 615 lines) to reduce initial bundle
+const BillingTab = lazy(() => import('../components/settings/BillingTab').then(m => ({ default: m.BillingTab })));
 
 const styles = {
   container: {
@@ -168,7 +171,9 @@ export function Settings() {
 
         {/* Tab Content */}
         <div style={styles.content}>
-          <ActiveTabComponent />
+          <Suspense fallback={<div style={{ padding: '20px', color: '#94a3b8' }}>Loading...</div>}>
+            <ActiveTabComponent />
+          </Suspense>
         </div>
       </div>
     </div>
