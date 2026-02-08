@@ -79,6 +79,32 @@ Framework-agnostic environment configuration.
 - **Dynamic Injection:** Environment variables injected into containers at runtime
 - **Secret Management:** Sensitive data never hardcoded, always injected
 
+### 💳 Billing & Subscription Management
+
+Integrated Stripe-powered subscription system.
+
+- **Subscription Plans:** Free, Team, and Enterprise tiers with different limits
+- **Stripe Integration:** Secure payment processing via Stripe Checkout
+- **Plan Limits Enforcement:** Test runs, team members, concurrent runs per plan
+- **Usage Tracking:** Real-time usage statistics and quota monitoring
+- **Self-Service Billing:** Upgrade/downgrade plans directly from dashboard
+
+### 👤 User Profile Management
+
+Personal account management for all users.
+
+- **Profile Settings:** Update name and view account details
+- **Read-Only Security:** Email and role displayed but not editable by user
+- **Role-Based Access:** Profile visible to all, role changes by admins only
+
+### 📧 Email Integration
+
+Professional email communications via SendGrid.
+
+- **Team Invitations:** Beautiful HTML email invitations with one-click join
+- **Welcome Emails:** Onboarding emails for new team members
+- **Transactional Emails:** Password reset, notifications (coming soon)
+
 ---
 
 ## 🏗️ System Architecture
@@ -290,6 +316,53 @@ The platform is **framework-agnostic** - any Docker-based test framework works:
 
 ---
 
+## ⚙️ Environment Variables
+
+### Required Variables
+
+```env
+# Server
+PORT=3000
+NODE_ENV=production
+
+# MongoDB
+MONGODB_URL=mongodb://localhost:27017/automation_platform
+
+# Redis (Rate Limiting, Sessions)
+REDIS_URL=redis://localhost:6379
+
+# JWT Authentication
+JWT_SECRET=your-super-secret-key-min-32-chars
+
+# Google AI (Root Cause Analysis)
+GOOGLE_AI_API_KEY=your-gemini-api-key
+```
+
+### Billing (Stripe)
+
+```env
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRICE_TEAM=price_team_plan_id
+STRIPE_PRICE_ENTERPRISE=price_enterprise_plan_id
+```
+
+### Email (SendGrid)
+
+```env
+SENDGRID_API_KEY=SG....
+SENDGRID_FROM_EMAIL=noreply@yourapp.com
+SENDGRID_FROM_NAME=Your App Name
+```
+
+### Frontend
+
+```env
+VITE_API_URL=https://api.yourapp.com
+```
+
+---
+
 ## 🛠️ Self-Hosting
 
 **Want to self-host?** This platform can be deployed on your own infrastructure.
@@ -413,8 +486,9 @@ See the [Self-Hosting Guide](docs/internal/self-hosting.md) for deployment instr
 
 ### AI & External Services
 - **Google Gemini 2.5 Flash** - AI-powered root cause analysis
-- **Nodemailer** - Email invitations
-- **SMTP / SendGrid** - Email delivery
+- **Stripe** - Subscription billing and payment processing
+- **SendGrid (@sendgrid/mail)** - Transactional email delivery
+- **Nodemailer** - SMTP email fallback
 
 ---
 

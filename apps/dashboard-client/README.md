@@ -52,8 +52,10 @@ src/
 │   ├── Dashboard.tsx    # Main dashboard view
 │   ├── ExecutionModal.tsx
 │   └── settings/        # Settings components
+│       ├── ProfileTab.tsx
 │       ├── OrganizationTab.tsx
 │       ├── MembersTab.tsx
+│       ├── BillingTab.tsx
 │       ├── SecurityTab.tsx
 │       ├── UsageTab.tsx
 │       └── InviteModal.tsx
