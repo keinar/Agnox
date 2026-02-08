@@ -70,6 +70,12 @@ services:
       - EMAIL_TRACKING_ENABLED=${EMAIL_TRACKING_ENABLED:-true}
       - EMAIL_OPEN_TRACKING=${EMAIL_OPEN_TRACKING:-true}
       - EMAIL_CLICK_TRACKING=${EMAIL_CLICK_TRACKING:-true}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -135,7 +141,7 @@ services:
       - API_URL=http://producer:3000
     depends_on:
       producer:
-        condition: service_started
+        condition: service_healthy
       worker:
         condition: service_started
     networks:
