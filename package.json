@@ -10,7 +10,8 @@
     "build:shared": "npm run build -w shared-types",
     "test": "npm run test --workspaces",
     "migration:dry-run": "ts-node migrations/001-add-organization-to-existing-data.ts --dry-run",
-    "migration:run": "ts-node migrations/001-add-organization-to-existing-data.ts"
+    "migration:run": "ts-node migrations/001-add-organization-to-existing-data.ts",
+    "test:system": "docker compose --profile test up --build --exit-code-from system-sanity"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
