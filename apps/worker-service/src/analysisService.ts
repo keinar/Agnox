@@ -1,10 +1,11 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { logger } from './utils/logger.js';
 
 export async function analyzeTestFailure(logs: string, image: string): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-        console.warn('[AI Analysis] Missing GEMINI_API_KEY. Skipping analysis.');
+        logger.warn('Missing GEMINI_API_KEY. Skipping analysis.');
         return 'AI Analysis disabled: Missing API Key.';
     }
 
@@ -13,12 +14,12 @@ export async function analyzeTestFailure(logs: string, image: string): Promise<s
     }
 
     try {
-        console.log(`[AI Analysis] Initializing Gemini for image: ${image}`);
+        logger.info({ image }, 'Initializing Gemini for AI analysis');
 
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-        const truncatedLogs = logs.slice(-8000); 
+        const truncatedLogs = logs.slice(-8000);
 
         const promptText = `
         You are an expert Automation Infrastructure Engineer.
@@ -38,17 +39,17 @@ export async function analyzeTestFailure(logs: string, image: string): Promise<s
         [Actionable advice for the developer]
         `;
 
-        console.log(`[AI Analysis] Sending prompt to Gemini...`);
-        
+        logger.info('Sending prompt to Gemini');
+
         const result = await model.generateContent(promptText);
         const response = await result.response;
         const text = response.text();
 
-        console.log(`[AI Analysis] Received response from Gemini.`);
+        logger.info('Received response from Gemini');
         return text;
 
     } catch (err: any) {
-        console.error('[AI Analysis] Error:', err);
+        logger.error({ error: err.message }, 'AI Analysis error');
         return "Failed to generate AI analysis due to a technical error.";
     }
 }

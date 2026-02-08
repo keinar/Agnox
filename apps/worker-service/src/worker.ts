@@ -103,7 +103,7 @@ async function startWorker() {
         try {
             await docker.getImage(image).inspect();
         } catch (e) {
-            console.log(`Image ${image} not found locally, pulling...`);
+            logger.info({ image }, 'Image not found locally, pulling');
             await pullImage(image);
         }
     }
@@ -116,7 +116,7 @@ async function startWorker() {
 
         // Multi-tenant: Use organizationId as STRING (matches JWT and backend)
         if (!organizationId) {
-            console.error(`[Worker] ERROR: Task ${taskId} missing organizationId. Rejecting message.`);
+            logger.error({ taskId }, 'Task missing organizationId. Rejecting message.');
             channel!.nack(msg, false, false); // Don't requeue
             return;
         }
@@ -128,7 +128,7 @@ async function startWorker() {
 
         if (!fs.existsSync(baseTaskDir)) {
             fs.mkdirSync(baseTaskDir, { recursive: true });
-            console.log(`[Worker] Created org-scoped report directory: ${baseTaskDir}`);
+            logger.info({ baseTaskDir }, 'Created org-scoped report directory');
         }
 
         const startTime = new Date();
@@ -144,7 +144,7 @@ async function startWorker() {
             });
             initialAiAnalysisEnabled = organization?.aiAnalysisEnabled !== false;
         } catch (e) {
-            console.warn(`[Worker] Could not fetch org settings at start. Defaulting AI to disabled.`);
+            logger.warn({ organizationId }, 'Could not fetch org settings at start. Defaulting AI to disabled.');
             initialAiAnalysisEnabled = false;
         }
 
@@ -180,13 +180,13 @@ async function startWorker() {
         let container: any = null;
 
         try {
-            console.log(`Orchestrating container for task: ${taskId} using image: ${image}`);
+            logger.info({ taskId, image }, 'Orchestrating container for task');
 
             try {
-                console.log(`Attempting to pull image: ${image}...`);
+                logger.info({ image }, 'Attempting to pull image');
                 await pullImage(image);
             } catch (pullError: any) {
-                console.warn(`Could not pull image ${image}. Proceeding with local cache.`);
+                logger.warn({ image }, 'Could not pull image. Proceeding with local cache.');
             }
 
             await ensureImageExists(image);
@@ -240,10 +240,10 @@ async function startWorker() {
 
             if (finalStatus === 'PASSED') {
                 if (hasFailures && !hasRetries) {
-                    console.warn(`[Worker] ⚠️ Exit code 0 but failures detected. Marking as FAILED.`);
+                    logger.warn({ taskId }, 'Exit code 0 but failures detected. Marking as FAILED.');
                     finalStatus = 'FAILED';
                 } else if (hasRetries) {
-                    console.warn(`[Worker] ⚠️ Retries detected. Marking as UNSTABLE.`);
+                    logger.warn({ taskId }, 'Retries detected. Marking as UNSTABLE.');
                     finalStatus = 'UNSTABLE';
                 }
             } else {
@@ -265,18 +265,18 @@ async function startWorker() {
                 if (organization) {
                     // Default to true if not explicitly set to false
                     aiAnalysisEnabled = organization.aiAnalysisEnabled !== false;
-                    console.log(`[Worker] Organization ${organizationId} AI Analysis: ${aiAnalysisEnabled ? 'ENABLED' : 'DISABLED'}`);
+                    logger.info({ organizationId, aiAnalysisEnabled }, 'Organization AI Analysis setting');
                 } else {
-                    console.warn(`[Worker] Organization ${organizationId} not found. Defaulting AI Analysis to DISABLED for security.`);
+                    logger.warn({ organizationId }, 'Organization not found. Defaulting AI Analysis to DISABLED for security.');
                     aiAnalysisEnabled = false;
                 }
             } catch (orgError: any) {
-                console.error(`[Worker] Failed to fetch organization settings: ${orgError.message}`);
+                logger.error({ organizationId, error: orgError.message }, 'Failed to fetch organization settings');
                 aiAnalysisEnabled = false; // Fail closed: disable AI if can't fetch settings
             }
 
             if ((finalStatus === 'FAILED' || finalStatus === 'UNSTABLE') && aiAnalysisEnabled) {
-                console.log(`[Worker] Task status is ${finalStatus}. AI Analysis ENABLED. Reporting analysis start...`);
+                logger.info({ taskId, finalStatus }, 'AI Analysis ENABLED. Starting analysis.');
 
                 // Multi-tenant: Filter by organizationId
                 await executionsCollection.updateOne(
@@ -299,19 +299,19 @@ async function startWorker() {
                     try {
                         const context = finalStatus === 'UNSTABLE' ? "Note: The test passed after retries (Flaky)." : "";
                         analysis = await analyzeTestFailure(logsBuffer + "\n" + context, image);
-                        console.log(`[Worker] AI Analysis completed (${analysis.length} chars).`);
+                        logger.info({ taskId, analysisLength: analysis.length }, 'AI Analysis completed');
                     } catch (aiError: any) {
-                        console.error('[Worker] AI Analysis CRASHED:', aiError.message);
+                        logger.error({ taskId, error: aiError.message }, 'AI Analysis CRASHED');
                         analysis = `AI Analysis Failed: ${aiError.message}`;
                     }
                 }
             } else if ((finalStatus === 'FAILED' || finalStatus === 'UNSTABLE') && !aiAnalysisEnabled) {
-                console.log(`[Worker] Task status is ${finalStatus}. AI Analysis DISABLED by organization settings. Skipping analysis.`);
+                logger.info({ taskId, finalStatus }, 'AI Analysis DISABLED by organization settings. Skipping analysis.');
                 analysis = "AI Analysis disabled for this organization.";
             }
             // --- AI ANALYSIS END ---
 
-            console.log(`Copying artifacts from container to ${baseTaskDir}...`);
+            logger.info({ taskId, baseTaskDir }, 'Copying artifacts from container');
             const copyAndRenameFolder = async (containerPath: string, hostSubDir: string) => {
                 try {
                     const stream = await container.getArchive({ path: containerPath });
@@ -330,7 +330,7 @@ async function startWorker() {
                     if (fs.existsSync(fullPathOnHost) && originalFolderName !== hostSubDir) {
                         if (fs.existsSync(targetPathOnHost)) fs.rmSync(targetPathOnHost, { recursive: true });
                         fs.renameSync(fullPathOnHost, targetPathOnHost);
-                        console.log(`Successfully mapped ${originalFolderName} to ${hostSubDir}`);
+                        logger.debug({ originalFolderName, hostSubDir }, 'Successfully mapped folder');
                     }
                 } catch (e) {
                     // Ignore specific missing folders errors
@@ -373,10 +373,10 @@ async function startWorker() {
                 { $set: updateData }
             );
             await notifyProducer(updateData);
-            console.log(`✅ Task ${taskId} (org: ${organizationId}) finished with status: ${finalStatus}`);
+            logger.info({ taskId, organizationId, finalStatus }, 'Task finished');
 
         } catch (error: any) {
-            console.error(`❌ Container orchestration failure for task ${taskId} (org: ${organizationId}):`, error.message);
+            logger.error({ taskId, organizationId, error: error.message }, 'Container orchestration failure');
 
             // Fetch AI setting even for errors (for audit trail)
             let aiAnalysisEnabledForError = false;
@@ -450,7 +450,7 @@ async function notifyProducer(data: any) {
             body: JSON.stringify(data)
         });
     } catch (e) {
-        console.error('[Worker] Failed to notify Producer');
+        logger.error('Failed to notify Producer');
     }
 }
 

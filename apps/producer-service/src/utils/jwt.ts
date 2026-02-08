@@ -172,10 +172,16 @@ export function isTokenExpired(token: string): boolean {
 }
 
 /**
- * Warn if JWT_SECRET is using default value (dev mode)
+ * Security: Enforce JWT_SECRET in production
  */
 if (JWT_SECRET === 'dev-secret-CHANGE-IN-PRODUCTION') {
-  console.warn('⚠️  WARNING: Using default JWT_SECRET! Set JWT_SECRET environment variable in production.');
+  if (process.env.NODE_ENV === 'production') {
+    console.error('🚨 CRITICAL: JWT_SECRET is not set! Cannot start in production mode.');
+    console.error('   Set the JWT_SECRET environment variable and restart.');
+    process.exit(1);
+  } else {
+    console.warn('⚠️  WARNING: Using default JWT_SECRET! Set JWT_SECRET environment variable in production.');
+  }
 }
 
 // Log JWT configuration on module load
