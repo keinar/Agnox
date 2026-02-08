@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useExecutions } from '../hooks/useExecutions';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useAuth } from '../context/AuthContext';
@@ -7,7 +7,7 @@ import { ExecutionModal } from './ExecutionModal';
 import { DashboardHeader } from './dashboard/DashboardHeader';
 import { ExecutionList } from './dashboard/ExecutionList';
 import { Play } from 'lucide-react';
-import io from 'socket.io-client';
+
 
 const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
 const API_URL = isProduction
@@ -22,55 +22,11 @@ export const Dashboard = () => {
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // Real-time updates handled by useExecutions hook
 
-  // Socket.io connection for real-time updates
-  useEffect(() => {
-    if (!token) return;
-
-    const socket = io(API_URL, {
-      auth: {
-        token
-      }
-    });
-
-    socket.on('connect', () => {
-      console.log('Socket.io connected');
-    });
-
-    socket.on('auth-success', (data) => {
-      console.log('Socket.io authenticated:', data);
-    });
-
-    socket.on('auth-error', (error) => {
-      console.error('Socket.io auth error:', error);
-    });
-
-    socket.on('execution-updated', (updatedExecution: any) => {
-      console.log('Execution updated:', updatedExecution);
-      setExecutions((prev) => {
-        const index = prev.findIndex((exec) => exec.taskId === updatedExecution.taskId);
-        if (index >= 0) {
-          const updated = [...prev];
-          updated[index] = { ...updated[index], ...updatedExecution };
-          return updated;
-        } else {
-          return [updatedExecution, ...prev];
-        }
-      });
-    });
-
-    socket.on('execution-log', (data: { taskId: string; log: string }) => {
-      console.log(`Log from ${data.taskId}:`, data.log);
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [token, setExecutions]);
-
-  const toggleRow = (id: string) => {
-    setExpandedRowId(expandedRowId === id ? null : id);
-  };
+  const toggleRow = useCallback((id: string) => {
+    setExpandedRowId(prev => prev === id ? null : id);
+  }, []);
 
   const handleRunTest = async (formData: {
     folder: string;
@@ -117,7 +73,7 @@ export const Dashboard = () => {
     }
   };
 
-  const handleDelete = async (taskId: string) => {
+  const handleDelete = useCallback(async (taskId: string) => {
     if (!window.confirm('Delete this execution?')) return;
     try {
       await fetch(`${API_URL}/api/executions/${taskId}`, {
@@ -130,7 +86,7 @@ export const Dashboard = () => {
     } catch (err) {
       alert('Delete failed');
     }
-  };
+  }, [token, setExecutions]);
 
   return (
     <div className="container">
