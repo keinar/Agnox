@@ -124,6 +124,23 @@ services:
     networks:
       - app-network
 
+  system-sanity:
+    build:
+      context: .
+      dockerfile: Dockerfile.tests
+    container_name: automation-sanity-tests
+    profiles:
+      - test
+    environment:
+      - API_URL=http://producer:3000
+    depends_on:
+      producer:
+        condition: service_started
+      worker:
+        condition: service_started
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge

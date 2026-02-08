@@ -28,6 +28,12 @@ jobs:
       - name: Linting
         run: npm run lint --if-present
 
+      - name: System Sanity Tests
+        run: npm run test:system
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+
   # Job 2: Deployment
   deploy:
     needs: quality-check
