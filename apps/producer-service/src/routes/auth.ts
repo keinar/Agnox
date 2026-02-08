@@ -18,6 +18,7 @@ import { signToken } from '../utils/jwt.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { hashInvitationToken, isValidInvitationTokenFormat, isInvitationExpired } from '../utils/invitation.js';
 import { sendWelcomeEmail } from '../utils/email.js';
+import { createApiKey, listApiKeys, revokeApiKey } from '../utils/apiKeys.js';
 
 const DB_NAME = 'automation_platform';
 
@@ -675,9 +676,174 @@ export async function authRoutes(
     });
   });
 
+  // ===================================================================
+  // API Key Management Routes
+  // ===================================================================
+
+  /**
+   * POST /api/auth/api-keys
+   * Generate a new API key for CI/CD integration
+   *
+   * Headers:
+   * - Authorization: Bearer <token>
+   *
+   * Request Body:
+   * - name: string (optional, default: "Unnamed Key")
+   *
+   * Response (201):
+   * - success: true
+   * - apiKey: string (FULL KEY - shown only once)
+   * - data: { id, name, prefix, createdAt }
+   *
+   * IMPORTANT: The full API key is only returned once. Store it securely.
+   */
+  app.post('/api/auth/api-keys', { preHandler: authMiddleware }, async (request, reply) => {
+    const { name } = request.body as { name?: string };
+    const currentUser = request.user!;
+
+    try {
+      const { fullKey, keyData } = await createApiKey(
+        new ObjectId(currentUser.userId),
+        new ObjectId(currentUser.organizationId),
+        name || 'Unnamed Key',
+        db
+      );
+
+      app.log.info(`API key created: ${currentUser.userId} created key ${keyData.prefix}`);
+
+      return reply.code(201).send({
+        success: true,
+        message: 'API key created. Store this key securely - it will not be shown again.',
+        apiKey: fullKey,
+        data: {
+          id: keyData._id?.toString(),
+          name: keyData.name,
+          prefix: keyData.prefix,
+          createdAt: keyData.createdAt
+        }
+      });
+
+    } catch (error: any) {
+      app.log.error(`API key creation error: ${error?.message || error}`);
+      return reply.code(500).send({
+        success: false,
+        error: 'Failed to create API key',
+        message: error.message
+      });
+    }
+  });
+
+  /**
+   * GET /api/auth/api-keys
+   * List all API keys for the current user
+   *
+   * Headers:
+   * - Authorization: Bearer <token>
+   *
+   * Response (200):
+   * - success: true
+   * - data: Array<{ id, name, prefix, createdAt, lastUsed }>
+   *
+   * Note: Full key is never returned - only prefix for identification.
+   */
+  app.get('/api/auth/api-keys', { preHandler: authMiddleware }, async (request, reply) => {
+    const currentUser = request.user!;
+
+    try {
+      const keys = await listApiKeys(
+        new ObjectId(currentUser.userId),
+        db
+      );
+
+      const keyList = keys.map(key => ({
+        id: key._id?.toString(),
+        name: key.name,
+        prefix: key.prefix,
+        createdAt: key.createdAt,
+        lastUsed: key.lastUsed
+      }));
+
+      return reply.send({
+        success: true,
+        data: keyList
+      });
+
+    } catch (error: any) {
+      app.log.error(`API key list error: ${error?.message || error}`);
+      return reply.code(500).send({
+        success: false,
+        error: 'Failed to list API keys',
+        message: error.message
+      });
+    }
+  });
+
+  /**
+   * DELETE /api/auth/api-keys/:id
+   * Revoke (delete) an API key
+   *
+   * Headers:
+   * - Authorization: Bearer <token>
+   *
+   * Params:
+   * - id: string (API key ObjectId)
+   *
+   * Response (200):
+   * - success: true
+   * - message: "API key revoked"
+   *
+   * Errors:
+   * - 404: API key not found or not owned by user
+   */
+  app.delete('/api/auth/api-keys/:id', { preHandler: authMiddleware }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const currentUser = request.user!;
+
+    try {
+      if (!ObjectId.isValid(id)) {
+        return reply.code(400).send({
+          success: false,
+          error: 'Invalid key ID'
+        });
+      }
+
+      const deleted = await revokeApiKey(
+        new ObjectId(id),
+        new ObjectId(currentUser.userId),
+        db
+      );
+
+      if (!deleted) {
+        return reply.code(404).send({
+          success: false,
+          error: 'API key not found',
+          message: 'The API key does not exist or you do not have permission to delete it.'
+        });
+      }
+
+      app.log.info(`API key revoked: ${currentUser.userId} deleted key ${id}`);
+
+      return reply.send({
+        success: true,
+        message: 'API key revoked successfully'
+      });
+
+    } catch (error: any) {
+      app.log.error(`API key revoke error: ${error?.message || error}`);
+      return reply.code(500).send({
+        success: false,
+        error: 'Failed to revoke API key',
+        message: error.message
+      });
+    }
+  });
+
   app.log.info('✅ Authentication routes registered');
   app.log.info('  - POST /api/auth/signup');
   app.log.info('  - POST /api/auth/login');
   app.log.info('  - GET /api/auth/me');
   app.log.info('  - POST /api/auth/logout');
+  app.log.info('  - POST /api/auth/api-keys');
+  app.log.info('  - GET /api/auth/api-keys');
+  app.log.info('  - DELETE /api/auth/api-keys/:id');
 }

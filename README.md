@@ -193,7 +193,7 @@ The platform works with **any containerized test framework**. Here's how to inte
 Send test execution requests to the API:
 
 ```bash
-curl -X POST https://api.yourinstance.com/api/execution-request \
+curl -X POST https://api.automation.keinar.com/api/execution-request \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{
@@ -203,7 +203,7 @@ curl -X POST https://api.yourinstance.com/api/execution-request \
     "folder": "tests/e2e",
     "config": {
       "environment": "staging",
-      "baseUrl": "https://staging.yourapp.com"
+      "baseUrl": "https://staging.automation.keinar.com"
     }
   }'
 ```
@@ -267,7 +267,7 @@ const axios = require('axios');
 
 async function runTests() {
   const response = await axios.post(
-    'https://api.yourinstance.com/api/execution-request',
+    'https://api.automation.keinar.com/api/execution-request',
     {
       taskId: `run-${Date.now()}`,
       image: 'mcr.microsoft.com/playwright:v1.40.0',
@@ -275,7 +275,7 @@ async function runTests() {
       folder: 'tests/integration',
       config: {
         environment: 'staging',
-        baseUrl: 'https://staging.yourapp.com',
+        baseUrl: 'https://staging.automation.keinar.com',
       },
     },
     {
@@ -351,14 +351,14 @@ STRIPE_PRICE_ENTERPRISE=price_enterprise_plan_id
 
 ```env
 SENDGRID_API_KEY=SG....
-SENDGRID_FROM_EMAIL=noreply@yourapp.com
+SENDGRID_FROM_EMAIL=noreply@automation.keinar.com
 SENDGRID_FROM_NAME=Your App Name
 ```
 
 ### Frontend
 
 ```env
-VITE_API_URL=https://api.yourapp.com
+VITE_API_URL=https://api.automation.keinar.com
 ```
 
 ---

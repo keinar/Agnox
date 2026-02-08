@@ -32,9 +32,6 @@ services:
   mongodb:
     image: mongo:6.0
     container_name: automation-mongodb
-    profiles:
-      - test
-      - dev
     ports:
       - "27017:27017"
     networks:

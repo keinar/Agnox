@@ -9,6 +9,26 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { verifyToken, extractTokenFromHeader } from '../utils/jwt';
 
 /**
+ * Public paths that do not require authentication
+ */
+const PUBLIC_PATHS = [
+  '/api/auth/login',
+  '/api/auth/signup',
+  '/api/auth/register',
+  '/api/auth/refresh',
+  '/__webpack_hmr',
+  '/health',
+  '/documentation'
+];
+
+/**
+ * Check if a request path is public (doesn't require auth)
+ */
+function isPublicPath(url: string): boolean {
+  return PUBLIC_PATHS.some(publicPath => url.startsWith(publicPath));
+}
+
+/**
  * User context injected into request after authentication
  */
 export interface IUserContext {
@@ -32,6 +52,7 @@ declare module 'fastify' {
  *
  * Verifies JWT token and injects user context into request.
  * Returns 401 Unauthorized if token is missing or invalid.
+ * Bypasses authentication for public paths (login, signup, etc.)
  *
  * @example
  * app.get('/api/protected', { preHandler: authMiddleware }, async (request, reply) => {
@@ -44,6 +65,11 @@ export async function authMiddleware(
   request: FastifyRequest,
   reply: FastifyReply
 ): Promise<void> {
+  // Bypass authentication for public paths
+  if (isPublicPath(request.url)) {
+    return;
+  }
+
   // Extract token from Authorization header
   const token = extractTokenFromHeader(request.headers.authorization);
 
@@ -78,6 +104,86 @@ export async function authMiddleware(
   if (process.env.LOG_AUTH === 'true') {
     console.log(`[AUTH] User ${request.user.userId} (${request.user.role}) from org ${request.user.organizationId}`);
   }
+}
+
+/**
+ * Create API Key authentication middleware factory
+ *
+ * Creates middleware that supports both x-api-key header and JWT Bearer token.
+ * API key is checked first, then falls back to JWT.
+ *
+ * @param db - MongoDB database instance
+ * @returns Middleware function
+ *
+ * @example
+ * const authWithApiKey = createApiKeyAuthMiddleware(db);
+ * app.get('/api/executions', { preHandler: authWithApiKey }, handler);
+ */
+export function createApiKeyAuthMiddleware(db: any) {
+  // Import dynamically to avoid circular dependency
+  const apiKeyUtils = require('../utils/apiKeys.js');
+
+  return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+    // Check for API key first
+    const apiKey = request.headers['x-api-key'] as string;
+
+    if (apiKey) {
+      const validation = await apiKeyUtils.validateApiKey(apiKey, db);
+
+      if (validation.valid && validation.user) {
+        request.user = validation.user;
+
+        // Update last used timestamp (non-blocking)
+        if (validation.keyId) {
+          apiKeyUtils.updateApiKeyLastUsed(validation.keyId, db).catch(() => { });
+        }
+
+        if (process.env.LOG_AUTH === 'true') {
+          console.log(`[AUTH/API-KEY] User ${request.user.userId} authenticated via API key`);
+        }
+        return;
+      }
+
+      // Invalid API key - return 401
+      return reply.code(401).send({
+        success: false,
+        error: 'Invalid API key',
+        message: 'The provided API key is invalid or has been revoked.'
+      });
+    }
+
+    // Fall back to JWT authentication
+    const token = extractTokenFromHeader(request.headers.authorization);
+
+    if (!token) {
+      return reply.code(401).send({
+        success: false,
+        error: 'Authentication required',
+        message: 'No API key or Bearer token provided. Use x-api-key header or Authorization: Bearer.'
+      });
+    }
+
+    const payload = verifyToken(token);
+
+    if (!payload) {
+      return reply.code(401).send({
+        success: false,
+        error: 'Invalid token',
+        message: 'Token is invalid or expired. Please login again.'
+      });
+    }
+
+    request.user = {
+      userId: payload.userId,
+      email: payload.email,
+      organizationId: payload.organizationId,
+      role: payload.role as 'admin' | 'developer' | 'viewer'
+    };
+
+    if (process.env.LOG_AUTH === 'true') {
+      console.log(`[AUTH/JWT] User ${request.user.userId} (${request.user.role}) from org ${request.user.organizationId}`);
+    }
+  };
 }
 
 /**
