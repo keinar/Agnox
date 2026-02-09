@@ -39,7 +39,7 @@ const config: Config = {
           sidebarPath: './sidebars.ts',
           editUrl: 'https://github.com/keinar/Agnostic-Automation-Center/tree/main/',
         },
-        blog: false, // Disable blog
+        blog: false,
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -51,24 +51,26 @@ const config: Config = {
     image: 'img/docusaurus-social-card.jpg',
     colorMode: {
       defaultMode: 'dark',
-      respectPrefersColorScheme: true,
+      disableSwitch: false,
+      respectPrefersColorScheme: false,
     },
     navbar: {
-      title: 'Agnostic Automation Center',
-      logo: {
-        alt: 'AAC Logo',
-        src: 'img/logo.svg',
-      },
+      title: 'Agnostic Automation',
+      style: 'dark',
+      // logo: {
+      //   alt: 'AAC Logo',
+      //   src: 'img/logo.svg',
+      // },
       items: [
         {
           type: 'docSidebar',
           sidebarId: 'docsSidebar',
           position: 'left',
-          label: 'Documentation',
+          label: 'Docs',
         },
         {
           to: '/docs/integration/quickstart',
-          label: 'Tutorial',
+          label: 'Quick Start',
           position: 'left',
         },
         {
@@ -98,27 +100,44 @@ const config: Config = {
               to: '/docs/api/README',
             },
             {
-              label: 'Setup Guide',
+              label: 'Deployment',
               to: '/docs/setup/deployment',
             },
           ],
         },
         {
-          title: 'Resources',
+          title: 'Product',
+          items: [
+            {
+              label: 'Dashboard',
+              href: 'https://automation.keinar.com',
+            },
+            {
+              label: 'Status',
+              href: 'https://status.automation.keinar.com',
+            },
+          ],
+        },
+        {
+          title: 'Community',
           items: [
             {
               label: 'GitHub',
               href: 'https://github.com/keinar/Agnostic-Automation-Center',
             },
+            {
+              label: 'Issues',
+              href: 'https://github.com/keinar/Agnostic-Automation-Center/issues',
+            },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Agnostic Automation Center. Built with Docusaurus.`,
+      copyright: `© ${new Date().getFullYear()} Agnostic Automation Center`,
     },
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
-      additionalLanguages: ['bash', 'json', 'yaml', 'typescript'],
+      additionalLanguages: ['bash', 'json', 'yaml', 'typescript', 'docker'],
     },
   } satisfies Preset.ThemeConfig,
 };
