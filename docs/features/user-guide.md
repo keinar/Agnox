@@ -129,19 +129,46 @@ When approaching plan limits (80%), the dashboard displays warnings.
    - **Environment**: Select Dev/Staging/Prod
 3. Click **Start Execution**
 
-### From CI/CD
+### From CI/CD (Recommended: API Keys)
 
-Use the API with your JWT token:
+Generate an API key (see section below) and use in your pipeline:
 
 ```bash
-curl -X POST https://your-api/api/execution-request \
-  -H "Authorization: Bearer YOUR_TOKEN" \
+curl -X POST https://api.automation.keinar.com/api/executions \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
   -d '{"image": "...", "command": "..."}'
 ```
 
 ---
 
-## 8. Viewing Test Results
+## 8. API Keys (CI/CD Integration)
+
+### Generating an API Key
+
+1. Go to **Settings → Profile** tab
+2. Scroll to **API Access** section
+3. Click **Generate New Key**
+4. Enter a name (e.g., "GitHub Actions", "Jenkins")
+5. **Copy the key immediately** - it's only shown once!
+
+### Using API Keys
+
+- Include in requests: `x-api-key: pk_live_...`
+- Keys inherit your user permissions
+- Track usage via "Last Used" timestamp
+
+### Revoking Keys
+
+1. Go to **Settings → Profile → API Access**
+2. Click **Revoke** next to the key
+3. Key is immediately invalidated
+
+> Store keys securely in CI/CD secrets (GitHub Secrets, GitLab Variables, etc.)
+
+---
+
+## 9. Viewing Test Results
 
 ### Live Monitoring
 

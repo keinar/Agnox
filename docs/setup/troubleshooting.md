@@ -191,6 +191,63 @@ Common issues and solutions for the Agnostic Automation Center.
 
 ---
 
+### Rate Limit Errors (429 Too Many Requests)
+
+**Symptom:** API returns 429 status code
+
+**Solutions:**
+
+1. **Check current rate limits:**
+   - Auth endpoints: 5 requests/min per IP
+   - API endpoints: 100 requests/min per organization
+   - Admin actions: 10 requests/min per organization
+
+2. **Wait for the rate limit window to reset** (typically 60 seconds)
+
+3. **Manual rate limit reset (development only):**
+   ```bash
+   docker exec -it automation-redis redis-cli
+   > KEYS rl:*
+   > DEL rl:api:<your-org-id>
+   > exit
+   ```
+
+4. **Check if you're running automation against the API:**
+   - Consider adding delays between requests
+   - Use API keys for CI/CD to track usage separately
+
+---
+
+### Invalid Credentials When Switching Environments
+
+**Symptom:** Login fails after changing from Cloud to Local database (or vice versa)
+
+**Cause:** Each database environment has separate user accounts.
+
+**Solutions:**
+
+1. **Check your MONGO_URI in `.env`:**
+   ```bash
+   # Cloud (MongoDB Atlas)
+   MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/automation_platform
+   
+   # Local (Docker container)
+   MONGO_URI=mongodb://automation-mongodb:27017/automation_platform
+   ```
+
+2. **Create a new account** in the target environment (users don't transfer between databases)
+
+3. **Clear browser localStorage** to remove stale JWT tokens:
+   ```javascript
+   localStorage.clear();
+   // Then refresh and login
+   ```
+
+4. **Restart services** after changing `MONGO_URI`:
+   ```bash
+   docker-compose down && docker-compose up -d
+   ```
+
 ## 🧪 Test Execution Issues
 
 ### Tests Stuck in "PENDING" Status

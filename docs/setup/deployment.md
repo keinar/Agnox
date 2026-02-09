@@ -177,6 +177,36 @@ else
 fi
 ```
 
+### 4. Database Connection (MONGO_URI)
+
+> [!IMPORTANT]
+> The `docker-compose.yml` uses `${MONGO_URI}` from your `.env` file to determine the database connection. **This is no longer hardcoded**.
+
+Configure based on your environment:
+
+| Mode | MONGO_URI Value | Use Case |
+|------|----------------|----------|
+| **Cloud** | `mongodb+srv://user:pass@cluster.mongodb.net/automation_platform` | Production/Staging with MongoDB Atlas |
+| **Local** | `mongodb://automation-mongodb:27017/automation_platform` | Local development with Docker container |
+
+**Setting Cloud Connection:**
+```bash
+# In .env file
+MONGO_URI=mongodb+srv://your-user:your-password@cluster.mongodb.net/automation_platform?retryWrites=true&w=majority
+```
+
+**Setting Local Connection:**
+```bash
+# In .env file (uses Docker MongoDB container)
+MONGO_URI=mongodb://automation-mongodb:27017/automation_platform
+```
+
+> [!WARNING]
+> When switching between Cloud and Local:
+> - Each database has separate user accounts
+> - You must create a new account in the new environment
+> - Existing JWT tokens will be invalid
+
 ---
 
 ## 📊 Database Migration

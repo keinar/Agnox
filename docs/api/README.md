@@ -4,11 +4,20 @@ Complete API reference for the Agnostic Automation Center.
 
 ## Authentication Required
 
-All endpoints except `/api/auth/signup` and `/api/auth/login` require a valid JWT token in the `Authorization` header:
+All endpoints except public routes (`/api/auth/signup`, `/api/auth/login`, `/api/invitations/validate/:token`) require authentication.
 
+### Option 1: JWT Bearer Token (Dashboard Users)
 ```
 Authorization: Bearer <jwt-token>
 ```
+
+### Option 2: API Key (CI/CD & Automation)
+```
+x-api-key: pk_live_<your-api-key>
+```
+
+> **Generate API keys:** Settings → Profile → API Access section.
+> Keys are shown only once at creation - store them securely!
 
 ## Base URL
 
