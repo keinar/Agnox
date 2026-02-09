@@ -410,18 +410,44 @@ export async function organizationRoutes(
       const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
       const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
+      // DEBUG: Log the query parameters
+      app.log.info({
+        msg: 'Usage query parameters',
+        organizationId: currentUser.organizationId,
+        orgIdObjectId: orgId.toString(),
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      });
+
       // Count executions in current month
       // Note: organizationId may be stored as string or ObjectId depending on source
       // Use $or to match both formats for consistency
+      // FIXED: Use startTime field (what execution records actually store) not createdAt
       const executionCount = await executionsCollection.countDocuments({
         $or: [
           { organizationId: currentUser.organizationId },
           { organizationId: orgId }
         ],
-        createdAt: {
+        startTime: {
           $gte: startDate,
           $lte: endDate
         }
+      });
+
+      // DEBUG: Also count total executions (without date filter) to diagnose issues
+      const totalExecutions = await executionsCollection.countDocuments({
+        $or: [
+          { organizationId: currentUser.organizationId },
+          { organizationId: orgId }
+        ]
+      });
+
+      // DEBUG: Log the results
+      app.log.info({
+        msg: 'Usage query results',
+        organizationId: currentUser.organizationId,
+        executionCountThisMonth: executionCount,
+        totalExecutionsAllTime: totalExecutions
       });
 
       // Count active users (users collection stores organizationId as ObjectId)
