@@ -4,6 +4,8 @@
 
 Run any containerized automation suite (Playwright, Pytest, JUnit, Cypress, etc.) on a remote server with real-time monitoring, live logs, and AI-powered failure analysis. Built for teams with complete data isolation between organizations.
 
+[![Documentation](https://img.shields.io/badge/Documentation-Live-violet?style=for-the-badge&logo=docusaurus)](https://docs.automation.keinar.com)
+
 ![Architecture](https://img.shields.io/badge/Architecture-Microservices-blue?style=flat-square)
 ![Multi-Tenant](https://img.shields.io/badge/Multi--Tenant-SaaS-orange?style=flat-square)
 ![Docker](https://img.shields.io/badge/Docker-Agnostic-2496ED?style=flat-square)
@@ -708,9 +710,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support & Contact
 
-- **Documentation:** [/docs/](docs/)
-- **Issues:** [GitHub Issues](https://github.com/your-org/agnostic-automation-center/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/your-org/agnostic-automation-center/discussions)
+- **Documentation:** [docs.automation.keinar.com](https://docs.automation.keinar.com)
+- **Issues:** [GitHub Issues](https://github.com/keinar/Agnostic-Automation-Center/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/keinar/Agnostic-Automation-Center/discussions)
 - **Email:** info@digital-solution.co.il
 
 ---

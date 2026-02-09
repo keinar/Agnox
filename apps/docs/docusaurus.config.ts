@@ -30,6 +30,19 @@ const config: Config = {
     locales: ['en'],
   },
 
+  plugins: [
+    [
+      require.resolve('@easyops-cn/docusaurus-search-local'),
+      {
+        hashed: true,
+        indexDocs: true,
+        indexBlog: false,
+        language: ['en'],
+        highlightSearchTermsOnTargetPage: true,
+      },
+    ],
+  ],
+
   presets: [
     [
       'classic',
@@ -74,7 +87,7 @@ const config: Config = {
           position: 'left',
         },
         {
-          to: '/docs/api/README',
+          to: '/docs/api',
           label: 'API',
           position: 'left',
         },
@@ -97,7 +110,7 @@ const config: Config = {
             },
             {
               label: 'API Reference',
-              to: '/docs/api/README',
+              to: '/docs/api',
             },
             {
               label: 'Deployment',
