@@ -1,30 +1,126 @@
 /**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
+ * Agnostic Automation Center - Custom Theme
+ * Modern Violet/Blue color scheme (Playwright/Stripe inspired)
  */
 
-/* You can override the default Infima variables here. */
+/* Light mode colors */
 :root {
-  --ifm-color-primary: #2e8555;
-  --ifm-color-primary-dark: #29784c;
-  --ifm-color-primary-darker: #277148;
-  --ifm-color-primary-darkest: #205d3b;
-  --ifm-color-primary-light: #33925d;
-  --ifm-color-primary-lighter: #359962;
-  --ifm-color-primary-lightest: #3cad6e;
+  --ifm-color-primary: #4e5ba6;
+  --ifm-color-primary-dark: #465194;
+  --ifm-color-primary-darker: #424d8c;
+  --ifm-color-primary-darkest: #364073;
+  --ifm-color-primary-light: #5664b8;
+  --ifm-color-primary-lighter: #5a69c2;
+  --ifm-color-primary-lightest: #6778d6;
   --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --docusaurus-highlighted-code-line-bg: rgba(78, 91, 166, 0.1);
+  
+  /* Typography */
+  --ifm-font-family-base: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --ifm-heading-font-family: var(--ifm-font-family-base);
 }
 
-/* For readability concerns, you should choose a lighter palette in dark mode. */
+/* Dark mode colors - Primary experience */
 [data-theme='dark'] {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --ifm-color-primary: #6778d6;
+  --ifm-color-primary-dark: #5664b8;
+  --ifm-color-primary-darker: #4e5ba6;
+  --ifm-color-primary-darkest: #364073;
+  --ifm-color-primary-light: #7a8ae0;
+  --ifm-color-primary-lighter: #8d9ce8;
+  --ifm-color-primary-lightest: #a8b4f0;
+  --docusaurus-highlighted-code-line-bg: rgba(103, 120, 214, 0.2);
+  
+  /* Darker backgrounds for premium feel */
+  --ifm-background-color: #0d1117;
+  --ifm-background-surface-color: #161b22;
+  --ifm-navbar-background-color: #0d1117;
+  --ifm-footer-background-color: #0d1117;
+  
+  /* Code block styling */
+  --ifm-code-background: #1e2430;
+  --prism-background-color: #0d1117;
+}
+
+/* Dark navbar (Playwright style) */
+.navbar--dark {
+  --ifm-navbar-background-color: #0d1117;
+  --ifm-navbar-shadow: 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Hero section enhancements */
+.hero--primary {
+  background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1a1f2e 100%);
+}
+
+[data-theme='dark'] .hero--primary {
+  background: linear-gradient(135deg, #0d1117 0%, #0f1419 50%, #161b22 100%);
+}
+
+/* Code blocks - high contrast in dark mode */
+[data-theme='dark'] pre {
+  background-color: #0d1117 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] code {
+  background-color: rgba(110, 118, 129, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Feature cards */
+.feature-card {
+  background: linear-gradient(135deg, rgba(103, 120, 214, 0.1) 0%, rgba(103, 120, 214, 0.05) 100%);
+  border: 1px solid rgba(103, 120, 214, 0.2);
+  border-radius: 12px;
+  padding: 2rem;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(103, 120, 214, 0.4);
+  box-shadow: 0 12px 40px rgba(103, 120, 214, 0.15);
+}
+
+/* Button enhancements */
+.button--primary {
+  background: linear-gradient(135deg, #4e5ba6 0%, #6778d6 100%);
+  border: none;
+  box-shadow: 0 4px 14px rgba(103, 120, 214, 0.4);
+  transition: all 0.3s ease;
+}
+
+.button--primary:hover {
+  background: linear-gradient(135deg, #5664b8 0%, #7a8ae0 100%);
+  box-shadow: 0 6px 20px rgba(103, 120, 214, 0.5);
+  transform: translateY(-2px);
+}
+
+.button--secondary {
+  border: 2px solid var(--ifm-color-primary);
+  background: transparent;
+  color: var(--ifm-color-primary);
+}
+
+[data-theme='dark'] .button--secondary {
+  border-color: #6778d6;
+  color: #6778d6;
+}
+
+/* Sidebar enhancements */
+[data-theme='dark'] .menu__link--active {
+  background: rgba(103, 120, 214, 0.15);
+  border-left: 3px solid #6778d6;
+}
+
+/* Footer styling */
+.footer--dark {
+  background-color: #0d1117;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
 }

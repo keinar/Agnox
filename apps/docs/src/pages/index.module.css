@@ -1,23 +1,162 @@
 /**
- * CSS files with the .module.css suffix will be treated as CSS modules
- * and scoped locally.
+ * Homepage styles - Modern, dark-mode centric design
  */
 
 .heroBanner {
-  padding: 4rem 0;
+  padding: 6rem 0;
   text-align: center;
   position: relative;
   overflow: hidden;
+  background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1a1f2e 100%);
 }
 
-@media screen and (max-width: 996px) {
-  .heroBanner {
-    padding: 2rem;
-  }
+.heroTitle {
+  font-size: 3.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #ffffff 0%, #a8b4f0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.heroSubtitle {
+  font-size: 1.35rem;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 700px;
+  margin: 0 auto 2.5rem;
+  line-height: 1.7;
 }
 
 .buttons {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.buttons .button {
+  padding: 0.875rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.buttons .button--primary {
+  background: linear-gradient(135deg, #4e5ba6 0%, #6778d6 100%);
+  border: none;
+  color: white;
+  box-shadow: 0 4px 14px rgba(103, 120, 214, 0.4);
+}
+
+.buttons .button--primary:hover {
+  background: linear-gradient(135deg, #5664b8 0%, #7a8ae0 100%);
+  box-shadow: 0 6px 20px rgba(103, 120, 214, 0.5);
+  transform: translateY(-2px);
+  color: white;
+}
+
+.buttons .button--secondary {
+  background: transparent;
+  border: 2px solid rgba(103, 120, 214, 0.6);
+  color: #a8b4f0;
+}
+
+.buttons .button--secondary:hover {
+  background: rgba(103, 120, 214, 0.1);
+  border-color: #6778d6;
+  color: #6778d6;
+}
+
+/* Features Section */
+.features {
+  padding: 5rem 0;
+  background-color: var(--ifm-background-color);
+}
+
+.featureCard {
+  background: linear-gradient(135deg, rgba(103, 120, 214, 0.08) 0%, rgba(103, 120, 214, 0.02) 100%);
+  border: 1px solid rgba(103, 120, 214, 0.15);
+  border-radius: 16px;
+  padding: 2rem;
+  height: 100%;
+  margin-bottom: 2rem;
+  transition: all 0.3s ease;
+}
+
+.featureCard:hover {
+  transform: translateY(-4px);
+  border-color: rgba(103, 120, 214, 0.35);
+  box-shadow: 0 12px 40px rgba(103, 120, 214, 0.1);
+}
+
+.featureIcon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.featureTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: var(--ifm-heading-color);
+}
+
+.featureDescription {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Light mode adjustments */
+[data-theme='light'] .heroBanner {
+  background: linear-gradient(135deg, #f8f9fc 0%, #eef1f8 50%, #e8ecf4 100%);
+}
+
+[data-theme='light'] .heroTitle {
+  background: linear-gradient(135deg, #1a1f2e 0%, #4e5ba6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+[data-theme='light'] .heroSubtitle {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme='light'] .buttons .button--secondary {
+  color: #4e5ba6;
+  border-color: rgba(78, 91, 166, 0.4);
+}
+
+[data-theme='light'] .featureDescription {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+/* Responsive */
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 3rem 1rem;
+  }
+
+  .heroTitle {
+    font-size: 2.5rem;
+  }
+
+  .heroSubtitle {
+    font-size: 1.1rem;
+  }
+
+  .buttons {
+    flex-direction: column;
+  }
+
+  .buttons .button {
+    width: 100%;
+    max-width: 280px;
+  }
 }
