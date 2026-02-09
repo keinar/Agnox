@@ -18,10 +18,13 @@
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { MongoClient, ObjectId } from 'mongodb';
+import * as fs from 'fs';
+import * as path from 'path';
 import { authMiddleware, adminOnly } from '../middleware/auth.js';
 import { checkUsageAlerts } from '../utils/usageAlerts.js';
 
 const DB_NAME = 'automation_platform';
+const REPORTS_DIR = process.env.REPORTS_DIR || path.join(process.cwd(), 'reports');
 
 /**
  * Audit log entry for organization actions
@@ -62,9 +65,46 @@ async function logAuditEvent(
 }
 
 /**
+ * Recursively calculate the total size of all files in a directory
+ *
+ * @param dirPath - Path to the directory
+ * @returns Total size in bytes
+ */
+function getDirectorySizeSync(dirPath: string): number {
+  let totalSize = 0;
+
+  try {
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name);
+
+      if (entry.isDirectory()) {
+        // Recursively sum subdirectory sizes
+        totalSize += getDirectorySizeSync(fullPath);
+      } else if (entry.isFile()) {
+        try {
+          const stats = fs.statSync(fullPath);
+          totalSize += stats.size;
+        } catch {
+          // Skip files we can't access
+        }
+      }
+    }
+  } catch {
+    // Directory doesn't exist or can't be read
+    return 0;
+  }
+
+  return totalSize;
+}
+
+/**
  * Calculate storage usage for organization
  *
- * @param db - Database instance
+ * Scans the organization's report directory and sums the size of all files.
+ *
+ * @param db - Database instance (unused, kept for API compatibility)
  * @param organizationId - Organization ID
  * @returns Storage used in bytes
  */
@@ -72,15 +112,16 @@ async function calculateStorageUsage(
   db: any,
   organizationId: string
 ): Promise<number> {
-  // TODO: Implement actual storage calculation
-  // For now, return 0 as placeholder
-  // In production, this would:
-  // 1. Calculate size of report directories
-  // 2. Sum artifact storage
-  // 3. Count screenshot sizes
-  // 4. Include log file sizes
+  // Build the path to the organization's report directory
+  const orgReportsDir = path.join(REPORTS_DIR, organizationId);
 
-  return 0;
+  // Check if the directory exists
+  if (!fs.existsSync(orgReportsDir)) {
+    return 0;
+  }
+
+  // Calculate total size of all files in the directory
+  return getDirectorySizeSync(orgReportsDir);
 }
 
 export async function organizationRoutes(
