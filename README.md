@@ -318,15 +318,19 @@ The platform is **framework-agnostic** - any Docker-based test framework works:
 
 ## ⚙️ Environment Variables
 
-### Required Variables
+> **📢 For SaaS Users:** If you're using the hosted platform at `automation.keinar.com`, you don't need to configure any infrastructure variables. Just [generate an API key](docs/integration/quickstart.md) and integrate!
+>
+> The variables below are only needed for **self-hosting**. See [Self-Hosting Guide](docs/internal/self-hosting.md) for details.
+
+### Required Variables (Self-Hosting Only)
 
 ```env
 # Server
 PORT=3000
 NODE_ENV=production
 
-# MongoDB
-MONGODB_URL=mongodb://localhost:27017/automation_platform
+# Database (MONGO_URI determines Cloud vs Local)
+MONGO_URI=mongodb://localhost:27017/automation_platform
 
 # Redis (Rate Limiting, Sessions)
 REDIS_URL=redis://localhost:6379
@@ -335,24 +339,21 @@ REDIS_URL=redis://localhost:6379
 JWT_SECRET=your-super-secret-key-min-32-chars
 
 # Google AI (Root Cause Analysis)
-GOOGLE_AI_API_KEY=your-gemini-api-key
+GEMINI_API_KEY=your-gemini-api-key
 ```
 
-### Billing (Stripe)
+### Optional: Billing & Email (Self-Hosting Only)
+
+> These are managed by the platform for SaaS users. Only configure if self-hosting.
 
 ```env
+# Stripe (for subscription billing)
 STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRICE_TEAM=price_team_plan_id
-STRIPE_PRICE_ENTERPRISE=price_enterprise_plan_id
-```
 
-### Email (SendGrid)
-
-```env
+# SendGrid (for email notifications)
 SENDGRID_API_KEY=SG....
-SENDGRID_FROM_EMAIL=noreply@automation.keinar.com
-SENDGRID_FROM_NAME=Your App Name
+FROM_EMAIL=noreply@automation.keinar.com
 ```
 
 ### Frontend
@@ -489,7 +490,7 @@ See the [Self-Hosting Guide](docs/internal/self-hosting.md) for deployment instr
 Comprehensive documentation available in `/docs/`:
 
 ### Setup & Deployment
-- **[Quick Start Guide](docs/setup/quickstart.md)** - Get started in 5 minutes _(coming soon)_
+- **[Integration Quickstart](docs/integration/quickstart.md)** - Get started in 5 minutes
 - **[Deployment Guide](docs/setup/deployment.md)** - Production deployment instructions
 - **[Infrastructure Guide](docs/setup/infrastructure.md)** - Server requirements and setup
 - **[CI/CD Guide](docs/setup/ci-cd.md)** - GitHub Actions configuration
@@ -501,15 +502,18 @@ Comprehensive documentation available in `/docs/`:
 
 ### API Documentation
 - **[API Overview](docs/api/README.md)** - Complete API reference
-- **[Authentication API](docs/api/authentication.md)** - Signup, login, JWT tokens
+- **[Authentication API](docs/api/authentication.md)** - Signup, login, JWT tokens & API Keys
 
 ### Security
 - **[Security Audit](docs/setup/security-audit.md)** - Comprehensive security assessment
 - **[Client Integration Guide](docs/setup/client-integration.md)** - How to integrate test suites
 
+### Self-Hosting
+- **[Self-Hosting Guide](docs/internal/self-hosting.md)** - Deploy on your own infrastructure
+
 ### Implementation Records
 - **[Phase 1 Summary](docs/implementation/phase-1/summary.md)** - Multi-tenant foundation
-- **[Phase 2 Progress](docs/implementation/phase-2/progress.md)** - Current development
+- **[Phase 2 Progress](docs/implementation/phase-2/progress.md)** - UI and security enhancements
 
 ---
 
@@ -666,18 +670,21 @@ Please read our [Contributing Guide](CONTRIBUTING.md) _(coming soon)_ for detail
 
 ## 🗺️ Roadmap
 
-### Q1 2026
+### Q1 2026 ✅ Complete
 - ✅ Phase 1: Multi-tenant foundation
 - ✅ Phase 2: User management UI and security enhancements
-- 🎯 Phase 3: Advanced dashboard features and analytics
+- ✅ Role-based access control (Admin/Developer/Viewer)
+- ✅ API Key Management for CI/CD integration
+- ✅ Redis-based rate limiting
+- ✅ Stripe billing foundation
 
 ### Q2 2026
-- 📋 Phase 3: Advanced analytics and insights
-- 📋 Custom role permissions (fine-grained RBAC)
+- 🎯 Phase 3: Advanced analytics and insights
 - 📋 Audit logging and compliance features
+- 📋 Webhook integrations
 
 ### Q3 2026
-- 📋 Phase 4: Enterprise features (SSO, advanced billing)
+- 📋 Phase 4: Enterprise features (SSO/SAML)
 - 📋 Terraform/IaC templates
 - 📋 99.9% uptime SLA
 
