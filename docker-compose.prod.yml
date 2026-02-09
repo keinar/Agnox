@@ -119,6 +119,17 @@ services:
     networks:
       - app-network
 
+  docs:
+    build:
+      context: .
+      dockerfile: apps/docs/Dockerfile
+    container_name: automation-docs
+    restart: always
+    expose:
+      - "80"
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge

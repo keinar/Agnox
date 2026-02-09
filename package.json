@@ -11,7 +11,9 @@
     "test": "npm run test --workspaces",
     "migration:dry-run": "ts-node migrations/001-add-organization-to-existing-data.ts --dry-run",
     "migration:run": "ts-node migrations/001-add-organization-to-existing-data.ts",
-    "test:system": "docker compose --profile test up --build --exit-code-from system-sanity"
+    "test:system": "docker compose --profile test up --build --exit-code-from system-sanity",
+    "docs:start": "npm run start --prefix apps/docs",
+    "docs:build": "npm run build --prefix apps/docs"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
