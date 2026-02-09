@@ -192,7 +192,11 @@ export async function setupRoutes(
 
             const collection = dbClient.db(DB_NAME).collection('executions');
             const executions = await collection
-                .find({ organizationId })
+                .find({
+                    organizationId,
+                    // Soft delete: Exclude records that have been marked as deleted
+                    deletedAt: { $exists: false }
+                })
                 .sort({ startTime: -1 })
                 .limit(50)
                 .toArray();
@@ -298,7 +302,9 @@ export async function setupRoutes(
         }
     });
 
-    // Delete execution by ID
+    // Soft-delete execution by ID
+    // NOTE: We use soft delete to prevent billing quota abuse.
+    // The record remains in the database so usage counts stay accurate.
     app.delete('/api/executions/:id', async (request, reply) => {
         const { id } = request.params as { id: string };
         try {
@@ -308,13 +314,25 @@ export async function setupRoutes(
             const organizationId = request.user!.organizationId;
 
             const collection = dbClient.db(DB_NAME).collection('executions');
-            const result = await collection.deleteOne({
-                taskId: id,
-                organizationId  // Only delete if belongs to this organization
-            });
+
+            // Soft delete: Set deletedAt timestamp instead of removing the document
+            // This preserves the record for accurate billing counts
+            const result = await collection.updateOne(
+                {
+                    taskId: id,
+                    organizationId,  // Only allow deletion if belongs to this organization
+                    deletedAt: { $exists: false }  // Don't re-delete already deleted records
+                },
+                {
+                    $set: {
+                        deletedAt: new Date(),
+                        deletedBy: request.user!.userId
+                    }
+                }
+            );
 
             // Return 404 instead of 403 to prevent leaking information about other orgs
-            if (result.deletedCount === 0) {
+            if (result.matchedCount === 0) {
                 return reply.status(404).send({
                     success: false,
                     error: 'Execution not found'
