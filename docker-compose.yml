@@ -32,9 +32,6 @@ services:
   mongodb:
     image: mongo:6.0
     container_name: automation-mongodb
-    profiles:
-      - test
-      - dev
     ports:
       - "27017:27017"
     networks:
@@ -58,9 +55,9 @@ services:
     environment:
       - PORT=3000
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      # MongoDB: Use service name for inter-container connectivity
-      - MONGO_URI=mongodb://mongodb:27017/automation_platform
-      - MONGODB_URL=mongodb://mongodb:27017/automation_platform
+      # MongoDB: Use cloud URI from .env file
+      - MONGO_URI=${MONGO_URI}
+      - MONGODB_URL=${MONGO_URI}
       - REPORTS_DIR=/app/reports
       - REDIS_URL=redis://redis:6379
       - INJECT_ENV_VARS=ADMIN_USER,ADMIN_PASS
@@ -120,9 +117,9 @@ services:
     environment:
       - RUNNING_IN_DOCKER=true
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      # MongoDB: Use service name for inter-container connectivity
-      - MONGO_URI=mongodb://mongodb:27017/automation_platform
-      - MONGODB_URL=mongodb://mongodb:27017/automation_platform
+      # MongoDB: Use cloud URI from .env file
+      - MONGO_URI=${MONGO_URI}
+      - MONGODB_URL=${MONGO_URI}
       - PRODUCER_URL=http://producer:3000
       - GEMINI_API_KEY=${GEMINI_API_KEY:-mock_gemini}
       - BASE_URL=${BASE_URL}

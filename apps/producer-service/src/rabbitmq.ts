@@ -6,22 +6,26 @@ export class RabbitMqService {
 
     async connect() {
         const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
-        let retries = 5;
+        const maxRetries = 15;
+        let retries = maxRetries;
+        let delay = 2000; // Start with 2 seconds
+
         while (retries > 0) {
             try {
-                console.log(`Connecting to RabbitMQ at ${RABBITMQ_URL}...`);
+                console.log(`Connecting to RabbitMQ at ${RABBITMQ_URL}... (attempt ${maxRetries - retries + 1}/${maxRetries})`);
                 this.connection = await amqp.connect(RABBITMQ_URL);
                 this.channel = await this.connection.createChannel();
                 await this.channel.assertQueue('test_queue', { durable: true });
-                console.log('Connected to RabbitMQ');
+                console.log('✅ Connected to RabbitMQ');
                 return;
             } catch (error) {
-                console.error('Failed to connect to RabbitMQ', error);
+                console.error(`Failed to connect to RabbitMQ (retry in ${delay / 1000}s):`, (error as Error).message);
                 retries--;
-                await new Promise(res => setTimeout(res, 5000));
+                await new Promise(res => setTimeout(res, delay));
+                delay = Math.min(delay * 1.5, 10000); // Exponential backoff, max 10s
             }
         }
-        console.error('Could not connect to RabbitMQ after multiple attempts.');
+        console.error('❌ Could not connect to RabbitMQ after multiple attempts.');
         process.exit(1);
     }
 

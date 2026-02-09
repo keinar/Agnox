@@ -38,37 +38,53 @@ export function setupGlobalAuth(
     apiRateLimit: (request: any, reply: any) => Promise<void>
 ): void {
     app.addHook('preHandler', async (request, reply) => {
+        // Debug logging
+        console.log(`[GlobalAuth] ${request.method} ${request.url}`);
+
         // Socket.io handshake - skip auth middleware (handled separately in Socket.io connection handler)
         if (request.url.startsWith('/socket.io/')) {
             return;
         }
 
-        // Public routes - no authentication required
-        const publicRoutes = [
-            '/',
+        // Public route prefixes - no authentication required
+        const publicPrefixes = [
             '/api/auth/signup',
             '/api/auth/login',
+            '/api/auth/register',
+            '/api/auth/refresh',
+            '/__webpack_hmr',
             '/config/defaults',
             '/executions/update',  // Internal worker callback
-            '/executions/log'      // Internal worker callback
+            '/executions/log',     // Internal worker callback
+            '/health'
         ];
 
         // Invitation validation endpoint (public)
         if (request.url.startsWith('/api/invitations/validate/')) {
+            console.log('[GlobalAuth] Skipping - invitation validation');
             return;
         }
 
         // Static files (reports) - no auth
         if (request.url.startsWith('/reports/')) {
+            console.log('[GlobalAuth] Skipping - reports');
             return;
         }
 
-        // Check if route is public
-        if (publicRoutes.includes(request.url)) {
+        // Root path
+        if (request.url === '/' || request.url === '') {
+            return;
+        }
+
+        // Check if route is public (using startsWith for prefix matching)
+        const isPublic = publicPrefixes.some(prefix => request.url.startsWith(prefix));
+        if (isPublic) {
+            console.log(`[GlobalAuth] Skipping auth - public path: ${request.url}`);
             return;
         }
 
         // Apply auth middleware to all other routes
+        console.log(`[GlobalAuth] Applying auth to: ${request.url}`);
         await authMiddleware(request, reply);
 
         // Apply rate limiting after authentication (uses organizationId from request.user)

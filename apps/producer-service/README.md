@@ -89,7 +89,7 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 
 # SendGrid
 SENDGRID_API_KEY=SG....
-SENDGRID_FROM_EMAIL=noreply@yourapp.com
+SENDGRID_FROM_EMAIL=noreply@automation.keinar.com
 
 # Google AI
 GOOGLE_AI_API_KEY=your-gemini-key

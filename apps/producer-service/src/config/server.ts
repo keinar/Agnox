@@ -111,6 +111,11 @@ export function createServer(): FastifyInstance {
         decorateReply: false
     });
 
+    // Silence webpack HMR requests from dashboard dev server
+    app.get('/__webpack_hmr', async (_request, reply) => {
+        return reply.code(204).send();
+    });
+
     return app;
 }
 
