@@ -102,9 +102,14 @@ export async function checkPlanLimits(
       const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
       const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
+      // FIXED: Use startTime (what executions actually store) not createdAt
+      // Also use $or to match both string and ObjectId formats for organizationId
       used = await db.collection('executions').countDocuments({
-        organizationId,
-        createdAt: { $gte: startDate, $lte: endDate }
+        $or: [
+          { organizationId },
+          { organizationId: new ObjectId(organizationId) }
+        ],
+        startTime: { $gte: startDate, $lte: endDate }
       });
       limit = org.limits?.maxTestRuns || 100;
       break;
