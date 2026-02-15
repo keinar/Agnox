@@ -46,20 +46,21 @@ These URLs are injected into your test container as `BASE_URL` at runtime.
 
 ## 3. Running Tests
 
-## 3. Running Tests
+### Option A: Via Dashboard (Recommended)
 
-### Option A: Via Dashboard (Primary)
 1. Click **Run New Test** (top right).
-2. Select your **Project** (settings are auto-filled).
+2. Select your **Project** (settings are pre-filled from Run Settings).
 3. Select the **Environment** (Dev/Staging/Prod).
-4. (Optional) Override the command or folder.
+4. (Optional) Override the folder path.
 5. Click **Start Execution**.
 
-### Option B: Via API / CI/CD
+> **Note:** The AAC CLI (`npx @keinar/aac-cli@latest init`) is used for **onboarding only** — generating your Dockerfile and pushing your image. Test execution is triggered via the Dashboard or API.
+
+### Option B: Via API
 See [API Keys section](#8-api-keys-cicd-integration) below.
 
-### Note on CLI
-The CLI (`aac-cli`) is currently used for **onboarding only** (initializing projects). Test execution is handled via the Dashboard or API to ensure centralized logging and analytics.
+### Option C: CI/CD Integration (GitHub Actions)
+Generate an API key and use the API to trigger tests from your CI pipeline.
 
 ---
 
