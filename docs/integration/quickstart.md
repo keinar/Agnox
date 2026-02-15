@@ -71,8 +71,9 @@ RUN npm install -g allure-commandline
 COPY . .
 RUN chmod +x /app/entrypoint.sh
 
-ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh"]
-CMD ["all"]
+# ⚠️ IMPORTANT: Do NOT add ENTRYPOINT or CMD
+# The AAC Worker injects the entrypoint at runtime to handle environment variables 
+# and log streaming. Adding them here will conflict with the execution engine.
 ```
 
 ### 1.3 Configure Your Framework
