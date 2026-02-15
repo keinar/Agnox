@@ -27,7 +27,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
     const [showAdvanced, setShowAdvanced] = useState(false);
 
     // Agnostic defaults
-    const [image, setImage] = useState('your_dockerhub_username/my-automation-tests:latest');
+    const [image, setImage] = useState('');
     const [command, setCommand] = useState('');
 
     useEffect(() => {
@@ -39,8 +39,19 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
     useEffect(() => {
         if (isOpen && defaults) {
             if (defaults.image) setImage(defaults.image);
-            if (defaults.baseUrl) setBaseUrl(defaults.baseUrl);
             if (defaults.folder) setSelectedFolder(defaults.folder);
+
+            // Auto-select the first environment that has a configured URL
+            if (defaults.envMapping) {
+                const envPriority = ['production', 'staging', 'development'];
+                const firstConfigured = envPriority.find(env => defaults.envMapping?.[env]);
+                if (firstConfigured) {
+                    setEnvironment(firstConfigured);
+                    setBaseUrl(defaults.envMapping[firstConfigured]);
+                }
+            } else if (defaults.baseUrl) {
+                setBaseUrl(defaults.baseUrl);
+            }
         }
     }, [defaults, isOpen]);
 
@@ -151,7 +162,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
                             value={baseUrl}
                             onChange={(e) => setBaseUrl(e.target.value)}
                             className="form-input"
-                            placeholder="https://example.com"
+                            placeholder={defaults?.baseUrl ? undefined : 'Not configured — go to Settings → Run Settings'}
                         />
                     </div>
 
@@ -208,7 +219,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
                                     value={image}
                                     onChange={(e) => setImage(e.target.value)}
                                     className="form-input"
-                                    placeholder="e.g. mcr.microsoft.com/playwright"
+                                    placeholder={defaults?.image ? undefined : 'Not configured — go to Settings → Run Settings'}
                                     style={{ fontSize: '0.8rem', fontFamily: 'monospace' }}
                                 />
                             </div>

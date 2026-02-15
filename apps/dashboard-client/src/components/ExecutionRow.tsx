@@ -51,21 +51,49 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
 
     React.useEffect(() => {
         const isFinished = ['PASSED', 'FAILED', 'UNSTABLE'].includes(execution.status);
-        if (isFinished && execution.image && token) {
-            const isProd = window.location.hostname.includes('.com');
-            const API_URL = isProd ? import.meta.env.VITE_API_URL : 'http://localhost:3000';
+        if (!isFinished || !execution.image || !token) return;
 
-            setTimeout(() => {
-                fetch(`${API_URL}/api/metrics/${encodeURIComponent(execution.image)}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
+        const isProd = window.location.hostname.includes('.com');
+        const API_URL = isProd ? import.meta.env.VITE_API_URL : 'http://localhost:3000';
+
+        let cancelled = false;
+        let timeoutId: ReturnType<typeof setTimeout>;
+        let retries = 0;
+        const MAX_RETRIES = 3;
+
+        const fetchMetrics = (delay: number) => {
+            timeoutId = setTimeout(async () => {
+                if (cancelled) return;
+                try {
+                    const res = await fetch(`${API_URL}/api/metrics/${encodeURIComponent(execution.image)}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+
+                    if (res.status === 429) {
+                        retries++;
+                        if (retries <= MAX_RETRIES) {
+                            const backoff = Math.min(10000 * Math.pow(2, retries - 1), 60000);
+                            fetchMetrics(backoff);
+                        }
+                        return;
                     }
-                })
-                    .then(res => res.json())
-                    .then(data => setMetrics(data))
-                    .catch(err => console.error("Metrics fetch failed", err));
-            }, 500);
-        }
+
+                    if (res.ok && !cancelled) {
+                        const data = await res.json();
+                        setMetrics(data);
+                    }
+                } catch (err) {
+                    if (!cancelled) console.error("Metrics fetch failed", err);
+                }
+            }, delay);
+        };
+
+        fetchMetrics(500);
+
+        return () => {
+            cancelled = true;
+            clearTimeout(timeoutId);
+        };
     }, [execution.status, execution.image, token]);
 
     const renderPerformanceInsight = () => {

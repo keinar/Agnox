@@ -31,16 +31,48 @@ async function fetchTestsStructure(token: string): Promise<string[]> {
   }
 }
 
+/**
+ * Fetch project run settings from the database.
+ * Falls back to the org's first project via /api/project-settings.
+ * Transforms the response to match the existing defaults contract
+ * expected by ExecutionModal (image, baseUrl, folder, envMapping).
+ */
 async function fetchDefaults(token: string): Promise<any> {
   try {
-    const response = await fetch(`${API_URL}/config/defaults`, {
+    const response = await fetch(`${API_URL}/api/project-settings`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
     });
-    return await response.json();
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    if (!data.success || !data.settings) return null;
+
+    const settings = data.settings;
+
+    // Build envMapping from targetUrls for the environment selector
+    const envMapping: Record<string, string> = {};
+    if (settings.targetUrls?.dev) envMapping.development = settings.targetUrls.dev;
+    if (settings.targetUrls?.staging) envMapping.staging = settings.targetUrls.staging;
+    if (settings.targetUrls?.prod) envMapping.production = settings.targetUrls.prod;
+
+    // Pick the first non-empty URL: prod → staging → dev
+    const defaultBaseUrl =
+      settings.targetUrls?.prod ||
+      settings.targetUrls?.staging ||
+      settings.targetUrls?.dev ||
+      '';
+
+    return {
+      image: settings.dockerImage || '',
+      baseUrl: defaultBaseUrl,
+      folder: settings.defaultTestFolder || 'all',
+      envMapping,
+    };
   } catch (error) {
-    console.warn('Using hardcoded defaults');
+    console.warn('Failed to fetch project settings, using empty defaults');
     return null;
   }
 }

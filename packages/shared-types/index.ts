@@ -130,6 +130,43 @@ export interface IExecution {
 }
 
 // ============================================================================
+// PROJECT & RUN SETTINGS INTERFACES
+// ============================================================================
+
+/**
+ * Project entity
+ * Represents an automation project belonging to an organization
+ */
+export interface IProject {
+    _id: ObjectId;
+    organizationId: string;
+    name: string;
+    slug: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+/**
+ * Project Run Settings entity
+ * Per-project configuration for test execution defaults.
+ * If projectId is undefined, represents org-level defaults.
+ */
+export interface IProjectRunSettings {
+    _id: ObjectId;
+    organizationId: string;
+    projectId?: string;
+    dockerImage: string;
+    targetUrls: {
+        dev?: string;
+        staging?: string;
+        prod?: string;
+    };
+    defaultTestFolder: string;
+    updatedAt: Date;
+    updatedBy: string;
+}
+
+// ============================================================================
 // AUTH API REQUEST/RESPONSE TYPES
 // ============================================================================
 

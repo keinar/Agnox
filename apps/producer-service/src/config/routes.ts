@@ -8,6 +8,8 @@ import { authRoutes } from '../routes/auth.js';
 import { invitationRoutes } from '../routes/invitations.js';
 import { userRoutes } from '../routes/users.js';
 import { organizationRoutes } from '../routes/organization.js';
+import { projectRoutes } from '../routes/projects.js';
+import { projectSettingsRoutes } from '../routes/projectSettings.js';
 import { billingRoutes } from '../routes/billing.js';
 import { webhookRoutes } from '../routes/webhooks.js';
 import { createTestRunLimitMiddleware } from '../middleware/planLimits.js';
@@ -37,6 +39,12 @@ export async function setupRoutes(
 
     // Organization routes
     await organizationRoutes(app, dbClient, apiRateLimit);
+
+    // Project routes (CRUD + plan-based limits)
+    await projectRoutes(app, dbClient, apiRateLimit);
+
+    // Project run settings routes (per-project configuration)
+    await projectSettingsRoutes(app, dbClient, apiRateLimit);
 
     // Billing routes (Stripe integration)
     await billingRoutes(app, dbClient, apiRateLimit);

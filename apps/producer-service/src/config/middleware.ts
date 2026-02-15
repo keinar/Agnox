@@ -88,8 +88,8 @@ export function setupGlobalAuth(
         await authMiddleware(request, reply);
 
         // Apply rate limiting after authentication (uses organizationId from request.user)
-        // Skip rate limiting for internal worker callbacks
-        if (!request.url.startsWith('/executions/')) {
+        // Skip rate limiting for internal worker callbacks and lightweight metrics polling
+        if (!request.url.startsWith('/executions/') && !request.url.startsWith('/api/metrics/')) {
             await apiRateLimit(request, reply);
         }
     });
