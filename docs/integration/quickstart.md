@@ -76,6 +76,8 @@ RUN chmod +x /app/entrypoint.sh
 # and log streaming. Adding them here will conflict with the execution engine.
 ```
 
+> ⚠️ Do not add `ENTRYPOINT` or `CMD` to your Dockerfile. The Worker injects the entrypoint at runtime — adding them will conflict with the execution engine.
+
 ### 1.3 Configure Your Framework
 
 Ensure your test framework reads `BASE_URL` from environment:
