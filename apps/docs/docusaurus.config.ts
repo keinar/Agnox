@@ -125,10 +125,6 @@ const config: Config = {
               label: 'Dashboard',
               href: 'https://automation.keinar.com',
             },
-            {
-              label: 'Status',
-              href: 'https://status.automation.keinar.com',
-            },
           ],
         },
         {

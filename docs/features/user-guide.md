@@ -46,26 +46,20 @@ These URLs are injected into your test container as `BASE_URL` at runtime.
 
 ## 3. Running Tests
 
-### Option A: Via CLI (Recommended)
-The CLI is the primary way to run tests from your local machine or CI/CD.
+## 3. Running Tests
 
-```bash
-# Run all tests
-npx @keinar/aac-cli@latest run --project "Web App E2E"
-
-# Run specific environment
-npx @keinar/aac-cli@latest run --project "Web App E2E" --env staging
-```
-
-### Option B: Via Dashboard
+### Option A: Via Dashboard (Primary)
 1. Click **Run New Test** (top right).
 2. Select your **Project** (settings are auto-filled).
 3. Select the **Environment** (Dev/Staging/Prod).
 4. (Optional) Override the command or folder.
 5. Click **Start Execution**.
 
-### Option C: Via API (CI/CD)
+### Option B: Via API / CI/CD
 See [API Keys section](#8-api-keys-cicd-integration) below.
+
+### Note on CLI
+The CLI (`aac-cli`) is currently used for **onboarding only** (initializing projects). Test execution is handled via the Dashboard or API to ensure centralized logging and analytics.
 
 ---
 
