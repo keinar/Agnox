@@ -586,9 +586,9 @@ A: SendGrid Dashboard → Activity → Email Activity. Search by recipient email
 
 ## Related Documentation
 
-- [SendGrid Setup Guide](./SENDGRID-SETUP-GUIDE.md) - Step-by-step setup instructions
-- [Phase 5 Sprint 1 Plan](../implementation/phase-5/phase-5-sprint-1-sendgrid-plan.md) - Implementation details
-- [PRD](../PRD-Multi-Tenant-SaaS.md) - Product requirements
+- [Troubleshooting](./troubleshooting.md) - Email issues
+- [Project History](../system/project-history-archive.md) - Implementation details
+- [Architecture Overview](../architecture/overview.md) - System context
 
 ---
 

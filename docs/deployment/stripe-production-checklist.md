@@ -690,10 +690,9 @@ Deployment considered successful when:
 
 ## Related Documents
 
-- `docs/testing/billing-test-scenarios.md` - Test scenarios
-- `docs/testing/billing-edge-cases.md` - Edge case handling
-- `docs/testing/webhook-load-testing.md` - Performance testing
-- `docs/implementation/phase-3/` - Implementation details
+- [Billing Guide](../features/billing-guide.md)
+- [API Reference](../api/README.md)
+- [Security Audit](../setup/security-audit.md)
 
 ---
 

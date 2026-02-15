@@ -4,7 +4,23 @@ Connect your test automation project to the platform and run your first test in 
 
 ---
 
-## Prerequisites
+## Recommended: Use the CLI
+
+The fastest way to connect your project is the official CLI. It auto-detects your framework, generates a `Dockerfile` and `entrypoint.sh`, builds a multi-platform Docker image, and pushes it to Docker Hub — all in one command:
+
+```bash
+npx @keinar/aac-cli@latest init
+```
+
+After the CLI completes, go to **Settings → Run Settings** in the dashboard to configure your project's environment URLs.
+
+> **Note:** The CLI currently supports Playwright (TypeScript/Node.js) and Pytest (Python). For other frameworks, follow the manual steps below.
+
+---
+
+## Manual Setup
+
+### Prerequisites
 
 - **Docker Hub account** with a pushed automation image
 - **Platform account** at [automation.keinar.com](https://automation.keinar.com)

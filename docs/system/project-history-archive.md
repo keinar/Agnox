@@ -11,6 +11,8 @@ Consolidated implementation history for the Agnostic Automation Center multi-ten
 | Phase 1: Multi-Tenant Foundation | Jan 28-30, 2026 | ✅ Complete |
 | Phase 2: User Management UI | Feb 4-5, 2026 | ✅ Complete |
 | Phase 3: Billing Integration | Feb 5-6, 2026 | ✅ Complete |
+| Phase 4: Project Run Settings | Feb 2026 | ✅ Complete |
+| Phase 5: Email Integration | Feb 2026 | ✅ Complete |
 
 ---
 
@@ -105,8 +107,8 @@ Consolidated implementation history for the Agnostic Automation Center multi-ten
 | Phase | Security Score | Key Additions |
 |-------|----------------|---------------|
 | Phase 1 | 87/100 | JWT auth, password hashing, data isolation |
-| Phase 2 | 92-95/100 | Rate limiting, security headers, lockout |
-| Phase 3 | 95+/100 | Webhook signatures, HTTPS, CORS |
+| Phase 2 | 92/100 | Rate limiting, security headers, lockout |
+| Phase 3 | 92/100 | Webhook signatures, HTTPS, CORS |
 
 ---
 
@@ -121,13 +123,39 @@ Consolidated implementation history for the Agnostic Automation Center multi-ten
 
 ---
 
-## Reference Documents (Archived)
+## Phase 4: Project Run Settings
 
-The following phase plan files are preserved for historical reference:
-- `docs/archive/phase-1-plan.md`
-- `docs/archive/phase-2-plan.md`
-- `docs/archive/phase-3-plan.md`
+### Key Deliverables
+- Per-project Docker image and test folder configuration
+- Per-project environment URLs (Dev, Staging, Production)
+- Settings → Run Settings management tab
+- Execution Modal pre-fills from saved project settings
+- Shared types package (`@aac/shared-types`) for type safety across apps
+
+### Lessons Learned
+
+**What Went Well:**
+- Clean separation between project config and execution concerns
+- Shared types prevented frontend/backend drift
+- Modal auto-fill reduced user friction significantly
 
 ---
 
-*Last Updated: February 8, 2026*
+## Phase 5: Email Integration
+
+### Key Deliverables
+- SendGrid transactional email integration (`@sendgrid/mail`)
+- HTML email templates for team invitations
+- Welcome emails for new team members
+- Console logging fallback when SendGrid is not configured
+
+### Lessons Learned
+
+**What Went Well:**
+- SendGrid integration was clean — single `@sendgrid/mail` package
+- Graceful fallback to console logging for local development
+- HTML templates provide professional email appearance
+
+---
+
+*Last Updated: February 15, 2026*

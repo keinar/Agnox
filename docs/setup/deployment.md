@@ -909,36 +909,101 @@ mongosh "mongodb://localhost:27017/automation_platform" --eval "
 
 ---
 
+## 🔐 SSL/TLS Setup
+
+Use a reverse proxy (Nginx, Caddy, or Traefik) for SSL termination:
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name api.yourdomain.com;
+
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # WebSocket support for Socket.io
+    location /socket.io/ {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+```
+
+---
+
+## 🛡️ Security Hardening
+
+### 1. Change Default Credentials
+- Generate strong JWT secret (64+ chars): `openssl rand -hex 64`
+- Use managed MongoDB with authentication
+- Enable Redis authentication
+- Change RabbitMQ default credentials
+
+### 2. Network Isolation
+- Use Docker networks to isolate services
+- Don't expose MongoDB/Redis/RabbitMQ ports publicly
+- Use firewall rules to restrict access
+
+### 3. HTTPS Only
+- Enable HSTS headers
+- Redirect HTTP → HTTPS
+- Use valid SSL certificates (Let's Encrypt)
+
+### 4. Rate Limiting
+- Configured by default (Redis-based)
+- Auth endpoints: 5 requests/minute per IP
+- API endpoints: 100 requests/minute per organization
+
+For a full security review, see the [Security Audit](./security-audit.md).
+
+---
+
+## 💾 Backup & Restore
+
+### MongoDB Backup
+
+```bash
+# Backup
+docker-compose exec mongodb mongodump --out=/backup
+
+# Restore
+docker-compose exec mongodb mongorestore /backup
+```
+
+### Redis Backup
+
+```bash
+# Redis saves snapshots automatically (RDB)
+docker-compose exec redis redis-cli BGSAVE
+```
+
+---
+
+## 📈 Scaling
+
+### Horizontal Scaling
+- Run multiple Worker Service instances for parallel test execution
+- Use a load balancer for Producer Service
+- Use MongoDB replica set for high availability
+- Use Redis Cluster for distributed rate limiting
+
+### Kubernetes Deployment
+See the [Kubernetes deployment guide](./kubernetes.md) for k8s-specific configuration.
+
+---
+
 ## 📚 Additional Resources
 
-- **Architecture Documentation:** `docs/architecture.md`
-- **API Documentation:** `docs/api-reference.md`
-- **Security Audit:** `docs/SECURITY-AUDIT-PHASE-1.md`
-- **Integration Testing:** `INTEGRATION-TESTING-COMPLETE.md`
-- **Bug Fixes:** `MANUAL-TESTING-FIXES-ROUND-2.md`
-
----
-
-## ✅ Deployment Sign-Off
-
-**Staging Deployment:**
-- [ ] Date: __________
-- [ ] Deployed By: __________
-- [ ] Commit Hash: __________
-- [ ] Smoke Tests Passed: [ ] Yes [ ] No
-- [ ] Approved By: __________
-
-**Production Deployment:**
-- [ ] Date: __________
-- [ ] Deployed By: __________
-- [ ] Commit Hash: __________
-- [ ] Smoke Tests Passed: [ ] Yes [ ] No
-- [ ] Approved By: __________
-- [ ] Monitoring Active: [ ] Yes [ ] No
-- [ ] Rollback Plan Ready: [ ] Yes [ ] No
-
----
-
-**Document Version:** 1.0.0
-**Last Updated:** January 29, 2026
-**Next Review:** After Phase 2 implementation
+- [Architecture Overview](../architecture/overview.md)
+- [API Reference](../api/README.md)
+- [Security Audit](./security-audit.md)
+- [Troubleshooting](./troubleshooting.md)
+- [Kubernetes Guide](./kubernetes.md)

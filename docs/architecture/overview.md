@@ -138,12 +138,16 @@ graph TB
 - `users` - User accounts, roles, authentication data
 - `invitations` - Team member invitations (pending/accepted/expired)
 - `executions` - Test execution history and results
+- `projects` - Project definitions per organization (name, Docker image, test folder)
+- `projectRunSettings` - Per-project environment URLs (Dev, Staging, Production)
+- `subscriptions` - Stripe subscription data (plan, status, billing period)
 
 **Indexes:**
 - `organizationId` - All collections (multi-tenant filtering)
 - `email` - Users (unique, login lookup)
 - `tokenHash` - Invitations (unique, validation)
 - `slug` - Organizations (unique, URL-friendly)
+- `stripeCustomerId` - Organizations (Stripe integration lookup)
 
 **Port:** 27017
 
@@ -431,4 +435,3 @@ services:
 - [API Documentation](../api/README.md)
 - [Deployment Guide](../setup/deployment.md)
 - [Security Audit](../setup/security-audit.md)
-- [Multi-Tenant Design (PRD)](../PRD-Multi-Tenant-SaaS.md)
