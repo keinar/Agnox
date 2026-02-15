@@ -31,7 +31,6 @@ function getMergedEnvVars(configEnv: any = {}) {
     const localKeysToInject = [
         'API_USER',
         'API_PASSWORD',
-        'BASE_URL',
         'SECRET_KEY',
         'DB_USER',
         'DB_PASS',
@@ -191,6 +190,14 @@ async function startWorker() {
 
             await ensureImageExists(image);
             const agnosticCommand = ['/bin/sh', '/app/entrypoint.sh', task.folder || 'all'];
+
+            // DEBUG: Trace URL resolution
+            logger.info({
+                configBaseUrl: config.baseUrl,
+                envBaseUrl: process.env.BASE_URL,
+                resolvedDockerHost: resolveHostForDocker(config.baseUrl)
+            }, '[URL] Resolving target URL');
+
             const targetBaseUrl = resolveHostForDocker(config.baseUrl || process.env.BASE_URL || 'http://host.docker.internal:3000');
 
             // Multi-tenant: Include organizationId in container name for isolation
@@ -347,6 +354,24 @@ async function startWorker() {
 
             for (const m of mappings) {
                 await copyAndRenameFolder(m.path, m.alias);
+            }
+
+            // Generate Allure Report if results exist (Platform-side generation)
+            const allureResultsDir = path.join(baseTaskDir, 'allure-results');
+            const allureReportDir = path.join(baseTaskDir, 'allure-report');
+
+            if (fs.existsSync(allureResultsDir) && !fs.existsSync(allureReportDir)) {
+                logger.info({ taskId, organizationId }, '[Allure] Generating report from results...');
+                try {
+                    const { execSync } = require('child_process');
+                    execSync(
+                        `allure generate "${allureResultsDir}" --clean -o "${allureReportDir}"`,
+                        { stdio: 'pipe' }
+                    );
+                    logger.info({ taskId, organizationId }, '[Allure] Report generated successfully');
+                } catch (err: any) {
+                    logger.error({ taskId, organizationId, error: err.stderr?.toString() || err.message }, '[Allure] Generation failed');
+                }
             }
 
             // Multi-tenant: Pass organizationId to scope metrics by org

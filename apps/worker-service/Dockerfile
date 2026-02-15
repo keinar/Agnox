@@ -11,6 +11,10 @@ COPY apps/worker-service ./apps/worker-service
 # Install dependencies including 'dockerode'
 RUN npm install --legacy-peer-deps
 
+# Install Java (for Allure) and Allure Commandline
+RUN apt-get update && apt-get install -y default-jre-headless && rm -rf /var/lib/apt/lists/*
+RUN npm install -g allure-commandline
+
 # Build shared types first
 WORKDIR /app/packages/shared-types
 RUN npm run build
