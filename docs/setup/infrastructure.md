@@ -26,13 +26,8 @@ MONGODB_URL=mongodb+srv://<user>:<pass>@cluster.mongodb.net/automation_platform
 RABBITMQ_URL=amqp://automation-rabbitmq
 REDIS_URL=redis://automation-redis:6379
 
-# AI Configuration (NEW)
+# AI Configuration
 GEMINI_API_KEY=AIzaSy...your_key_here
-
-# Dashboard Defaults (Pre-fills the UI)
-DEFAULT_TEST_IMAGE=keinar101/my-automation-tests:latest
-DEFAULT_BASE_URL=https://your-app.com
-DEFAULT_TEST_FOLDER=all
 
 # --- AGNOSTIC SECRET INJECTION ---
 # These variables belong to the CLIENT tests.
@@ -41,16 +36,27 @@ ADMIN_USER=admin@example.com
 ADMIN_PASS=secure_password
 MONGO_URI=mongodb+srv://... (Client DB)
 
-# --- DYNAMIC ENVIRONMENTS ---
-# Defining these variables will automatically enable them in the Dashboard UI
-DEV_URL=http://localhost:5173
-STAGING_URL=https://staging.photographer.keinar.com
-PRODUCTION_URL=https://photographer.keinar.com
-
 # WHITE LIST
 # Only variables declared here are injected into the test container
 INJECT_ENV_VARS=ADMIN_USER,ADMIN_PASS,GEMINI_API_KEY,MONGO_URI
 ```
+
+> [!WARNING]
+> **Deprecated ENV variables** — The following variables were previously used to pre-fill the
+> Execution Modal in the Dashboard. They are **no longer needed** for this purpose.
+> These values are now configured **per-project** in **Settings → Run Settings** and stored in the database.
+>
+> | Variable | Status | Replacement |
+> |---|---|---|
+> | `DEFAULT_TEST_IMAGE` | ❌ Deprecated | Settings → Run Settings → Docker Image |
+> | `DEFAULT_BASE_URL` | ❌ Deprecated | Settings → Run Settings → Target URLs |
+> | `DEFAULT_TEST_FOLDER` | ❌ Deprecated | Settings → Run Settings → Default Test Folder |
+> | `DEV_URL` | ❌ Deprecated | Settings → Run Settings → Dev URL |
+> | `STAGING_URL` | ❌ Deprecated | Settings → Run Settings → Staging URL |
+> | `PRODUCTION_URL` | ❌ Deprecated | Settings → Run Settings → Production URL |
+>
+> If you still have these variables in your `.env` file, they will be ignored by the platform.
+> Remove them to keep your configuration clean.
 
 ---
 

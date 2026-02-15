@@ -55,11 +55,11 @@ Complete isolation and security for multiple organizations.
 
 Modern React-based UI built with Vite + Pure CSS.
 
-- **Manual Triggers:** Launch tests directly from UI using Execution Modal
-- **Dynamic Configuration:** Select environments (Dev/Staging/Prod), folders, Docker images on-the-fly
+- **Manual Triggers:** Launch tests directly from UI using the Execution Modal — Docker image, Target URL, and Test Folder are pre-filled from your saved project settings
+- **Per-Project Configuration:** Configure environments, Docker images, and test folders per project in **Settings → Run Settings**. If nothing is configured yet, the modal guides you there
 - **Live Monitoring:** Watch console logs stream in real-time via WebSockets
 - **Mobile Responsive:** Full mobile and tablet support with responsive Pure CSS
-- **Settings Management:** Manage team members, organization settings, usage quotas
+- **Settings Management:** Manage team members, organization settings, usage quotas, and per-project run configuration
 
 ### 🔐 Enterprise-Grade Security
 
@@ -76,8 +76,8 @@ Built with security best practices from the ground up.
 
 Framework-agnostic environment configuration.
 
-- **Agnostic Environments:** Define environments via infrastructure ENV variables
-- **Auto-Switching:** UI automatically maps environment selection to correct URL
+- **Per-Project Environments:** Define Dev, Staging, and Production URLs per project in **Settings → Run Settings** (stored in the database, not server ENV variables)
+- **Auto-Switching:** The Execution Modal automatically maps environment selection to the correct URL
 - **Dynamic Injection:** Environment variables injected into containers at runtime
 - **Secret Management:** Sensitive data never hardcoded, always injected
 
@@ -106,6 +106,38 @@ Professional email communications via SendGrid.
 - **Team Invitations:** Beautiful HTML email invitations with one-click join
 - **Welcome Emails:** Onboarding emails for new team members
 - **Transactional Emails:** Password reset, notifications (coming soon)
+
+---
+
+## 🔌 Connecting an Automation Project
+
+The **AAC CLI** ([`@keinar/aac-cli`](https://www.npmjs.com/package/@keinar/aac-cli)) is the official tool for preparing and connecting any test automation repository to the platform.
+
+### Quick Start
+
+```bash
+npx @keinar/aac-cli@latest init
+```
+
+### What It Does
+
+- **Generates integration files** — `Dockerfile`, `entrypoint.sh`, `.dockerignore` tailored to your framework
+- **Auto-detects Playwright version** from your `package.json` and pins the correct Docker base image
+- **Builds a multi-platform Docker image** (`linux/amd64` + `linux/arm64`) and pushes it to Docker Hub
+- **Supported frameworks:** Playwright (TypeScript/Node.js) and Pytest (Python)
+
+### After Running the CLI
+
+Once the image is pushed to Docker Hub:
+
+1. Open the **AAC Dashboard**
+2. Go to **Settings → Run Settings**
+3. Create a new project and enter the Docker image name
+4. Configure your environment URLs (Dev/Staging/Prod)
+
+The platform will use this image and configuration for all future test runs launched from the Execution Modal.
+
+📦 **CLI Repository:** [github.com/keinar/aac-cli](https://github.com/keinar/aac-cli) · **npm:** [@keinar/aac-cli](https://www.npmjs.com/package/@keinar/aac-cli)
 
 ---
 
