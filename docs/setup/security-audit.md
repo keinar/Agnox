@@ -737,7 +737,7 @@ if (failedAttempts >= 5) {
 - **Multi-Tenant Isolation:** All queries filtered by `organizationId` (STRING)
 - **Password Policy:** Min 8 chars, uppercase, lowercase, number, special char
 - **JWT Expiry:** Default 24h (configurable via `JWT_EXPIRY`)
-- **Rate Limiting:** Basic in-memory (upgrade to Redis recommended)
+- **Rate Limiting:** Redis-based, per-organization + per-IP (Auth: 5/min, API: 100/min)
 
 ---
 

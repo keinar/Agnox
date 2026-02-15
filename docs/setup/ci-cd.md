@@ -17,9 +17,11 @@ Go to your GitHub Repo -> **Settings** -> **Secrets and variables** -> **Actions
 | `VPS_SSH_KEY` | **Infra** | The Private Key (PEM) to access the server. |
 | `VPS_USER` | **Infra** | Usually `ubuntu` or `opc`. |
 | `MONGODB_URL` | **Infra** | Connection string for MongoDB Atlas. |
+| `JWT_SECRET` | **Infra** | 64-char hex secret for JWT authentication (`openssl rand -hex 32`). |
 | `GEMINI_API_KEY` | **Infra** | **Critical:** Required by the Worker Service for AI Root Cause Analysis. |
-| `ADMIN_USER` | *Client* | (Example) Username for the target application tests. |
-| `ADMIN_PASS` | *Client* | (Example) Password for the target application tests. |
+| `STRIPE_SECRET_KEY` | **Infra** | Stripe API secret key for billing integration. |
+| `STRIPE_WEBHOOK_SECRET` | **Infra** | Stripe webhook endpoint secret for signature verification. |
+| `SENDGRID_API_KEY` | **Infra** | SendGrid API key for transactional email delivery. |
 | `DEFAULT_TEST_IMAGE` | *Config* | The default Docker image to show in the Dashboard. |
 
 ---
@@ -52,19 +54,24 @@ It uses a **HEREDOC** pattern to regenerate the `.env` file on the server during
             MONGODB_URL=${{ secrets.MONGODB_URL }}
             RABBITMQ_URL=amqp://automation-rabbitmq
             REDIS_URL=redis://automation-redis:6379
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            
+            # --- BILLING ---
+            STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+            STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
+            
+            # --- EMAIL ---
+            SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}
+            FROM_EMAIL=noreply@automation.keinar.com
             
             # --- DASHBOARD DEFAULTS ---
             DEFAULT_TEST_IMAGE=${{ secrets.DEFAULT_TEST_IMAGE }}
             DEFAULT_BASE_URL=https://photographer.keinar.com
             
-            # --- CLIENT INJECTION ---
-            ADMIN_USER=${{ secrets.ADMIN_USER }}
-            ADMIN_PASS=${{ secrets.ADMIN_PASS }}
-            
             # --- THE GATEKEEPER: Whitelist ---
-            # Define which variables are allowed to pass into the test container
-            INJECT_ENV_VARS=ADMIN_USER,ADMIN_PASS,MONGO_URI
+            # Define which env vars from the dashboard are allowed into the test container
+            INJECT_ENV_VARS=BASE_URL
             EOF
             
             # 3. Pull latest infrastructure images
@@ -91,5 +98,6 @@ The Worker Service uses this list to decide which environment variables to pass 
 | Issue | Resolution |
 | --- | --- |
 | **AI Analysis Fails** | Check if `GEMINI_API_KEY` is in GitHub Secrets and if the `.env` on the server contains it after deploy. |
-| **Tests cannot login** | Verify `ADMIN_USER/PASS` are in GitHub Secrets AND in `INJECT_ENV_VARS`. |
+| **Billing not working** | Verify `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are in GitHub Secrets and that the webhook URL is registered in Stripe dashboard. |
+| **Emails not sending** | Verify `SENDGRID_API_KEY` is valid. Check SendGrid Activity for delivery status. |
 | **"Permission denied"** | Ensure the SSH Key in GitHub Secrets matches the one on the VPS (`~/.ssh/authorized_keys`). |

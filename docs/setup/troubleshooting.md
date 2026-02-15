@@ -161,33 +161,27 @@ Common issues and solutions for the Agnostic Automation Center.
 
 **Solutions:**
 
-1. **Check email service configuration:**
+1. **Check SendGrid configuration:**
    ```env
-   # In producer-service
-   EMAIL_SERVICE=ethereal  # Development: Ethereal (test mode)
-   EMAIL_SERVICE=smtp      # Production: Real SMTP
-
-   SMTP_HOST=smtp.gmail.com
-   SMTP_PORT=587
-   SMTP_USER=your-email@gmail.com
-   SMTP_PASS=your-app-password  # NOT your Gmail password
+   # In .env
+   SENDGRID_API_KEY=SG.your-api-key
+   FROM_EMAIL=noreply@automation.keinar.com
+   FROM_NAME=Agnostic Automation Center
    ```
 
 2. **Check logs for email errors:**
    ```bash
-   docker-compose logs producer-service | grep -i "email"
+   docker-compose logs producer-service | grep -i "email\|sendgrid"
    ```
 
-3. **Test with Ethereal (development):**
-   ```env
-   EMAIL_SERVICE=ethereal
-   # Check producer logs for Ethereal preview URL
-   ```
+3. **Verify SendGrid API key is valid:**
+   - Log into SendGrid dashboard
+   - Check Activity → Email Activity for delivery status
 
-4. **Gmail App Password:**
-   - Don't use your Gmail password directly
-   - Generate App Password: https://myaccount.google.com/apppasswords
-   - Use that password in `SMTP_PASS`
+4. **If SendGrid is not configured:**
+   - The system falls back to console logging
+   - Invitation will be created but email won't be sent
+   - Check producer logs for the invitation accept URL
 
 ---
 

@@ -200,7 +200,7 @@ graph TB
 | **Redis** | In-memory Cache | Rate limiting, session storage, metrics |
 | **RabbitMQ** | Message Queue | Distributed task queue for test execution |
 | **Google Gemini** | AI Model | Root cause analysis for test failures |
-| **Email Service** | Nodemailer + SMTP | Team member invitations |
+| **Email Service** | SendGrid | Team member invitations, transactional emails |
 
 ---
 
@@ -212,11 +212,11 @@ graph TB
 2. **Your organization is created automatically**
 3. **You're the admin** - invite team members via Settings → Team Members
 
-### Step 2: Get Your API Credentials
+### Step 2: Get Your API Key
 
 1. Login to the dashboard
-2. Navigate to **Settings → Security**
-3. Copy your **API URL** and **JWT Token** (after login)
+2. Navigate to **Settings → Profile → API Access**
+3. Click **Generate API Key** and copy it (shown only once)
 
 ### Step 3: Configure Your Test Project
 
@@ -229,7 +229,7 @@ Send test execution requests to the API:
 ```bash
 curl -X POST https://api.automation.keinar.com/api/execution-request \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "x-api-key: pk_live_YOUR_API_KEY" \
   -d '{
     "taskId": "run-'$(date +%s)'",
     "image": "mcr.microsoft.com/playwright:v1.40.0",
@@ -260,7 +260,7 @@ jobs:
         run: |
           curl -X POST ${{ secrets.AUTOMATION_API_URL }}/api/execution-request \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.AUTOMATION_JWT_TOKEN }}" \
+            -H "x-api-key: ${{ secrets.AAC_API_KEY }}" \
             -d '{
               "taskId": "ci-run-${{ github.run_id }}",
               "image": "mcr.microsoft.com/playwright:v1.40.0",
@@ -282,7 +282,7 @@ e2e-tests:
     - |
       curl -X POST $AUTOMATION_API_URL/api/execution-request \
         -H "Content-Type: application/json" \
-        -H "Authorization: Bearer $AUTOMATION_JWT_TOKEN" \
+        -H "x-api-key: $AAC_API_KEY" \
         -d '{
           "taskId": "gitlab-'$CI_PIPELINE_ID'",
           "image": "cypress/included:13.6.0",
@@ -315,7 +315,7 @@ async function runTests() {
     {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.AUTOMATION_JWT_TOKEN}`,
+        'x-api-key': process.env.AAC_API_KEY,
       },
     }
   );
@@ -354,7 +354,7 @@ The platform is **framework-agnostic** - any Docker-based test framework works:
 
 > **📢 For SaaS Users:** If you're using the hosted platform at `automation.keinar.com`, you don't need to configure any infrastructure variables. Just [generate an API key](docs/integration/quickstart.md) and integrate!
 >
-> The variables below are only needed for **self-hosting**. See [Self-Hosting Guide](docs/internal/self-hosting.md) for details.
+> The variables below are only needed for **self-hosting**. See [Deployment Guide](docs/setup/deployment.md) for details.
 
 ### Required Variables (Self-Hosting Only)
 
@@ -402,7 +402,7 @@ VITE_API_URL=https://api.automation.keinar.com
 
 **Want to self-host?** This platform can be deployed on your own infrastructure.
 
-See the [Self-Hosting Guide](docs/internal/self-hosting.md) for deployment instructions.
+See the [Deployment Guide](docs/setup/deployment.md) for full deployment instructions including environment setup, database migration, SSL/TLS, security hardening, and scaling.
 
 ---
 
@@ -469,20 +469,39 @@ See the [Self-Hosting Guide](docs/internal/self-hosting.md) for deployment instr
 
 ---
 
-### Phase 3 & 4: Advanced Features 📋 (Planned)
+### Phase 3: Billing Integration ✅ (Complete)
 
-**Phase 3: Advanced Dashboard & Analytics** (Planned)
-- Advanced analytics and insights
-- Custom role permissions (fine-grained access control)
-- Audit logging for compliance
-- Webhook integrations
+**Duration:** Feb 5-6, 2026 | **Status:** Production Ready
 
-**Phase 4: Enterprise Features** (Planned)
-- SSO integration (SAML, OAuth)
-- Advanced billing and subscription management
-- Terraform/IaC templates
-- Custom SLA monitoring
-- 99.9% uptime SLA
+- ✅ Stripe subscription billing (Free, Team, Enterprise plans)
+- ✅ Stripe Checkout and Customer Portal integration
+- ✅ Webhook handling for payment events
+- ✅ Plan limits enforcement (test runs, team members, concurrent runs)
+- ✅ Usage tracking and quota monitoring
+- ✅ Billing dashboard UI in Settings
+
+---
+
+### Phase 4: Project Run Settings ✅ (Complete)
+
+**Duration:** Feb 2026 | **Status:** Production Ready
+
+- ✅ Per-project Docker image and test folder configuration
+- ✅ Per-project environment URLs (Dev, Staging, Production)
+- ✅ Settings → Run Settings management tab
+- ✅ Execution Modal pre-fills from project settings
+- ✅ Shared types package (`@aac/shared-types`)
+
+---
+
+### Phase 5: Email Integration ✅ (Complete)
+
+**Duration:** Feb 2026 | **Status:** Production Ready
+
+- ✅ SendGrid transactional email integration
+- ✅ HTML email templates for team invitations
+- ✅ Welcome emails for new team members
+- ✅ Fallback to console logging when SendGrid is not configured
 
 ---
 
@@ -521,33 +540,29 @@ See the [Self-Hosting Guide](docs/internal/self-hosting.md) for deployment instr
 
 ## 📖 Documentation
 
-Comprehensive documentation available in `/docs/`:
+Comprehensive documentation available in `/docs/` and at [docs.automation.keinar.com](https://docs.automation.keinar.com):
 
 ### Setup & Deployment
 - **[Integration Quickstart](docs/integration/quickstart.md)** - Get started in 5 minutes
-- **[Deployment Guide](docs/setup/deployment.md)** - Production deployment instructions
+- **[Docker Setup](docs/integration/docker-setup.md)** - Container protocol for test images
+- **[Deployment Guide](docs/setup/deployment.md)** - Production deployment, SSL, scaling
 - **[Infrastructure Guide](docs/setup/infrastructure.md)** - Server requirements and setup
-- **[CI/CD Guide](docs/setup/ci-cd.md)** - GitHub Actions configuration
+- **[CI/CD Guide](docs/setup/ci-cd.md)** - GitHub Actions and secret management
 - **[Troubleshooting](docs/setup/troubleshooting.md)** - Common issues and solutions
 
-### Architecture & Design
-- **[Architecture Overview](docs/architecture/overview.md)** - System design and data flow
-- **[Multi-Tenant Design](docs/PRD-Multi-Tenant-SaaS.md)** - Product requirements document
+### Features
+- **[User Guide](docs/features/user-guide.md)** - Dashboard, test execution, and settings
+- **[Billing Guide](docs/features/billing-guide.md)** - Plans, subscriptions, and usage
 
-### API Documentation
+### Architecture & API
+- **[Architecture Overview](docs/architecture/overview.md)** - System design and data flow
 - **[API Overview](docs/api/README.md)** - Complete API reference
 - **[Authentication API](docs/api/authentication.md)** - Signup, login, JWT tokens & API Keys
 
-### Security
+### Security & Operations
 - **[Security Audit](docs/setup/security-audit.md)** - Comprehensive security assessment
-- **[Client Integration Guide](docs/setup/client-integration.md)** - How to integrate test suites
-
-### Self-Hosting
-- **[Self-Hosting Guide](docs/internal/self-hosting.md)** - Deploy on your own infrastructure
-
-### Implementation Records
-- **[Phase 1 Summary](docs/implementation/phase-1/summary.md)** - Multi-tenant foundation
-- **[Phase 2 Progress](docs/implementation/phase-2/progress.md)** - UI and security enhancements
+- **[Email Configuration](docs/setup/email-configuration.md)** - SendGrid setup
+- **[Kubernetes Guide](docs/setup/kubernetes.md)** - K8s deployment architecture
 
 ---
 

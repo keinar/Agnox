@@ -6,184 +6,138 @@ Complete walkthrough of the Agnostic Automation Center platform features.
 
 ## 1. Getting Started
 
-### Sign Up (New Organization)
+### Sign Up
+1. Navigate to the **Sign Up** page.
+2. Enter your **email**, **password**, and **name**.
+3. Enter your **organization name** (your company/team name).
+4. Click **Create Account**.
 
-1. Navigate to the **Sign Up** page
-2. Enter your **email**, **password**, and **name**
-3. Enter your **organization name** (your company/team name)
-4. Click **Create Account**
-
-> Your organization is created automatically in 10 seconds, and you become the **Admin**.
+> Your organization is created automatically, and you become the **Admin**.
 
 ### Join via Invitation
-
-1. Receive an email invitation from an existing team member
-2. Click the **Accept Invitation** link in the email
-3. If new user: Create your account with the invitation token
-4. If existing user: Log in to join the new organization
-
----
-
-## 2. Team Management
-
-### Inviting Team Members (Admin Only)
-
-1. Go to **Settings** → **Team Members** tab
-2. Click **Invite Member**
-3. Enter the invitee's **email** and select their **role**:
-   - **Admin**: Full access, can manage billing, team, and settings
-   - **Developer**: Can run tests, view results, limited settings access
-   - **Viewer**: Read-only access to test results and dashboards
-4. Click **Send Invitation**
-
-### Managing Roles (Admin Only)
-
-1. Go to **Settings** → **Team Members** tab
-2. Find the user in the members list
-3. Use the **role dropdown** to change their role
-4. Changes take effect immediately
-
-### Removing Members (Admin Only)
-
-1. Go to **Settings** → **Team Members** tab
-2. Click the **Remove** button next to the user
-3. Confirm removal
-
-> Note: The last admin cannot be removed to prevent lockout.
+1. Receive an email invitation from a team member.
+2. Click the **Accept Invitation** link.
+3. **New users:** Create an account with the token.
+4. **Existing users:** Log in to join the new organization.
 
 ---
 
-## 3. Profile Settings
+## 2. Project & Run Settings
 
-### Updating Your Name
+Before running tests, you must configure your project settings.
 
-1. Go to **Settings** → **My Profile** tab
-2. Edit your **Name** field
-3. Click **Save Changes**
+### Creating a Project
+1. Go to **Settings** → **Run Settings**.
+2. Click **Create New Project**.
+3. Enter:
+   - **Project Name**: e.g., "Web App E2E"
+   - **Docker Image**: The image you pushed to Docker Hub (e.g., `myuser/my-tests:latest`)
+   - **Test Folder**: Path to tests inside container (default: `.` or `tests/`)
 
-> Email and Role are read-only and displayed for reference.
+### Configuring Environments
+For each project, define base URLs for your environments:
+- **Development**
+- **Staging**
+- **Production**
+
+These URLs are injected into your test container as `BASE_URL` at runtime.
 
 ---
 
-## 4. Organization Settings
+## 3. Running Tests
 
-### Editing Organization Name (Admin Only)
+### Option A: Via CLI (Recommended)
+The CLI is the primary way to run tests from your local machine or CI/CD.
 
-1. Go to **Settings** → **Organization** tab
-2. Edit the **Organization Name** field
-3. Click **Save Changes**
+```bash
+# Run all tests
+npx @keinar/aac-cli@latest run --project "Web App E2E"
 
-> Non-admins can view but not edit organization settings.
+# Run specific environment
+npx @keinar/aac-cli@latest run --project "Web App E2E" --env staging
+```
+
+### Option B: Via Dashboard
+1. Click **Run New Test** (top right).
+2. Select your **Project** (settings are auto-filled).
+3. Select the **Environment** (Dev/Staging/Prod).
+4. (Optional) Override the command or folder.
+5. Click **Start Execution**.
+
+### Option C: Via API (CI/CD)
+See [API Keys section](#8-api-keys-cicd-integration) below.
+
+---
+
+## 4. Team Management (Admin Only)
+
+### Inviting Members
+1. Go to **Settings** → **Team Members**.
+2. Click **Invite Member**.
+3. Enter email and select role:
+   - **Admin**: Full access (billing, settings, invites)
+   - **Developer**: Run tests, view results
+   - **Viewer**: Read-only access
+
+### Managing Roles
+- **Promote/Demote**: Change roles via the dropdown in the member list.
+- **Remove**: Click the trash icon to remove a member.
 
 ---
 
 ## 5. Billing & Plans
 
-### Viewing Current Plan
-
-1. Go to **Settings** → **Billing & Plans** tab
-2. View your current plan details and limits
-
-### Upgrading Your Plan (Admin Only)
-
-1. Go to **Settings** → **Billing & Plans** tab
-2. Click **Upgrade Plan** on your desired tier
-3. Complete payment via Stripe Checkout
-4. Your plan upgrades immediately
+Manage subscriptions in **Settings** → **Billing & Plans**.
 
 ### Plan Limits
 
 | Feature | Free | Team | Enterprise |
 |---------|------|------|------------|
-| Test Runs/Month | 100 | 1,000 | Unlimited |
-| Team Members | 3 | 10 | Unlimited |
-| Concurrent Runs | 1 | 5 | 20 |
-| AI Analysis | ❌ | ✅ | ✅ |
+| **Test Runs/Month** | 100 | 1,000 | Unlimited |
+| **Projects** | 1 | 10 | Unlimited |
+| **Team Members** | 3 | 20 | Unlimited |
+| **Concurrent Runs** | 1 | 5 | 20 |
+| **Storage** | 1 GB | 10 GB | 100 GB |
+| **AI Analysis** | ✅ | ✅ | ✅ |
+
+> **Note:** Limits are enforced automatically. Upgrading takes effect immediately.
 
 ---
 
-## 6. Usage Tracking
+## 6. API Keys (CI/CD Integration)
 
-### Monitoring Usage
+Use API keys to authenticate CI/CD pipelines without sharing personal credentials.
 
-1. Go to **Settings** → **Usage** tab
-2. View your current usage statistics:
-   - Test runs this month
-   - Team member count
-   - Concurrent run capacity
+### Generating a Key
+1. Go to **Settings** → **Profile** → **API Access**.
+2. Click **Generate New Key**.
+3. Enter a label (e.g., "GitHub Actions").
+4. **Copy the key** immediately (it won't be shown again).
 
-### Usage Alerts
-
-When approaching plan limits (80%), the dashboard displays warnings.
-
----
-
-## 7. Running Tests
-
-### From the Dashboard
-
-1. Click **Run New Test** button
-2. Fill in the execution modal:
-   - **Docker Image**: e.g., `mcr.microsoft.com/playwright:v1.40.0`
-   - **Command**: e.g., `npx playwright test`
-   - **Environment**: Select Dev/Staging/Prod
-3. Click **Start Execution**
-
-### From CI/CD (Recommended: API Keys)
-
-Generate an API key (see section below) and use in your pipeline:
+### Using the Key
+Add the `x-api-key` header to your requests:
 
 ```bash
-curl -X POST https://api.automation.keinar.com/api/executions \
-  -H "x-api-key: YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"image": "...", "command": "..."}'
+curl -H "x-api-key: pk_live_..." ...
 ```
 
 ---
 
-## 8. API Keys (CI/CD Integration)
+## 7. AI Analysis & Results
 
-### Generating an API Key
+### Live Results
+- Check the **Dashboard** for real-time logs via WebSocket.
+- Status updates: `QUEUED` → `RUNNING` → `PASSED` / `FAILED`.
 
-1. Go to **Settings → Profile** tab
-2. Scroll to **API Access** section
-3. Click **Generate New Key**
-4. Enter a name (e.g., "GitHub Actions", "Jenkins")
-5. **Copy the key immediately** - it's only shown once!
-
-### Using API Keys
-
-- Include in requests: `x-api-key: pk_live_...`
-- Keys inherit your user permissions
-- Track usage via "Last Used" timestamp
-
-### Revoking Keys
-
-1. Go to **Settings → Profile → API Access**
-2. Click **Revoke** next to the key
-3. Key is immediately invalidated
-
-> Store keys securely in CI/CD secrets (GitHub Secrets, GitLab Variables, etc.)
+### AI Root Cause Analysis
+If a test fails:
+1. Click the **✨** icon next to the failure.
+2. View the AI-generated diagnosis and suggested fix.
+3. AI analysis can be disabled per-organization in **Settings** → **Organization**.
 
 ---
 
-## 9. Viewing Test Results
+## 8. Support
 
-### Live Monitoring
-
-- Watch test logs stream in real-time via WebSocket
-- See execution status updates (Queued → Running → Passed/Failed)
-
-### AI Analysis
-
-When tests fail, click the **✨ icon** to view AI-powered root cause analysis.
-
-> AI Analysis can be disabled organization-wide in **Settings** → **Organization**.
-
----
-
-## Need Help?
-
-- **Documentation**: See `/docs/` folder
-- **Support**: info@digital-solution.co.il
+- **Documentation**: [docs.automation.keinar.com](https://docs.automation.keinar.com)
+- **Email**: info@digital-solution.co.il

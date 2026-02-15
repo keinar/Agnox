@@ -41,23 +41,6 @@ MONGO_URI=mongodb+srv://... (Client DB)
 INJECT_ENV_VARS=ADMIN_USER,ADMIN_PASS,GEMINI_API_KEY,MONGO_URI
 ```
 
-> [!WARNING]
-> **Deprecated ENV variables** — The following variables were previously used to pre-fill the
-> Execution Modal in the Dashboard. They are **no longer needed** for this purpose.
-> These values are now configured **per-project** in **Settings → Run Settings** and stored in the database.
->
-> | Variable | Status | Replacement |
-> |---|---|---|
-> | `DEFAULT_TEST_IMAGE` | ❌ Deprecated | Settings → Run Settings → Docker Image |
-> | `DEFAULT_BASE_URL` | ❌ Deprecated | Settings → Run Settings → Target URLs |
-> | `DEFAULT_TEST_FOLDER` | ❌ Deprecated | Settings → Run Settings → Default Test Folder |
-> | `DEV_URL` | ❌ Deprecated | Settings → Run Settings → Dev URL |
-> | `STAGING_URL` | ❌ Deprecated | Settings → Run Settings → Staging URL |
-> | `PRODUCTION_URL` | ❌ Deprecated | Settings → Run Settings → Production URL |
->
-> If you still have these variables in your `.env` file, they will be ignored by the platform.
-> Remove them to keep your configuration clean.
-
 ---
 
 ## 3. The Worker Service Workflow
