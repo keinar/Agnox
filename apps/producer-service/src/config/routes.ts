@@ -228,7 +228,12 @@ export async function setupRoutes(
             });
         }
 
-        const { taskId, image, command, tests, config, folder } = parseResult.data;
+        const { taskId, image: rawImage, command, tests, config, folder } = parseResult.data;
+        const image = rawImage?.trim();
+
+        if (!image) {
+            return reply.status(400).send({ error: 'Image name cannot be empty' });
+        }
 
         // DEBUG: Trace incoming payload config
         app.log.info({

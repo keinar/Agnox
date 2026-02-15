@@ -111,7 +111,14 @@ async function startWorker() {
         if (!msg) return;
 
         const task = JSON.parse(msg.content.toString());
-        const { taskId, image, command, config, organizationId } = task;
+        const { taskId, image: rawImage, command, config, organizationId } = task;
+        const image = rawImage?.trim();
+
+        if (!image) {
+            logger.error({ taskId }, 'Image name is empty or invalid. Rejecting task.');
+            channel!.nack(msg, false, false);
+            return;
+        }
 
         // Multi-tenant: Use organizationId as STRING (matches JWT and backend)
         if (!organizationId) {

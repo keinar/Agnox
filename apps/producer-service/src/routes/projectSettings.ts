@@ -117,7 +117,7 @@ export async function projectSettingsRoutes(
             };
 
             if (typeof body.dockerImage === 'string') {
-                update.dockerImage = body.dockerImage;
+                update.dockerImage = body.dockerImage.trim();
             }
 
             if (body.targetUrls && typeof body.targetUrls === 'object') {
