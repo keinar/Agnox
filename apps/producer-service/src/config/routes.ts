@@ -230,6 +230,13 @@ export async function setupRoutes(
 
         const { taskId, image, command, tests, config, folder } = parseResult.data;
 
+        // DEBUG: Trace incoming payload config
+        app.log.info({
+            taskId,
+            configBaseUrl: config.baseUrl,
+            configEnvironment: config.environment
+        }, '[API] Received execution request');
+
         try {
             const startTime = new Date();
 

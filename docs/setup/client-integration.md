@@ -69,11 +69,11 @@ else
 fi
 
 # Generate Allure HTML report from raw results
-echo "Generating Allure Report..."
-npx allure generate allure-results --clean -o allure-report
+# NOTE: The Agnostic Worker handles report generation automatically!
+# You do NOT need 'allure generate' here.
 ```
 
-> ⚠️ **Do not use `exec`** before your test runner command. Using `exec` replaces the shell process and prevents the `allure generate` step from running.
+> ⚠️ **Do not use `exec`** before your test runner command. Using `exec` replaces the shell process and prevents the worker from correctly tracking the process exit.
 
 #### Why this matters
 
