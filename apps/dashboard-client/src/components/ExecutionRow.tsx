@@ -247,12 +247,16 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                                     </span>
                                 ) : (
                                     <>
-                                        <a href={htmlReportUrl} target="_blank" rel="noreferrer" title="HTML Report" className="icon-link blue" onClick={(e) => e.stopPropagation()}>
-                                            <FileText size={18} />
-                                        </a>
-                                        <a href={allureReportUrl} target="_blank" rel="noreferrer" title="Allure Report" className="icon-link green" onClick={(e) => e.stopPropagation()}>
-                                            <BarChart2 size={18} />
-                                        </a>
+                                        {execution.hasNativeReport === true && (
+                                            <a href={htmlReportUrl} target="_blank" rel="noreferrer" title="HTML Report" className="icon-link blue" onClick={(e) => e.stopPropagation()}>
+                                                <FileText size={18} />
+                                            </a>
+                                        )}
+                                        {execution.hasAllureReport === true && (
+                                            <a href={allureReportUrl} target="_blank" rel="noreferrer" title="Allure Report" className="icon-link green" onClick={(e) => e.stopPropagation()}>
+                                                <BarChart2 size={18} />
+                                            </a>
+                                        )}
                                     </>
                                 )}
                             </>

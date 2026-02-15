@@ -3,7 +3,7 @@ export interface ExecutionConfig {
     baseUrl: string;
     retryAttempts: number;
 }
-  
+
 export interface Execution {
     _id: string;
     taskId: string;
@@ -15,4 +15,6 @@ export interface Execution {
     error?: string;
     analysis?: string;
     config: ExecutionConfig;
+    hasNativeReport?: boolean;
+    hasAllureReport?: boolean;
 }
