@@ -1,1 +1,173 @@
-# Client Integration Guide\r\n\r\n## Making Your Test Suite *Agnostic-Ready*\r\n\r\nThis guide explains how to prepare **any containerized automation suite (Python, Java, Node.js, etc.)** so it can run safely and correctly inside the **Agnostic Automation Center**.\r\n\r\nThe key principle: **The platform controls execution — your repo provides behavior.**\r\n\r\n---\r\n\r\n## 1. Recommended: Use the AAC CLI\r\n\r\nThe fastest way to get started is with the official **AAC CLI**:\r\n\r\n```bash\r\nnpx @keinar/aac-cli@latest init\r\n```\r\n\r\nThis interactive tool will:\r\n\r\n- Generate a `Dockerfile`, `entrypoint.sh`, and `.dockerignore` tailored to your framework\r\n- Auto-detect your Playwright version from `package.json` and pin the correct Docker base image\r\n- Build a multi-platform Docker image (`linux/amd64` + `linux/arm64`) and push it to Docker Hub\r\n\r\n**Supported frameworks:** Playwright (TypeScript/Node.js) and Pytest (Python).\r\n\r\n📦 **CLI Repository:** [github.com/keinar/aac-cli](https://github.com/keinar/aac-cli) · **npm:** [@keinar/aac-cli](https://www.npmjs.com/package/@keinar/aac-cli)\r\n\r\n---\r\n\r\n## 2. Manual Setup (Advanced)\r\n\r\nIf you prefer to set up your project manually, follow the steps below.\r\n\r\n### 2.1 Mandatory `entrypoint.sh`\r\n\r\nFor security and consistency, the Worker **does not execute arbitrary commands**.\r\nInstead, it always runs:\r\n\r\n```bash\r\n/app/entrypoint.sh <folder>\r\n```\r\n\r\n#### Your responsibility\r\n\r\nCreate an executable `entrypoint.sh` at the root of your repo. This script acts as the bridge between the platform and your specific test runner.\r\n\r\n**Recommended Script Pattern:**\r\n\r\n```bash\r\n#!/bin/sh\r\n# entrypoint.sh\r\n\r\nFOLDER=$1\r\n\r\n# 🧹 CRITICAL: Remove local .env file if it exists.\r\n# We want to rely ONLY on the variables injected by the Worker/Dashboard.\r\nif [ -f .env ]; then\r\n  echo \"Removing local .env to enforce injected configuration...\"\r\n  rm .env\r\nfi\r\n\r\n# Example for Node.js/Playwright:\r\nif [ -z \"$FOLDER\" ] || [ \"$FOLDER\" = \"all\" ]; then\r\n  echo \"Running ALL tests...\"\r\n  npx playwright test\r\nelse\r\n  echo \"Running tests in folder: $FOLDER\"\r\n  npx playwright test \"$FOLDER\"\r\nfi\r\n```\r\n\r\n#### Why this matters\r\n\r\n- **Security:** Prevents configuration conflicts.\r\n- **Predictability:** Guarantees the test runs exactly as the Dashboard intended.\r\n- **Flexibility:** Allows folder-level test selection from the UI.\r\n\r\n### 2.2 Dockerfile Requirements\r\n\r\nYour test suite **must be containerized** and published to a registry (Docker Hub, GHCR).\r\n\r\n```dockerfile\r\nFROM mcr.microsoft.com/playwright:v1.50.0-jammy\r\n\r\nWORKDIR /app\r\n\r\nCOPY package*.json ./\r\nRUN npm ci\r\n\r\nCOPY . .\r\n\r\n# Ensure entrypoint is executable\r\nRUN chmod +x /app/entrypoint.sh\r\n\r\n# Do NOT use ENTRYPOINT or CMD here.\r\n# The Worker Service will inject the entrypoint command at runtime.\r\n```\r\n\r\n### 2.3 Environment Variables & Validation\r\n\r\nThe platform injects environment variables **only if they are whitelisted** in the infrastructure.\r\n\r\n#### Best Practice\r\n\r\nIf you use validation libraries like **Zod**, ensure your schema allows for optional defaults or that you have added the variable to the infrastructure's `INJECT_ENV_VARS` list.\r\n\r\n---\r\n\r\n## 3. Register Your Project in the Dashboard\r\n\r\nOnce your Docker image is built and pushed to a registry:\r\n\r\n1. Open the **AAC Dashboard**\r\n2. Go to **Settings → Run Settings**\r\n3. **Create a new project** and enter a project name\r\n4. Enter your **Docker image name** (e.g., `youruser/my-automation:latest`)\r\n5. Configure your **environment URLs** (Dev, Staging, Production)\r\n6. Set a **default test folder** (or leave as `all`)\r\n\r\nThese settings will pre-fill the Execution Modal each time you launch a new test run.\r\n\r\n---\r\n\r\n## 4. What You Should NOT Do ❌\r\n\r\n- ❌ Run Playwright directly in Docker `CMD`.\r\n- ❌ Expect shell access to the server.\r\n- ❌ Read infrastructure-level secrets (like the VPS SSH key).\r\n- ❌ Depend on a local `.env` file inside the image.\r\n\r\n## 5. What You CAN Do ✅\r\n\r\n- ✅ Read injected environment variables (`process.env.BASE_URL`).\r\n- ✅ Control test selection via folders.\r\n- ✅ Use any framework (Playwright, Pytest, Robot Framework).\r\n\r\n---\r\n\r\n## 6. Using the Interactive Dashboard 🎮\r\n\r\nOnce your image is integrated, you can utilize the Dashboard's advanced features:\r\n\r\n### Manual Execution (The Play Button)\r\n\r\nYou don't need to trigger tests via API. You can launch them visually:\r\n\r\n1. Click the **\"Launch Execution\"** button (Top Right).\r\n2. **Environment:** Select `Dev`, `Staging`, or `Prod` — the system pre-fills the URL from your project settings.\r\n3. **Folder:** Type a folder path (e.g., `tests/login`) or select `all`.\r\n4. **Launch:** The test starts immediately, and you will see logs streaming in real-time.\r\n\r\n### 🕵️ Troubleshooting with AI\r\n\r\nIf a test fails, the system automatically performs a Root Cause Analysis.\r\n\r\n1. Look for the status: `ANALYZING` (Purple).\r\n2. Once finished, a ✨ **Sparkle Icon** will appear next to the `FAILED` status.\r\n3. **Click the icon** to open the **AI Analysis Report**.\r\n   - See the exact error reason.\r\n   - Get code snippets for suggested fixes.\r\n   - Understand *why* it failed without reading 1000 log lines.\r\n\r\n---\r\n\r\n## Client Integration Complete\r\n\r\nYour test suite is now **fully agnostic, portable, and secure**.\r\n
+# Client Integration Guide
+
+## Making Your Test Suite *Agnostic-Ready*
+
+This guide explains how to prepare **any containerized automation suite (Python, Java, Node.js, etc.)** so it can run safely and correctly inside the **Agnostic Automation Center**.
+
+The key principle: **The platform controls execution — your repo provides behavior.**
+
+---
+
+## 1. Recommended: Use the AAC CLI
+
+The fastest way to get started is with the official **AAC CLI**:
+
+```bash
+npx @keinar/aac-cli@latest init
+```
+
+This interactive tool will:
+
+- Generate a `Dockerfile`, `entrypoint.sh`, and `.dockerignore` tailored to your framework
+- Auto-detect your Playwright version from `package.json` and pin the correct Docker base image
+- Build a multi-platform Docker image (`linux/amd64` + `linux/arm64`) and push it to Docker Hub
+
+**Supported frameworks:** Playwright (TypeScript/Node.js) and Pytest (Python).
+
+📦 **CLI Repository:** [github.com/keinar/aac-cli](https://github.com/keinar/aac-cli) · **npm:** [@keinar/aac-cli](https://www.npmjs.com/package/@keinar/aac-cli)
+
+---
+
+## 2. Manual Setup (Advanced)
+
+If you prefer to set up your project manually, follow the steps below.
+
+### 2.1 Mandatory `entrypoint.sh`
+
+For security and consistency, the Worker **does not execute arbitrary commands**.
+Instead, it always runs:
+
+```bash
+/app/entrypoint.sh <folder>
+```
+
+#### Your responsibility
+
+Create an executable `entrypoint.sh` at the root of your repo. This script acts as the bridge between the platform and your specific test runner.
+
+**Recommended Script Pattern:**
+
+```sh
+#!/bin/sh
+
+FOLDER=$1
+
+# Remove local .env to enforce Worker configuration
+if [ -f .env ]; then
+  echo "Removing local .env to enforce injected configuration..."
+  rm .env
+fi
+
+echo "Running against BASE_URL: $BASE_URL"
+
+if [ -z "$FOLDER" ] || [ "$FOLDER" = "all" ]; then
+  echo "Running ALL tests..."
+  npx playwright test
+else
+  echo "Running tests in folder: $FOLDER"
+  npx playwright test "$FOLDER"
+fi
+
+# Generate Allure HTML report from raw results
+echo "Generating Allure Report..."
+npx allure generate allure-results --clean -o allure-report
+```
+
+> ⚠️ **Do not use `exec`** before your test runner command. Using `exec` replaces the shell process and prevents the `allure generate` step from running.
+
+#### Why this matters
+
+- **Security:** Prevents configuration conflicts.
+- **Predictability:** Guarantees the test runs exactly as the Dashboard intended.
+- **Flexibility:** Allows folder-level test selection from the UI.
+
+### 2.2 Dockerfile Requirements
+
+Your test suite **must be containerized** and published to a registry (Docker Hub, GHCR).
+
+```dockerfile
+FROM mcr.microsoft.com/playwright:v1.50.0-jammy
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci
+
+COPY . .
+
+# Ensure entrypoint is executable
+RUN chmod +x /app/entrypoint.sh
+
+# Do NOT use ENTRYPOINT or CMD here.
+# The Worker Service will inject the entrypoint command at runtime.
+```
+
+### 2.3 Environment Variables & Validation
+
+The platform injects environment variables **only if they are whitelisted** in the infrastructure.
+
+#### Best Practice
+
+If you use validation libraries like **Zod**, ensure your schema allows for optional defaults or that you have added the variable to the infrastructure's `INJECT_ENV_VARS` list.
+
+---
+
+## 3. Register Your Project in the Dashboard
+
+Once your Docker image is built and pushed to a registry:
+
+1. Open the **AAC Dashboard**
+2. Go to **Settings → Run Settings**
+3. **Create a new project** and enter a project name
+4. Enter your **Docker image name** (e.g., `youruser/my-automation:latest`)
+5. Configure your **environment URLs** (Dev, Staging, Production)
+6. Set a **default test folder** (or leave as `all`)
+
+These settings will pre-fill the Execution Modal each time you launch a new test run.
+
+---
+
+## 4. What You Should NOT Do ❌
+
+- ❌ Run Playwright directly in Docker `CMD`.
+- ❌ Expect shell access to the server.
+- ❌ Read infrastructure-level secrets (like the VPS SSH key).
+- ❌ Depend on a local `.env` file inside the image.
+
+## 5. What You CAN Do ✅
+
+- ✅ Read injected environment variables (`process.env.BASE_URL`).
+- ✅ Control test selection via folders.
+- ✅ Use any framework (Playwright, Pytest, Robot Framework).
+
+---
+
+## 6. Using the Interactive Dashboard 🎮
+
+Once your image is integrated, you can utilize the Dashboard's advanced features:
+
+### Manual Execution (The Play Button)
+
+You don't need to trigger tests via API. You can launch them visually:
+
+1. Click the **"Launch Execution"** button (Top Right).
+2. **Environment:** Select `Dev`, `Staging`, or `Prod` — the system pre-fills the URL from your project settings.
+3. **Folder:** Type a folder path (e.g., `tests/login`) or select `all`.
+4. **Launch:** The test starts immediately, and you will see logs streaming in real-time.
+
+### 🕵️ Troubleshooting with AI
+
+If a test fails, the system automatically performs a Root Cause Analysis.
+
+1. Look for the status: `ANALYZING` (Purple).
+2. Once finished, a ✨ **Sparkle Icon** will appear next to the `FAILED` status.
+3. **Click the icon** to open the **AI Analysis Report**.
+   - See the exact error reason.
+   - Get code snippets for suggested fixes.
+   - Understand *why* it failed without reading 1000 log lines.
+
+---
+
+## Client Integration Complete
+
+Your test suite is now **fully agnostic, portable, and secure**.
