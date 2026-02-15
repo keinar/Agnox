@@ -731,6 +731,7 @@ Please read our [Contributing Guide](CONTRIBUTING.md) _(coming soon)_ for detail
 - 🎯 Phase 3: Advanced analytics and insights
 - 📋 Audit logging and compliance features
 - 📋 Webhook integrations
+- | x86 Worker Support | Run Chrome/Edge browser channels on dedicated x86 infrastructure | 🔮 Planned |
 
 ### Q3 2026
 - 📋 Phase 4: Enterprise features (SSO/SAML)

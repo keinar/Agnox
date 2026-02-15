@@ -386,6 +386,10 @@ async function startWorker() {
 
             const endTime = new Date();
 
+            // Perform existence checks for reports
+            const hasNativeReport = fs.existsSync(path.join(baseTaskDir, 'native-report', 'index.html'));
+            const hasAllureReport = fs.existsSync(path.join(baseTaskDir, 'allure-report', 'index.html'));
+
             const updateData = {
                 taskId,
                 organizationId,  // Include for room-based broadcasting
@@ -396,7 +400,9 @@ async function startWorker() {
                 image,
                 command,
                 analysis: analysis,
-                aiAnalysisEnabled  // Audit trail: Record whether AI was enabled for this execution
+                aiAnalysisEnabled,  // Audit trail: Record whether AI was enabled for this execution
+                hasNativeReport,
+                hasAllureReport
             };
 
             // Multi-tenant: Filter by organizationId

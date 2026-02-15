@@ -435,3 +435,27 @@ services:
 - [API Documentation](../api/README.md)
 - [Deployment Guide](../setup/deployment.md)
 - [Security Audit](../setup/security-audit.md)
+
+---
+
+## Known Limitations
+
+### Google Chrome on ARM64 Servers
+
+The AAC platform currently runs on a Linux ARM64 server (Oracle Cloud).
+Google Chrome and Microsoft Edge do **not** support Linux ARM64.
+
+**Impact:** Test projects that use `--browser-channel chrome` or
+`--browser-channel msedge` in their `pytest.ini` or Playwright config
+will fail with:
+
+```
+BrowserType.launch: Chromium distribution 'chrome' is not found
+```
+
+**Workaround:** Remove `--browser-channel chrome` from your pytest/Playwright
+config and use `--browser chromium` instead. Chromium is fully supported
+on ARM64 and produces identical results for most web applications.
+
+**Roadmap:** Full Chrome/Edge support on x86 infrastructure is planned.
+See roadmap below.
