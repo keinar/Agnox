@@ -32,7 +32,8 @@ interface ICustomFieldSchema {
     key: string;
     name: string;
     required: boolean;
-    schema: { type: string; items?: string };
+    schema: { type: string; items?: string; custom?: string };
+    allowedValues?: { id: string; value: string }[];
 }
 
 interface ICreatedTicket {
@@ -94,7 +95,7 @@ const buildDescription = (execution: any): string => {
     return lines.join('\n');
 };
 
-// ── Shared select class ───────────────────────────────────────────────────────
+// ── Shared select / input classes ─────────────────────────────────────────────
 
 const SELECT_CLASS =
     'w-full appearance-none pl-3 pr-8 py-2 text-sm border border-slate-200 rounded-lg ' +
@@ -142,8 +143,6 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
     // ── Form fields ───────────────────────────────────────────────────────────
     const [summary, setSummary] = React.useState(`[AAC] Failed Run: ${execution.taskId}`);
     const [description, setDescription] = React.useState(() => buildDescription(execution));
-    const [expectedResult, setExpectedResult] = React.useState('');
-    const [actualResult, setActualResult] = React.useState('');
 
     // ── Submit state ──────────────────────────────────────────────────────────
     const [submitState, setSubmitState] = React.useState<SubmitState>('idle');
@@ -167,8 +166,14 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                     { headers: authHeaders },
                 );
                 if (!cancelled && res.data.success && res.data.data) {
-                    setProjects(res.data.data);
-                    if (res.data.data.length > 0) setSelectedProject(res.data.data[0].id);
+                    const fetchedProjects = res.data.data;
+                    setProjects(fetchedProjects);
+                    if (fetchedProjects.length > 0) {
+                        const cached = localStorage.getItem('jira_selected_project');
+                        const exists = fetchedProjects.some((p) => p.id === cached);
+                        const initial = exists ? cached! : fetchedProjects[0].id;
+                        setSelectedProject((prev) => prev || initial);
+                    }
                 }
             } catch (err: any) {
                 if (!cancelled) {
@@ -184,9 +189,18 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
         return () => { cancelled = true; };
     }, [authHeaders]);
 
+    // Derive the selected project's key (needed for issue types, assignees + createmeta)
+    const selectedProjectKey = React.useMemo(
+        () => projects.find((p) => p.id === selectedProject)?.key ?? '',
+        [projects, selectedProject],
+    );
+
     // ── Fetch issue types when project changes ────────────────────────────────
     React.useEffect(() => {
         if (!selectedProject) return;
+
+        const currentProject = projects.find((p) => p.id === selectedProject);
+        if (!currentProject?.key) return;
 
         let cancelled = false;
         setIssueTypesLoading(true);
@@ -197,12 +211,19 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
         (async () => {
             try {
                 const res = await axios.get<{ success: boolean; data?: IJiraIssueType[] }>(
-                    `${API_URL}/api/jira/issue-types?projectId=${encodeURIComponent(selectedProject)}`,
+                    `${API_URL}/api/jira/issue-types?projectKey=${encodeURIComponent(currentProject.key)}`,
                     { headers: authHeaders },
                 );
                 if (!cancelled && res.data.success && res.data.data) {
-                    setIssueTypes(res.data.data);
-                    if (res.data.data.length > 0) setSelectedIssueType(res.data.data[0].id);
+                    const fetchedTypes = res.data.data;
+                    setIssueTypes(fetchedTypes);
+                    if (fetchedTypes.length > 0) {
+                        const cached = localStorage.getItem('jira_selected_issueType');
+                        const exists = fetchedTypes.some((t) => t.id === cached);
+                        if (exists) {
+                            setSelectedIssueType(cached!);
+                        }
+                    }
                 }
             } catch {
                 // Non-critical; user can change project to retry
@@ -212,13 +233,37 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
         })();
 
         return () => { cancelled = true; };
-    }, [selectedProject, authHeaders]);
+    }, [selectedProject, projects, authHeaders]);
 
-    // Derive the selected project's key (needed for assignees + createmeta)
-    const selectedProjectKey = React.useMemo(
-        () => projects.find((p) => p.id === selectedProject)?.key ?? '',
-        [projects, selectedProject],
-    );
+    // ── Auto-select first issue type when loaded ──────────────────────────────
+    React.useEffect(() => {
+        if (issueTypes.length > 0 && !selectedIssueType) {
+            setSelectedIssueType(issueTypes[0].id);
+        }
+    }, [issueTypes, selectedIssueType]);
+
+    // ── Persist selected project to localStorage ──────────────────────────────
+    React.useEffect(() => {
+        if (selectedProject) {
+            localStorage.setItem('jira_selected_project', selectedProject);
+        }
+    }, [selectedProject]);
+
+    // ── Persist selected issue type to localStorage ───────────────────────────
+    React.useEffect(() => {
+        if (selectedIssueType) {
+            localStorage.setItem('jira_selected_issueType', selectedIssueType);
+        }
+    }, [selectedIssueType]);
+
+    // ── Persist selected assignee to localStorage ─────────────────────────────
+    React.useEffect(() => {
+        if (selectedAssignee) {
+            localStorage.setItem('jira_selected_assignee', selectedAssignee);
+        } else {
+            localStorage.removeItem('jira_selected_assignee');
+        }
+    }, [selectedAssignee]);
 
     // ── Fetch assignees when project key is known ─────────────────────────────
     React.useEffect(() => {
@@ -237,7 +282,14 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                     { headers: authHeaders },
                 );
                 if (!cancelled && res.data.success && res.data.data) {
-                    setAssignees(res.data.data);
+                    const fetchedAssignees = res.data.data;
+                    setAssignees(fetchedAssignees);
+                    const cached = localStorage.getItem('jira_selected_assignee');
+                    if (cached && fetchedAssignees.some((a) => a.accountId === cached)) {
+                        setSelectedAssignee(cached);
+                    } else {
+                        setSelectedAssignee('');
+                    }
                 }
             } catch {
                 // Assignees are optional; fail silently
@@ -263,8 +315,8 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
             try {
                 const res = await axios.get<{ success: boolean; data?: ICustomFieldSchema[] }>(
                     `${API_URL}/api/jira/createmeta` +
-                        `?projectKey=${encodeURIComponent(selectedProjectKey)}` +
-                        `&issueTypeId=${encodeURIComponent(selectedIssueType)}`,
+                    `?projectKey=${encodeURIComponent(selectedProjectKey)}` +
+                    `&issueTypeId=${encodeURIComponent(selectedIssueType)}`,
                     { headers: authHeaders },
                 );
                 if (!cancelled && res.data.success && res.data.data) {
@@ -287,16 +339,39 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
         setSubmitError(null);
         const API_URL = getApiUrl();
 
-        // Build customFields payload — array-type fields are split on comma
+        // Build customFields payload — array-type fields split on comma; the loop
+        // only populates the map. The API call happens once after the loop.
         const customFieldsPayload: Record<string, unknown> = {};
         for (const schema of customFieldSchemas) {
             const raw = customFieldValues[schema.key]?.trim() ?? '';
             if (!raw) continue;
-            if (schema.schema.type === 'array') {
-                customFieldsPayload[schema.key] = raw
-                    .split(',')
-                    .map((v) => v.trim())
-                    .filter(Boolean);
+
+            // Rich-text fields require Atlassian Document Format (ADF).
+            // Caught by two indicators:
+            //   1. schema.type === 'doc'  → paragraph custom fields
+            //   2. schema.custom === '...textarea' → plain-textarea custom fields
+            //      (Jira returns type 'string' for these, but they still demand ADF in v3)
+            const isDocField =
+                schema.schema?.type === 'doc' ||
+                schema.schema?.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:textarea' ||
+                schema.schema?.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:paragraph';
+
+            if (schema.schema?.type === 'array') {
+                const parts = raw.split(',').map((s) => s.trim()).filter(Boolean);
+                if (Array.isArray(schema.allowedValues) && schema.allowedValues.length > 0) {
+                    customFieldsPayload[schema.key] = parts.map((val) => ({ id: val }));
+                } else {
+                    customFieldsPayload[schema.key] = parts;
+                }
+            } else if (isDocField) {
+                customFieldsPayload[schema.key] = {
+                    version: 1,
+                    type: 'doc',
+                    content: [{ type: 'paragraph', content: [{ type: 'text', text: String(raw) }] }],
+                };
+            } else if (Array.isArray(schema.allowedValues) && schema.allowedValues.length > 0) {
+                // Jira v3 custom select fields expect { id: "<option-id>" }
+                customFieldsPayload[schema.key] = { id: raw };
             } else {
                 customFieldsPayload[schema.key] = raw;
             }
@@ -306,13 +381,10 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
             const res = await axios.post<{ success: boolean; data?: ICreatedTicket; error?: string }>(
                 `${API_URL}/api/jira/tickets`,
                 {
-                    projectId: selectedProject,
                     projectKey: selectedProjectKey,
                     issueType: selectedIssueType,
                     summary: summary.trim(),
                     description: description.trim(),
-                    expectedResult: expectedResult.trim() || undefined,
-                    actualResult: actualResult.trim() || undefined,
                     executionId: execution._id ?? execution.taskId,
                     assigneeId: selectedAssignee || undefined,
                     customFields: Object.keys(customFieldsPayload).length > 0
@@ -335,39 +407,116 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
         }
     };
 
+    // ── Backdrop click handler ────────────────────────────────────────────────
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) onClose();
     };
 
-    // ── Render helpers ────────────────────────────────────────────────────────
-
+    // ── Custom field renderer ─────────────────────────────────────────────────
     const renderCustomField = (schema: ICustomFieldSchema) => {
         const value = customFieldValues[schema.key] ?? '';
         const onChange = (v: string) =>
             setCustomFieldValues((prev) => ({ ...prev, [schema.key]: v }));
 
+        // Mirror the payload builder's isDocField logic so the UI matches the format sent.
+        const isDocField =
+            schema.schema?.type === 'doc' ||
+            schema.schema?.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:textarea' ||
+            schema.schema?.custom === 'com.atlassian.jira.plugin.system.customfieldtypes:paragraph';
+
+        const label = (
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                {schema.name}
+                {schema.required && <span className="ml-1 text-rose-500">*</span>}
+                {schema.schema?.type === 'array' && (!Array.isArray(schema.allowedValues) || schema.allowedValues.length === 0) && (
+                    <span className="ml-1 font-normal text-slate-400">(comma-separated)</span>
+                )}
+            </label>
+        );
+
+        if (Array.isArray(schema.allowedValues) && schema.allowedValues.length > 0) {
+            return (
+                <div key={schema.key}>
+                    {label}
+                    <div className="relative">
+                        <select
+                            required={schema.required}
+                            value={value}
+                            onChange={(e) => onChange(e.target.value)}
+                            className={SELECT_CLASS}
+                        >
+                            <option value="">Select {schema.name}...</option>
+                            {schema.allowedValues.map((opt) => (
+                                <option key={opt.id} value={opt.id}>{opt.value}</option>
+                            ))}
+                        </select>
+                        <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    </div>
+                </div>
+            );
+        }
+
+        if (schema.schema?.type === 'date') {
+            return (
+                <div key={schema.key}>
+                    {label}
+                    <input
+                        type="date"
+                        required={schema.required}
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                        className={INPUT_CLASS}
+                    />
+                </div>
+            );
+        }
+
+        if (schema.schema?.type === 'datetime') {
+            return (
+                <div key={schema.key}>
+                    {label}
+                    <input
+                        type="datetime-local"
+                        required={schema.required}
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                        className={INPUT_CLASS}
+                    />
+                </div>
+            );
+        }
+
+        if (isDocField) {
+            return (
+                <div key={schema.key}>
+                    {label}
+                    <textarea
+                        rows={4}
+                        required={schema.required}
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y transition"
+                    />
+                </div>
+            );
+        }
+
         return (
             <div key={schema.key}>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                    {schema.name}
-                    {schema.required && <span className="ml-1 text-rose-500">*</span>}
-                    {schema.schema.type === 'array' && (
-                        <span className="ml-1 font-normal text-slate-400">(comma-separated)</span>
-                    )}
-                </label>
+                {label}
                 <input
                     type="text"
                     required={schema.required}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    placeholder={schema.schema.type === 'array' ? 'value1, value2' : ''}
+                    placeholder={schema.schema?.type === 'array' ? 'value1, value2' : ''}
                     className={INPUT_CLASS}
                 />
             </div>
         );
     };
 
-    // ── Modal content ─────────────────────────────────────────────────────────
+    // ── Modal JSX ─────────────────────────────────────────────────────────────
 
     const modal = (
         <div
@@ -530,11 +679,17 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                                         required
                                         value={selectedIssueType}
                                         onChange={(e) => setSelectedIssueType(e.target.value)}
-                                        disabled={issueTypesLoading || issueTypes.length === 0}
+                                        disabled={!selectedProject || issueTypesLoading}
                                         className={SELECT_CLASS}
                                     >
-                                        {issueTypes.length === 0 && !issueTypesLoading && (
+                                        {issueTypesLoading && (
+                                            <option value="">Loading issue types...</option>
+                                        )}
+                                        {!issueTypesLoading && !selectedProject && (
                                             <option value="">Select a project first</option>
+                                        )}
+                                        {!issueTypesLoading && selectedProject && issueTypes.length === 0 && (
+                                            <option value="">No issue types found</option>
                                         )}
                                         {issueTypes.map((t) => (
                                             <option key={t.id} value={t.id}>{t.name}</option>
@@ -601,38 +756,6 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
                                     className="w-full px-3 py-2 text-xs font-mono border border-slate-200 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y transition"
-                                />
-                            </div>
-
-                            {/* Expected Result */}
-                            <div>
-                                <label className="block text-xs font-semibold text-slate-600 mb-1.5" htmlFor="jira-expected">
-                                    Expected Result
-                                    <span className="ml-1 font-normal text-slate-400">(optional)</span>
-                                </label>
-                                <textarea
-                                    id="jira-expected"
-                                    rows={3}
-                                    placeholder="What should have happened?"
-                                    value={expectedResult}
-                                    onChange={(e) => setExpectedResult(e.target.value)}
-                                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y transition"
-                                />
-                            </div>
-
-                            {/* Actual Result */}
-                            <div>
-                                <label className="block text-xs font-semibold text-slate-600 mb-1.5" htmlFor="jira-actual">
-                                    Actual Result
-                                    <span className="ml-1 font-normal text-slate-400">(optional)</span>
-                                </label>
-                                <textarea
-                                    id="jira-actual"
-                                    rows={3}
-                                    placeholder="What actually happened?"
-                                    value={actualResult}
-                                    onChange={(e) => setActualResult(e.target.value)}
-                                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y transition"
                                 />
                             </div>
 
