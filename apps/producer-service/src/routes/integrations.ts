@@ -113,8 +113,6 @@ interface ICreateTicketBody {
     summary?: string;
     description?: string;
     executionId?: string;
-    expectedResult?: string;
-    actualResult?: string;
     assigneeId?: string;
     customFields?: Record<string, unknown>;
 }
@@ -133,7 +131,8 @@ interface ICustomFieldSchema {
     key: string;
     name: string;
     required: boolean;
-    schema: { type: string; items?: string };
+    schema: { type: string; items?: string; custom?: string };
+    allowedValues?: { id: string; value: string }[];
 }
 
 /** Standard Jira fields that are already handled by dedicated form inputs. */
@@ -324,10 +323,10 @@ export async function integrationRoutes(
     });
 
     // ── GET /api/jira/issue-types ─────────────────────────────────────────────
-    // Returns issue types. Optionally filter by ?projectId= to get project-specific types.
+    // Returns issue types. Optionally filter by ?projectKey= to get project-specific types.
     app.get('/api/jira/issue-types', async (request, reply) => {
         const organizationId = request.user!.organizationId;
-        const { projectId } = request.query as { projectId?: string };
+        const { projectKey } = request.query as { projectKey?: string };
 
         try {
             const config = await getJiraConfig(mongoClient, organizationId);
@@ -342,13 +341,15 @@ export async function integrationRoutes(
                 authTag: config.authTag,
             });
 
-            const path = projectId
-                ? `/rest/api/3/issuetype/project?projectId=${encodeURIComponent(projectId)}`
+            const path = projectKey
+                ? `/rest/api/3/issue/createmeta/${encodeURIComponent(projectKey)}/issuetypes`
                 : '/rest/api/3/issuetype';
 
-            const result = await jiraFetch(config.domain, path, config.email, apiToken) as any[];
+            const result = await jiraFetch(config.domain, path, config.email, apiToken) as any;
 
-            const issueTypes = (Array.isArray(result) ? result : []).map((t: any) => ({
+            const rawIssueTypes = result?.values || result?.issueTypes || (Array.isArray(result) ? result : []);
+
+            const issueTypes = rawIssueTypes.map((t: any) => ({
                 id: t.id,
                 name: t.name,
                 description: t.description ?? '',
@@ -385,27 +386,41 @@ export async function integrationRoutes(
 
             const apiToken = decrypt({ encrypted: config.encryptedToken, iv: config.iv, authTag: config.authTag });
 
-            const path =
-                `/rest/api/3/issue/createmeta` +
-                `?projectKeys=${encodeURIComponent(projectKey)}` +
-                `&issuetypeIds=${encodeURIComponent(issueTypeId)}` +
-                `&expand=projects.issuetypes.fields`;
+            const path = `/rest/api/3/issue/createmeta/${encodeURIComponent(projectKey)}/issuetypes/${encodeURIComponent(issueTypeId)}`;
 
             const result = await jiraFetch(config.domain, path, config.email, apiToken) as any;
 
-            const rawFields: Record<string, any> =
-                result?.projects?.[0]?.issuetypes?.[0]?.fields ?? {};
+            // Jira v3 createmeta return formats can wildly vary based on exact endpoint used or enterprise configurations.
+            // It could be `{ values: [ { fieldId: ... } ] }`, or `{ fields: { "customfield_10010": { ... } } }`,
+            // or `{ values: [ { fields: { ... } } ] }`.
+            let rawFieldsList: any[] = [];
 
-            const customFields: ICustomFieldSchema[] = Object.entries(rawFields)
-                .filter(([key]) => !STANDARD_JIRA_FIELDS.has(key))
-                .map(([key, meta]) => ({
-                    key,
-                    name: meta.name ?? key,
-                    required: meta.required === true,
+            if (result?.fields && typeof result.fields === 'object') {
+                rawFieldsList = Object.values(result.fields);
+            } else if (result?.values && Array.isArray(result.values)) {
+                if (result.values.length > 0 && result.values[0].fields) {
+                    rawFieldsList = Object.values(result.values[0].fields);
+                } else {
+                    rawFieldsList = result.values;
+                }
+            } else if (Array.isArray(result)) {
+                rawFieldsList = result;
+            }
+
+            const customFields: ICustomFieldSchema[] = rawFieldsList
+                .filter((field) => field.fieldId && !STANDARD_JIRA_FIELDS.has(field.fieldId))
+                .map((field) => ({
+                    key: field.fieldId,
+                    name: field.name ?? field.fieldId,
+                    required: field.required === true,
                     schema: {
-                        type: meta.schema?.type ?? 'string',
-                        items: meta.schema?.items,
+                        type: field.schema?.type ?? 'string',
+                        items: field.schema?.items,
+                        custom: field.schema?.custom,
                     },
+                    allowedValues: Array.isArray(field.allowedValues)
+                        ? field.allowedValues.map((v: any) => ({ id: v.id, value: v.value ?? v.name }))
+                        : undefined,
                 }));
 
             return reply.send({ success: true, data: customFields });
@@ -468,8 +483,7 @@ export async function integrationRoutes(
         const organizationId = request.user!.organizationId;
         const {
             projectKey, issueType, summary, description,
-            executionId, expectedResult, actualResult,
-            assigneeId, customFields,
+            executionId, assigneeId, customFields,
         } = request.body as ICreateTicketBody;
 
         // Input validation
@@ -499,20 +513,6 @@ export async function integrationRoutes(
                     type: 'paragraph',
                     content: [{ type: 'text', text: description }],
                 });
-            }
-
-            if (expectedResult) {
-                adfContent.push(
-                    { type: 'paragraph', content: [{ type: 'text', text: 'Expected Result:', marks: [{ type: 'strong' }] }] },
-                    { type: 'paragraph', content: [{ type: 'text', text: expectedResult }] },
-                );
-            }
-
-            if (actualResult) {
-                adfContent.push(
-                    { type: 'paragraph', content: [{ type: 'text', text: 'Actual Result:', marks: [{ type: 'strong' }] }] },
-                    { type: 'paragraph', content: [{ type: 'text', text: actualResult }] },
-                );
             }
 
             const issueFields: Record<string, unknown> = {
