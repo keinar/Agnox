@@ -7,7 +7,6 @@ import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Settings } from './pages/Settings';
 import { PrivacyPolicy } from './components/legal/PrivacyPolicy';
-import './App.css';
 
 function App() {
   const queryClient = new QueryClient();
@@ -15,36 +14,38 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/join" element={<Signup />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
+        <div className="dark min-h-screen bg-slate-950 text-slate-50 font-sans antialiased">
+          <BrowserRouter>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/join" element={<Signup />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
 
-            {/* Protected routes */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              }
-            />
+              {/* Protected routes */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Redirect root to dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </BrowserRouter>
+              {/* Redirect root to dashboard */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </div>
       </AuthProvider>
     </QueryClientProvider>
   );
