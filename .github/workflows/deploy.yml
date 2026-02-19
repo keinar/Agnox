@@ -99,6 +99,7 @@ jobs:
             FROM_EMAIL=${{ secrets.FROM_EMAIL }}
             FROM_NAME=${{ secrets.FROM_NAME }}
             FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+            ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}
             EOF
             
             # 1. Pull the latest test image
