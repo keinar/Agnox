@@ -12,6 +12,7 @@ import { projectRoutes } from '../routes/projects.js';
 import { projectSettingsRoutes } from '../routes/projectSettings.js';
 import { billingRoutes } from '../routes/billing.js';
 import { webhookRoutes } from '../routes/webhooks.js';
+import { integrationRoutes } from '../routes/integrations.js';
 import { createTestRunLimitMiddleware } from '../middleware/planLimits.js';
 import { getDbName } from './server.js';
 
@@ -51,6 +52,9 @@ export async function setupRoutes(
 
     // Webhook routes (Stripe events - no auth, signature verified)
     await webhookRoutes(app, dbClient);
+
+    // Integration routes (Jira settings + proxy — JWT protected via global auth)
+    await integrationRoutes(app, dbClient, apiRateLimit);
 
     // Create plan enforcement middleware
     const db = dbClient.db(DB_NAME);

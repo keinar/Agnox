@@ -87,8 +87,10 @@ export const Dashboard = () => {
     }
   }, [token, setExecutions]);
 
+  const isViewer = user?.role === 'viewer';
+
   return (
-    <div className="container">
+    <div className="max-w-7xl mx-auto px-5 py-6">
       {/* Header with Auth, Settings, Logout */}
       <DashboardHeader
         user={user}
@@ -98,50 +100,25 @@ export const Dashboard = () => {
       />
 
       {/* Main Header with Title and Run Test Button */}
-      <div className="header">
-        <div className="title">
-          <h1>Automation Center</h1>
-          <p style={{ color: '#94a3b8', marginTop: '4px' }}>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="m-0 text-3xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+            Automation Center
+          </h1>
+          <p className="text-slate-500 mt-1">
             Live monitoring of test infrastructure
           </p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
-          disabled={user?.role === 'viewer'}
-          title={user?.role === 'viewer' ? 'Viewers cannot run tests' : 'Run a new test'}
-          style={{
-            background: user?.role === 'viewer'
-              ? 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'
-              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            border: 'none',
-            padding: '12px 24px',
-            borderRadius: '10px',
-            fontWeight: 600,
-            cursor: user?.role === 'viewer' ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            boxShadow: user?.role === 'viewer'
-              ? 'none'
-              : '0 4px 12px rgba(102, 126, 234, 0.35)',
-            transition: 'all 0.2s ease',
-            fontSize: '14px',
-            opacity: user?.role === 'viewer' ? 0.6 : 1
-          }}
-          onMouseOver={(e) => {
-            if (user?.role !== 'viewer') {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.45)';
-            }
-          }}
-          onMouseOut={(e) => {
-            if (user?.role !== 'viewer') {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.35)';
-            }
-          }}
+          disabled={isViewer}
+          title={isViewer ? 'Viewers cannot run tests' : 'Run a new test'}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm text-white border-none transition-all duration-200 ${
+            isViewer
+              ? 'bg-gradient-to-r from-gray-400 to-gray-500 opacity-60 cursor-not-allowed'
+              : 'bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/35 cursor-pointer hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/45'
+          }`}
         >
           <Play size={18} /> Run New Test
         </button>

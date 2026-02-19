@@ -22,7 +22,7 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -37,7 +37,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -91,9 +91,10 @@ services:
       - EMAIL_CLICK_TRACKING=${EMAIL_CLICK_TRACKING:-true}
       # Gemini API (for strict checks)
       - GEMINI_API_KEY=${GEMINI_API_KEY:-mock_gemini}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
     healthcheck:
       # Simple TCP port check - works reliably in all Node images
-      test: ["CMD-SHELL", "node -e \"const net=require('net');const c=net.connect(3000,'localhost',()=>{c.end();process.exit(0)});c.on('error',()=>process.exit(1))\""]
+      test: [ "CMD-SHELL", "node -e \"const net=require('net');const c=net.connect(3000,'localhost',()=>{c.end();process.exit(0)});c.on('error',()=>process.exit(1))\"" ]
       interval: 5s
       timeout: 5s
       retries: 30
@@ -125,7 +126,7 @@ services:
       - BASE_URL=${BASE_URL}
       - CI=true
       - REPORTS_DIR=/app/reports
-      - PUBLIC_API_URL=http://producer:3000
+      - PUBLIC_API_URL=http://localhost:3000
       - REDIS_URL=redis://redis:6379
       - GITHUB_COPILOT_API_KEY=${GITHUB_COPILOT_API_KEY}
     volumes:

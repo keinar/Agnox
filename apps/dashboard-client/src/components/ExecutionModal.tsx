@@ -66,7 +66,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
 
         const targetFolder = getCleanPath(selectedFolder);
 
-        // This is just for UI display/preview. 
+        // This is just for UI display/preview.
         // The backend will ignore this string and use its internal agnostic logic.
         setCommand(`Agnostic Execution Mode: Running [${targetFolder}] via entrypoint.sh`);
     }, [selectedFolder, showAdvanced]);
@@ -85,30 +85,36 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
         });
     };
 
+    const inputClass = "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow";
+
     return (
-        <div className="modal-overlay">
-            <div className="modal-container">
-                <div className="modal-header">
-                    <h3 className="modal-title">
-                        <Play size={20} color="#3b82f6" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg animate-slide-up">
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+                    <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+                        <Play size={20} className="text-indigo-500" />
                         Launch Agnostic Execution
                     </h3>
-                    <button onClick={onClose} className="close-button">
-                        <X size={24} />
+                    <button
+                        onClick={onClose}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                    >
+                        <X size={20} />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="modal-body">
-                    {/* Basic Config */}
-                    <div className="form-group">
-                        <label className="form-label">
-                            <Folder size={16} /> Test Folder (Path)
+                <form onSubmit={handleSubmit} className="px-6 py-5 flex flex-col gap-4">
+                    {/* Test Folder */}
+                    <div className="flex flex-col gap-1.5">
+                        <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                            <Folder size={16} className="text-slate-400" /> Test Folder (Path)
                         </label>
                         {availableFolders.length > 0 ? (
                             <select
                                 value={selectedFolder}
                                 onChange={(e) => setSelectedFolder(e.target.value)}
-                                className="form-input"
+                                className={inputClass}
                             >
                                 <option value="all">Run All Tests</option>
                                 {availableFolders.map(f => <option key={f} value={f}>{f}</option>)}
@@ -116,26 +122,27 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
                         ) : (
                             <input
                                 type="text"
-                                className="form-input"
+                                className={inputClass}
                                 placeholder="e.g. tests/ui or all"
                                 value={selectedFolder}
                                 onChange={(e) => setSelectedFolder(e.target.value)}
                             />
                         )}
-                        <p className="helper-text">Path inside the Docker image</p>
+                        <p className="text-xs text-slate-400">Path inside the Docker image</p>
                     </div>
 
-                    <div className="form-group">
-                        <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <Server size={16} /> Environment
+                    {/* Environment */}
+                    <div className="flex flex-col gap-1.5">
+                        <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                            <Server size={16} className="text-slate-400" /> Environment
                             <span title="Environments are mapped from system ENV variables (e.g. STAGING_URL)">
-                                <Info size={14} style={{ cursor: 'help', color: '#94a3b8' }} />
+                                <Info size={14} className="cursor-help text-slate-400" />
                             </span>
                         </label>
                         <select
                             value={environment}
                             onChange={(e) => setEnvironment(e.target.value)}
-                            className="form-select"
+                            className={inputClass}
                         >
                             {!defaults?.envMapping || Object.keys(defaults.envMapping).length === 0 ? (
                                 <>
@@ -152,86 +159,72 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
                         </select>
                     </div>
 
-                    <div className="form-group">
-                        <label className="form-label">
-                            <Globe size={16} /> Target URL
+                    {/* Target URL */}
+                    <div className="flex flex-col gap-1.5">
+                        <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                            <Globe size={16} className="text-slate-400" /> Target URL
                         </label>
                         <input
                             type="url"
                             required
                             value={baseUrl}
                             onChange={(e) => setBaseUrl(e.target.value)}
-                            className="form-input"
+                            className={inputClass}
                             placeholder={defaults?.baseUrl ? undefined : 'Not configured — go to Settings → Run Settings'}
                         />
                     </div>
 
-                    <div className="form-group" style={{ marginTop: '1rem' }}>
-                        <label className="form-label">
-                            <Terminal size={16} /> Execution Strategy
+                    {/* Execution Strategy Preview */}
+                    <div className="flex flex-col gap-1.5">
+                        <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                            <Terminal size={16} className="text-slate-400" /> Execution Strategy
                         </label>
-                        <div style={{
-                            padding: '10px',
-                            backgroundColor: '#0f172a',
-                            borderRadius: '6px',
-                            border: '1px solid #1e293b',
-                            color: '#38bdf8',
-                            fontFamily: 'monospace',
-                            fontSize: '0.8rem'
-                        }}>
+                        <div className="rounded-lg bg-slate-950 border border-slate-800 px-3 py-2.5 font-mono text-xs text-sky-400">
                             {command}
                         </div>
                     </div>
 
                     {/* Advanced Configuration Toggle */}
-                    <div
-                        className="advanced-toggle"
+                    <button
+                        type="button"
                         onClick={() => setShowAdvanced(!showAdvanced)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            cursor: 'pointer',
-                            color: '#94a3b8',
-                            fontSize: '0.85rem',
-                            marginTop: '1rem',
-                            padding: '8px 0'
-                        }}
+                        className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 transition-colors cursor-pointer py-1"
                     >
                         {showAdvanced ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                         Advanced Container Configuration
-                    </div>
+                    </button>
 
                     {showAdvanced && (
-                        <div className="advanced-section" style={{
-                            padding: '12px',
-                            backgroundColor: 'rgba(255,255,255,0.03)',
-                            borderRadius: '8px',
-                            border: '1px solid rgba(255,255,255,0.05)',
-                            marginTop: '8px'
-                        }}>
-                            <div className="form-group">
-                                <label className="form-label">
-                                    <Box size={16} /> Docker Image
+                        <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                                    <Box size={16} className="text-slate-400" /> Docker Image
                                 </label>
                                 <input
                                     type="text"
                                     value={image}
                                     onChange={(e) => setImage(e.target.value)}
-                                    className="form-input"
+                                    className={`${inputClass} font-mono text-xs`}
                                     placeholder={defaults?.image ? undefined : 'Not configured — go to Settings → Run Settings'}
-                                    style={{ fontSize: '0.8rem', fontFamily: 'monospace' }}
                                 />
                             </div>
                         </div>
                     )}
 
-                    <div className="modal-footer">
-                        <button type="button" onClick={onClose} className="btn btn-secondary">
+                    {/* Footer */}
+                    <div className="flex justify-end gap-3 pt-2 mt-2 border-t border-slate-100">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 rounded-lg text-sm font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
+                        >
                             Cancel
                         </button>
-                        <button type="submit" className="btn btn-primary">
-                            <Play size={18} />
+                        <button
+                            type="submit"
+                            className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors cursor-pointer shadow-sm"
+                        >
+                            <Play size={16} />
                             Launch Execution
                         </button>
                     </div>

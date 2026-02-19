@@ -8,6 +8,7 @@ import { MembersTab } from '../components/settings/MembersTab';
 import { SecurityTab } from '../components/settings/SecurityTab';
 import { UsageTab } from '../components/settings/UsageTab';
 import { RunSettingsTab } from '../components/settings/RunSettingsTab';
+import { IntegrationsTab } from '../components/settings/IntegrationsTab';
 
 // Lazy load BillingTab (largest component - 615 lines) to reduce initial bundle
 const BillingTab = lazy(() => import('../components/settings/BillingTab').then(m => ({ default: m.BillingTab })));
@@ -96,7 +97,7 @@ const styles = {
   } as React.CSSProperties,
 };
 
-type TabId = 'profile' | 'organization' | 'members' | 'billing' | 'security' | 'usage' | 'run-settings';
+type TabId = 'profile' | 'organization' | 'members' | 'billing' | 'security' | 'usage' | 'run-settings' | 'integrations';
 
 export function Settings() {
   const { user } = useAuth();
@@ -110,6 +111,7 @@ export function Settings() {
     { id: 'security' as const, label: 'Security', component: SecurityTab },
     { id: 'usage' as const, label: 'Usage', component: UsageTab },
     { id: 'run-settings' as const, label: 'Run Settings', component: RunSettingsTab },
+    { id: 'integrations' as const, label: 'Integrations', component: IntegrationsTab },
   ];
 
   // Filter billing tab for non-admins to prevent 403 errors
