@@ -179,7 +179,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
     const allureReportUrl = `${baseUrl}/${execution.taskId}/allure-report/index.html`;
 
     const isFinished = ['PASSED', 'FAILED', 'UNSTABLE'].includes(execution.status);
-    const isRunLocal = execution.reportsBaseUrl?.includes('localhost') || execution.reportsBaseUrl?.includes('127.0.0.1');
+    const isRunLocal = execution.config?.baseUrl?.includes('localhost') || execution.config?.baseUrl?.includes('127.0.0.1');
     const isDashboardCloud = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
     const areReportsInaccessible = isDashboardCloud && isRunLocal;
 
@@ -244,7 +244,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                         <div className="flex flex-col gap-1">
                             <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold w-fit border ${
                                 isRunLocal
-                                    ? 'bg-sky-50 text-sky-700 border-sky-200'
+                                    ? 'bg-slate-100 text-slate-600 border-slate-200'
                                     : 'bg-purple-50 text-purple-700 border-purple-200'
                             }`}>
                                 {isRunLocal ? <Laptop size={11} /> : <Server size={11} />}

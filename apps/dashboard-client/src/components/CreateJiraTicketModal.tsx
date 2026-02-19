@@ -163,7 +163,7 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                 {
                     projectId: selectedProject,
                     projectKey: selectedProjectObj?.key,
-                    issueTypeId: selectedIssueType,
+                    issueType: selectedIssueType,
                     summary: summary.trim(),
                     description: description.trim(),
                     executionId: execution._id,

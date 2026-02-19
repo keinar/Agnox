@@ -126,7 +126,7 @@ services:
       - BASE_URL=${BASE_URL}
       - CI=true
       - REPORTS_DIR=/app/reports
-      - PUBLIC_API_URL=http://producer:3000
+      - PUBLIC_API_URL=http://localhost:3000
       - REDIS_URL=redis://redis:6379
       - GITHUB_COPILOT_API_KEY=${GITHUB_COPILOT_API_KEY}
     volumes:

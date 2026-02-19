@@ -32,14 +32,14 @@ const AIAnalysisView: React.FC<AIAnalysisViewProps> = ({
                 const isFix = title.toLowerCase().includes('fix') || title.toLowerCase().includes('solution');
 
                 return (
-                    <div key={i} style={{ marginTop: '24px', marginBottom: '12px', borderBottom: '1px solid #374151', paddingBottom: '8px' }}>
+                    <div key={i} style={{ marginTop: '24px', marginBottom: '12px', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
                         <h3 style={{
                             fontSize: '18px',
                             fontWeight: 'bold',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            color: isRootCause ? '#fca5a5' : isFix ? '#86efac' : '#e2e8f0'
+                            color: isRootCause ? '#dc2626' : isFix ? '#16a34a' : '#1e293b'
                         }}>
                             {isRootCause && <AlertTriangle size={18} style={{ color: '#f87171' }} />}
                             {isFix && <Sparkles size={18} style={{ color: '#4ade80' }} />}
@@ -59,7 +59,7 @@ const AIAnalysisView: React.FC<AIAnalysisViewProps> = ({
                             borderRadius: '50%',
                             backgroundColor: '#3b82f6'
                         }}></div>
-                        <p style={{ color: '#d1d5db', fontSize: '14px', lineHeight: '1.625' }}>
+                        <p style={{ color: '#64748b', fontSize: '14px', lineHeight: '1.625' }}>
                             {line.replace('* ', '').replace(/\*\*/g, '')}
                         </p>
                     </div>
@@ -69,13 +69,13 @@ const AIAnalysisView: React.FC<AIAnalysisViewProps> = ({
             if (line.includes('**')) {
                 const parts = line.split('**');
                 return (
-                    <p key={i} style={{ color: '#d1d5db', marginBottom: '12px', fontSize: '14px', lineHeight: '1.625' }}>
+                    <p key={i} style={{ color: '#64748b', marginBottom: '12px', fontSize: '14px', lineHeight: '1.625' }}>
                         {parts.map((part, index) =>
                             index % 2 === 1 ? (
                                 <span key={index} style={{
-                                    color: '#ffffff',
+                                    color: '#1e293b',
                                     fontWeight: 600,
-                                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                    backgroundColor: 'rgba(0, 0, 0, 0.07)',
                                     padding: '0 4px',
                                     borderRadius: '4px'
                                 }}>
@@ -88,7 +88,7 @@ const AIAnalysisView: React.FC<AIAnalysisViewProps> = ({
             }
 
             if (line.trim() === '') return <div key={i} style={{ height: '8px' }}></div>;
-            return <p key={i} style={{ color: '#d1d5db', marginBottom: '12px', fontSize: '14px', lineHeight: '1.625' }}>{line}</p>;
+            return <p key={i} style={{ color: '#64748b', marginBottom: '12px', fontSize: '14px', lineHeight: '1.625' }}>{line}</p>;
         });
     }, [analysis]);
 
@@ -96,7 +96,7 @@ const AIAnalysisView: React.FC<AIAnalysisViewProps> = ({
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-slate-900 rounded-xl shadow-2xl w-full max-w-3xl flex flex-col" style={{ maxHeight: '85vh' }}>
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl flex flex-col" style={{ maxHeight: '85vh' }}>
                 
                 {/* Header */}
                 <div className="modal-header">
@@ -123,18 +123,18 @@ const AIAnalysisView: React.FC<AIAnalysisViewProps> = ({
                 </div>
 
                 {/* Body (Scrollable) */}
-                <div className="modal-body" style={{ 
-                    flex: 1, 
-                    overflowY: 'auto', 
-                    padding: '20px', 
-                    backgroundColor: '#0f172a',
-                    fontSize: '0.9rem' 
+                <div className="modal-body" style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    padding: '20px',
+                    backgroundColor: '#ffffff',
+                    fontSize: '0.9rem'
                 }}>
                     {formattedContent}
                 </div>
 
                 {/* Footer */}
-                <div className="modal-footer" style={{ borderTop: '1px solid #1e293b', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="modal-footer" style={{ borderTop: '1px solid #e2e8f0', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#64748b' }}>
                         <CheckCircle size={14} />
                         Generated automatically from logs
