@@ -95,8 +95,8 @@ const AIAnalysisView: React.FC<AIAnalysisViewProps> = ({
     if (!isVisible) return null;
 
     return createPortal(
-        <div className="modal-overlay">
-            <div className="modal-container" style={{ maxWidth: '800px', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-slate-900 rounded-xl shadow-2xl w-full max-w-3xl flex flex-col" style={{ maxHeight: '85vh' }}>
                 
                 {/* Header */}
                 <div className="modal-header">
