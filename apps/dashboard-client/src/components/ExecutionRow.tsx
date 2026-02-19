@@ -3,10 +3,11 @@ import {
     Trash2, ChevronDown, ChevronRight, CheckCircle, XCircle,
     Clock, PlayCircle, FileText, BarChart2, Laptop, Server,
     Turtle, Zap, Box, Sparkles, Loader2, AlertTriangle,
-    User2, Timer, Github, Clipboard, Check,
+    User2, Timer, Github, Clipboard, Check, Bug,
 } from 'lucide-react';
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns';
 import AIAnalysisView from './AIAnalysisView';
+import { CreateJiraTicketModal } from './CreateJiraTicketModal';
 import { useAuth } from '../context/AuthContext';
 
 interface ExecutionRowProps {
@@ -80,6 +81,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
 }) {
     const [metrics, setMetrics] = React.useState<any>(null);
     const [showAI, setShowAI] = React.useState(false);
+    const [showJiraModal, setShowJiraModal] = React.useState(false);
     const [copied, setCopied] = React.useState(false);
     const { token } = useAuth();
 
@@ -299,6 +301,17 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                                 </button>
                             )}
 
+                            {/* Create Jira Ticket button — FAILED/ERROR only */}
+                            {(execution.status === 'FAILED' || execution.status === 'ERROR') && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setShowJiraModal(true); }}
+                                    title="Create Jira Ticket"
+                                    className={`${iconBtnBase} text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100`}
+                                >
+                                    <Bug size={16} />
+                                </button>
+                            )}
+
                             {/* Analyzing spinner */}
                             {execution.status === 'ANALYZING' && (
                                 <div
@@ -440,6 +453,13 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                 isVisible={showAI}
                 onClose={() => setShowAI(false)}
             />
+
+            {showJiraModal && (
+                <CreateJiraTicketModal
+                    execution={execution}
+                    onClose={() => setShowJiraModal(false)}
+                />
+            )}
         </>
     );
 });
