@@ -1,8 +1,13 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
-import { X, Loader2, CheckCircle2, XCircle, ExternalLink, ChevronDown } from 'lucide-react';
+import {
+    X, Loader2, CheckCircle2, XCircle, ExternalLink,
+    ChevronDown, Plus, Ticket,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+// ── Interfaces ────────────────────────────────────────────────────────────────
 
 interface IJiraProject {
     id: string;
@@ -16,9 +21,30 @@ interface IJiraIssueType {
     iconUrl?: string;
 }
 
+interface IJiraAssignee {
+    accountId: string;
+    displayName: string;
+    emailAddress?: string | null;
+    avatarUrl?: string | null;
+}
+
+interface ICustomFieldSchema {
+    key: string;
+    name: string;
+    required: boolean;
+    schema: { type: string; items?: string };
+}
+
 interface ICreatedTicket {
     key: string;
     url: string;
+}
+
+/** A Jira ticket reference previously saved on the execution document. */
+interface IJiraTicketRef {
+    ticketKey: string;
+    ticketUrl: string;
+    createdAt: string;
 }
 
 interface CreateJiraTicketModalProps {
@@ -28,7 +54,12 @@ interface CreateJiraTicketModalProps {
 
 type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
-const getApiUrl = () =>
+/** Which panel the modal currently displays. */
+type ModalView = 'existing-tickets' | 'form';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const getApiUrl = (): string =>
     window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
         ? import.meta.env.VITE_API_URL
         : 'http://localhost:3000';
@@ -46,9 +77,10 @@ const buildDescription = (execution: any): string => {
     ];
 
     if (execution.error) {
-        const errorText = typeof execution.error === 'object'
-            ? JSON.stringify(execution.error, null, 2)
-            : execution.error;
+        const errorText =
+            typeof execution.error === 'object'
+                ? JSON.stringify(execution.error, null, 2)
+                : execution.error;
         lines.push('', '*Error Details:*', '{code}', errorText.slice(0, 500), '{code}');
     }
 
@@ -62,9 +94,32 @@ const buildDescription = (execution: any): string => {
     return lines.join('\n');
 };
 
+// ── Shared select class ───────────────────────────────────────────────────────
+
+const SELECT_CLASS =
+    'w-full appearance-none pl-3 pr-8 py-2 text-sm border border-slate-200 rounded-lg ' +
+    'bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 ' +
+    'focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition';
+
+const INPUT_CLASS =
+    'w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 ' +
+    'placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 ' +
+    'focus:border-indigo-500 transition';
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketModalProps) {
     const { token } = useAuth();
 
+    // Derive existing tickets from the execution document
+    const existingTickets: IJiraTicketRef[] = execution.jiraTickets ?? [];
+
+    // Modal view state — start on the existing-tickets panel if there are linked tickets
+    const [view, setView] = React.useState<ModalView>(
+        existingTickets.length > 0 ? 'existing-tickets' : 'form',
+    );
+
+    // ── Project / issue-type state ────────────────────────────────────────────
     const [projects, setProjects] = React.useState<IJiraProject[]>([]);
     const [issueTypes, setIssueTypes] = React.useState<IJiraIssueType[]>([]);
     const [projectsLoading, setProjectsLoading] = React.useState(true);
@@ -73,11 +128,24 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
 
     const [selectedProject, setSelectedProject] = React.useState('');
     const [selectedIssueType, setSelectedIssueType] = React.useState('');
+
+    // ── Assignee state ────────────────────────────────────────────────────────
+    const [assignees, setAssignees] = React.useState<IJiraAssignee[]>([]);
+    const [assigneesLoading, setAssigneesLoading] = React.useState(false);
+    const [selectedAssignee, setSelectedAssignee] = React.useState('');
+
+    // ── Custom fields state ───────────────────────────────────────────────────
+    const [customFieldSchemas, setCustomFieldSchemas] = React.useState<ICustomFieldSchema[]>([]);
+    const [customFieldValues, setCustomFieldValues] = React.useState<Record<string, string>>({});
+    const [customFieldsLoading, setCustomFieldsLoading] = React.useState(false);
+
+    // ── Form fields ───────────────────────────────────────────────────────────
     const [summary, setSummary] = React.useState(`[AAC] Failed Run: ${execution.taskId}`);
     const [description, setDescription] = React.useState(() => buildDescription(execution));
     const [expectedResult, setExpectedResult] = React.useState('');
     const [actualResult, setActualResult] = React.useState('');
 
+    // ── Submit state ──────────────────────────────────────────────────────────
     const [submitState, setSubmitState] = React.useState<SubmitState>('idle');
     const [submitError, setSubmitError] = React.useState<string | null>(null);
     const [createdTicket, setCreatedTicket] = React.useState<ICreatedTicket | null>(null);
@@ -87,12 +155,12 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
         [token],
     );
 
-    // Fetch projects on mount
+    // ── Fetch projects on mount ───────────────────────────────────────────────
     React.useEffect(() => {
         let cancelled = false;
         const API_URL = getApiUrl();
 
-        const fetchProjects = async () => {
+        (async () => {
             try {
                 const res = await axios.get<{ success: boolean; data?: IJiraProject[] }>(
                     `${API_URL}/api/jira/projects`,
@@ -100,25 +168,23 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                 );
                 if (!cancelled && res.data.success && res.data.data) {
                     setProjects(res.data.data);
-                    if (res.data.data.length > 0) {
-                        setSelectedProject(res.data.data[0].id);
-                    }
+                    if (res.data.data.length > 0) setSelectedProject(res.data.data[0].id);
                 }
             } catch (err: any) {
                 if (!cancelled) {
-                    const msg = err?.response?.data?.error ?? 'Failed to load Jira projects. Check your integration settings.';
-                    setProjectsError(msg);
+                    setProjectsError(
+                        err?.response?.data?.error ?? 'Failed to load Jira projects. Check your integration settings.',
+                    );
                 }
             } finally {
                 if (!cancelled) setProjectsLoading(false);
             }
-        };
+        })();
 
-        fetchProjects();
         return () => { cancelled = true; };
     }, [authHeaders]);
 
-    // Fetch issue types when project changes
+    // ── Fetch issue types when project changes ────────────────────────────────
     React.useEffect(() => {
         if (!selectedProject) return;
 
@@ -128,7 +194,7 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
         setSelectedIssueType('');
         const API_URL = getApiUrl();
 
-        const fetchIssueTypes = async () => {
+        (async () => {
             try {
                 const res = await axios.get<{ success: boolean; data?: IJiraIssueType[] }>(
                     `${API_URL}/api/jira/issue-types?projectId=${encodeURIComponent(selectedProject)}`,
@@ -136,42 +202,122 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                 );
                 if (!cancelled && res.data.success && res.data.data) {
                     setIssueTypes(res.data.data);
-                    if (res.data.data.length > 0) {
-                        setSelectedIssueType(res.data.data[0].id);
-                    }
+                    if (res.data.data.length > 0) setSelectedIssueType(res.data.data[0].id);
                 }
             } catch {
-                // Non-critical; user can still submit without pre-selected type
+                // Non-critical; user can change project to retry
             } finally {
                 if (!cancelled) setIssueTypesLoading(false);
             }
-        };
+        })();
 
-        fetchIssueTypes();
         return () => { cancelled = true; };
     }, [selectedProject, authHeaders]);
 
+    // Derive the selected project's key (needed for assignees + createmeta)
+    const selectedProjectKey = React.useMemo(
+        () => projects.find((p) => p.id === selectedProject)?.key ?? '',
+        [projects, selectedProject],
+    );
+
+    // ── Fetch assignees when project key is known ─────────────────────────────
+    React.useEffect(() => {
+        if (!selectedProjectKey) return;
+
+        let cancelled = false;
+        setAssigneesLoading(true);
+        setAssignees([]);
+        setSelectedAssignee('');
+        const API_URL = getApiUrl();
+
+        (async () => {
+            try {
+                const res = await axios.get<{ success: boolean; data?: IJiraAssignee[] }>(
+                    `${API_URL}/api/jira/assignees?projectKey=${encodeURIComponent(selectedProjectKey)}`,
+                    { headers: authHeaders },
+                );
+                if (!cancelled && res.data.success && res.data.data) {
+                    setAssignees(res.data.data);
+                }
+            } catch {
+                // Assignees are optional; fail silently
+            } finally {
+                if (!cancelled) setAssigneesLoading(false);
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [selectedProjectKey, authHeaders]);
+
+    // ── Fetch custom field schema when project key + issue type are known ──────
+    React.useEffect(() => {
+        if (!selectedProjectKey || !selectedIssueType) return;
+
+        let cancelled = false;
+        setCustomFieldsLoading(true);
+        setCustomFieldSchemas([]);
+        setCustomFieldValues({});
+        const API_URL = getApiUrl();
+
+        (async () => {
+            try {
+                const res = await axios.get<{ success: boolean; data?: ICustomFieldSchema[] }>(
+                    `${API_URL}/api/jira/createmeta` +
+                        `?projectKey=${encodeURIComponent(selectedProjectKey)}` +
+                        `&issueTypeId=${encodeURIComponent(selectedIssueType)}`,
+                    { headers: authHeaders },
+                );
+                if (!cancelled && res.data.success && res.data.data) {
+                    setCustomFieldSchemas(res.data.data);
+                }
+            } catch {
+                // Custom fields are optional; fail silently
+            } finally {
+                if (!cancelled) setCustomFieldsLoading(false);
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [selectedProjectKey, selectedIssueType, authHeaders]);
+
+    // ── Submit handler ────────────────────────────────────────────────────────
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitState('loading');
         setSubmitError(null);
         const API_URL = getApiUrl();
 
-        const selectedProjectObj = projects.find(p => p.id === selectedProject);
+        // Build customFields payload — array-type fields are split on comma
+        const customFieldsPayload: Record<string, unknown> = {};
+        for (const schema of customFieldSchemas) {
+            const raw = customFieldValues[schema.key]?.trim() ?? '';
+            if (!raw) continue;
+            if (schema.schema.type === 'array') {
+                customFieldsPayload[schema.key] = raw
+                    .split(',')
+                    .map((v) => v.trim())
+                    .filter(Boolean);
+            } else {
+                customFieldsPayload[schema.key] = raw;
+            }
+        }
 
         try {
             const res = await axios.post<{ success: boolean; data?: ICreatedTicket; error?: string }>(
                 `${API_URL}/api/jira/tickets`,
                 {
                     projectId: selectedProject,
-                    projectKey: selectedProjectObj?.key,
+                    projectKey: selectedProjectKey,
                     issueType: selectedIssueType,
                     summary: summary.trim(),
                     description: description.trim(),
                     expectedResult: expectedResult.trim() || undefined,
                     actualResult: actualResult.trim() || undefined,
-                    executionId: execution._id,
-                    taskId: execution.taskId,
+                    executionId: execution._id ?? execution.taskId,
+                    assigneeId: selectedAssignee || undefined,
+                    customFields: Object.keys(customFieldsPayload).length > 0
+                        ? customFieldsPayload
+                        : undefined,
                 },
                 { headers: authHeaders },
             );
@@ -193,22 +339,56 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
         if (e.target === e.currentTarget) onClose();
     };
 
+    // ── Render helpers ────────────────────────────────────────────────────────
+
+    const renderCustomField = (schema: ICustomFieldSchema) => {
+        const value = customFieldValues[schema.key] ?? '';
+        const onChange = (v: string) =>
+            setCustomFieldValues((prev) => ({ ...prev, [schema.key]: v }));
+
+        return (
+            <div key={schema.key}>
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                    {schema.name}
+                    {schema.required && <span className="ml-1 text-rose-500">*</span>}
+                    {schema.schema.type === 'array' && (
+                        <span className="ml-1 font-normal text-slate-400">(comma-separated)</span>
+                    )}
+                </label>
+                <input
+                    type="text"
+                    required={schema.required}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    placeholder={schema.schema.type === 'array' ? 'value1, value2' : ''}
+                    className={INPUT_CLASS}
+                />
+            </div>
+        );
+    };
+
+    // ── Modal content ─────────────────────────────────────────────────────────
+
     const modal = (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4"
             onClick={handleBackdropClick}
         >
             <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[90vh]">
-                {/* Header */}
+
+                {/* ── Header ── */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
+                            {/* Jira logo */}
                             <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white" aria-hidden="true">
-                                <path d="M11.53 2c0 2.4 1.97 4.35 4.35 4.35H17.5v1.61C17.5 10.36 19.46 12.3 21.85 12.3V2.85a.85.85 0 0 0-.85-.85H11.53ZM6.77 6.8a4.362 4.362 0 0 0 4.35 4.34h1.62v1.63a4.362 4.362 0 0 0 4.34 4.34V7.65a.85.85 0 0 0-.85-.85H6.77ZM2 11.6c0 2.4 1.97 4.35 4.35 4.35h1.62v1.62C7.97 20.03 9.94 22 12.32 22v-9.54a.85.85 0 0 0-.85-.85L2 11.6Z"/>
+                                <path d="M11.53 2c0 2.4 1.97 4.35 4.35 4.35H17.5v1.61C17.5 10.36 19.46 12.3 21.85 12.3V2.85a.85.85 0 0 0-.85-.85H11.53ZM6.77 6.8a4.362 4.362 0 0 0 4.35 4.34h1.62v1.63a4.362 4.362 0 0 0 4.34 4.34V7.65a.85.85 0 0 0-.85-.85H6.77ZM2 11.6c0 2.4 1.97 4.35 4.35 4.35h1.62v1.62C7.97 20.03 9.94 22 12.32 22v-9.54a.85.85 0 0 0-.85-.85L2 11.6Z" />
                             </svg>
                         </div>
                         <div>
-                            <h2 className="text-sm font-semibold text-slate-900">Create Jira Ticket</h2>
+                            <h2 className="text-sm font-semibold text-slate-900">
+                                {view === 'existing-tickets' ? 'Linked Jira Tickets' : 'Create Jira Ticket'}
+                            </h2>
                             <p className="text-xs text-slate-400 font-mono">{execution.taskId}</p>
                         </div>
                     </div>
@@ -221,18 +401,57 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                     </button>
                 </div>
 
-                {/* Body */}
+                {/* ── Body ── */}
                 <div className="overflow-y-auto flex-1 px-6 py-5">
-                    {/* Loading projects */}
-                    {projectsLoading && (
+
+                    {/* ── State: existing tickets list ── */}
+                    {view === 'existing-tickets' && (
+                        <div className="space-y-3">
+                            <p className="text-xs text-slate-500">
+                                {existingTickets.length} ticket{existingTickets.length !== 1 ? 's' : ''} already linked to this run.
+                            </p>
+                            <ul className="space-y-2">
+                                {existingTickets.map((t) => (
+                                    <li
+                                        key={t.ticketKey}
+                                        className="flex items-center justify-between px-4 py-3 rounded-xl border border-indigo-100 bg-indigo-50"
+                                    >
+                                        <div className="flex items-center gap-2.5">
+                                            <Ticket size={15} className="text-indigo-500 flex-shrink-0" />
+                                            <div>
+                                                <span className="text-sm font-semibold text-indigo-700">{t.ticketKey}</span>
+                                                {t.createdAt && (
+                                                    <p className="text-[11px] text-slate-400 mt-0.5">
+                                                        {new Date(t.createdAt).toLocaleString()}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <a
+                                            href={t.ticketUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-white border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            Open <ExternalLink size={11} />
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {/* ── State: projects loading ── */}
+                    {view === 'form' && projectsLoading && (
                         <div className="flex items-center justify-center py-12">
                             <Loader2 size={22} className="animate-spin text-indigo-500" />
                             <span className="ml-3 text-sm text-slate-500">Loading Jira projects…</span>
                         </div>
                     )}
 
-                    {/* Projects error */}
-                    {!projectsLoading && projectsError && (
+                    {/* ── State: projects error ── */}
+                    {view === 'form' && !projectsLoading && projectsError && (
                         <div className="flex items-start gap-2 rounded-lg px-3 py-3 bg-rose-50 border border-rose-200 text-rose-700 text-sm">
                             <XCircle size={15} className="flex-shrink-0 mt-0.5" />
                             <div>
@@ -248,8 +467,8 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                         </div>
                     )}
 
-                    {/* Success state */}
-                    {submitState === 'success' && createdTicket && (
+                    {/* ── State: success ── */}
+                    {view === 'form' && submitState === 'success' && createdTicket && (
                         <div className="flex flex-col items-center gap-4 py-8 text-center">
                             <div className="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
                                 <CheckCircle2 size={28} className="text-emerald-600" />
@@ -257,7 +476,7 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                             <div>
                                 <h3 className="text-sm font-semibold text-slate-900">Ticket created!</h3>
                                 <p className="text-xs text-slate-500 mt-1">
-                                    Your Jira ticket has been created successfully.
+                                    Your Jira ticket has been created and linked to this run.
                                 </p>
                             </div>
                             <a
@@ -266,16 +485,16 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                                 rel="noreferrer"
                                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
                             >
-                                Open {createdTicket.key} in Jira
-                                <ExternalLink size={13} />
+                                Open {createdTicket.key} in Jira <ExternalLink size={13} />
                             </a>
                         </div>
                     )}
 
-                    {/* Form */}
-                    {!projectsLoading && !projectsError && submitState !== 'success' && (
+                    {/* ── State: form ── */}
+                    {view === 'form' && !projectsLoading && !projectsError && submitState !== 'success' && (
                         <form id="jira-ticket-form" onSubmit={handleSubmit} className="space-y-4">
-                            {/* Project selector */}
+
+                            {/* Project */}
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1.5" htmlFor="jira-project">
                                     Project
@@ -285,11 +504,11 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                                         id="jira-project"
                                         required
                                         value={selectedProject}
-                                        onChange={e => setSelectedProject(e.target.value)}
-                                        className="w-full appearance-none pl-3 pr-8 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                                        onChange={(e) => setSelectedProject(e.target.value)}
+                                        className={SELECT_CLASS}
                                     >
                                         {projects.length === 0 && <option value="">No projects found</option>}
-                                        {projects.map(p => (
+                                        {projects.map((p) => (
                                             <option key={p.id} value={p.id}>{p.name} ({p.key})</option>
                                         ))}
                                     </select>
@@ -297,7 +516,7 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                                 </div>
                             </div>
 
-                            {/* Issue Type selector */}
+                            {/* Issue Type */}
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1.5" htmlFor="jira-issue-type">
                                     Issue Type
@@ -310,15 +529,44 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                                         id="jira-issue-type"
                                         required
                                         value={selectedIssueType}
-                                        onChange={e => setSelectedIssueType(e.target.value)}
+                                        onChange={(e) => setSelectedIssueType(e.target.value)}
                                         disabled={issueTypesLoading || issueTypes.length === 0}
-                                        className="w-full appearance-none pl-3 pr-8 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                        className={SELECT_CLASS}
                                     >
                                         {issueTypes.length === 0 && !issueTypesLoading && (
                                             <option value="">Select a project first</option>
                                         )}
-                                        {issueTypes.map(t => (
+                                        {issueTypes.map((t) => (
                                             <option key={t.id} value={t.id}>{t.name}</option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                </div>
+                            </div>
+
+                            {/* Assignee */}
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1.5" htmlFor="jira-assignee">
+                                    Assignee
+                                    <span className="ml-1 font-normal text-slate-400">(optional)</span>
+                                    {assigneesLoading && (
+                                        <Loader2 size={11} className="inline-block ml-2 animate-spin text-slate-400" />
+                                    )}
+                                </label>
+                                <div className="relative">
+                                    <select
+                                        id="jira-assignee"
+                                        value={selectedAssignee}
+                                        onChange={(e) => setSelectedAssignee(e.target.value)}
+                                        disabled={assigneesLoading}
+                                        className={SELECT_CLASS}
+                                    >
+                                        <option value="">Unassigned</option>
+                                        {assignees.map((a) => (
+                                            <option key={a.accountId} value={a.accountId}>
+                                                {a.displayName}
+                                                {a.emailAddress ? ` (${a.emailAddress})` : ''}
+                                            </option>
                                         ))}
                                     </select>
                                     <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -336,8 +584,8 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                                     required
                                     maxLength={255}
                                     value={summary}
-                                    onChange={e => setSummary(e.target.value)}
-                                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                                    onChange={(e) => setSummary(e.target.value)}
+                                    className={INPUT_CLASS}
                                 />
                             </div>
 
@@ -351,7 +599,7 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                                     id="jira-description"
                                     rows={8}
                                     value={description}
-                                    onChange={e => setDescription(e.target.value)}
+                                    onChange={(e) => setDescription(e.target.value)}
                                     className="w-full px-3 py-2 text-xs font-mono border border-slate-200 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y transition"
                                 />
                             </div>
@@ -367,7 +615,7 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                                     rows={3}
                                     placeholder="What should have happened?"
                                     value={expectedResult}
-                                    onChange={e => setExpectedResult(e.target.value)}
+                                    onChange={(e) => setExpectedResult(e.target.value)}
                                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y transition"
                                 />
                             </div>
@@ -383,10 +631,26 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                                     rows={3}
                                     placeholder="What actually happened?"
                                     value={actualResult}
-                                    onChange={e => setActualResult(e.target.value)}
+                                    onChange={(e) => setActualResult(e.target.value)}
                                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y transition"
                                 />
                             </div>
+
+                            {/* Dynamic custom fields */}
+                            {customFieldsLoading && (
+                                <div className="flex items-center gap-2 text-xs text-slate-400">
+                                    <Loader2 size={12} className="animate-spin" />
+                                    Loading custom fields…
+                                </div>
+                            )}
+                            {!customFieldsLoading && customFieldSchemas.length > 0 && (
+                                <div className="space-y-4 pt-1 border-t border-slate-100">
+                                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide pt-1">
+                                        Custom Fields
+                                    </p>
+                                    {customFieldSchemas.map(renderCustomField)}
+                                </div>
+                            )}
 
                             {/* Submit error */}
                             {submitState === 'error' && submitError && (
@@ -399,8 +663,31 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                     )}
                 </div>
 
-                {/* Footer */}
-                {!projectsLoading && !projectsError && submitState !== 'success' && (
+                {/* ── Footer ── */}
+
+                {/* Existing-tickets footer */}
+                {view === 'existing-tickets' && (
+                    <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl flex-shrink-0">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
+                        >
+                            Close
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setView('form')}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                            <Plus size={14} />
+                            Create Another Ticket
+                        </button>
+                    </div>
+                )}
+
+                {/* Form footer */}
+                {view === 'form' && !projectsLoading && !projectsError && submitState !== 'success' && (
                     <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl flex-shrink-0">
                         <button
                             type="button"
@@ -412,7 +699,7 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                         <button
                             type="submit"
                             form="jira-ticket-form"
-                            disabled={submitState === 'loading' || !selectedProject}
+                            disabled={submitState === 'loading' || !selectedProject || !selectedIssueType}
                             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                         >
                             {submitState === 'loading' && <Loader2 size={14} className="animate-spin" />}
@@ -421,8 +708,8 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                     </div>
                 )}
 
-                {/* Footer for success state */}
-                {submitState === 'success' && (
+                {/* Success footer */}
+                {view === 'form' && submitState === 'success' && (
                     <div className="flex justify-center px-6 py-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl flex-shrink-0">
                         <button
                             type="button"
@@ -433,6 +720,7 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                         </button>
                     </div>
                 )}
+
             </div>
         </div>
     );

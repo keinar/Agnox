@@ -115,7 +115,32 @@ interface ICreateTicketBody {
     executionId?: string;
     expectedResult?: string;
     actualResult?: string;
+    assigneeId?: string;
+    customFields?: Record<string, unknown>;
 }
+
+interface ICreateMetaQuerystring {
+    projectKey: string;
+    issueTypeId: string;
+}
+
+interface IAssigneesQuerystring {
+    projectKey: string;
+}
+
+/** Normalized custom field schema entry returned to the client. */
+interface ICustomFieldSchema {
+    key: string;
+    name: string;
+    required: boolean;
+    schema: { type: string; items?: string };
+}
+
+/** Standard Jira fields that are already handled by dedicated form inputs. */
+const STANDARD_JIRA_FIELDS = new Set([
+    'summary', 'description', 'issuetype', 'project', 'reporter',
+    'attachment', 'issuelinks', 'subtasks', 'comment', 'votes', 'watches',
+]);
 
 // ── Route registration ────────────────────────────────────────────────────────
 
@@ -341,11 +366,111 @@ export async function integrationRoutes(
         }
     });
 
+    // ── GET /api/jira/createmeta ──────────────────────────────────────────────
+    // Returns the custom-field schema for a given project + issue type.
+    // Query params: projectKey (e.g. "AAC"), issueTypeId (numeric Jira ID)
+    app.get('/api/jira/createmeta', async (request, reply) => {
+        const organizationId = request.user!.organizationId;
+        const { projectKey, issueTypeId } = request.query as ICreateMetaQuerystring;
+
+        if (!projectKey || !issueTypeId) {
+            return reply.status(400).send({ success: false, error: 'projectKey and issueTypeId are required' });
+        }
+
+        try {
+            const config = await getJiraConfig(mongoClient, organizationId);
+            if (!config || !config.enabled) {
+                return reply.status(404).send({ success: false, error: 'Jira integration not configured or disabled' });
+            }
+
+            const apiToken = decrypt({ encrypted: config.encryptedToken, iv: config.iv, authTag: config.authTag });
+
+            const path =
+                `/rest/api/3/issue/createmeta` +
+                `?projectKeys=${encodeURIComponent(projectKey)}` +
+                `&issuetypeIds=${encodeURIComponent(issueTypeId)}` +
+                `&expand=projects.issuetypes.fields`;
+
+            const result = await jiraFetch(config.domain, path, config.email, apiToken) as any;
+
+            const rawFields: Record<string, any> =
+                result?.projects?.[0]?.issuetypes?.[0]?.fields ?? {};
+
+            const customFields: ICustomFieldSchema[] = Object.entries(rawFields)
+                .filter(([key]) => !STANDARD_JIRA_FIELDS.has(key))
+                .map(([key, meta]) => ({
+                    key,
+                    name: meta.name ?? key,
+                    required: meta.required === true,
+                    schema: {
+                        type: meta.schema?.type ?? 'string',
+                        items: meta.schema?.items,
+                    },
+                }));
+
+            return reply.send({ success: true, data: customFields });
+        } catch (error: any) {
+            app.log.error(error, '[integrations] Failed to fetch Jira createmeta');
+            return reply.status(502).send({
+                success: false,
+                error: `Failed to fetch custom field schema: ${error?.message ?? 'Unknown error'}`,
+            });
+        }
+    });
+
+    // ── GET /api/jira/assignees ───────────────────────────────────────────────
+    // Returns users that can be assigned to issues in the given project.
+    // Query params: projectKey (e.g. "AAC")
+    app.get('/api/jira/assignees', async (request, reply) => {
+        const organizationId = request.user!.organizationId;
+        const { projectKey } = request.query as IAssigneesQuerystring;
+
+        if (!projectKey) {
+            return reply.status(400).send({ success: false, error: 'projectKey is required' });
+        }
+
+        try {
+            const config = await getJiraConfig(mongoClient, organizationId);
+            if (!config || !config.enabled) {
+                return reply.status(404).send({ success: false, error: 'Jira integration not configured or disabled' });
+            }
+
+            const apiToken = decrypt({ encrypted: config.encryptedToken, iv: config.iv, authTag: config.authTag });
+
+            const path =
+                `/rest/api/3/user/assignable/search` +
+                `?project=${encodeURIComponent(projectKey)}&maxResults=50`;
+
+            const result = await jiraFetch(config.domain, path, config.email, apiToken) as any[];
+
+            const assignees = (Array.isArray(result) ? result : []).map((u: any) => ({
+                accountId: u.accountId,
+                displayName: u.displayName ?? u.accountId,
+                emailAddress: u.emailAddress ?? null,
+                avatarUrl: u.avatarUrls?.['48x48'] ?? null,
+            }));
+
+            return reply.send({ success: true, data: assignees });
+        } catch (error: any) {
+            app.log.error(error, '[integrations] Failed to fetch Jira assignees');
+            return reply.status(502).send({
+                success: false,
+                error: `Failed to fetch assignees: ${error?.message ?? 'Unknown error'}`,
+            });
+        }
+    });
+
     // ── POST /api/jira/tickets ────────────────────────────────────────────────
-    // Creates a Jira issue using run details from the request body.
+    // Creates a Jira issue and links it back to the execution document.
+    // Body: projectKey, issueType, summary, description, executionId,
+    //       expectedResult, actualResult, assigneeId?, customFields?
     app.post('/api/jira/tickets', async (request, reply) => {
         const organizationId = request.user!.organizationId;
-        const { projectKey, issueType, summary, description, executionId, expectedResult, actualResult } = request.body as ICreateTicketBody;
+        const {
+            projectKey, issueType, summary, description,
+            executionId, expectedResult, actualResult,
+            assigneeId, customFields,
+        } = request.body as ICreateTicketBody;
 
         // Input validation
         if (!projectKey || typeof projectKey !== 'string' || projectKey.trim().length === 0) {
@@ -360,18 +485,13 @@ export async function integrationRoutes(
 
         try {
             const config = await getJiraConfig(mongoClient, organizationId);
-
             if (!config || !config.enabled) {
                 return reply.status(404).send({ success: false, error: 'Jira integration not configured or disabled' });
             }
 
-            const apiToken = decrypt({
-                encrypted: config.encryptedToken,
-                iv: config.iv,
-                authTag: config.authTag,
-            });
+            const apiToken = decrypt({ encrypted: config.encryptedToken, iv: config.iv, authTag: config.authTag });
 
-            // Build the Jira issue body using the Atlassian Document Format (ADF) for description
+            // Build description in Atlassian Document Format (ADF)
             const adfContent: unknown[] = [];
 
             if (description) {
@@ -395,15 +515,19 @@ export async function integrationRoutes(
                 );
             }
 
-            const issueBody: Record<string, unknown> = {
-                fields: {
-                    project: { key: projectKey.trim().toUpperCase() },
-                    issuetype: { id: issueType.trim() },
-                    summary: summary.trim(),
-                    ...(adfContent.length > 0 && {
-                        description: { type: 'doc', version: 1, content: adfContent },
-                    }),
-                },
+            const issueFields: Record<string, unknown> = {
+                project: { key: projectKey.trim().toUpperCase() },
+                issuetype: { id: issueType.trim() },
+                summary: summary.trim(),
+                ...(adfContent.length > 0 && {
+                    description: { type: 'doc', version: 1, content: adfContent },
+                }),
+                // Assignee — injected only when provided
+                ...(assigneeId && assigneeId.trim().length > 0 && {
+                    assignee: { id: assigneeId.trim() },
+                }),
+                // Custom fields — spread directly into fields so Jira receives them as top-level keys
+                ...(customFields && typeof customFields === 'object' ? customFields : {}),
             };
 
             const result = await jiraFetch(
@@ -411,21 +535,52 @@ export async function integrationRoutes(
                 '/rest/api/3/issue',
                 config.email,
                 apiToken,
-                { method: 'POST', body: JSON.stringify(issueBody) },
+                { method: 'POST', body: JSON.stringify({ fields: issueFields }) },
             ) as any;
 
-            app.log.info(
-                { organizationId, jiraKey: result?.key, executionId },
-                '[integrations] Jira ticket created',
-            );
+            const ticketKey: string = result?.key;
+            const ticketUrl = `https://${config.domain}/browse/${ticketKey}`;
+
+            app.log.info({ organizationId, jiraKey: ticketKey, executionId }, '[integrations] Jira ticket created');
+
+            // Bidirectional linkage — push ticket reference back into the execution document.
+            // We attempt the update but never fail the overall request if it doesn't match.
+            if (executionId) {
+                const executionsCollection = db.collection('executions');
+
+                // Support both ObjectId and plain string task IDs
+                const execFilter: Record<string, unknown> = {
+                    organizationId,
+                    $or: [
+                        { taskId: executionId },
+                        ...(ObjectId.isValid(executionId)
+                            ? [{ _id: new ObjectId(executionId) }]
+                            : []),
+                    ],
+                };
+
+                const pushResult = await executionsCollection.updateOne(
+                    execFilter,
+                    {
+                        $push: {
+                            jiraTickets: {
+                                ticketKey,
+                                ticketUrl,
+                                createdAt: new Date(),
+                            },
+                        } as any,
+                    },
+                );
+
+                app.log.info(
+                    { organizationId, executionId, ticketKey, matched: pushResult.matchedCount },
+                    '[integrations] Execution jiraTickets updated',
+                );
+            }
 
             return reply.status(201).send({
                 success: true,
-                data: {
-                    id: result?.id,
-                    key: result?.key,
-                    url: `https://${config.domain}/browse/${result?.key}`,
-                },
+                data: { id: result?.id, key: ticketKey, url: ticketUrl },
             });
         } catch (error: any) {
             app.log.error(error, '[integrations] Failed to create Jira ticket');
