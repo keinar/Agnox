@@ -3,7 +3,7 @@ import {
     Trash2, ChevronDown, ChevronRight, CheckCircle, XCircle,
     Clock, PlayCircle, FileText, BarChart2, Laptop, Server,
     Turtle, Zap, Box, Sparkles, Loader2, AlertTriangle,
-    User2, Timer, Github,
+    User2, Timer, Github, Clipboard, Check,
 } from 'lucide-react';
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns';
 import AIAnalysisView from './AIAnalysisView';
@@ -17,6 +17,8 @@ interface ExecutionRowProps {
     visibleColumns: Set<string>;
     visibleColCount: number;
 }
+
+const stripAnsi = (str: string): string => str.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
 
 type TriggerType = 'Manual' | 'CRON' | 'GitHub';
 
@@ -78,6 +80,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
 }) {
     const [metrics, setMetrics] = React.useState<any>(null);
     const [showAI, setShowAI] = React.useState(false);
+    const [copied, setCopied] = React.useState(false);
     const { token } = useAuth();
 
     React.useEffect(() => {
@@ -186,6 +189,17 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
     const logs = execution.output || execution.logs;
     if (logs && logs.length > 0) terminalContent += Array.isArray(logs) ? logs.join('\n') : logs;
     if (!terminalContent) terminalContent = 'Waiting for logs...';
+
+    const handleCopyLogs = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        try {
+            navigator.clipboard.writeText(stripAnsi(terminalContent));
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            // clipboard unavailable (e.g. non-HTTPS); silently ignore
+        }
+    };
 
     const badgeClass = STATUS_BADGE[execution.status] ?? DEFAULT_BADGE;
     const iconBtnBase = 'flex items-center justify-center w-8 h-8 rounded-lg border transition-colors cursor-pointer';
@@ -399,6 +413,18 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                                 <span className="w-3 h-3 rounded-full bg-amber-400" />
                                 <span className="w-3 h-3 rounded-full bg-emerald-500" />
                                 <span className="ml-3 text-xs text-slate-500 font-mono">console output</span>
+                                <button
+                                    onClick={handleCopyLogs}
+                                    title={copied ? 'Copied!' : 'Copy logs'}
+                                    className={`ml-auto flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium transition-colors ${
+                                        copied
+                                            ? 'text-emerald-400 hover:bg-slate-700'
+                                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700'
+                                    }`}
+                                >
+                                    {copied ? <Check size={12} /> : <Clipboard size={12} />}
+                                    {copied ? 'Copied!' : 'Copy'}
+                                </button>
                             </div>
                             <pre className="bg-slate-950 text-slate-300 text-xs font-mono p-4 overflow-x-auto max-h-80 leading-relaxed whitespace-pre-wrap">
                                 {terminalContent}
