@@ -34,30 +34,30 @@ export function ExecutionList({
 }: ExecutionListProps) {
   if (error) {
     return (
-      <div style={{ color: '#ef4444', padding: '20px', textAlign: 'center' }}>
+      <div className="text-red-500 text-center p-5 bg-white rounded-xl border border-slate-200 shadow-sm">
         Error: {error}
       </div>
     );
   }
 
   return (
-    <div className="table-container">
-      <table>
+    <div className="w-full overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+      <table className="w-full text-sm text-left">
         <thead>
-          <tr>
-            <th>Status</th>
-            <th>Source</th>
-            <th>Task ID</th>
-            <th>Environment</th>
-            <th>Start Time</th>
-            <th>Duration</th>
-            <th style={{ textAlign: 'right' }}>Actions</th>
+          <tr className="border-b border-slate-200 bg-slate-50">
+            <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
+            <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Source</th>
+            <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Task ID</th>
+            <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Environment</th>
+            <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Start Time</th>
+            <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Duration</th>
+            <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           {loading && executions.length === 0 && (
             <tr>
-              <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
+              <td colSpan={7} className="text-center py-8 text-slate-400">
                 Loading live data...
               </td>
             </tr>
