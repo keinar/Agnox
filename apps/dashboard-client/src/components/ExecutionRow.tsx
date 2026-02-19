@@ -2,7 +2,8 @@ import React from 'react';
 import {
     Trash2, ChevronDown, ChevronRight, CheckCircle, XCircle,
     Clock, PlayCircle, FileText, BarChart2, Laptop, Server,
-    Turtle, Zap, Box, Sparkles, Loader2, AlertTriangle
+    Turtle, Zap, Box, Sparkles, Loader2, AlertTriangle,
+    User2, Timer, Github,
 } from 'lucide-react';
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns';
 import AIAnalysisView from './AIAnalysisView';
@@ -13,7 +14,22 @@ interface ExecutionRowProps {
     isExpanded: boolean;
     onToggle: () => void;
     onDelete: (id: string) => void;
+    visibleColumns: Set<string>;
+    visibleColCount: number;
 }
+
+type TriggerType = 'Manual' | 'CRON' | 'GitHub';
+
+const TRIGGER_CONFIG: Record<TriggerType, { icon: React.ElementType; className: string }> = {
+    Manual: { icon: User2,  className: 'bg-slate-100 text-slate-600 border-slate-200' },
+    CRON:   { icon: Timer,  className: 'bg-amber-50 text-amber-700 border-amber-200' },
+    GitHub: { icon: Github, className: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+};
+
+const TRIGGER_OPTIONS: TriggerType[] = ['Manual', 'CRON', 'GitHub'];
+
+const getMockTrigger = (taskId: string): TriggerType =>
+    TRIGGER_OPTIONS[taskId.charCodeAt(taskId.length - 1) % 3];
 
 const formatDateSafe = (dateString: string | Date | undefined) => {
     if (!dateString) return '-';
@@ -36,7 +52,7 @@ const calculateDuration = (exec: any) => {
             const minutes = Math.floor(seconds / 60);
             const remainingSeconds = seconds % 60;
             return `${minutes}m ${remainingSeconds}s`;
-        } catch (e) { return '-'; }
+        } catch { return '-'; }
     }
     if ((exec.status === 'RUNNING' || exec.status === 'ANALYZING') && exec.startTime) {
         try { return formatDistanceToNow(new Date(exec.startTime)).replace('about ', ''); } catch { return 'Running...'; }
@@ -44,19 +60,22 @@ const calculateDuration = (exec: any) => {
     return '-';
 };
 
-// Status badge variant classes
+// Status badge variant classes — PASSED=emerald, FAILED/ERROR=rose, RUNNING/PENDING/UNSTABLE=amber, ANALYZING=purple
 const STATUS_BADGE: Record<string, string> = {
     PASSED:    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200',
-    FAILED:    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200',
-    RUNNING:   'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200',
-    PENDING:   'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200',
+    FAILED:    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200',
+    ERROR:     'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200',
+    RUNNING:   'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200',
+    PENDING:   'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200',
     ANALYZING: 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200',
     UNSTABLE:  'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200',
 };
 
 const DEFAULT_BADGE = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200';
 
-export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function ExecutionRow({ execution, isExpanded, onToggle, onDelete }) {
+export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function ExecutionRow({
+    execution, isExpanded, onToggle, onDelete, visibleColumns, visibleColCount,
+}) {
     const [metrics, setMetrics] = React.useState<any>(null);
     const [showAI, setShowAI] = React.useState(false);
     const { token } = useAuth();
@@ -78,7 +97,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                 if (cancelled) return;
                 try {
                     const res = await fetch(`${API_URL}/api/metrics/${encodeURIComponent(execution.image)}`, {
-                        headers: { Authorization: `Bearer ${token}` }
+                        headers: { Authorization: `Bearer ${token}` },
                     });
 
                     if (res.status === 429) {
@@ -94,8 +113,8 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                         const data = await res.json();
                         setMetrics(data);
                     }
-                } catch (err) {
-                    if (!cancelled) console.error("Metrics fetch failed", err);
+                } catch {
+                    // metrics are non-critical; suppress
                 }
             }, delay);
         };
@@ -133,6 +152,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
         switch (status) {
             case 'PASSED':    return <CheckCircle size={13} />;
             case 'FAILED':    return <XCircle size={13} />;
+            case 'ERROR':     return <XCircle size={13} />;
             case 'UNSTABLE':  return <AlertTriangle size={13} />;
             case 'ANALYZING': return <Sparkles size={13} className="animate-pulse" />;
             case 'RUNNING':   return <PlayCircle size={13} className="animate-spin" style={{ animationDuration: '3s' }} />;
@@ -150,7 +170,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
     };
 
     const baseUrl = getBaseUrl();
-    const htmlReportUrl = `${baseUrl}/${execution.taskId}/native-report/index.html`;
+    const htmlReportUrl  = `${baseUrl}/${execution.taskId}/native-report/index.html`;
     const allureReportUrl = `${baseUrl}/${execution.taskId}/allure-report/index.html`;
 
     const isFinished = ['PASSED', 'FAILED', 'UNSTABLE'].includes(execution.status);
@@ -168,9 +188,11 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
     if (!terminalContent) terminalContent = 'Waiting for logs...';
 
     const badgeClass = STATUS_BADGE[execution.status] ?? DEFAULT_BADGE;
-
-    // Icon button base classes
     const iconBtnBase = 'flex items-center justify-center w-8 h-8 rounded-lg border transition-colors cursor-pointer';
+
+    const trigger = getMockTrigger(execution.taskId);
+    const triggerCfg = TRIGGER_CONFIG[trigger];
+    const TriggerIcon = triggerCfg.icon;
 
     return (
         <>
@@ -178,146 +200,166 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                 onClick={onToggle}
                 className={`border-b border-slate-100 transition-colors cursor-pointer hover:bg-slate-50 ${isExpanded ? 'bg-slate-50' : 'bg-white'}`}
             >
-                {/* Status */}
+                {/* Run ID — mandatory, always first */}
+                <td className="px-4 py-3 font-mono text-xs text-slate-500 whitespace-nowrap">
+                    {execution.taskId}
+                </td>
+
+                {/* Status — mandatory */}
                 <td className="px-4 py-3">
                     <span className={badgeClass}>
                         {getStatusIcon(execution.status)} {execution.status}
                     </span>
                 </td>
 
-                {/* Source */}
-                <td className="px-4 py-3">
-                    <div className="flex flex-col gap-1">
-                        <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold w-fit border ${
-                            isRunLocal
-                                ? 'bg-sky-50 text-sky-700 border-sky-200'
-                                : 'bg-purple-50 text-purple-700 border-purple-200'
-                        }`}>
-                            {isRunLocal ? <Laptop size={11} /> : <Server size={11} />}
-                            {isRunLocal ? 'LOCAL' : 'CLOUD'}
-                            {renderPerformanceInsight()}
-                        </div>
-                        <div className="flex items-center gap-1 text-[11px] text-slate-400">
-                            <Box size={10} />
-                            <span className="font-mono">{execution.image?.split('/').pop() || 'container'}</span>
-                        </div>
-                    </div>
-                </td>
+                {/* Triggered By — optional mock */}
+                {visibleColumns.has('triggeredBy') && (
+                    <td className="px-4 py-3">
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold border ${triggerCfg.className}`}>
+                            <TriggerIcon size={11} />
+                            {trigger}
+                        </span>
+                    </td>
+                )}
 
-                {/* Task ID */}
-                <td className="px-4 py-3 font-mono text-xs text-slate-500">
-                    {execution.taskId}
-                </td>
-
-                {/* Environment */}
-                <td className="px-4 py-3">
-                    <span className="bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded text-xs font-medium">
-                        {execution.config?.environment?.toUpperCase() || 'DEV'}
-                    </span>
-                </td>
-
-                {/* Start Time */}
-                <td className="px-4 py-3">
-                    <div className="flex flex-col text-sm">
-                        <span className="text-slate-700">{formatDateSafe(execution.startTime)}</span>
-                        <span className="text-xs text-slate-400">{formatTimeAgo(execution.startTime)}</span>
-                    </div>
-                </td>
-
-                {/* Duration */}
-                <td className="px-4 py-3 text-sm font-medium text-slate-700">
-                    {calculateDuration(execution)}
-                </td>
-
-                {/* Actions */}
-                <td className="px-4 py-3">
-                    <div className="flex items-center gap-2 justify-end">
-
-                        {/* AI Analysis button */}
-                        {(execution.status === 'FAILED' || execution.status === 'UNSTABLE') && execution.analysis && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); setShowAI(true); }}
-                                title="View AI Root Cause Analysis"
-                                className={`${iconBtnBase} text-purple-500 bg-purple-50 border-purple-200 hover:bg-purple-100`}
-                            >
-                                <Sparkles size={16} />
-                            </button>
-                        )}
-
-                        {/* Analyzing spinner */}
-                        {execution.status === 'ANALYZING' && (
-                            <div
-                                title="AI Analysis in progress..."
-                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-600 border border-purple-200"
-                            >
-                                <Loader2 size={12} className="animate-spin" />
-                                <span>Analyzing...</span>
+                {/* Source — optional */}
+                {visibleColumns.has('source') && (
+                    <td className="px-4 py-3">
+                        <div className="flex flex-col gap-1">
+                            <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold w-fit border ${
+                                isRunLocal
+                                    ? 'bg-sky-50 text-sky-700 border-sky-200'
+                                    : 'bg-purple-50 text-purple-700 border-purple-200'
+                            }`}>
+                                {isRunLocal ? <Laptop size={11} /> : <Server size={11} />}
+                                {isRunLocal ? 'LOCAL' : 'CLOUD'}
+                                {renderPerformanceInsight()}
                             </div>
-                        )}
+                            <div className="flex items-center gap-1 text-[11px] text-slate-400">
+                                <Box size={10} />
+                                <span className="font-mono">{execution.image?.split('/').pop() || 'container'}</span>
+                            </div>
+                        </div>
+                    </td>
+                )}
 
-                        {/* Report links */}
-                        {isFinished && (
-                            <>
-                                {areReportsInaccessible ? (
-                                    <span
-                                        title="Reports available locally"
-                                        className="text-[10px] text-slate-400 bg-slate-100 px-2 py-1 rounded cursor-help"
-                                    >
-                                        Local Reports
-                                    </span>
-                                ) : (
-                                    <>
-                                        {execution.hasNativeReport === true && (
-                                            <a
-                                                href={htmlReportUrl}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                title="HTML Report"
-                                                onClick={(e) => e.stopPropagation()}
-                                                className={`${iconBtnBase} text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100`}
-                                            >
-                                                <FileText size={16} />
-                                            </a>
-                                        )}
-                                        {execution.hasAllureReport === true && (
-                                            <a
-                                                href={allureReportUrl}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                title="Allure Report"
-                                                onClick={(e) => e.stopPropagation()}
-                                                className={`${iconBtnBase} text-emerald-500 bg-emerald-50 border-emerald-200 hover:bg-emerald-100`}
-                                            >
-                                                <BarChart2 size={16} />
-                                            </a>
-                                        )}
-                                    </>
-                                )}
-                            </>
-                        )}
+                {/* Environment — optional */}
+                {visibleColumns.has('environment') && (
+                    <td className="px-4 py-3">
+                        <span className="bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded text-xs font-medium">
+                            {execution.config?.environment?.toUpperCase() || 'DEV'}
+                        </span>
+                    </td>
+                )}
 
-                        {/* Delete */}
-                        <button
-                            title="Delete"
-                            onClick={(e) => { e.stopPropagation(); onDelete(execution.taskId); }}
-                            className={`${iconBtnBase} text-rose-500 bg-rose-50 border-rose-200 hover:bg-rose-100`}
-                        >
-                            <Trash2 size={16} />
-                        </button>
+                {/* Start Time — optional */}
+                {visibleColumns.has('startTime') && (
+                    <td className="px-4 py-3">
+                        <div className="flex flex-col text-sm">
+                            <span className="text-slate-700">{formatDateSafe(execution.startTime)}</span>
+                            <span className="text-xs text-slate-400">{formatTimeAgo(execution.startTime)}</span>
+                        </div>
+                    </td>
+                )}
 
-                        {/* Expand chevron */}
-                        {isExpanded
-                            ? <ChevronDown size={16} className="text-slate-400 flex-shrink-0" />
-                            : <ChevronRight size={16} className="text-slate-400 flex-shrink-0" />
-                        }
-                    </div>
-                </td>
+                {/* Duration — optional */}
+                {visibleColumns.has('duration') && (
+                    <td className="px-4 py-3 text-sm font-medium text-slate-700">
+                        {calculateDuration(execution)}
+                    </td>
+                )}
+
+                {/* Actions — optional */}
+                {visibleColumns.has('actions') && (
+                    <td className="px-4 py-3">
+                        <div className="flex items-center gap-2 justify-end">
+
+                            {/* AI Analysis button */}
+                            {(execution.status === 'FAILED' || execution.status === 'UNSTABLE') && execution.analysis && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setShowAI(true); }}
+                                    title="View AI Root Cause Analysis"
+                                    className={`${iconBtnBase} text-purple-500 bg-purple-50 border-purple-200 hover:bg-purple-100`}
+                                >
+                                    <Sparkles size={16} />
+                                </button>
+                            )}
+
+                            {/* Analyzing spinner */}
+                            {execution.status === 'ANALYZING' && (
+                                <div
+                                    title="AI Analysis in progress..."
+                                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-600 border border-purple-200"
+                                >
+                                    <Loader2 size={12} className="animate-spin" />
+                                    <span>Analyzing...</span>
+                                </div>
+                            )}
+
+                            {/* Report links */}
+                            {isFinished && (
+                                <>
+                                    {areReportsInaccessible ? (
+                                        <span
+                                            title="Reports available locally"
+                                            className="text-[10px] text-slate-400 bg-slate-100 px-2 py-1 rounded cursor-help"
+                                        >
+                                            Local Reports
+                                        </span>
+                                    ) : (
+                                        <>
+                                            {execution.hasNativeReport === true && (
+                                                <a
+                                                    href={htmlReportUrl}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    title="HTML Report"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className={`${iconBtnBase} text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100`}
+                                                >
+                                                    <FileText size={16} />
+                                                </a>
+                                            )}
+                                            {execution.hasAllureReport === true && (
+                                                <a
+                                                    href={allureReportUrl}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    title="Allure Report"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className={`${iconBtnBase} text-emerald-500 bg-emerald-50 border-emerald-200 hover:bg-emerald-100`}
+                                                >
+                                                    <BarChart2 size={16} />
+                                                </a>
+                                            )}
+                                        </>
+                                    )}
+                                </>
+                            )}
+
+                            {/* Delete */}
+                            <button
+                                title="Delete"
+                                onClick={(e) => { e.stopPropagation(); onDelete(execution.taskId); }}
+                                className={`${iconBtnBase} text-rose-500 bg-rose-50 border-rose-200 hover:bg-rose-100`}
+                            >
+                                <Trash2 size={16} />
+                            </button>
+
+                            {/* Expand chevron */}
+                            {isExpanded
+                                ? <ChevronDown size={16} className="text-slate-400 flex-shrink-0" />
+                                : <ChevronRight size={16} className="text-slate-400 flex-shrink-0" />
+                            }
+                        </div>
+                    </td>
+                )}
             </tr>
 
             {/* Expanded detail panel */}
             {isExpanded && (
                 <tr className="bg-slate-50">
-                    <td colSpan={7} className="px-4 py-5">
+                    <td colSpan={visibleColCount} className="px-4 py-5">
                         {/* Details grid */}
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                             <div className="flex flex-col gap-0.5">
