@@ -113,6 +113,8 @@ interface ICreateTicketBody {
     summary?: string;
     description?: string;
     executionId?: string;
+    expectedResult?: string;
+    actualResult?: string;
 }
 
 // ── Route registration ────────────────────────────────────────────────────────
@@ -343,7 +345,7 @@ export async function integrationRoutes(
     // Creates a Jira issue using run details from the request body.
     app.post('/api/jira/tickets', async (request, reply) => {
         const organizationId = request.user!.organizationId;
-        const { projectKey, issueType, summary, description, executionId } = request.body as ICreateTicketBody;
+        const { projectKey, issueType, summary, description, executionId, expectedResult, actualResult } = request.body as ICreateTicketBody;
 
         // Input validation
         if (!projectKey || typeof projectKey !== 'string' || projectKey.trim().length === 0) {
@@ -370,29 +372,39 @@ export async function integrationRoutes(
             });
 
             // Build the Jira issue body using the Atlassian Document Format (ADF) for description
+            const adfContent: unknown[] = [];
+
+            if (description) {
+                adfContent.push({
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: description }],
+                });
+            }
+
+            if (expectedResult) {
+                adfContent.push(
+                    { type: 'paragraph', content: [{ type: 'text', text: 'Expected Result:', marks: [{ type: 'strong' }] }] },
+                    { type: 'paragraph', content: [{ type: 'text', text: expectedResult }] },
+                );
+            }
+
+            if (actualResult) {
+                adfContent.push(
+                    { type: 'paragraph', content: [{ type: 'text', text: 'Actual Result:', marks: [{ type: 'strong' }] }] },
+                    { type: 'paragraph', content: [{ type: 'text', text: actualResult }] },
+                );
+            }
+
             const issueBody: Record<string, unknown> = {
                 fields: {
                     project: { key: projectKey.trim().toUpperCase() },
-                    issuetype: { name: issueType.trim() },
+                    issuetype: { id: issueType.trim() },
                     summary: summary.trim(),
+                    ...(adfContent.length > 0 && {
+                        description: { type: 'doc', version: 1, content: adfContent },
+                    }),
                 },
             };
-
-            if (description) {
-                issueBody.fields = {
-                    ...issueBody.fields as object,
-                    description: {
-                        type: 'doc',
-                        version: 1,
-                        content: [
-                            {
-                                type: 'paragraph',
-                                content: [{ type: 'text', text: description }],
-                            },
-                        ],
-                    },
-                };
-            }
 
             const result = await jiraFetch(
                 config.domain,

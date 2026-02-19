@@ -75,6 +75,8 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
     const [selectedIssueType, setSelectedIssueType] = React.useState('');
     const [summary, setSummary] = React.useState(`[AAC] Failed Run: ${execution.taskId}`);
     const [description, setDescription] = React.useState(() => buildDescription(execution));
+    const [expectedResult, setExpectedResult] = React.useState('');
+    const [actualResult, setActualResult] = React.useState('');
 
     const [submitState, setSubmitState] = React.useState<SubmitState>('idle');
     const [submitError, setSubmitError] = React.useState<string | null>(null);
@@ -166,6 +168,8 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                     issueType: selectedIssueType,
                     summary: summary.trim(),
                     description: description.trim(),
+                    expectedResult: expectedResult.trim() || undefined,
+                    actualResult: actualResult.trim() || undefined,
                     executionId: execution._id,
                     taskId: execution.taskId,
                 },
@@ -349,6 +353,38 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                                     value={description}
                                     onChange={e => setDescription(e.target.value)}
                                     className="w-full px-3 py-2 text-xs font-mono border border-slate-200 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y transition"
+                                />
+                            </div>
+
+                            {/* Expected Result */}
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1.5" htmlFor="jira-expected">
+                                    Expected Result
+                                    <span className="ml-1 font-normal text-slate-400">(optional)</span>
+                                </label>
+                                <textarea
+                                    id="jira-expected"
+                                    rows={3}
+                                    placeholder="What should have happened?"
+                                    value={expectedResult}
+                                    onChange={e => setExpectedResult(e.target.value)}
+                                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y transition"
+                                />
+                            </div>
+
+                            {/* Actual Result */}
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1.5" htmlFor="jira-actual">
+                                    Actual Result
+                                    <span className="ml-1 font-normal text-slate-400">(optional)</span>
+                                </label>
+                                <textarea
+                                    id="jira-actual"
+                                    rows={3}
+                                    placeholder="What actually happened?"
+                                    value={actualResult}
+                                    onChange={e => setActualResult(e.target.value)}
+                                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y transition"
                                 />
                             </div>
 

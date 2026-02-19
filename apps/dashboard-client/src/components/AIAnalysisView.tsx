@@ -96,29 +96,28 @@ const AIAnalysisView: React.FC<AIAnalysisViewProps> = ({
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl flex flex-col" style={{ maxHeight: '85vh' }}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl flex flex-col" style={{ maxHeight: '85vh' }}>
                 
                 {/* Header */}
-                <div className="modal-header">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{
-                            padding: '8px',
-                            borderRadius: '8px',
-                            backgroundColor: status === 'UNSTABLE' ? 'rgba(234, 179, 8, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                            color: status === 'UNSTABLE' ? '#facc15' : '#f87171'
-                        }}>
-                            <Bot size={24} />
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 flex-shrink-0">
+                    <div className="flex items-center gap-2.5">
+                        <div className={`p-2 rounded-lg ${status === 'UNSTABLE' ? 'bg-amber-100 text-amber-400' : 'bg-rose-100 text-rose-400'}`}>
+                            <Bot size={22} />
                         </div>
                         <div>
-                            <h3 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <h3 className="text-base font-bold text-slate-800 m-0 flex items-center gap-2">
                                 AI Root Cause Analysis
-                                <Sparkles size={16} style={{ color: '#60a5fa', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }} />
+                                <Sparkles size={15} className="text-blue-400 animate-pulse" />
                             </h3>
-                            <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>Powered by Gemini 2.5 Flash</p>
+                            <p className="text-xs text-slate-400 m-0">Powered by Gemini 2.5 Flash</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="close-button">
-                        <X size={24} />
+                    <button
+                        onClick={onClose}
+                        aria-label="Close"
+                        className="text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full p-1.5 transition-colors"
+                    >
+                        <X size={20} />
                     </button>
                 </div>
 
