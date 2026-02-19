@@ -102,10 +102,10 @@ export const Dashboard = () => {
       {/* Main Header with Title and Run Test Button */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="m-0 text-3xl font-bold bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
+          <h1 className="m-0 text-3xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
             Automation Center
           </h1>
-          <p className="text-slate-400 mt-1">
+          <p className="text-slate-500 mt-1">
             Live monitoring of test infrastructure
           </p>
         </div>

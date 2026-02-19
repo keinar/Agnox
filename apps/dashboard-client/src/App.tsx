@@ -14,7 +14,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <div className="dark min-h-screen bg-slate-950 text-slate-50 font-sans antialiased">
+        <div className="min-h-screen bg-gray-50 text-slate-900 font-sans antialiased">
           <BrowserRouter>
             <Routes>
               {/* Public routes */}
