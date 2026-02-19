@@ -73,7 +73,7 @@ export function IntegrationsTab() {
         try {
             await axios.put(
                 `${API_URL}/api/integrations/jira`,
-                { domain: form.domain.trim(), email: form.email.trim(), apiToken: form.apiToken },
+                { domain: form.domain.trim(), email: form.email.trim(), token: form.apiToken },
                 { headers: authHeaders },
             );
             setIsConfigured(true);
