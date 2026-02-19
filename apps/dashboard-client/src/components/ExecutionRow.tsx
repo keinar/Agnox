@@ -301,8 +301,8 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                                 </button>
                             )}
 
-                            {/* Create Jira Ticket button — FAILED/ERROR only */}
-                            {(execution.status === 'FAILED' || execution.status === 'ERROR') && (
+                            {/* Create Jira Ticket button — FAILED/ERROR/UNSTABLE */}
+                            {(execution.status === 'FAILED' || execution.status === 'ERROR' || execution.status === 'UNSTABLE') && (
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setShowJiraModal(true); }}
                                     title="Create Jira Ticket"

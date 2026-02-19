@@ -251,17 +251,27 @@ async function startWorker() {
             const logsString = logsBuffer;
             const hasFailures = logsString.includes('failed') || logsString.includes('✘');
             const hasRetries = logsString.includes('retry #');
+            const hasPassed = /\d+ passed/.test(logsString) || logsString.includes('✓') || logsString.includes('passing (');
 
             if (finalStatus === 'PASSED') {
-                if (hasFailures && !hasRetries) {
-                    logger.warn({ taskId }, 'Exit code 0 but failures detected. Marking as FAILED.');
-                    finalStatus = 'FAILED';
-                } else if (hasRetries) {
-                    logger.warn({ taskId }, 'Retries detected. Marking as UNSTABLE.');
+                if (hasFailures && hasPassed) {
+                    // Mix of passed and failed tests — genuinely unstable/flaky
+                    logger.warn({ taskId }, 'Mixed results detected (passed + failed). Marking as UNSTABLE.');
                     finalStatus = 'UNSTABLE';
+                } else if (hasFailures) {
+                    // Failures detected with no evidence of passing tests — fully failed
+                    logger.warn({ taskId }, 'Exit code 0 but only failures detected. Marking as FAILED.');
+                    finalStatus = 'FAILED';
                 }
+                // else: no failures detected, stays PASSED
             } else {
-                finalStatus = 'FAILED';
+                if (hasRetries && hasPassed && hasFailures) {
+                    // Non-zero exit but some tests passed with retries, some failed — mixed
+                    logger.warn({ taskId }, 'Mixed results with retries and non-zero exit. Marking as UNSTABLE.');
+                    finalStatus = 'UNSTABLE';
+                } else {
+                    finalStatus = 'FAILED';
+                }
             }
 
             const duration = new Date().getTime() - startTime.getTime();
