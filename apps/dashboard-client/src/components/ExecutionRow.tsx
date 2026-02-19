@@ -179,7 +179,21 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
     const allureReportUrl = `${baseUrl}/${execution.taskId}/allure-report/index.html`;
 
     const isFinished = ['PASSED', 'FAILED', 'UNSTABLE'].includes(execution.status);
-    const isRunLocal = execution.config?.baseUrl?.includes('localhost') || execution.config?.baseUrl?.includes('127.0.0.1');
+
+    // Permissive local-run detection — check every possible field that may carry a base URL.
+    const LOCAL_INDICATORS = ['localhost', '127.0.0.1', 'host.docker.internal'] as const;
+    const isRunLocal = (() => {
+        const candidates: (string | undefined)[] = [
+            execution.environment,
+            execution.config?.baseUrl,
+            execution.baseUrl,
+            execution.meta?.baseUrl,
+        ];
+        return candidates.some(
+            (v) => v && LOCAL_INDICATORS.some((indicator) => v.includes(indicator)),
+        );
+    })();
+
     const isDashboardCloud = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
     const areReportsInaccessible = isDashboardCloud && isRunLocal;
 
@@ -301,16 +315,23 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                                 </button>
                             )}
 
-                            {/* Create Jira Ticket button — FAILED/ERROR/UNSTABLE */}
-                            {(execution.status === 'FAILED' || execution.status === 'ERROR' || execution.status === 'UNSTABLE') && (
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); setShowJiraModal(true); }}
-                                    title="Create Jira Ticket"
-                                    className={`${iconBtnBase} text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100`}
-                                >
-                                    <Bug size={16} />
-                                </button>
-                            )}
+                            {/* Create / View Jira Ticket button — FAILED/ERROR/UNSTABLE */}
+                            {(execution.status === 'FAILED' || execution.status === 'ERROR' || execution.status === 'UNSTABLE') && (() => {
+                                const hasTickets = (execution.jiraTickets?.length ?? 0) > 0;
+                                return (
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setShowJiraModal(true); }}
+                                        title={hasTickets ? `${execution.jiraTickets.length} Jira ticket(s) linked — click to view or create another` : 'Create Jira Ticket'}
+                                        className={`${iconBtnBase} ${
+                                            hasTickets
+                                                ? 'text-indigo-700 bg-indigo-100 border-indigo-300 hover:bg-indigo-200'
+                                                : 'text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100'
+                                        }`}
+                                    >
+                                        <Bug size={16} />
+                                    </button>
+                                );
+                            })()}
 
                             {/* Analyzing spinner */}
                             {execution.status === 'ANALYZING' && (
