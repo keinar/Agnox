@@ -1,7 +1,7 @@
 import { NavLink, Link } from 'react-router-dom';
 import { LayoutDashboard, Settings, BookOpen, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import logoLight from '../assets/logo-full.png';
-import logoDark from '../assets/logo.png';
+import logoLight from '../assets/logo.png';
+import logoDark from '../assets/logo-dark.png';
 import { useTheme } from '../context/ThemeContext';
 
 interface SidebarProps {
@@ -33,9 +33,8 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
         <img
           src={logo}
           alt="Agnostic Automation Center"
-          className={`w-auto object-contain transition-all duration-300 ${
-            isCollapsed ? 'h-6' : 'h-10'
-          }`}
+          className={`w-auto object-contain transition-all duration-300 ${isCollapsed ? 'h-6' : 'h-10'
+            }`}
         />
       </Link>
 
@@ -53,9 +52,8 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
   // Label text — fades out smoothly as the sidebar collapses instead of snapping.
   const labelSpan = (text: string) => (
     <span
-      className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
-        isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[160px] opacity-100'
-      }`}
+      className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isCollapsed ? 'max-w-0 opacity-0' : 'max-w-[160px] opacity-100'
+        }`}
     >
       {text}
     </span>
@@ -99,8 +97,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
             to={to!}
             title={isCollapsed ? label : undefined}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors duration-150 ${
-                isActive ? ACTIVE_CLASS : DEFAULT_CLASS
+              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors duration-150 ${isActive ? ACTIVE_CLASS : DEFAULT_CLASS
               }`
             }
           >
@@ -115,9 +112,8 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
   // ── Desktop sidebar ───────────────────────────────────────────────────────
   const desktopSidebar = (
     <aside
-      className={`hidden md:flex flex-col bg-gh-bg dark:bg-gh-bg-dark border-r border-gh-border dark:border-gh-border-dark transition-all duration-300 flex-shrink-0 ${
-        isCollapsed ? 'w-16' : 'w-60'
-      }`}
+      className={`hidden md:flex flex-col bg-gh-bg dark:bg-gh-bg-dark border-r border-gh-border dark:border-gh-border-dark transition-all duration-300 flex-shrink-0 ${isCollapsed ? 'w-16' : 'w-60'
+        }`}
     >
       {logoBlock}
       {navLinks}
@@ -141,9 +137,8 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
 
       {/* Drawer */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-60 bg-gh-bg dark:bg-gh-bg-dark border-r border-gh-border dark:border-gh-border-dark flex flex-col md:hidden transition-transform duration-300 ${
-          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-60 bg-gh-bg dark:bg-gh-bg-dark border-r border-gh-border dark:border-gh-border-dark flex flex-col md:hidden transition-transform duration-300 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         {/* Mobile header with logo and close button */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gh-border dark:border-gh-border-dark">
@@ -198,8 +193,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
                 to={to!}
                 onClick={onMobileClose}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors duration-150 ${
-                    isActive ? ACTIVE_CLASS : DEFAULT_CLASS
+                  `flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors duration-150 ${isActive ? ACTIVE_CLASS : DEFAULT_CLASS
                   }`
                 }
               >
