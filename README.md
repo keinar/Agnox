@@ -11,10 +11,11 @@ Run any containerized automation suite (Playwright, Pytest, JUnit, Cypress, etc.
 ![Docker](https://img.shields.io/badge/Docker-Agnostic-2496ED?style=flat-square)
 ![AI](https://img.shields.io/badge/AI-Gemini%202.5%20Flash-8e44ad?style=flat-square)
 ![Security](https://img.shields.io/badge/Security-JWT%20%2B%20RBAC-green?style=flat-square)
+![TanStack Query](https://img.shields.io/badge/TanStack_Query-v5-FF4154?style=flat-square)
 
 ---
 
-## 🎯 What Problem Does This Solve?
+## What Problem Does This Solve?
 
 **The Challenge:** Test automation teams struggle with:
 - Managing different frameworks (Playwright, Selenium, Pytest, etc.) across environments
@@ -31,18 +32,18 @@ Run any containerized automation suite (Playwright, Pytest, JUnit, Cypress, etc.
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 🧠 AI-Powered Root Cause Analysis
+### AI-Powered Root Cause Analysis
 
 No more digging through thousands of log lines.
 
 - **Automatic Detection:** When tests fail, the system captures logs automatically
 - **Gemini 2.5 Flash:** Analyzes failure context, identifies exact errors, suggests fixes
 - **Privacy Controls:** Organization-level toggle to opt-out of AI processing
-- **Instant Reports:** View styled analysis directly in dashboard via ✨ icon
+- **Instant Reports:** View styled analysis directly in the dashboard
 
-### 🏢 Multi-Tenant SaaS Architecture
+### Multi-Tenant SaaS Architecture
 
 Complete isolation and security for multiple organizations.
 
@@ -51,17 +52,51 @@ Complete isolation and security for multiple organizations.
 - **Data Isolation:** Organizations cannot see or access each other's data
 - **Usage Tracking:** Per-organization quotas and limits based on subscription plan
 
-### 🎨 Interactive Dashboard
+### Modern Full-Screen Dashboard
 
-Modern React-based UI built with Vite + Pure CSS.
+A professional React 19 + Tailwind CSS interface built for power users.
 
-- **Manual Triggers:** Launch tests directly from UI using the Execution Modal — Docker image, Target URL, and Test Folder are pre-filled from your saved project settings
-- **Per-Project Configuration:** Configure environments, Docker images, and test folders per project in **Settings → Run Settings**. If nothing is configured yet, the modal guides you there
-- **Live Monitoring:** Watch console logs stream in real-time via WebSockets
-- **Mobile Responsive:** Full mobile and tablet support with responsive Pure CSS
+- **Full-Screen Layout:** Edge-to-edge design with no artificial width constraints, maximizing visible data
+- **Collapsible Sidebar:** Persistent navigation sidebar with Dashboard, Settings, and Docs links. Collapsed state is persisted in `localStorage`
+- **AppLayout / Outlet Pattern:** React Router's nested layout pattern — the `AppLayout` component renders the `<Outlet />`, ensuring the Sidebar and global chrome are shared across all pages without re-mounting
+- **Manual Triggers:** Launch tests directly from the UI using the Execution Modal — Docker image, Target URL, and Test Folder are pre-filled from saved project settings
+- **Live Monitoring:** Watch console logs stream in real-time via Socket.io WebSockets
 - **Settings Management:** Manage team members, organization settings, usage quotas, and per-project run configuration
 
-### 🔐 Enterprise-Grade Security
+### Advanced Run Management
+
+Powerful organization and control over test executions.
+
+- **Grouped vs. Flat View:** Toggle between a flat chronological list and a grouped view that aggregates runs by `groupName`. Both views support full filtering and pagination
+- **Group Collapsing:** In Grouped view, each group header shows a pass/fail summary badge and last run timestamp. Click to expand or collapse the child executions
+- **Bulk Actions Bar:** A floating action bar appears when one or more rows are selected. Supports:
+  - **Group Selected** — assign a group name to multiple executions at once (popover input)
+  - **Ungroup Selected** — remove the group assignment from selected executions
+  - **Delete Selected** — soft-delete up to 100 executions in a single operation
+- **Pagination:** Both flat and grouped views are fully paginated, with "Showing X–Y of Z results" context, Prev/Next controls, and loading state dimming
+- **Persistent View Mode:** The active view mode (flat or grouped) is saved to `localStorage` across sessions
+
+### Smart Real-Time Analytics
+
+Live KPI dashboard powered by MongoDB server-side aggregation.
+
+- **Total Runs:** Count of all test executions in the current calendar month, scoped to the organization
+- **Success Rate:** Computed as `PASSED / finishedRuns × 100`, rounded to one decimal place. Excludes in-progress runs (RUNNING, PENDING, ANALYZING) to avoid misleading percentages
+- **Average Duration:** Mean execution time in milliseconds across all finished runs that have an `endTime`
+- **TanStack Query Integration:** KPIs are fetched with a 60-second stale window, 2 automatic retries, and a local skeleton-loading state while the request is in flight
+- **Zero-State Handling:** If no executions exist for the current month, all KPIs display as 0 without errors
+
+### Dynamic Jira Integration
+
+First-class bug-filing directly from the dashboard.
+
+- **Custom Field Schema:** The Jira project's `createmeta` endpoint is fetched at modal open time. Any custom fields (`customfield_*`) defined in the project are dynamically rendered — no hardcoded field lists
+- **ADF Formatting:** Issue descriptions are built using Atlassian Document Format (ADF) for rich, structured content including code blocks, bullet lists, and paragraph nodes
+- **Bidirectional Linkage:** Filed tickets are stored in MongoDB and linked back to their originating execution record
+- **Assignee Selection:** Supports dynamic assignee lookup and selection within the modal
+- **Localized Context:** The "Source" field in the Jira ticket body is populated dynamically from `window.location.hostname` at modal open time — resolving to `LOCAL` for local development hosts and `CLOUD` for all other environments
+
+### Enterprise-Grade Security
 
 Built with security best practices from the ground up.
 
@@ -72,7 +107,7 @@ Built with security best practices from the ground up.
 - **Security Headers:** OWASP-recommended headers (HSTS, X-Frame-Options, CSP-ready)
 - **CORS Protection:** Environment-based origin validation
 
-### 🚀 Smart Environment Mapping
+### Smart Environment Mapping
 
 Framework-agnostic environment configuration.
 
@@ -81,7 +116,7 @@ Framework-agnostic environment configuration.
 - **Dynamic Injection:** Environment variables injected into containers at runtime
 - **Secret Management:** Sensitive data never hardcoded, always injected
 
-### 💳 Billing & Subscription Management
+### Billing & Subscription Management
 
 Integrated Stripe-powered subscription system.
 
@@ -89,9 +124,9 @@ Integrated Stripe-powered subscription system.
 - **Stripe Integration:** Secure payment processing via Stripe Checkout
 - **Plan Limits Enforcement:** Test runs, team members, concurrent runs per plan
 - **Usage Tracking:** Real-time usage statistics and quota monitoring
-- **Self-Service Billing:** Upgrade/downgrade plans directly from dashboard
+- **Self-Service Billing:** Upgrade/downgrade plans directly from the dashboard
 
-### 👤 User Profile Management
+### User Profile Management
 
 Personal account management for all users.
 
@@ -99,17 +134,17 @@ Personal account management for all users.
 - **Read-Only Security:** Email and role displayed but not editable by user
 - **Role-Based Access:** Profile visible to all, role changes by admins only
 
-### 📧 Email Integration
+### Email Integration
 
 Professional email communications via SendGrid.
 
-- **Team Invitations:** Beautiful HTML email invitations with one-click join
+- **Team Invitations:** HTML email invitations with one-click join
 - **Welcome Emails:** Onboarding emails for new team members
 - **Transactional Emails:** Password reset, notifications (coming soon)
 
 ---
 
-## 🔌 Connecting an Automation Project
+## Connecting an Automation Project
 
 The **AAC CLI** ([`@keinar/aac-cli`](https://www.npmjs.com/package/@keinar/aac-cli)) is the official tool for preparing and connecting any test automation repository to the platform.
 
@@ -141,12 +176,12 @@ The platform will use this image and configuration for all future test runs laun
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ```mermaid
 graph TB
     subgraph "Client Layer"
-        UI[Dashboard Client<br/>React + Vite + Pure CSS]
+        UI[Dashboard Client<br/>React 19 + Vite + Tailwind CSS<br/>TanStack Query v5]
     end
 
     subgraph "API Layer"
@@ -161,7 +196,7 @@ graph TB
 
     subgraph "Data Layer"
         Mongo[(MongoDB<br/>Multi-tenant Data)]
-        Redis[(Redis<br/>Cache + Queues)]
+        Redis[(Redis<br/>Rate Limiting + Cache)]
     end
 
     subgraph "Message Queue"
@@ -171,6 +206,7 @@ graph TB
     subgraph "External Services"
         Gemini[Google Gemini AI<br/>Root Cause Analysis]
         Email[Email Service<br/>SMTP/SendGrid]
+        Jira[Jira Cloud<br/>Bug Filing]
     end
 
     UI -->|HTTPS/WSS| Producer
@@ -179,6 +215,7 @@ graph TB
     Producer --> Redis
     Producer --> RabbitMQ
     Producer --> Email
+    Producer --> Jira
 
     RabbitMQ --> Worker
     Worker --> Docker
@@ -193,18 +230,18 @@ graph TB
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
-| **Dashboard Client** | React 19 + TypeScript + Vite + Pure CSS | User interface for test management |
-| **Producer Service** | Fastify + TypeScript | RESTful API, authentication, WebSocket server |
+| **Dashboard Client** | React 19 + TypeScript + Vite + Tailwind CSS + TanStack Query v5 | Full-screen UI with sidebar navigation, grouped execution views, and real-time analytics |
+| **Producer Service** | Fastify + TypeScript | RESTful API, authentication, WebSocket server, analytics aggregation |
 | **Worker Service** | Node.js + Docker SDK | Test execution orchestration |
-| **MongoDB** | NoSQL Database | Multi-tenant data storage |
-| **Redis** | In-memory Cache | Rate limiting, session storage, metrics |
+| **MongoDB** | NoSQL Database | Multi-tenant data storage, server-side KPI aggregation |
+| **Redis** | In-memory Cache | Rate limiting, session storage |
 | **RabbitMQ** | Message Queue | Distributed task queue for test execution |
 | **Google Gemini** | AI Model | Root cause analysis for test failures |
 | **Email Service** | SendGrid | Team member invitations, transactional emails |
 
 ---
 
-## 🚀 Quick Start: Integrate Your Automation Project
+## Quick Start: Integrate Your Automation Project
 
 ### Step 1: Create Your Account
 
@@ -224,8 +261,6 @@ The platform works with **any containerized test framework**. Here's how to inte
 
 #### Option A: Use the API Directly
 
-Send test execution requests to the API:
-
 ```bash
 curl -X POST https://api.automation.keinar.com/api/execution-request \
   -H "Content-Type: application/json" \
@@ -235,6 +270,7 @@ curl -X POST https://api.automation.keinar.com/api/execution-request \
     "image": "mcr.microsoft.com/playwright:v1.40.0",
     "command": "npx playwright test",
     "folder": "tests/e2e",
+    "groupName": "nightly-regression",
     "config": {
       "environment": "staging",
       "baseUrl": "https://staging.automation.keinar.com"
@@ -266,6 +302,7 @@ jobs:
               "image": "mcr.microsoft.com/playwright:v1.40.0",
               "command": "npm test",
               "folder": "tests",
+              "groupName": "ci-${{ github.ref_name }}",
               "config": {
                 "environment": "production",
                 "baseUrl": "${{ secrets.PROD_URL }}"
@@ -307,6 +344,7 @@ async function runTests() {
       image: 'mcr.microsoft.com/playwright:v1.40.0',
       command: 'npx playwright test',
       folder: 'tests/integration',
+      groupName: 'smoke-suite',
       config: {
         environment: 'staging',
         baseUrl: 'https://staging.automation.keinar.com',
@@ -335,7 +373,7 @@ runTests();
 
 ---
 
-## 🖥️ Supported Test Frameworks
+## Supported Test Frameworks
 
 The platform is **framework-agnostic** - any Docker-based test framework works:
 
@@ -350,11 +388,173 @@ The platform is **framework-agnostic** - any Docker-based test framework works:
 
 ---
 
-## ⚙️ Environment Variables
+## API Reference
 
-> **📢 For SaaS Users:** If you're using the hosted platform at `automation.keinar.com`, you don't need to configure any infrastructure variables. Just [generate an API key](docs/integration/quickstart.md) and integrate!
+All endpoints return `{ success: boolean; data?: T; error?: string }`. Protected routes require a `Bearer` JWT token in the `Authorization` header.
+
+### Analytics
+
+#### GET `/api/analytics/kpis`
+
+Returns real-time KPI metrics for the caller's organization, scoped to the current calendar month (UTC). Soft-deleted executions are excluded.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "totalRuns": 142,
+    "passedRuns": 128,
+    "finishedRuns": 135,
+    "successRate": 94.8,
+    "avgDurationMs": 47300,
+    "period": "2026-02"
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `totalRuns` | All executions in the current calendar month |
+| `successRate` | `passedRuns / finishedRuns × 100`, excluding in-progress runs |
+| `avgDurationMs` | Mean duration across runs that have an `endTime` |
+| `period` | ISO calendar month of the aggregation window (`YYYY-MM`) |
+
+---
+
+### Executions
+
+#### GET `/api/executions`
+
+Returns a paginated, filtered list of executions for the caller's organization.
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | number | `25` | Records per page (max `100`) |
+| `offset` | number | `0` | Zero-based start index |
+| `status` | string | — | Comma-separated status values: `PASSED,FAILED,ERROR,UNSTABLE` |
+| `environment` | string | — | Case-insensitive match on `config.environment` |
+| `startAfter` | ISO date | — | Include only executions that started after this date |
+| `startBefore` | ISO date | — | Include only executions that started before this date (inclusive, extended to `23:59:59 UTC`) |
+| `groupName` | string | — | Exact match on `groupName` field |
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "executions": [...],
+    "total": 380,
+    "limit": 25,
+    "offset": 0
+  }
+}
+```
+
+---
+
+#### GET `/api/executions/grouped`
+
+Returns executions aggregated by `groupName` using a MongoDB `$group` + `$facet` aggregation pipeline. Executions without a `groupName` are placed in a synthetic `__ungrouped__` bucket.
+
+**Query Parameters:** Same as `GET /api/executions`, except:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `limit` | number | `10` | Groups per page (max `50`) |
+| `offset` | number | `0` | Zero-based group offset |
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "groups": [
+      {
+        "groupName": "nightly-regression",
+        "totalCount": 24,
+        "passCount": 22,
+        "lastRunAt": "2026-02-19T23:15:00.000Z",
+        "executions": [...]
+      }
+    ],
+    "totalGroups": 8,
+    "limit": 10,
+    "offset": 0
+  }
+}
+```
+
+---
+
+#### PATCH `/api/executions/bulk`
+
+Updates a whitelisted field on up to 100 executions in a single operation. Currently supports setting or removing `groupName`. Passing `null` or an empty string for `groupName` removes the field (ungroups).
+
+**Request Body:**
+```json
+{
+  "taskIds": ["task-001", "task-002"],
+  "data": { "groupName": "sprint-42" }
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": { "modifiedCount": 2 }
+}
+```
+
+---
+
+#### DELETE `/api/executions/bulk`
+
+Soft-deletes up to 100 executions at once. Records are not removed from the database — a `deletedAt` timestamp is written to preserve billing accuracy.
+
+**Request Body:**
+```json
+{
+  "taskIds": ["task-001", "task-002"]
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": { "deletedCount": 2 }
+}
+```
+
+---
+
+### Execution Requests
+
+#### POST `/api/execution-request`
+
+Queues a new test execution. Accepts an optional `groupName` and `batchId` for grouping.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `taskId` | string | Yes | Unique identifier for this execution |
+| `image` | string | Yes | Docker image to run |
+| `command` | string | Yes | Command to execute inside the container |
+| `folder` | string | No | Test folder path (default: `all`) |
+| `groupName` | string | No | Logical group name for grouping related runs |
+| `batchId` | string | No | Batch identifier for CI/CD pipeline grouping |
+| `config` | object | Yes | `{ environment, baseUrl, envVars }` |
+
+---
+
+## Environment Variables
+
+> **For SaaS Users:** If you're using the hosted platform, you don't need to configure any infrastructure variables. Just generate an API key and integrate.
 >
-> The variables below are only needed for **self-hosting**. See [Deployment Guide](docs/setup/deployment.md) for details.
+> The variables below are only needed for **self-hosting**.
 
 ### Required Variables (Self-Hosting Only)
 
@@ -363,7 +563,7 @@ The platform is **framework-agnostic** - any Docker-based test framework works:
 PORT=3000
 NODE_ENV=production
 
-# Database (MONGO_URI determines Cloud vs Local)
+# Database
 MONGO_URI=mongodb://localhost:27017/automation_platform
 
 # Redis (Rate Limiting, Sessions)
@@ -377,8 +577,6 @@ GEMINI_API_KEY=your-gemini-api-key
 ```
 
 ### Optional: Billing & Email (Self-Hosting Only)
-
-> These are managed by the platform for SaaS users. Only configure if self-hosting.
 
 ```env
 # Stripe (for subscription billing)
@@ -398,7 +596,7 @@ VITE_API_URL=https://api.automation.keinar.com
 
 ---
 
-## 🛠️ Self-Hosting
+## Self-Hosting
 
 **Want to self-host?** This platform can be deployed on your own infrastructure.
 
@@ -406,186 +604,166 @@ See the [Deployment Guide](docs/setup/deployment.md) for full deployment instruc
 
 ---
 
-## 📦 What's Included
+## What's Included
 
-### Phase 1: Multi-Tenant Foundation ✅ (Complete)
+### Phase 1: Multi-Tenant Foundation ✅
 
-**Duration:** Jan 28-30, 2026 | **Status:** Production Ready
+**Status:** Production Ready
 
-- ✅ Organization and User management with RBAC
-- ✅ JWT-based authentication with bcrypt password hashing
-- ✅ Multi-tenant data isolation (100% verified)
-- ✅ Database migration script for existing data
-- ✅ Security audit completed (87/100 → 92/100 score)
-- ✅ Production deployment guide
-- ✅ Comprehensive test coverage (unit + integration)
-
-**Deliverables:**
-- 3 new data models (Organization, User, Invitation)
-- 4 API route modules (auth, users, invitations, organization)
-- Authentication middleware with JWT verification
-- Database migration script
-- 8,000+ lines of code
-- Comprehensive documentation
+- Organization and User management with RBAC
+- JWT-based authentication with bcrypt password hashing
+- Multi-tenant data isolation (100% verified)
+- Database migration script for existing data
+- Security audit completed (87/100 → 92/100 score)
 
 ---
 
-### Phase 2: User Management UI & Security ✅ (Complete)
+### Phase 2: User Management UI & Security ✅
 
-**Duration:** Feb 4-6, 2026 | **Status:** Production Ready
+**Status:** Production Ready
 
-#### ✅ Completed Features (Sprint 1-4)
-
-**Team Member Management:**
-- ✅ Invite team members via email
-- ✅ Role management (Admin, Developer, Viewer)
-- ✅ User list with status indicators
-- ✅ Remove team members
-- ✅ Invitation status tracking
-
-**Organization Settings:**
-- ✅ Organization details page
-- ✅ Plan limits visualization
-- ✅ Admin-only organization name editing
-- ✅ Mobile-responsive settings UI
-
-**AI Privacy Controls:**
-- ✅ Organization-level AI analysis toggle
-- ✅ Privacy disclosure and transparency
-- ✅ Worker service enforcement
-- ✅ Admin-only control
-
-**Security Enhancements:**
-- ✅ Redis-based rate limiting (per-organization + per-IP)
-- ✅ Security headers (OWASP recommendations)
-- ✅ Login attempt tracking with account lockout
-- ✅ CORS production configuration
-
-**Completed Features:**
-- ✅ Usage statistics visualization
-- ✅ Quota enforcement (test runs, concurrent runs)
-- ✅ API Key Management for CI/CD integration
-- ✅ Comprehensive integration testing
+- Team member invitations with secure SHA-256 token hashing
+- Role management (Admin/Developer/Viewer) with full RBAC enforcement
+- Organization settings (AI toggle, usage tracking, plan limits)
+- Redis-based rate limiting and login attempt tracking
+- API Key Management for CI/CD integration
 
 ---
 
-### Phase 3: Billing Integration ✅ (Complete)
+### Phase 3: Billing Integration ✅
 
-**Duration:** Feb 5-6, 2026 | **Status:** Production Ready
+**Status:** Production Ready
 
-- ✅ Stripe subscription billing (Free, Team, Enterprise plans)
-- ✅ Stripe Checkout and Customer Portal integration
-- ✅ Webhook handling for payment events
-- ✅ Plan limits enforcement (test runs, team members, concurrent runs)
-- ✅ Usage tracking and quota monitoring
-- ✅ Billing dashboard UI in Settings
+- Stripe subscription billing (Free, Team, Enterprise plans)
+- Stripe Checkout and Customer Portal integration
+- Webhook handling for payment events
+- Plan limits enforcement and quota monitoring
 
 ---
 
-### Phase 4: Project Run Settings ✅ (Complete)
+### Phase 4: Project Run Settings ✅
 
-**Duration:** Feb 2026 | **Status:** Production Ready
+**Status:** Production Ready
 
-- ✅ Per-project Docker image and test folder configuration
-- ✅ Per-project environment URLs (Dev, Staging, Production)
-- ✅ Settings → Run Settings management tab
-- ✅ Execution Modal pre-fills from project settings
-- ✅ Shared types package (`@aac/shared-types`)
-
----
-
-### Phase 5: Email Integration ✅ (Complete)
-
-**Duration:** Feb 2026 | **Status:** Production Ready
-
-- ✅ SendGrid transactional email integration
-- ✅ HTML email templates for team invitations
-- ✅ Welcome emails for new team members
-- ✅ Fallback to console logging when SendGrid is not configured
+- Per-project Docker image and test folder configuration
+- Per-project environment URLs (Dev, Staging, Production)
+- Settings → Run Settings management tab
+- Execution Modal pre-fills from project settings
+- Shared types package (`@aac/shared-types`)
 
 ---
 
-## 🛠️ Technology Stack
+### Phase 5: Email Integration ✅
+
+**Status:** Production Ready
+
+- SendGrid transactional email integration
+- HTML email templates for team invitations
+- Welcome emails for new team members
+
+---
+
+### Sprint 5: Dashboard Evolution ✅
+
+**Status:** Production Ready
+
+- **Layout Overhaul:** Full-screen layout with collapsible Sidebar and AppLayout/Outlet routing pattern
+- **Real-Time Analytics:** MongoDB aggregation pipeline for KPI cards (Total Runs, Success Rate, Avg Duration), powered by TanStack Query v5 with 60-second stale window
+- **Advanced Pagination & Filtering:** Server-side pagination with `limit`/`offset`, multi-select status chips, environment filter, and date range inputs
+- **Run Groups:** `groupName` / `batchId` fields on executions; `GET /api/executions/grouped` endpoint with `$group`+`$facet` aggregation; collapsible group rows with pass/fail summary badges
+- **Bulk Actions:** Multi-select checkboxes, floating action bar with Group / Ungroup / Delete operations; `PATCH /api/executions/bulk` and `DELETE /api/executions/bulk` endpoints using indexed soft-delete pattern
+- **Dynamic Jira Integration:** `createmeta`-driven custom field rendering, ADF-formatted descriptions, bidirectional execution↔ticket linkage
+- **Localized Context:** `window.location.hostname`-based LOCAL/CLOUD source detection
+- **UX Polish:** Persistent view mode in `localStorage`, scroll-locking on log panels, filter chip cleanup
+
+---
+
+## Technology Stack
 
 ### Frontend
-- **React 19** - Modern UI framework
-- **TypeScript** - Type safety
-- **Vite** - Lightning-fast build tool
-- **Pure CSS** - Inline styles and custom CSS, mobile-responsive
-- **Socket.io Client** - Real-time WebSocket connections
+- **React 19** — Modern UI framework with concurrent rendering
+- **TypeScript** — End-to-end type safety
+- **Vite** — Lightning-fast build tooling
+- **Tailwind CSS** — Utility-first CSS framework (all styling; no inline styles or custom CSS)
+- **TanStack Query v5** — Server state management with caching, background refetch, and optimistic updates
+- **Socket.io Client** — Real-time WebSocket connections
+- **React Router v6** — Nested layout routing with AppLayout/Outlet pattern
 
 ### Backend
-- **Fastify** - High-performance web framework
-- **TypeScript** - Type-safe backend
-- **MongoDB** - NoSQL database for multi-tenant data
-- **Redis** - In-memory cache and rate limiting
-- **RabbitMQ** - Message queue for task distribution
-- **Docker SDK** - Container orchestration
-- **Socket.io** - WebSocket server
+- **Fastify** — High-performance web framework
+- **TypeScript** — Type-safe backend
+- **MongoDB** — NoSQL database for multi-tenant data and server-side aggregation
+- **Redis** — In-memory cache and rate limiting
+- **RabbitMQ** — Message queue for task distribution
+- **Docker SDK** — Container orchestration
+- **Socket.io** — WebSocket server with organization-scoped rooms
 
 ### Security & Auth
-- **JWT (jsonwebtoken)** - Stateless authentication
-- **bcrypt** - Password hashing
-- **Redis Rate Limiting** - DDoS and brute force protection
-- **CORS** - Cross-origin resource sharing
-- **Security Headers** - OWASP best practices
+- **JWT (jsonwebtoken)** — Stateless authentication
+- **bcrypt** — Password hashing (10 rounds)
+- **Redis Rate Limiting** — DDoS and brute force protection
+- **CORS** — Cross-origin resource sharing
+- **Security Headers** — OWASP best practices
+- **AES-256-GCM** — Encryption for integration secrets (Jira tokens, etc.)
 
 ### AI & External Services
-- **Google Gemini 2.5 Flash** - AI-powered root cause analysis
-- **Stripe** - Subscription billing and payment processing
-- **SendGrid (@sendgrid/mail)** - Transactional email delivery
-- **Nodemailer** - SMTP email fallback
+- **Google Gemini 2.5 Flash** — AI-powered root cause analysis
+- **Stripe** — Subscription billing and payment processing
+- **SendGrid** — Transactional email delivery
+- **Jira Cloud API** — Dynamic issue creation with ADF formatting
 
 ---
 
-## 📖 Documentation
+## Documentation
 
 Comprehensive documentation available in `/docs/` and at [docs.automation.keinar.com](https://docs.automation.keinar.com):
 
 ### Setup & Deployment
-- **[Integration Quickstart](docs/integration/quickstart.md)** - Get started in 5 minutes
-- **[Docker Setup](docs/integration/docker-setup.md)** - Container protocol for test images
-- **[Deployment Guide](docs/setup/deployment.md)** - Production deployment, SSL, scaling
-- **[Infrastructure Guide](docs/setup/infrastructure.md)** - Server requirements and setup
-- **[CI/CD Guide](docs/setup/ci-cd.md)** - GitHub Actions and secret management
-- **[Troubleshooting](docs/setup/troubleshooting.md)** - Common issues and solutions
+- **[Integration Quickstart](docs/integration/quickstart.md)** — Get started in 5 minutes
+- **[Docker Setup](docs/integration/docker-setup.md)** — Container protocol for test images
+- **[Deployment Guide](docs/setup/deployment.md)** — Production deployment, SSL, scaling
+- **[Infrastructure Guide](docs/setup/infrastructure.md)** — Server requirements and setup
+- **[CI/CD Guide](docs/setup/ci-cd.md)** — GitHub Actions and secret management
+- **[Troubleshooting](docs/setup/troubleshooting.md)** — Common issues and solutions
 
 ### Features
-- **[User Guide](docs/features/user-guide.md)** - Dashboard, test execution, and settings
-- **[Billing Guide](docs/features/billing-guide.md)** - Plans, subscriptions, and usage
+- **[User Guide](docs/features/user-guide.md)** — Dashboard, test execution, and settings
+- **[Billing Guide](docs/features/billing-guide.md)** — Plans, subscriptions, and usage
 
 ### Architecture & API
-- **[Architecture Overview](docs/architecture/overview.md)** - System design and data flow
-- **[API Overview](docs/api/README.md)** - Complete API reference
-- **[Authentication API](docs/api/authentication.md)** - Signup, login, JWT tokens & API Keys
+- **[Architecture Overview](docs/architecture/overview.md)** — System design and data flow
+- **[API Overview](docs/api/README.md)** — Complete API reference
+- **[Authentication API](docs/api/authentication.md)** — Signup, login, JWT tokens & API Keys
 
 ### Security & Operations
-- **[Security Audit](docs/setup/security-audit.md)** - Comprehensive security assessment
-- **[Email Configuration](docs/setup/email-configuration.md)** - SendGrid setup
-- **[Kubernetes Guide](docs/setup/kubernetes.md)** - K8s deployment architecture
+- **[Security Audit](docs/setup/security-audit.md)** — Comprehensive security assessment
+- **[Email Configuration](docs/setup/email-configuration.md)** — SendGrid setup
+- **[Kubernetes Guide](docs/setup/kubernetes.md)** — K8s deployment architecture
 
 ---
 
-## 🔒 Security
+## Security
 
 Security is a top priority. The platform includes:
 
-- **87/100 → 92/100 Security Score** (comprehensive audit completed)
+- **92/100 Security Score** (comprehensive audit completed)
 - JWT authentication with bcrypt password hashing (10 rounds)
 - Per-organization rate limiting (prevents noisy neighbor problem)
 - Login attempt tracking (5 failures = 15-minute lockout)
 - OWASP-recommended security headers
 - Multi-tenant data isolation (100% verified, zero cross-org data leaks)
 - CORS protection with environment-based configuration
+- AES-256-GCM encryption for integration secrets
 - HTTPS/TLS in production with HSTS headers
 
-See [Security Audit](docs/setup/security-audit.md) for detailed assessment.
+See [Security Audit](docs/setup/security-audit.md) for the detailed assessment.
 
 ---
 
-## 🧪 Running Tests
+## Running Tests
 
 ### Integration Tests
+
 ```bash
 # Start services
 docker-compose up -d
@@ -595,95 +773,31 @@ npm run test:integration
 ```
 
 ### Unit Tests
+
 ```bash
 # Backend tests
-cd apps/producer-service
-npm test
+cd apps/producer-service && npm test
 
 # Frontend tests
-cd apps/dashboard-client
-npm test
+cd apps/dashboard-client && npm test
 ```
 
----
+### E2E Test Suite
 
-## 🧪 Testing
-
-Comprehensive test suite for Phase 2 multi-tenant features.
-
-### Integration Tests
-
-**Invitation System Tests** (`tests/invitations.test.ts`):
 ```bash
-npx tsx tests/invitations.test.ts
-```
-
-Tests:
-- Admin can send invitations
-- Non-admin forbidden (RBAC)
-- Duplicate email validation
-- User limit enforcement
-- **CRITICAL:** Token hashing security (SHA-256)
-- Existing vs new user email flow
-- Invitation acceptance flows
-- Expired/revoked token handling
-- Status transitions (pending → accepted)
-
-**User Management Tests** (`tests/users.test.ts`):
-```bash
-npx tsx tests/users.test.ts
-```
-
-Tests:
-- List users (all roles)
-- Change user roles (admin only)
-- Sole admin protection
-- Last admin protection
-- User removal
-- RBAC enforcement per matrix
-- Cross-organization isolation
-
-### E2E Test
-
-**Full Invitation Flow** (`tests/invitation-flow.e2e.test.ts`):
-```bash
+# Full invitation flow (15 steps)
 npx tsx tests/invitation-flow.e2e.test.ts
-```
 
-Complete user journey validation (15 steps):
-1. **New User Signup Flow** - Admin invites, user signs up with token
-2. **RBAC Enforcement** - Verify permissions (admin/developer/viewer)
-3. **Existing User Join** - User accepts invitation to new organization
-4. **Role Management** - Admin changes roles, permissions update
-5. **User Removal** - Admin removes user, access revoked
+# User management
+npx tsx tests/users.test.ts
 
-### Test Configuration
-
-Environment variables (optional):
-```bash
-# API endpoint (default: http://localhost:3000)
-export API_URL=http://localhost:3000
-
-# MongoDB connection (default: localhost)
-export MONGODB_URL=mongodb://localhost:27017/automation_platform
-```
-
-### Multi-Org Isolation Tests
-
-Legacy multi-tenant isolation validation:
-```bash
+# Multi-org isolation
 npx tsx tests/multi-org-isolation.test.ts
 ```
 
-Verifies:
-- Organizations created independently
-- Data completely isolated between orgs
-- Cross-organization access prevented
-- Socket.io connections scoped to organizations
-
 ---
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Here's how to get started:
 
@@ -697,66 +811,60 @@ Please read our [Contributing Guide](CONTRIBUTING.md) _(coming soon)_ for detail
 
 ---
 
-## 📊 Project Status
+## Project Status
 
 | Phase | Status | Completion |
 |-------|--------|------------|
 | **Phase 1:** Multi-Tenant Foundation | ✅ Complete | 100% |
 | **Phase 2:** User Management UI & Security | ✅ Complete | 100% |
-| **Phase 3:** Advanced Dashboard | 📋 Planned | 0% |
-| **Phase 4:** Enterprise Features | 📋 Planned | 0% |
-
-**Current Focus:** Phase 3 planning and advanced features
-
-**Phase 2 Completed:** 🎉
-- ✅ Invitation system with secure token hashing
-- ✅ User management routes with RBAC
-- ✅ Organization settings (AI toggle, usage tracking)
-- ✅ Security enhancements (rate limiting, audit logging)
-- ✅ Comprehensive test coverage (unit + E2E)
+| **Phase 3:** Billing Integration | ✅ Complete | 100% |
+| **Phase 4:** Project Run Settings | ✅ Complete | 100% |
+| **Phase 5:** Email Integration | ✅ Complete | 100% |
+| **Sprint 5:** Dashboard Evolution | ✅ Complete | 100% |
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 ### Q1 2026 ✅ Complete
-- ✅ Phase 1: Multi-tenant foundation
-- ✅ Phase 2: User management UI and security enhancements
-- ✅ Role-based access control (Admin/Developer/Viewer)
-- ✅ API Key Management for CI/CD integration
-- ✅ Redis-based rate limiting
-- ✅ Stripe billing foundation
+- Phase 1: Multi-tenant foundation
+- Phase 2: User management UI and security enhancements
+- Phase 3: Stripe billing integration
+- Phase 4: Per-project Run Settings
+- Phase 5: Email integration (SendGrid)
+- Sprint 5: Full-screen layout, real-time analytics, run groups, bulk actions, Jira ADF integration
 
 ### Q2 2026
-- 🎯 Phase 3: Advanced analytics and insights
-- 📋 Audit logging and compliance features
-- 📋 Webhook integrations
-- | x86 Worker Support | Run Chrome/Edge browser channels on dedicated x86 infrastructure | 🔮 Planned |
+- Advanced analytics dashboards and trend charts
+- Audit logging and compliance features
+- Webhook integrations for external notifications
+- x86 Worker Support for dedicated Chrome/Edge infrastructure
 
 ### Q3 2026
-- 📋 Phase 4: Enterprise features (SSO/SAML)
-- 📋 Terraform/IaC templates
-- 📋 99.9% uptime SLA
+- Enterprise features (SSO/SAML)
+- Terraform / IaC templates
+- 99.9% uptime SLA
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Google Gemini AI** for powerful root cause analysis capabilities
 - **Fastify** for blazing-fast API performance
 - **React + Vite** for excellent developer experience
-- **MongoDB** for flexible multi-tenant data modeling
+- **MongoDB** for flexible multi-tenant data modeling and server-side aggregation
+- **TanStack Query** for best-in-class server state management
 - **Docker** for framework-agnostic test execution
 
 ---
 
-## 📞 Support & Contact
+## Support & Contact
 
 - **Documentation:** [docs.automation.keinar.com](https://docs.automation.keinar.com)
 - **Issues:** [GitHub Issues](https://github.com/keinar/Agnostic-Automation-Center/issues)
@@ -765,6 +873,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ for test automation teams everywhere**
+**Built for test automation teams everywhere**
 
 Made by developers, for developers. Framework agnostic. AI-powered. Multi-tenant. Secure.

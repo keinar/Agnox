@@ -65,12 +65,19 @@ const getApiUrl = (): string =>
         ? import.meta.env.VITE_API_URL
         : 'http://localhost:3000';
 
+const resolveRunSource = (): 'LOCAL' | 'CLOUD' => {
+    const { hostname } = window.location;
+    return hostname === 'localhost' || hostname === '127.0.0.1' ? 'LOCAL' : 'CLOUD';
+};
+
 const buildDescription = (execution: any): string => {
+    const source = resolveRunSource();
     const lines: string[] = [
         '*Failed Execution Report — Agnostic Automation Center*',
         '',
         `*Run ID:* \`${execution.taskId}\``,
         `*Status:* ${execution.status}`,
+        `*Source:* ${source}`,
         `*Environment:* ${execution.config?.environment?.toUpperCase() ?? 'N/A'}`,
         `*Base URL:* ${execution.config?.baseUrl ?? 'N/A'}`,
         `*Docker Image:* ${execution.image ?? 'N/A'}`,
