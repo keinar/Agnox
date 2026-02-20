@@ -48,7 +48,7 @@ const DEFAULT_FILTERS: IExecutionFilters = {
 export const Dashboard = () => {
   const { user, token } = useAuth();
   const queryClient = useQueryClient();
-  const { availableFolders, defaults } = useDashboardData(token);
+  const { availableFolders, defaults } = useDashboardData();
   const { kpis, isLoading: kpisLoading } = useAnalyticsKPIs();
   const groupNames = useGroupNames();
 
@@ -225,7 +225,7 @@ export const Dashboard = () => {
       {/* Title + Run button */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="m-0 text-3xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+          <h1 className="m-0 text-3xl font-bold text-gh-text dark:text-gh-text-dark">
             Automation Center
           </h1>
           <p className="text-slate-500 mt-1">Live monitoring of test infrastructure</p>
@@ -238,7 +238,7 @@ export const Dashboard = () => {
           className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm text-white border-none transition-all duration-200 ${
             isViewer
               ? 'bg-gradient-to-r from-gray-400 to-gray-500 opacity-60 cursor-not-allowed'
-              : 'bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/35 cursor-pointer hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/45'
+              : 'bg-gh-accent dark:bg-gh-accent-dark shadow-lg shadow-blue-500/30 cursor-pointer hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/40 hover:opacity-90'
           }`}
         >
           <Play size={18} /> Run New Test
