@@ -15,6 +15,8 @@ interface ExecutionRowProps {
     isExpanded: boolean;
     onToggle: () => void;
     onDelete: (id: string) => void;
+    onSelect: (taskId: string) => void;
+    isSelected: boolean;
     visibleColumns: Set<string>;
     visibleColCount: number;
 }
@@ -77,7 +79,7 @@ const STATUS_BADGE: Record<string, string> = {
 const DEFAULT_BADGE = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200';
 
 export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function ExecutionRow({
-    execution, isExpanded, onToggle, onDelete, visibleColumns, visibleColCount,
+    execution, isExpanded, onToggle, onDelete, onSelect, isSelected, visibleColumns, visibleColCount,
 }) {
     const [metrics, setMetrics] = React.useState<any>(null);
     const [showAI, setShowAI] = React.useState(false);
@@ -228,8 +230,21 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
         <>
             <tr
                 onClick={onToggle}
-                className={`border-b border-slate-100 transition-colors cursor-pointer hover:bg-slate-50 ${isExpanded ? 'bg-slate-50' : 'bg-white'}`}
+                className={`border-b border-slate-100 transition-colors cursor-pointer hover:bg-slate-50 ${isSelected ? 'bg-indigo-50/60' : isExpanded ? 'bg-slate-50' : 'bg-white'}`}
             >
+                {/* Checkbox — bulk selection; stopPropagation prevents row expand */}
+                <td
+                    className="px-3 py-3 w-10"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => onSelect(execution.taskId)}
+                        className="w-4 h-4 rounded accent-indigo-600 cursor-pointer"
+                    />
+                </td>
+
                 {/* Run ID — mandatory, always first */}
                 <td className="px-4 py-3 font-mono text-xs text-slate-500 whitespace-nowrap">
                     {execution.taskId}
@@ -426,10 +441,6 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                                 <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Tests Path</span>
                                 <span className="text-sm text-slate-600">{execution.tests?.join(', ') || 'All'}</span>
                             </div>
-                            <div className="flex flex-col gap-0.5">
-                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Run Origin</span>
-                                <span className="text-sm text-slate-600">{execution.reportsBaseUrl || 'Unknown'}</span>
-                            </div>
                             {metrics && (
                                 <div className="flex flex-col gap-0.5">
                                     <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Avg. Duration</span>
@@ -460,7 +471,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                                     {copied ? 'Copied!' : 'Copy'}
                                 </button>
                             </div>
-                            <pre className="bg-slate-950 text-slate-300 text-xs font-mono p-4 overflow-x-auto max-h-80 leading-relaxed whitespace-pre-wrap">
+                            <pre className="bg-slate-950 text-slate-300 text-xs font-mono p-4 overflow-x-auto overflow-y-auto max-h-80 leading-relaxed whitespace-pre-wrap overscroll-contain">
                                 {terminalContent}
                             </pre>
                         </div>

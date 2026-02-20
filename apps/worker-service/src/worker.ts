@@ -111,7 +111,7 @@ async function startWorker() {
         if (!msg) return;
 
         const task = JSON.parse(msg.content.toString());
-        const { taskId, image: rawImage, command, config, organizationId } = task;
+        const { taskId, image: rawImage, command, config, organizationId, groupName, batchId } = task;
         const image = rawImage?.trim();
 
         if (!image) {
@@ -154,18 +154,21 @@ async function startWorker() {
             initialAiAnalysisEnabled = false;
         }
 
+        // Build the RUNNING update payload, optionally including group fields
+        const runningUpdate: Record<string, unknown> = {
+            status: 'RUNNING',
+            startTime,
+            config,
+            reportsBaseUrl: currentReportsBaseUrl,
+            aiAnalysisEnabled: initialAiAnalysisEnabled,
+        };
+        if (groupName) runningUpdate.groupName = groupName;
+        if (batchId)   runningUpdate.batchId   = batchId;
+
         // Notify start (DB update) - Multi-tenant: Filter by organizationId
         await executionsCollection.updateOne(
             { taskId, organizationId },
-            {
-                $set: {
-                    status: 'RUNNING',
-                    startTime,
-                    config,
-                    reportsBaseUrl: currentReportsBaseUrl,
-                    aiAnalysisEnabled: initialAiAnalysisEnabled  // Record AI setting at execution start
-                }
-            },
+            { $set: runningUpdate },
             { upsert: true }
         );
 
@@ -179,7 +182,9 @@ async function startWorker() {
             command,
             config,
             reportsBaseUrl: currentReportsBaseUrl,
-            aiAnalysisEnabled: initialAiAnalysisEnabled
+            aiAnalysisEnabled: initialAiAnalysisEnabled,
+            ...(groupName && { groupName }),
+            ...(batchId   && { batchId }),
         });
 
         let logsBuffer = "";

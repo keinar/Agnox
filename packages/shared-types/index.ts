@@ -22,6 +22,10 @@ export const TestExecutionRequestSchema = z.object({
     tests: z.array(z.string().min(1)).optional(),
     config: ExecutionConfigSchema,
     executionId: z.string().uuid().optional(),
+    /** Optional: logical run group name (e.g. "Daily Sanity", "Regression Suite"). */
+    groupName: z.string().max(128).optional(),
+    /** Optional: shared identifier that links runs triggered in the same CI batch. */
+    batchId: z.string().max(128).optional(),
 });
 
 export type TestExecutionRequest = z.infer<typeof TestExecutionRequestSchema>;
@@ -127,6 +131,10 @@ export interface IExecution {
     error?: string;
     analysis?: string;
     reportsBaseUrl?: string;
+    /** Logical run-group label supplied at trigger time (e.g. "Daily Sanity"). */
+    groupName?: string;
+    /** CI-level batch identifier shared by runs triggered together. */
+    batchId?: string;
 }
 
 // ============================================================================

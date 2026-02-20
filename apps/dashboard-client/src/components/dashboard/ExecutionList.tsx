@@ -1,6 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Settings2, ChevronDown } from 'lucide-react';
 import { ExecutionRow } from '../ExecutionRow';
+import { GroupHeaderRow } from '../GroupHeaderRow';
+import { BulkActionsBar } from '../BulkActionsBar';
+import type { IExecutionGroup, ViewMode } from '../../types';
 
 interface Execution {
   _id?: string;
@@ -70,6 +73,11 @@ interface ExecutionListProps {
   expandedRowId: string | null;
   onToggleRow: (id: string) => void;
   onDelete: (taskId: string) => Promise<void>;
+  onBulkDelete: (taskIds: string[]) => Promise<void>;
+  onBulkGroup: (taskIds: string[], groupName: string) => Promise<void>;
+  // Grouped-view props (only required when viewMode === 'grouped')
+  viewMode?: ViewMode;
+  groups?: IExecutionGroup[];
 }
 
 export function ExecutionList({
@@ -79,10 +87,114 @@ export function ExecutionList({
   expandedRowId,
   onToggleRow,
   onDelete,
+  onBulkDelete,
+  onBulkGroup,
+  viewMode = 'flat',
+  groups = [],
 }: ExecutionListProps) {
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(loadVisibility);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+
+  // ── Bulk selection ─────────────────────────────────────────────────────────
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
+
+  // All taskIds visible in the current view mode
+  const allTaskIds = useMemo(
+    () =>
+      viewMode === 'grouped'
+        ? groups.flatMap((g) => g.executions.map((e) => e.taskId))
+        : executions.map((e) => e.taskId),
+    [viewMode, groups, executions],
+  );
+
+  const isAllSelected = allTaskIds.length > 0 && allTaskIds.every((id) => selectedIds.has(id));
+  const isSomeSelected = allTaskIds.some((id) => selectedIds.has(id));
+  const isIndeterminate = isSomeSelected && !isAllSelected;
+
+  // Sync the native indeterminate property (cannot be set via React attribute)
+  useEffect(() => {
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate = isIndeterminate;
+    }
+  }, [isIndeterminate]);
+
+  // Clear selection whenever the view mode switches to avoid stale ids
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [viewMode]);
+
+  const handleSelectAll = useCallback(() => {
+    setSelectedIds(isAllSelected ? new Set() : new Set(allTaskIds));
+  }, [isAllSelected, allTaskIds]);
+
+  const handleSelect = useCallback((taskId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
+  }, []);
+
+  // Determines if any selected execution already belongs to a named group.
+  // Used to toggle "Ungroup" visibility and rename "Group" → "Change Group".
+  const hasGroupedSelected = useMemo(() => {
+    if (selectedIds.size === 0) return false;
+    if (viewMode === 'grouped') {
+      return groups.some((g) =>
+        g.executions.some(
+          (e) => selectedIds.has(e.taskId) && e.groupName && e.groupName !== '__ungrouped__',
+        ),
+      );
+    }
+    return executions.some((e) => selectedIds.has(e.taskId) && !!e.groupName);
+  }, [selectedIds, executions, groups, viewMode]);
+
+  // Delegates to parent handler; clears selection only on success
+  const handleBulkDeleteInternal = useCallback(async () => {
+    const ids = [...selectedIds];
+    try {
+      await onBulkDelete(ids);
+      setSelectedIds(new Set());
+    } catch (err) {
+      throw err; // let BulkActionsBar reset its loading state
+    }
+  }, [onBulkDelete, selectedIds]);
+
+  const handleBulkGroupInternal = useCallback(async (groupName: string) => {
+    const ids = [...selectedIds];
+    try {
+      await onBulkGroup(ids, groupName);
+      setSelectedIds(new Set());
+    } catch (err) {
+      throw err;
+    }
+  }, [onBulkGroup, selectedIds]);
+
+  // Passes an empty string to onBulkGroup so the backend $unsets the groupName field.
+  const handleBulkUngroup = useCallback(async () => {
+    const ids = [...selectedIds];
+    try {
+      await onBulkGroup(ids, '');
+      setSelectedIds(new Set());
+    } catch (err) {
+      throw err;
+    }
+  }, [onBulkGroup, selectedIds]);
+
+  // Track which groups are collapsed. Default: all groups are expanded.
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  const toggleGroup = useCallback((groupName: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupName)) next.delete(groupName);
+      else next.add(groupName);
+      return next;
+    });
+  }, []);
 
   // Persist optional column preferences on every change
   useEffect(() => {
@@ -114,7 +226,8 @@ export function ExecutionList({
   }, []);
 
   const visibleDefs = COLUMN_DEFS.filter(c => c.mandatory || visibleColumns.has(c.key));
-  const visibleColCount = visibleDefs.length;
+  // +1 accounts for the always-visible checkbox column (not in COLUMN_DEFS)
+  const visibleColCount = visibleDefs.length + 1;
 
   if (error) {
     return (
@@ -129,9 +242,11 @@ export function ExecutionList({
       {/* Toolbar */}
       <div className="flex items-center justify-between">
         <span className="text-sm text-slate-500">
-          {loading && executions.length === 0
+          {loading && executions.length === 0 && groups.length === 0
             ? 'Loading\u2026'
-            : `${executions.length} execution${executions.length !== 1 ? 's' : ''}`}
+            : viewMode === 'grouped'
+                ? `${groups.length} group${groups.length !== 1 ? 's' : ''}`
+                : `${executions.length} execution${executions.length !== 1 ? 's' : ''}`}
         </span>
 
         {/* Columns popover */}
@@ -188,6 +303,18 @@ export function ExecutionList({
         <table className="w-full text-sm text-left">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50">
+              {/* Select-all checkbox header */}
+              <th className="px-3 py-3 w-10">
+                <input
+                  ref={headerCheckboxRef}
+                  type="checkbox"
+                  checked={isAllSelected}
+                  onChange={handleSelectAll}
+                  disabled={allTaskIds.length === 0}
+                  title={isAllSelected ? 'Deselect all' : 'Select all'}
+                  className="w-4 h-4 rounded accent-indigo-600 cursor-pointer disabled:cursor-default"
+                />
+              </th>
               {visibleDefs.map(col => (
                 <th
                   key={col.key}
@@ -201,9 +328,14 @@ export function ExecutionList({
             </tr>
           </thead>
           <tbody>
-            {loading && executions.length === 0 &&
+            {/* ── Skeleton loading rows ── */}
+            {loading && executions.length === 0 && groups.length === 0 &&
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i} className="border-b border-slate-100">
+                  {/* Skeleton for checkbox column */}
+                  <td className="px-3 py-3.5 w-10">
+                    <div className="animate-pulse bg-slate-200 rounded w-4 h-4" />
+                  </td>
                   {visibleDefs.map(col => (
                     <td key={col.key} className="px-4 py-3.5">
                       <div
@@ -217,13 +349,44 @@ export function ExecutionList({
               ))
             }
 
-            {executions.map((exec) => (
+            {/* ── Grouped mode ── */}
+            {viewMode === 'grouped' && groups.map((group) => {
+              const isGroupExpanded = !collapsedGroups.has(group.groupName);
+              return (
+                <React.Fragment key={group.groupName}>
+                  <GroupHeaderRow
+                    group={group}
+                    isExpanded={isGroupExpanded}
+                    onToggle={() => toggleGroup(group.groupName)}
+                    colCount={visibleColCount}
+                  />
+                  {isGroupExpanded && group.executions.map((exec) => (
+                    <ExecutionRow
+                      key={exec._id || exec.taskId}
+                      execution={exec}
+                      isExpanded={expandedRowId === (exec._id || exec.taskId)}
+                      onToggle={() => onToggleRow(exec._id || exec.taskId)}
+                      onDelete={onDelete}
+                      onSelect={handleSelect}
+                      isSelected={selectedIds.has(exec.taskId)}
+                      visibleColumns={visibleColumns}
+                      visibleColCount={visibleColCount}
+                    />
+                  ))}
+                </React.Fragment>
+              );
+            })}
+
+            {/* ── Flat mode ── */}
+            {viewMode === 'flat' && executions.map((exec) => (
               <ExecutionRow
                 key={exec._id || exec.taskId}
                 execution={exec}
                 isExpanded={expandedRowId === (exec._id || exec.taskId)}
                 onToggle={() => onToggleRow(exec._id || exec.taskId)}
                 onDelete={onDelete}
+                onSelect={handleSelect}
+                isSelected={selectedIds.has(exec.taskId)}
                 visibleColumns={visibleColumns}
                 visibleColCount={visibleColCount}
               />
@@ -231,6 +394,18 @@ export function ExecutionList({
           </tbody>
         </table>
       </div>
+
+      {/* Floating bulk actions bar — appears when at least one row is selected */}
+      {selectedIds.size > 0 && (
+        <BulkActionsBar
+          count={selectedIds.size}
+          hasGroupedSelected={hasGroupedSelected}
+          onDelete={handleBulkDeleteInternal}
+          onGroup={handleBulkGroupInternal}
+          onUngroup={handleBulkUngroup}
+          onClear={() => setSelectedIds(new Set())}
+        />
+      )}
     </div>
   );
 }
