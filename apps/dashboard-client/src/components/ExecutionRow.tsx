@@ -1,14 +1,28 @@
 import React from 'react';
 import {
-    Trash2, ChevronDown, ChevronRight, CheckCircle, XCircle,
+    Trash2, ChevronRight, CheckCircle, XCircle,
     Clock, PlayCircle, FileText, BarChart2, Laptop, Server,
     Turtle, Zap, Box, Sparkles, Loader2, AlertTriangle,
     User2, Timer, Github, Clipboard, Check, Bug,
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns';
 import AIAnalysisView from './AIAnalysisView';
 import { CreateJiraTicketModal } from './CreateJiraTicketModal';
 import { useAuth } from '../context/AuthContext';
+
+// ── Module-level constants ─────────────────────────────────────────────────────
+
+const EXEC_ROW_API_URL =
+    window.location.hostname.includes('.com')
+        ? import.meta.env.VITE_API_URL
+        : 'http://localhost:3000';
+
+const FINISHED_STATUSES = new Set(['PASSED', 'FAILED', 'UNSTABLE']);
+
+const LOCAL_INDICATORS = ['localhost', '127.0.0.1', 'host.docker.internal'] as const;
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface ExecutionRowProps {
     execution: any;
@@ -19,16 +33,20 @@ interface ExecutionRowProps {
     isSelected: boolean;
     visibleColumns: Set<string>;
     visibleColCount: number;
+    /** When true, plays the slide-down entry animation (used for grouped-view children). */
+    animateIn?: boolean;
 }
-
-const stripAnsi = (str: string): string => str.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
 
 type TriggerType = 'Manual' | 'CRON' | 'GitHub';
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const stripAnsi = (str: string): string => str.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
+
 const TRIGGER_CONFIG: Record<TriggerType, { icon: React.ElementType; className: string }> = {
-    Manual: { icon: User2,  className: 'bg-slate-100 text-slate-600 border-slate-200' },
-    CRON:   { icon: Timer,  className: 'bg-amber-50 text-amber-700 border-amber-200' },
-    GitHub: { icon: Github, className: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+    Manual: { icon: User2,  className: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
+    CRON:   { icon: Timer,  className: 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' },
+    GitHub: { icon: Github, className: 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
 };
 
 const TRIGGER_OPTIONS: TriggerType[] = ['Manual', 'CRON', 'GitHub'];
@@ -65,108 +83,87 @@ const calculateDuration = (exec: any) => {
     return '-';
 };
 
-// Status badge variant classes — PASSED=emerald, FAILED/ERROR=rose, RUNNING/PENDING/UNSTABLE=amber, ANALYZING=purple
+// Status badge variant classes — PASSED=emerald, FAILED/ERROR=rose, RUNNING/PENDING/UNSTABLE=amber, ANALYZING=blue
 const STATUS_BADGE: Record<string, string> = {
-    PASSED:    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200',
-    FAILED:    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200',
-    ERROR:     'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200',
-    RUNNING:   'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200',
-    PENDING:   'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200',
-    ANALYZING: 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200',
-    UNSTABLE:  'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200',
+    PASSED:    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800',
+    FAILED:    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800',
+    ERROR:     'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800',
+    RUNNING:   'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800',
+    PENDING:   'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800',
+    ANALYZING: 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800',
+    UNSTABLE:  'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800',
 };
 
-const DEFAULT_BADGE = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200';
+const DEFAULT_BADGE = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
+
+/** Returns the appropriate icon for a given execution status. Module-level for stable reference. */
+function getStatusIcon(status: string) {
+    switch (status) {
+        case 'PASSED':    return <CheckCircle size={13} />;
+        case 'FAILED':    return <XCircle size={13} />;
+        case 'ERROR':     return <XCircle size={13} />;
+        case 'UNSTABLE':  return <AlertTriangle size={13} />;
+        case 'ANALYZING': return <Sparkles size={13} className="animate-pulse" />;
+        case 'RUNNING':   return <PlayCircle size={13} className="animate-spin" style={{ animationDuration: '3s' }} />;
+        case 'PENDING':   return <Clock size={13} className="animate-pulse" />;
+        default:          return <Clock size={13} />;
+    }
+}
+
+// ── PerformanceInsight sub-component ──────────────────────────────────────────
+
+interface PerformanceInsightProps {
+    metrics: any;
+}
+
+function PerformanceInsight({ metrics }: PerformanceInsightProps) {
+    if (!metrics || metrics.status === 'NO_DATA') return null;
+    const avg = (metrics.averageDuration / 1000).toFixed(1);
+
+    if (metrics.isRegression) {
+        return (
+            <span title={`Slower than average (${avg}s)`} className="flex items-center text-amber-500 ml-1">
+                <Turtle size={12} />
+            </span>
+        );
+    }
+    if (metrics.lastRunDuration < metrics.averageDuration * 0.8) {
+        return (
+            <span title={`Faster than average (${avg}s)`} className="flex items-center text-emerald-500 ml-1">
+                <Zap size={12} />
+            </span>
+        );
+    }
+    return null;
+}
+
+// ── ExecutionRow component ─────────────────────────────────────────────────────
 
 export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function ExecutionRow({
-    execution, isExpanded, onToggle, onDelete, onSelect, isSelected, visibleColumns, visibleColCount,
+    execution, isExpanded, onToggle, onDelete, onSelect, isSelected, visibleColumns, visibleColCount, animateIn = false,
 }) {
-    const [metrics, setMetrics] = React.useState<any>(null);
     const [showAI, setShowAI] = React.useState(false);
     const [showJiraModal, setShowJiraModal] = React.useState(false);
     const [copied, setCopied] = React.useState(false);
     const { token } = useAuth();
 
-    React.useEffect(() => {
-        const isFinished = ['PASSED', 'FAILED', 'UNSTABLE'].includes(execution.status);
-        if (!isFinished || !execution.image || !token) return;
-
-        const isProd = window.location.hostname.includes('.com');
-        const API_URL = isProd ? import.meta.env.VITE_API_URL : 'http://localhost:3000';
-
-        let cancelled = false;
-        let timeoutId: ReturnType<typeof setTimeout>;
-        let retries = 0;
-        const MAX_RETRIES = 3;
-
-        const fetchMetrics = (delay: number) => {
-            timeoutId = setTimeout(async () => {
-                if (cancelled) return;
-                try {
-                    const res = await fetch(`${API_URL}/api/metrics/${encodeURIComponent(execution.image)}`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    });
-
-                    if (res.status === 429) {
-                        retries++;
-                        if (retries <= MAX_RETRIES) {
-                            const backoff = Math.min(10000 * Math.pow(2, retries - 1), 60000);
-                            fetchMetrics(backoff);
-                        }
-                        return;
-                    }
-
-                    if (res.ok && !cancelled) {
-                        const data = await res.json();
-                        setMetrics(data);
-                    }
-                } catch {
-                    // metrics are non-critical; suppress
-                }
-            }, delay);
-        };
-
-        fetchMetrics(500);
-
-        return () => {
-            cancelled = true;
-            clearTimeout(timeoutId);
-        };
-    }, [execution.status, execution.image, token]);
-
-    const renderPerformanceInsight = () => {
-        if (!metrics || metrics.status === 'NO_DATA') return null;
-        const avg = (metrics.averageDuration / 1000).toFixed(1);
-
-        if (metrics.isRegression) {
-            return (
-                <span title={`Slower than average (${avg}s)`} className="flex items-center text-amber-500 ml-1">
-                    <Turtle size={12} />
-                </span>
+    // ── Metrics — fetched once per finished execution via TanStack Query ───────
+    const { data: metrics = null } = useQuery<any>({
+        queryKey: ['metrics', execution.image, token],
+        queryFn: async ({ signal }) => {
+            const res = await fetch(
+                `${EXEC_ROW_API_URL}/api/metrics/${encodeURIComponent(execution.image)}`,
+                { headers: { Authorization: `Bearer ${token}` }, signal },
             );
-        }
-        if (metrics.lastRunDuration < metrics.averageDuration * 0.8) {
-            return (
-                <span title={`Faster than average (${avg}s)`} className="flex items-center text-emerald-500 ml-1">
-                    <Zap size={12} />
-                </span>
-            );
-        }
-        return null;
-    };
-
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case 'PASSED':    return <CheckCircle size={13} />;
-            case 'FAILED':    return <XCircle size={13} />;
-            case 'ERROR':     return <XCircle size={13} />;
-            case 'UNSTABLE':  return <AlertTriangle size={13} />;
-            case 'ANALYZING': return <Sparkles size={13} className="animate-pulse" />;
-            case 'RUNNING':   return <PlayCircle size={13} className="animate-spin" style={{ animationDuration: '3s' }} />;
-            case 'PENDING':   return <Clock size={13} className="animate-pulse" />;
-            default:          return <Clock size={13} />;
-        }
-    };
+            if (res.status === 429) throw Object.assign(new Error('rate-limited'), { status: 429 });
+            if (!res.ok) return null;
+            return res.json();
+        },
+        enabled: FINISHED_STATUSES.has(execution.status) && !!execution.image && !!token,
+        staleTime: 5 * 60 * 1000,
+        retry: 3,
+        retryDelay: (attempt) => Math.min(10_000 * Math.pow(2, attempt), 60_000),
+    });
 
     const getBaseUrl = () => {
         if (execution.reportsBaseUrl) return execution.reportsBaseUrl.replace(/\/$/, '');
@@ -177,13 +174,12 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
     };
 
     const baseUrl = getBaseUrl();
-    const htmlReportUrl  = `${baseUrl}/${execution.taskId}/native-report/index.html`;
+    const htmlReportUrl   = `${baseUrl}/${execution.taskId}/native-report/index.html`;
     const allureReportUrl = `${baseUrl}/${execution.taskId}/allure-report/index.html`;
 
-    const isFinished = ['PASSED', 'FAILED', 'UNSTABLE'].includes(execution.status);
+    const isFinished = FINISHED_STATUSES.has(execution.status);
 
     // Permissive local-run detection — check every possible field that may carry a base URL.
-    const LOCAL_INDICATORS = ['localhost', '127.0.0.1', 'host.docker.internal'] as const;
     const isRunLocal = (() => {
         const candidates: (string | undefined)[] = [
             execution.environment,
@@ -219,6 +215,13 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
         }
     };
 
+    const handleRowKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onToggle();
+        }
+    };
+
     const badgeClass = STATUS_BADGE[execution.status] ?? DEFAULT_BADGE;
     const iconBtnBase = 'flex items-center justify-center w-8 h-8 rounded-lg border transition-colors cursor-pointer';
 
@@ -229,29 +232,41 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
     return (
         <>
             <tr
+                tabIndex={0}
                 onClick={onToggle}
-                className={`border-b border-slate-100 transition-colors cursor-pointer hover:bg-slate-50 ${isSelected ? 'bg-indigo-50/60' : isExpanded ? 'bg-slate-50' : 'bg-white'}`}
+                onKeyDown={handleRowKeyDown}
+                aria-expanded={isExpanded}
+                className={`h-14 border-b border-slate-100 dark:border-gh-border-dark transition-colors duration-150 cursor-pointer hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark ${
+                    animateIn ? 'animate-slide-down' : ''
+                } ${
+                    isSelected
+                        ? 'bg-blue-50/60 dark:bg-blue-950/30'
+                        : isExpanded
+                            ? 'bg-slate-50 dark:bg-gh-bg-subtle-dark'
+                            : 'odd:bg-gh-bg dark:odd:bg-gh-bg-dark even:bg-gh-bg-subtle dark:even:bg-gh-bg-subtle-dark'
+                }`}
             >
                 {/* Checkbox — bulk selection; stopPropagation prevents row expand */}
                 <td
-                    className="px-3 py-3 w-10"
+                    className="px-3 py-4 w-10"
                     onClick={(e) => e.stopPropagation()}
                 >
                     <input
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => onSelect(execution.taskId)}
-                        className="w-4 h-4 rounded accent-indigo-600 cursor-pointer"
+                        aria-label={`Select run ${execution.taskId}`}
+                        className="w-4 h-4 rounded accent-blue-600 cursor-pointer"
                     />
                 </td>
 
                 {/* Run ID — mandatory, always first */}
-                <td className="px-4 py-3 font-mono text-xs text-slate-500 whitespace-nowrap">
+                <td className="px-4 py-4 font-mono text-xs text-slate-600 dark:text-slate-400 whitespace-nowrap">
                     {execution.taskId}
                 </td>
 
                 {/* Status — mandatory */}
-                <td className="px-4 py-3">
+                <td className="px-4 py-4">
                     <span className={badgeClass}>
                         {getStatusIcon(execution.status)} {execution.status}
                     </span>
@@ -259,7 +274,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
 
                 {/* Triggered By — optional mock */}
                 {visibleColumns.has('triggeredBy') && (
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-4">
                         <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold border ${triggerCfg.className}`}>
                             <TriggerIcon size={11} />
                             {trigger}
@@ -269,16 +284,16 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
 
                 {/* Source — optional */}
                 {visibleColumns.has('source') && (
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-4">
                         <div className="flex flex-col gap-1">
                             <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold w-fit border ${
                                 isRunLocal
-                                    ? 'bg-slate-100 text-slate-600 border-slate-200'
-                                    : 'bg-purple-50 text-purple-700 border-purple-200'
+                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                    : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800'
                             }`}>
                                 {isRunLocal ? <Laptop size={11} /> : <Server size={11} />}
                                 {isRunLocal ? 'LOCAL' : 'CLOUD'}
-                                {renderPerformanceInsight()}
+                                <PerformanceInsight metrics={metrics} />
                             </div>
                             <div className="flex items-center gap-1 text-[11px] text-slate-400">
                                 <Box size={10} />
@@ -290,8 +305,8 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
 
                 {/* Environment — optional */}
                 {visibleColumns.has('environment') && (
-                    <td className="px-4 py-3">
-                        <span className="bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded text-xs font-medium">
+                    <td className="px-4 py-4">
+                        <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700 px-2 py-0.5 rounded text-xs font-medium">
                             {execution.config?.environment?.toUpperCase() || 'DEV'}
                         </span>
                     </td>
@@ -299,24 +314,24 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
 
                 {/* Start Time — optional */}
                 {visibleColumns.has('startTime') && (
-                    <td className="px-4 py-3">
-                        <div className="flex flex-col text-sm">
-                            <span className="text-slate-700">{formatDateSafe(execution.startTime)}</span>
-                            <span className="text-xs text-slate-400">{formatTimeAgo(execution.startTime)}</span>
+                    <td className="px-4 py-4">
+                        <div className="flex flex-col text-sm tabular-nums">
+                            <span className="text-slate-700 dark:text-slate-300 font-medium">{formatDateSafe(execution.startTime)}</span>
+                            <span className="text-xs text-slate-400 dark:text-slate-500">{formatTimeAgo(execution.startTime)}</span>
                         </div>
                     </td>
                 )}
 
                 {/* Duration — optional */}
                 {visibleColumns.has('duration') && (
-                    <td className="px-4 py-3 text-sm font-medium text-slate-700">
+                    <td className="px-4 py-4 text-sm font-medium tabular-nums text-slate-700 dark:text-slate-300">
                         {calculateDuration(execution)}
                     </td>
                 )}
 
                 {/* Actions — optional */}
                 {visibleColumns.has('actions') && (
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-4">
                         <div className="flex items-center gap-2 justify-end">
 
                             {/* AI Analysis button */}
@@ -324,7 +339,8 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setShowAI(true); }}
                                     title="View AI Root Cause Analysis"
-                                    className={`${iconBtnBase} text-purple-500 bg-purple-50 border-purple-200 hover:bg-purple-100`}
+                                    aria-label="View AI Root Cause Analysis"
+                                    className={`${iconBtnBase} text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/50`}
                                 >
                                     <Sparkles size={16} />
                                 </button>
@@ -337,10 +353,11 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setShowJiraModal(true); }}
                                         title={hasTickets ? `${execution.jiraTickets.length} Jira ticket(s) linked — click to view or create another` : 'Create Jira Ticket'}
+                                        aria-label={hasTickets ? 'View or create Jira ticket' : 'Create Jira Ticket'}
                                         className={`${iconBtnBase} ${
                                             hasTickets
-                                                ? 'text-indigo-700 bg-indigo-100 border-indigo-300 hover:bg-indigo-200'
-                                                : 'text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100'
+                                                ? 'text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-900/60'
+                                                : 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/50'
                                         }`}
                                     >
                                         <Bug size={16} />
@@ -351,8 +368,9 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                             {/* Analyzing spinner */}
                             {execution.status === 'ANALYZING' && (
                                 <div
-                                    title="AI Analysis in progress..."
-                                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-600 border border-purple-200"
+                                    role="status"
+                                    aria-label="AI Analysis in progress"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
                                 >
                                     <Loader2 size={12} className="animate-spin" />
                                     <span>Analyzing...</span>
@@ -365,7 +383,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                                     {areReportsInaccessible ? (
                                         <span
                                             title="Reports available locally"
-                                            className="text-[10px] text-slate-400 bg-slate-100 px-2 py-1 rounded cursor-help"
+                                            className="text-[10px] text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded cursor-help"
                                         >
                                             Local Reports
                                         </span>
@@ -377,8 +395,9 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                                                     target="_blank"
                                                     rel="noreferrer"
                                                     title="HTML Report"
+                                                    aria-label="Open HTML Report"
                                                     onClick={(e) => e.stopPropagation()}
-                                                    className={`${iconBtnBase} text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100`}
+                                                    className={`${iconBtnBase} text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/50`}
                                                 >
                                                     <FileText size={16} />
                                                 </a>
@@ -389,8 +408,9 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                                                     target="_blank"
                                                     rel="noreferrer"
                                                     title="Allure Report"
+                                                    aria-label="Open Allure Report"
                                                     onClick={(e) => e.stopPropagation()}
-                                                    className={`${iconBtnBase} text-emerald-500 bg-emerald-50 border-emerald-200 hover:bg-emerald-100`}
+                                                    className={`${iconBtnBase} text-emerald-500 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-950/50`}
                                                 >
                                                     <BarChart2 size={16} />
                                                 </a>
@@ -403,17 +423,18 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                             {/* Delete */}
                             <button
                                 title="Delete"
+                                aria-label={`Delete run ${execution.taskId}`}
                                 onClick={(e) => { e.stopPropagation(); onDelete(execution.taskId); }}
-                                className={`${iconBtnBase} text-rose-500 bg-rose-50 border-rose-200 hover:bg-rose-100`}
+                                className={`${iconBtnBase} text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-950/50`}
                             >
                                 <Trash2 size={16} />
                             </button>
 
-                            {/* Expand chevron */}
-                            {isExpanded
-                                ? <ChevronDown size={16} className="text-slate-400 flex-shrink-0" />
-                                : <ChevronRight size={16} className="text-slate-400 flex-shrink-0" />
-                            }
+                            {/* Expand chevron — rotates 90° when row is expanded */}
+                            <ChevronRight
+                                size={16}
+                                className={`text-slate-400 flex-shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
+                            />
                         </div>
                     </td>
                 )}
@@ -421,25 +442,25 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
 
             {/* Expanded detail panel */}
             {isExpanded && (
-                <tr className="bg-slate-50">
+                <tr className="bg-slate-50 dark:bg-gh-bg-subtle-dark">
                     <td colSpan={visibleColCount} className="px-4 py-5">
                         {/* Details grid */}
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                             <div className="flex flex-col gap-0.5">
-                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Docker Image</span>
-                                <span className="text-sm font-mono text-indigo-600">{execution.image || 'N/A'}</span>
+                                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Docker Image</span>
+                                <span className="text-sm font-mono text-blue-600 dark:text-blue-400">{execution.image || 'N/A'}</span>
                             </div>
                             <div className="flex flex-col gap-0.5">
-                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Command</span>
-                                <span className="text-xs font-mono text-slate-600">{execution.command || 'N/A'}</span>
+                                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Command</span>
+                                <span className="text-xs font-mono text-slate-600 dark:text-slate-400">{execution.command || 'N/A'}</span>
                             </div>
                             <div className="flex flex-col gap-0.5">
-                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Base URL</span>
-                                <span className="text-sm text-slate-600">{execution.config?.baseUrl}</span>
+                                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Base URL</span>
+                                <span className="text-sm text-slate-600 dark:text-slate-400">{execution.config?.baseUrl}</span>
                             </div>
                             <div className="flex flex-col gap-0.5">
-                                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Tests Path</span>
-                                <span className="text-sm text-slate-600">{execution.tests?.join(', ') || 'All'}</span>
+                                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Tests Path</span>
+                                <span className="text-sm text-slate-600 dark:text-slate-400">{execution.tests?.join(', ') || 'All'}</span>
                             </div>
                             {metrics && (
                                 <div className="flex flex-col gap-0.5">
@@ -460,6 +481,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                                 <span className="ml-3 text-xs text-slate-500 font-mono">console output</span>
                                 <button
                                     onClick={handleCopyLogs}
+                                    aria-label={copied ? 'Logs copied' : 'Copy logs to clipboard'}
                                     title={copied ? 'Copied!' : 'Copy logs'}
                                     className={`ml-auto flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium transition-colors ${
                                         copied

@@ -28,61 +28,6 @@ interface Invitation {
   createdAt: string;
 }
 
-const styles = {
-  container: {
-    maxWidth: '100%',
-    overflowX: 'hidden' as const,
-  } as React.CSSProperties,
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '24px',
-    flexWrap: 'wrap' as const,
-    gap: '16px',
-  } as React.CSSProperties,
-  title: {
-    fontSize: '18px',
-    fontWeight: 600,
-    color: '#1e293b',
-    margin: 0,
-  } as React.CSSProperties,
-  inviteButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '10px 20px',
-    fontSize: '14px',
-    fontWeight: 600,
-    color: '#ffffff',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  } as React.CSSProperties,
-  errorMessage: {
-    padding: '12px 16px',
-    background: '#fef2f2',
-    border: '1px solid #fecaca',
-    borderRadius: '8px',
-    color: '#dc2626',
-    fontSize: '14px',
-    marginBottom: '16px',
-  } as React.CSSProperties,
-  badge: {
-    padding: '4px 10px',
-    borderRadius: '6px',
-    fontSize: '12px',
-    fontWeight: 600,
-    textTransform: 'uppercase' as const,
-    display: 'inline-block',
-  } as React.CSSProperties,
-  adminBadge: { background: '#f0f4ff', color: '#667eea', border: '1px solid #c7d2fe' },
-  developerBadge: { background: '#f0fdf4', color: '#16a34a', border: '1px solid #86efac' },
-  viewerBadge: { background: '#f3f4f6', color: '#6b7280', border: '1px solid #d1d5db' },
-};
-
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   useEffect(() => {
@@ -91,6 +36,19 @@ function useIsMobile() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   return isMobile;
+}
+
+function getRoleBadgeClass(role: string): string {
+  switch (role) {
+    case 'admin':
+      return 'inline-block px-2.5 py-1 rounded-md text-xs font-semibold uppercase bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800';
+    case 'developer':
+      return 'inline-block px-2.5 py-1 rounded-md text-xs font-semibold uppercase bg-green-50 text-green-700 border border-green-200 dark:bg-green-950/60 dark:text-green-400 dark:border-green-800';
+    case 'viewer':
+      return 'inline-block px-2.5 py-1 rounded-md text-xs font-semibold uppercase bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700';
+    default:
+      return 'inline-block px-2.5 py-1 rounded-md text-xs font-semibold uppercase bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700';
+  }
 }
 
 export function MembersTab() {
@@ -115,8 +73,7 @@ export function MembersTab() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.data.success) setUsers(response.data.users);
-    } catch (error: any) {
-      console.error('Failed to fetch users:', error);
+    } catch (err: any) {
       setError('Failed to load team members');
     } finally {
       setLoading(false);
@@ -129,8 +86,8 @@ export function MembersTab() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.data.success) setInvitations(response.data.invitations);
-    } catch (error: any) {
-      console.error('Failed to fetch invitations:', error);
+    } catch {
+      // Silently ignore invitation fetch failures
     }
   }
 
@@ -148,9 +105,8 @@ export function MembersTab() {
       if (response.data.success) {
         setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
       }
-    } catch (error: any) {
-      console.error('Failed to change role:', error);
-      alert(error.response?.data?.message || 'Failed to change user role');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to change user role');
     }
   }
 
@@ -164,8 +120,8 @@ export function MembersTab() {
       if (response.data.success) {
         setUsers((prev) => prev.filter((u) => u.id !== userId));
       }
-    } catch (error: any) {
-      alert(error.response?.data?.message || 'Failed to remove user');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to remove user');
     }
   }
 
@@ -178,23 +134,10 @@ export function MembersTab() {
       if (response.data.success) {
         setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId));
       }
-    } catch (error: any) {
-      alert(error.response?.data?.message || 'Failed to revoke invitation');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to revoke invitation');
     }
   }
-
-  const getRoleBadgeStyle = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return { ...styles.badge, ...styles.adminBadge };
-      case 'developer':
-        return { ...styles.badge, ...styles.developerBadge };
-      case 'viewer':
-        return { ...styles.badge, ...styles.viewerBadge };
-      default:
-        return styles.badge;
-    }
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -206,32 +149,40 @@ export function MembersTab() {
 
   if (loading) {
     return (
-      <div style={{ color: '#6b7280', fontSize: '14px' }}>
+      <div className="text-sm text-slate-500 dark:text-slate-400">
         Loading team members...
       </div>
     );
   }
 
   return (
-    <div style={styles.container}>
-      {error && <div style={styles.errorMessage}>{error}</div>}
+    <div className="max-w-full overflow-x-hidden">
+      {error && (
+        <div className="mb-4 px-4 py-3 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-lg text-rose-700 dark:text-rose-400 text-sm">
+          {error}
+        </div>
+      )}
 
-      <div style={styles.header}>
-        <h2 style={styles.title}>Current Members ({users.length})</h2>
+      <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-gh-text-dark">
+          Current Members ({users.length})
+        </h2>
         {isAdmin && (
-          <button onClick={() => setIsInviteModalOpen(true)} style={styles.inviteButton}>
-            <UserPlus size={18} /> Invite Member
+          <button
+            onClick={() => setIsInviteModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 rounded-lg transition-colors cursor-pointer"
+          >
+            <UserPlus size={16} /> Invite Member
           </button>
         )}
       </div>
 
       {users.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '32px', color: '#9ca3af' }}>
+        <div className="text-center py-8 text-slate-400 dark:text-slate-500">
           No team members found
         </div>
       ) : (
         <>
-          {/* Desktop: Table, Mobile: Cards */}
           {isMobile ? (
             <MemberCards
               users={users}
@@ -240,7 +191,7 @@ export function MembersTab() {
               onRoleChange={handleRoleChange}
               onRemove={handleRemoveUser}
               formatDate={formatDate}
-              getRoleBadgeStyle={getRoleBadgeStyle}
+              getRoleBadgeClass={getRoleBadgeClass}
             />
           ) : (
             <MemberTable
@@ -250,24 +201,22 @@ export function MembersTab() {
               onRoleChange={handleRoleChange}
               onRemove={handleRemoveUser}
               formatDate={formatDate}
-              getRoleBadgeStyle={getRoleBadgeStyle}
+              getRoleBadgeClass={getRoleBadgeClass}
             />
           )}
         </>
       )}
 
-      {/* Pending Invitations */}
       {isAdmin && (
         <InvitationList
           invitations={invitations}
           isMobile={isMobile}
           onRevoke={handleRevokeInvitation}
           formatDate={formatDate}
-          getRoleBadgeStyle={getRoleBadgeStyle}
+          getRoleBadgeClass={getRoleBadgeClass}
         />
       )}
 
-      {/* Invite Modal */}
       {isInviteModalOpen && (
         <InviteModal
           onClose={() => setIsInviteModalOpen(false)}

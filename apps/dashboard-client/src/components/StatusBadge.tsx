@@ -17,7 +17,7 @@ const STATUS_CONFIG: Record<string, BadgeConfig> = {
     ERROR:     { icon: XCircle,       className: 'bg-rose-50 text-rose-700 border-rose-200' },
     RUNNING:   { icon: Play,          className: 'bg-amber-50 text-amber-700 border-amber-200',   iconClassName: 'animate-spin' },
     PENDING:   { icon: Clock,         className: 'bg-amber-50 text-amber-700 border-amber-200',   iconClassName: 'animate-pulse' },
-    ANALYZING: { icon: Sparkles,      className: 'bg-purple-50 text-purple-700 border-purple-200', iconClassName: 'animate-pulse' },
+    ANALYZING: { icon: Sparkles,      className: 'bg-blue-50 text-blue-700 border-blue-200', iconClassName: 'animate-pulse' },
     UNSTABLE:  { icon: AlertTriangle, className: 'bg-amber-50 text-amber-700 border-amber-200' },
 };
 

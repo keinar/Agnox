@@ -1,64 +1,42 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../context/AuthContext';
 
 const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-const API_URL = isProduction
-  ? import.meta.env.VITE_API_URL || ''
-  : 'http://localhost:3000';
-
-interface DashboardData {
-  availableFolders: string[];
-  defaults: any;
-  loading: boolean;
-}
+const API_URL = isProduction ? import.meta.env.VITE_API_URL || '' : 'http://localhost:3000';
 
 async function fetchTestsStructure(token: string): Promise<string[]> {
   try {
     const response = await fetch(`${API_URL}/api/tests-structure`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      headers: { Authorization: `Bearer ${token}` },
     });
-
     const contentType = response.headers.get('content-type');
-    if (response.ok && contentType && contentType.includes('application/json')) {
+    if (response.ok && contentType?.includes('application/json')) {
       const data = await response.json();
       return Array.isArray(data) ? data : [];
     }
     return [];
-  } catch (error) {
-    console.warn('Using decoupled mode (local folders not found)');
+  } catch {
     return [];
   }
 }
 
-/**
- * Fetch project run settings from the database.
- * Falls back to the org's first project via /api/project-settings.
- * Transforms the response to match the existing defaults contract
- * expected by ExecutionModal (image, baseUrl, folder, envMapping).
- */
-async function fetchDefaults(token: string): Promise<any> {
+async function fetchDefaults(token: string): Promise<Record<string, any> | null> {
   try {
     const response = await fetch(`${API_URL}/api/project-settings`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      headers: { Authorization: `Bearer ${token}` },
     });
-
     if (!response.ok) return null;
 
     const data = await response.json();
     if (!data.success || !data.settings) return null;
 
-    const settings = data.settings;
+    const { settings } = data;
 
-    // Build envMapping from targetUrls for the environment selector
     const envMapping: Record<string, string> = {};
-    if (settings.targetUrls?.dev) envMapping.development = settings.targetUrls.dev;
-    if (settings.targetUrls?.staging) envMapping.staging = settings.targetUrls.staging;
-    if (settings.targetUrls?.prod) envMapping.production = settings.targetUrls.prod;
+    if (settings.targetUrls?.dev)     envMapping.development = settings.targetUrls.dev;
+    if (settings.targetUrls?.staging) envMapping.staging     = settings.targetUrls.staging;
+    if (settings.targetUrls?.prod)    envMapping.production  = settings.targetUrls.prod;
 
-    // Pick the first non-empty URL: prod → staging → dev
     const defaultBaseUrl =
       settings.targetUrls?.prod ||
       settings.targetUrls?.staging ||
@@ -66,42 +44,32 @@ async function fetchDefaults(token: string): Promise<any> {
       '';
 
     return {
-      image: settings.dockerImage || '',
-      baseUrl: defaultBaseUrl,
-      folder: settings.defaultTestFolder || 'all',
+      image:    settings.dockerImage        || '',
+      baseUrl:  defaultBaseUrl,
+      folder:   settings.defaultTestFolder  || 'all',
       envMapping,
     };
-  } catch (error) {
-    console.warn('Failed to fetch project settings, using empty defaults');
+  } catch {
     return null;
   }
 }
 
-export function useDashboardData(token: string | null): DashboardData {
-  const [availableFolders, setAvailableFolders] = useState<string[]>([]);
-  const [defaults, setDefaults] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+export function useDashboardData() {
+  const { token } = useAuth();
 
-  useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+  const { data: availableFolders = [] } = useQuery<string[]>({
+    queryKey: ['tests-structure', token],
+    queryFn:  () => fetchTestsStructure(token!),
+    enabled:  !!token,
+    staleTime: 5 * 60 * 1000,
+  });
 
-    setLoading(true);
+  const { data: defaults = null, isLoading } = useQuery<Record<string, any> | null>({
+    queryKey: ['project-settings', token],
+    queryFn:  () => fetchDefaults(token!),
+    enabled:  !!token,
+    staleTime: 5 * 60 * 1000,
+  });
 
-    Promise.all([
-      fetchTestsStructure(token),
-      fetchDefaults(token)
-    ]).then(([folders, defaultsData]) => {
-      setAvailableFolders(folders);
-      setDefaults(defaultsData);
-      setLoading(false);
-    }).catch((error) => {
-      console.error('Failed to fetch dashboard data:', error);
-      setLoading(false);
-    });
-  }, [token]);
-
-  return { availableFolders, defaults, loading };
+  return { availableFolders, defaults, loading: isLoading };
 }

@@ -16,64 +16,8 @@ interface MemberTableProps {
   onRoleChange: (userId: string, newRole: string) => Promise<void>;
   onRemove: (userId: string, userName: string) => Promise<void>;
   formatDate: (dateString: string) => string;
-  getRoleBadgeStyle: (role: string) => React.CSSProperties;
+  getRoleBadgeClass: (role: string) => string;
 }
-
-const styles = {
-  tableContainer: {
-    overflowX: 'auto',
-    borderRadius: '8px',
-    border: '1px solid #f1f5f9',
-  } as React.CSSProperties,
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse' as const,
-    minWidth: '600px',
-  } as React.CSSProperties,
-  th: {
-    textAlign: 'left' as const,
-    padding: '12px 16px',
-    fontSize: '13px',
-    fontWeight: 600,
-    color: '#6b7280',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.5px',
-    borderBottom: '2px solid #f3f4f6',
-    background: '#f8fafc',
-  } as React.CSSProperties,
-  td: {
-    padding: '16px',
-    fontSize: '14px',
-    color: '#374151',
-    borderBottom: '1px solid #f3f4f6',
-    verticalAlign: 'middle',
-  } as React.CSSProperties,
-  select: {
-    padding: '6px 12px',
-    fontSize: '14px',
-    border: '1px solid #e5e7eb',
-    borderRadius: '6px',
-    outline: 'none',
-    cursor: 'pointer',
-    background: '#ffffff',
-    width: 'auto',
-  } as React.CSSProperties,
-  deleteButton: {
-    padding: '8px 12px',
-    fontSize: '13px',
-    color: '#dc2626',
-    background: '#fef2f2',
-    border: '1px solid #fecaca',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '6px',
-    width: 'auto',
-  } as React.CSSProperties,
-};
 
 export function MemberTable({
   users,
@@ -82,60 +26,57 @@ export function MemberTable({
   onRoleChange,
   onRemove,
   formatDate,
-  getRoleBadgeStyle
+  getRoleBadgeClass,
 }: MemberTableProps) {
   return (
-    <div style={styles.tableContainer}>
-      <table style={styles.table}>
+    <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-gh-border-dark">
+      <table className="w-full border-collapse" style={{ minWidth: '600px' }}>
         <thead>
-          <tr>
-            <th style={styles.th}>Name</th>
-            <th style={styles.th}>Email</th>
-            <th style={styles.th}>Role</th>
-            <th style={styles.th}>Joined</th>
-            {isAdmin && <th style={styles.th}>Actions</th>}
+          <tr className="bg-slate-50 dark:bg-gh-bg-subtle-dark border-b-2 border-slate-200 dark:border-gh-border-dark">
+            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Name</th>
+            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Email</th>
+            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Role</th>
+            <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Joined</th>
+            {isAdmin && <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Actions</th>}
           </tr>
         </thead>
         <tbody>
           {users.map((u) => (
-            <tr key={u.id}>
-              <td style={styles.td}>
-                <strong>{u.name}</strong>
+            <tr
+              key={u.id}
+              className="border-b border-slate-100 dark:border-gh-border-dark hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark transition-colors"
+            >
+              <td className="px-4 py-4 text-sm text-slate-700 dark:text-gh-text-dark align-middle">
+                <span className="font-semibold">{u.name}</span>
                 {u.id === currentUserId && (
-                  <span style={{ marginLeft: '8px', color: '#6b7280', fontSize: '12px' }}>
-                    (You)
-                  </span>
+                  <span className="ml-2 text-xs text-slate-400 dark:text-slate-500">(You)</span>
                 )}
               </td>
-              <td style={styles.td}>{u.email}</td>
-              <td style={styles.td}>
+              <td className="px-4 py-4 text-sm text-slate-700 dark:text-gh-text-dark align-middle">{u.email}</td>
+              <td className="px-4 py-4 text-sm align-middle">
                 {isAdmin && u.id !== currentUserId ? (
                   <select
                     value={u.role}
                     onChange={(e) => onRoleChange(u.id, e.target.value)}
-                    style={styles.select}
+                    className="px-3 py-1.5 text-sm border border-slate-200 dark:border-gh-border-dark rounded-md outline-none cursor-pointer bg-white dark:bg-gh-bg-dark text-slate-700 dark:text-gh-text-dark transition-colors"
                   >
                     <option value="admin">Admin</option>
                     <option value="developer">Developer</option>
                     <option value="viewer">Viewer</option>
                   </select>
                 ) : (
-                  <span style={getRoleBadgeStyle(u.role)}>{u.role}</span>
+                  <span className={getRoleBadgeClass(u.role)}>{u.role}</span>
                 )}
               </td>
-              <td style={styles.td}>{formatDate(u.createdAt)}</td>
+              <td className="px-4 py-4 text-sm text-slate-700 dark:text-gh-text-dark align-middle">{formatDate(u.createdAt)}</td>
               {isAdmin && (
-                <td style={styles.td}>
+                <td className="px-4 py-4 text-sm align-middle">
                   <button
                     onClick={() => onRemove(u.id, u.name)}
                     disabled={u.id === currentUserId}
-                    style={{
-                      ...styles.deleteButton,
-                      opacity: u.id === currentUserId ? 0.5 : 1,
-                      cursor: u.id === currentUserId ? 'not-allowed' : 'pointer'
-                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-md hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
-                    <Trash2 size={14} /> Remove
+                    <Trash2 size={13} /> Remove
                   </button>
                 </td>
               )}
