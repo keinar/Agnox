@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AppLayout } from './components/AppLayout';
@@ -14,8 +15,9 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
       <AuthProvider>
-        <div className="min-h-screen bg-gray-50 text-slate-900 font-sans antialiased">
+        <div className="min-h-screen bg-gh-bg-subtle dark:bg-gh-bg-dark text-gh-text dark:text-gh-text-dark font-sans antialiased transition-colors duration-200">
           <BrowserRouter>
             <Routes>
               {/* Public routes */}
@@ -42,6 +44,7 @@ function App() {
           </BrowserRouter>
         </div>
       </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

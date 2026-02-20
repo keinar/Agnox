@@ -38,13 +38,6 @@ export function BulkActionsBar({
     return () => document.removeEventListener('mousedown', handler);
   }, [groupPopoverOpen]);
 
-  // Auto-focus input when popover opens
-  useEffect(() => {
-    if (groupPopoverOpen) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  }, [groupPopoverOpen]);
-
   const handleDelete = async () => {
     setLoading('delete');
     try {
@@ -86,7 +79,7 @@ export function BulkActionsBar({
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-3 bg-slate-900 text-white rounded-2xl shadow-2xl border border-slate-700">
       {/* Selection count badge */}
-      <span className="flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-full bg-indigo-500 text-xs font-bold">
+      <span className="flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-full bg-blue-500 text-xs font-bold">
         {count}
       </span>
       <span className="text-sm font-medium text-slate-300 mr-1">selected</span>
@@ -125,7 +118,7 @@ export function BulkActionsBar({
         <button
           onClick={() => setGroupPopoverOpen(v => !v)}
           disabled={!!loading}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading === 'group'
             ? <Loader2 size={13} className="animate-spin" />
@@ -142,17 +135,17 @@ export function BulkActionsBar({
             </p>
             <form onSubmit={handleGroupSubmit} className="flex flex-col gap-2">
               <input
-                ref={inputRef}
+                ref={(el) => { (inputRef as React.MutableRefObject<HTMLInputElement | null>).current = el; el?.focus(); }}
                 type="text"
                 value={groupName}
                 onChange={(e) => setGroupName(e.target.value)}
                 placeholder="e.g. Nightly Sanity"
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 placeholder:text-slate-400"
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 placeholder:text-slate-400"
               />
               <button
                 type="submit"
                 disabled={!groupName.trim()}
-                className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Apply Group
               </button>

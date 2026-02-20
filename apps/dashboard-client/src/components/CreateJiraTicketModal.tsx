@@ -106,13 +106,13 @@ const buildDescription = (execution: any): string => {
 
 const SELECT_CLASS =
     'w-full appearance-none pl-3 pr-8 py-2 text-sm border border-slate-200 rounded-lg ' +
-    'bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 ' +
-    'focus:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition';
+    'bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ' +
+    'focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition';
 
 const INPUT_CLASS =
     'w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 ' +
-    'placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 ' +
-    'focus:border-indigo-500 transition';
+    'placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ' +
+    'focus:border-blue-500 transition';
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -502,7 +502,7 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                         required={schema.required}
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y transition"
+                        className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y transition"
                     />
                 </div>
             );
@@ -527,8 +527,12 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
 
     const modal = (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4"
+            role="button"
+            tabIndex={-1}
+            aria-label="Close modal"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 cursor-default"
             onClick={handleBackdropClick}
+            onKeyDown={(e) => { if (e.key === 'Escape') handleBackdropClick(e as any); }}
         >
             <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[90vh]">
 
@@ -570,12 +574,12 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                                 {existingTickets.map((t) => (
                                     <li
                                         key={t.ticketKey}
-                                        className="flex items-center justify-between px-4 py-3 rounded-xl border border-indigo-100 bg-indigo-50"
+                                        className="flex items-center justify-between px-4 py-3 rounded-xl border border-blue-100 bg-blue-50"
                                     >
                                         <div className="flex items-center gap-2.5">
-                                            <Ticket size={15} className="text-indigo-500 flex-shrink-0" />
+                                            <Ticket size={15} className="text-blue-500 flex-shrink-0" />
                                             <div>
-                                                <span className="text-sm font-semibold text-indigo-700">{t.ticketKey}</span>
+                                                <span className="text-sm font-semibold text-blue-700">{t.ticketKey}</span>
                                                 {t.createdAt && (
                                                     <p className="text-[11px] text-slate-400 mt-0.5">
                                                         {new Date(t.createdAt).toLocaleString()}
@@ -587,7 +591,7 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                                             href={t.ticketUrl}
                                             target="_blank"
                                             rel="noreferrer"
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-white border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-white border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
                                             onClick={(e) => e.stopPropagation()}
                                         >
                                             Open <ExternalLink size={11} />
@@ -601,7 +605,7 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                     {/* ── State: projects loading ── */}
                     {view === 'form' && projectsLoading && (
                         <div className="flex items-center justify-center py-12">
-                            <Loader2 size={22} className="animate-spin text-indigo-500" />
+                            <Loader2 size={22} className="animate-spin text-blue-500" />
                             <span className="ml-3 text-sm text-slate-500">Loading Jira projects…</span>
                         </div>
                     )}
@@ -762,7 +766,7 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
                                     rows={8}
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
-                                    className="w-full px-3 py-2 text-xs font-mono border border-slate-200 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y transition"
+                                    className="w-full px-3 py-2 text-xs font-mono border border-slate-200 rounded-lg bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y transition"
                                 />
                             </div>
 

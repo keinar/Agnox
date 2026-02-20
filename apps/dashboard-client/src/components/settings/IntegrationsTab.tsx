@@ -22,6 +22,13 @@ const getApiUrl = () =>
         ? import.meta.env.VITE_API_URL
         : 'http://localhost:3000';
 
+// Shared input class — consistent across all fields in this tab
+const INPUT_CLASS =
+    'w-full pl-9 pr-3 py-2 text-sm border border-slate-300 dark:border-gh-border-dark rounded-lg ' +
+    'bg-white dark:bg-gh-bg-dark text-slate-900 dark:text-gh-text-dark ' +
+    'placeholder-slate-400 dark:placeholder-slate-500 ' +
+    'focus:outline-none focus:ring-2 focus:ring-gh-accent dark:focus:ring-gh-accent-dark focus:border-gh-accent dark:focus:border-gh-accent-dark transition';
+
 export function IntegrationsTab() {
     const { token } = useAuth();
 
@@ -111,8 +118,8 @@ export function IntegrationsTab() {
     if (loading) {
         return (
             <div className="flex items-center justify-center py-16">
-                <Loader2 size={24} className="animate-spin text-indigo-500" />
-                <span className="ml-3 text-sm text-slate-500">Loading integration settings...</span>
+                <Loader2 size={24} className="animate-spin text-blue-500 dark:text-blue-400" />
+                <span className="ml-3 text-sm text-slate-500 dark:text-slate-400">Loading integration settings...</span>
             </div>
         );
     }
@@ -121,16 +128,16 @@ export function IntegrationsTab() {
         <div className="max-w-2xl">
             {/* Section heading */}
             <div className="mb-6">
-                <h2 className="text-base font-semibold text-slate-900">Integrations</h2>
-                <p className="mt-1 text-sm text-slate-500">
+                <h2 className="text-base font-semibold text-slate-900 dark:text-gh-text-dark">Integrations</h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     Connect external services to extend your automation workflow.
                 </p>
             </div>
 
             {/* Jira Card */}
-            <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-xl border border-slate-300 dark:border-gh-border-dark bg-white dark:bg-gh-bg-dark shadow-sm overflow-hidden">
                 {/* Card header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-gh-border-dark">
                     <div className="flex items-center gap-3">
                         {/* Jira-style icon badge */}
                         <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
@@ -139,12 +146,12 @@ export function IntegrationsTab() {
                             </svg>
                         </div>
                         <div>
-                            <h3 className="text-sm font-semibold text-slate-800">Jira</h3>
-                            <p className="text-xs text-slate-400">Atlassian Jira Software</p>
+                            <h3 className="text-sm font-semibold text-slate-800 dark:text-gh-text-dark">Jira</h3>
+                            <p className="text-xs text-slate-400 dark:text-slate-500">Atlassian Jira Software</p>
                         </div>
                     </div>
                     {isConfigured && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                             <CheckCircle2 size={12} />
                             Connected
                         </span>
@@ -153,18 +160,18 @@ export function IntegrationsTab() {
 
                 {/* Form */}
                 <form onSubmit={handleSave} className="px-5 py-5 space-y-4">
-                    <p className="text-xs text-slate-500 leading-relaxed">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                         Connect your Jira workspace to create tickets directly from failed executions.
                         Your API token is encrypted with AES-256-GCM before storage.
                     </p>
 
                     {/* Domain */}
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1.5" htmlFor="jira-domain">
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5" htmlFor="jira-domain">
                             Jira Domain
                         </label>
                         <div className="relative">
-                            <Globe size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <Globe size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                             <input
                                 id="jira-domain"
                                 type="text"
@@ -172,19 +179,22 @@ export function IntegrationsTab() {
                                 placeholder="your-org.atlassian.net"
                                 value={form.domain}
                                 onChange={e => setForm(prev => ({ ...prev, domain: e.target.value }))}
-                                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                                className={INPUT_CLASS}
                             />
                         </div>
-                        <p className="mt-1 text-xs text-slate-400">Your Atlassian subdomain, e.g. <code className="bg-slate-100 px-1 rounded">acme.atlassian.net</code></p>
+                        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                            Your Atlassian subdomain, e.g.{' '}
+                            <code className="bg-slate-100 dark:bg-slate-800 dark:text-slate-300 px-1 rounded">acme.atlassian.net</code>
+                        </p>
                     </div>
 
                     {/* Email */}
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1.5" htmlFor="jira-email">
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5" htmlFor="jira-email">
                             Account Email
                         </label>
                         <div className="relative">
-                            <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                             <input
                                 id="jira-email"
                                 type="email"
@@ -192,35 +202,35 @@ export function IntegrationsTab() {
                                 placeholder="you@example.com"
                                 value={form.email}
                                 onChange={e => setForm(prev => ({ ...prev, email: e.target.value }))}
-                                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                                className={INPUT_CLASS}
                             />
                         </div>
-                        <p className="mt-1 text-xs text-slate-400">The email address associated with your Jira account.</p>
+                        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">The email address associated with your Jira account.</p>
                     </div>
 
                     {/* API Token */}
                     <div>
-                        <label className="block text-xs font-semibold text-slate-600 mb-1.5" htmlFor="jira-token">
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5" htmlFor="jira-token">
                             API Token
                         </label>
                         <div className="relative">
-                            <KeyRound size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <KeyRound size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                             <input
                                 id="jira-token"
                                 type="password"
                                 placeholder={isConfigured ? '••••••••  (leave blank to keep existing)' : 'Paste your API token'}
                                 value={form.apiToken}
                                 onChange={e => setForm(prev => ({ ...prev, apiToken: e.target.value }))}
-                                className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
+                                className={INPUT_CLASS}
                             />
                         </div>
-                        <p className="mt-1 text-xs text-slate-400">
+                        <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
                             Generate at{' '}
                             <a
                                 href="https://id.atlassian.com/manage-profile/security/api-tokens"
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-indigo-500 hover:text-indigo-700 inline-flex items-center gap-0.5"
+                                className="text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 inline-flex items-center gap-0.5"
                             >
                                 Atlassian account settings <ExternalLink size={10} />
                             </a>
@@ -231,8 +241,8 @@ export function IntegrationsTab() {
                     {saveFeedback && (
                         <div className={`flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm ${
                             saveFeedback.type === 'success'
-                                ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
-                                : 'bg-rose-50 border border-rose-200 text-rose-700'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
+                                : 'bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400'
                         }`}>
                             {saveFeedback.type === 'success'
                                 ? <CheckCircle2 size={15} className="flex-shrink-0 mt-0.5" />
@@ -246,8 +256,8 @@ export function IntegrationsTab() {
                     {testFeedback && (
                         <div className={`flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm ${
                             testFeedback.type === 'success'
-                                ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
-                                : 'bg-rose-50 border border-rose-200 text-rose-700'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
+                                : 'bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400'
                         }`}>
                             {testFeedback.type === 'success'
                                 ? <CheckCircle2 size={15} className="flex-shrink-0 mt-0.5" />
@@ -262,7 +272,7 @@ export function IntegrationsTab() {
                         <button
                             type="submit"
                             disabled={saving}
-                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gh-bg-dark"
                         >
                             {saving && <Loader2 size={14} className="animate-spin" />}
                             {saving ? 'Saving…' : 'Save Configuration'}
@@ -273,7 +283,7 @@ export function IntegrationsTab() {
                                 type="button"
                                 disabled={testing}
                                 onClick={handleTest}
-                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
+                                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-gh-bg-subtle-dark border border-slate-300 dark:border-gh-border-dark rounded-lg hover:bg-slate-50 dark:hover:bg-gh-bg-dark disabled:opacity-60 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 dark:focus:ring-offset-gh-bg-dark"
                             >
                                 {testing && <Loader2 size={14} className="animate-spin" />}
                                 {testing ? 'Testing…' : 'Test Connection'}

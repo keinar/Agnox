@@ -12,66 +12,6 @@ import { IntegrationsTab } from '../components/settings/IntegrationsTab';
 // Lazy load BillingTab (largest component - 615 lines) to reduce initial bundle
 const BillingTab = lazy(() => import('../components/settings/BillingTab').then(m => ({ default: m.BillingTab })));
 
-const styles = {
-  container: {
-    padding: '16px',
-    maxWidth: '1200px',
-    margin: '0 auto',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif',
-  } as React.CSSProperties,
-  header: {
-    marginBottom: '24px',
-  } as React.CSSProperties,
-  title: {
-    fontSize: '24px',
-    fontWeight: 700,
-    color: '#ffffff',
-    margin: 0,
-    lineHeight: 1.2,
-  } as React.CSSProperties,
-  subtitle: {
-    fontSize: '14px',
-    color: '#cbd5e1',
-    marginTop: '4px',
-    margin: 0,
-  } as React.CSSProperties,
-  card: {
-    background: '#ffffff',
-    borderRadius: '16px',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-    overflow: 'hidden',
-  } as React.CSSProperties,
-  tabNav: {
-    display: 'flex',
-    borderBottom: '1px solid #f1f5f9',
-    padding: '0 16px',
-    overflowX: 'auto',
-    whiteSpace: 'nowrap',
-    scrollbarWidth: 'none',
-    gap: '24px',
-  } as React.CSSProperties,
-  tab: {
-    padding: '16px 4px',
-    fontSize: '14px',
-    fontWeight: 600,
-    color: '#64748b',
-    background: 'none',
-    border: 'none',
-    borderBottom: '2px solid transparent',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-    marginBottom: '-1px',
-    whiteSpace: 'nowrap',
-  } as React.CSSProperties,
-  tabActive: {
-    color: '#4f46e5',
-    borderBottomColor: '#4f46e5',
-  } as React.CSSProperties,
-  content: {
-    padding: '24px',
-  } as React.CSSProperties,
-};
-
 type TabId = 'profile' | 'organization' | 'members' | 'billing' | 'security' | 'usage' | 'run-settings' | 'integrations';
 
 export function Settings() {
@@ -106,27 +46,30 @@ export function Settings() {
   const ActiveTabComponent = tabs.find(t => t.id === activeTab)?.component || OrganizationTab;
 
   return (
-    <div style={styles.container}>
+    <div className="p-4 max-w-[1200px] mx-auto font-sans">
       {/* Header */}
-      <div style={styles.header}>
-        <h1 style={styles.title}>Settings</h1>
-        <p style={styles.subtitle}>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gh-text dark:text-gh-text-dark leading-tight">
+          Settings
+        </h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           Manage your organization, team members, and preferences
         </p>
       </div>
 
       {/* Settings Card */}
-      <div style={styles.card}>
+      <div className="bg-white dark:bg-gh-bg-subtle-dark rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-gh-border-dark">
         {/* Tab Navigation */}
-        <nav style={styles.tabNav} className="scrollbar-hide">
+        <nav className="flex border-b border-slate-200 dark:border-gh-border-dark px-4 overflow-x-auto gap-6 scrollbar-hide">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              style={{
-                ...styles.tab,
-                ...(activeTab === tab.id ? styles.tabActive : {}),
-              }}
+              className={`py-4 px-1 text-sm font-semibold whitespace-nowrap cursor-pointer border-b-2 -mb-px transition-all duration-200 ${
+                activeTab === tab.id
+                  ? 'text-gh-accent dark:text-gh-accent-dark border-gh-accent dark:border-gh-accent-dark'
+                  : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-gh-border-dark'
+              }`}
             >
               {tab.label}
             </button>
@@ -134,8 +77,10 @@ export function Settings() {
         </nav>
 
         {/* Tab Content */}
-        <div style={styles.content}>
-          <Suspense fallback={<div style={{ padding: '20px', color: '#94a3b8' }}>Loading...</div>}>
+        <div className="p-6">
+          <Suspense fallback={
+            <div className="py-5 text-sm text-slate-400 dark:text-slate-500">Loading...</div>
+          }>
             <ActiveTabComponent />
           </Suspense>
         </div>
