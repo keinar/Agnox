@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AppLayout } from './components/AppLayout';
 import { Dashboard } from './components/Dashboard';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
@@ -18,28 +19,22 @@ function App() {
           <BrowserRouter>
             <Routes>
               {/* Public routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/join" element={<Signup />} />
+              <Route path="/login"   element={<Login />} />
+              <Route path="/signup"  element={<Signup />} />
+              <Route path="/join"    element={<Signup />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
 
-              {/* Protected routes */}
+              {/* Protected routes — share the AppLayout shell */}
               <Route
-                path="/dashboard"
                 element={
                   <ProtectedRoute>
-                    <Dashboard />
+                    <AppLayout />
                   </ProtectedRoute>
                 }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                }
-              />
+              >
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/settings"  element={<Settings />} />
+              </Route>
 
               {/* Redirect root to dashboard */}
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
