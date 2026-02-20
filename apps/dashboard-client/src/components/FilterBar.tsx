@@ -54,11 +54,14 @@ const ENV_OPTIONS = [
     { value: 'production',   label: 'Prod'    },
 ] as const;
 
+/** Stable empty default for the groupNames prop — avoids a new array reference on every render. */
+const EMPTY_GROUP_NAMES: string[] = [];
+
 // ── Shared classes ────────────────────────────────────────────────────────────
 
 const DATE_INPUT_CLASS =
     'px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white text-slate-700 ' +
-    'focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 ' +
+    'focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ' +
     'transition cursor-pointer';
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -68,7 +71,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     onChange,
     viewMode,
     onViewModeChange,
-    groupNames = [],
+    groupNames = EMPTY_GROUP_NAMES,
 }) => {
     const { status = [], environment = '', startAfter = '', startBefore = '', groupName = '' } = filters;
 
@@ -107,7 +110,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                     <Filter size={12} />
                     Filters
                     {isActive && (
-                        <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-indigo-600 text-white text-[9px] font-bold">
+                        <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-bold">
                             {activeCount}
                         </span>
                     )}
@@ -156,7 +159,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                                         px-2.5 py-1 text-[11px] font-semibold transition-colors duration-100 cursor-pointer
                                         ${i > 0 ? 'border-l border-slate-200' : ''}
                                         ${isSelected
-                                            ? 'bg-indigo-600 text-white'
+                                            ? 'bg-blue-600 text-white'
                                             : 'bg-white text-slate-600 hover:bg-slate-50'
                                         }
                                     `}
@@ -173,16 +176,28 @@ export const FilterBar: React.FC<FilterBarProps> = ({
 
                 {/* ── Date range ── */}
                 <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-slate-400 font-medium flex-shrink-0">From:</span>
+                    <label
+                        htmlFor="filter-start-after"
+                        className="text-[11px] text-slate-400 font-medium flex-shrink-0"
+                    >
+                        From:
+                    </label>
                     <input
+                        id="filter-start-after"
                         type="date"
                         value={startAfter}
                         max={startBefore || undefined}
                         onChange={(e) => onChange({ startAfter: e.target.value })}
                         className={DATE_INPUT_CLASS}
                     />
-                    <span className="text-[11px] text-slate-400 font-medium">To:</span>
+                    <label
+                        htmlFor="filter-start-before"
+                        className="text-[11px] text-slate-400 font-medium"
+                    >
+                        To:
+                    </label>
                     <input
+                        id="filter-start-before"
                         type="date"
                         value={startBefore}
                         min={startAfter || undefined}
@@ -209,9 +224,9 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                             placeholder="All groups"
                             className={`
                                 px-2.5 py-1.5 text-xs border rounded-lg bg-white text-slate-700
-                                focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400
+                                focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400
                                 transition w-36 placeholder:text-slate-400
-                                ${groupName ? 'pr-6 border-indigo-300' : 'border-slate-200'}
+                                ${groupName ? 'pr-6 border-blue-300' : 'border-slate-200'}
                             `}
                         />
                         <datalist id="aac-group-names-datalist">
@@ -247,7 +262,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                                 inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold
                                 transition-colors duration-100 cursor-pointer
                                 ${viewMode === 'flat'
-                                    ? 'bg-indigo-600 text-white'
+                                    ? 'bg-blue-600 text-white'
                                     : 'bg-white text-slate-600 hover:bg-slate-50'
                                 }
                             `}
@@ -263,7 +278,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                                 inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold
                                 border-l border-slate-200 transition-colors duration-100 cursor-pointer
                                 ${viewMode === 'grouped'
-                                    ? 'bg-indigo-600 text-white'
+                                    ? 'bg-blue-600 text-white'
                                     : 'bg-white text-slate-600 hover:bg-slate-50'
                                 }
                             `}

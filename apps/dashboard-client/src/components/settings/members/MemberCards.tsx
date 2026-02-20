@@ -1,4 +1,4 @@
-import { Trash2, Clock } from 'lucide-react';
+import { Clock, Trash2 } from 'lucide-react';
 
 interface User {
   id: string;
@@ -16,62 +16,8 @@ interface MemberCardsProps {
   onRoleChange: (userId: string, newRole: string) => Promise<void>;
   onRemove: (userId: string, userName: string) => Promise<void>;
   formatDate: (dateString: string) => string;
-  getRoleBadgeStyle: (role: string) => React.CSSProperties;
+  getRoleBadgeClass: (role: string) => string;
 }
-
-const styles = {
-  cardsContainer: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '16px',
-  } as React.CSSProperties,
-  card: {
-    background: '#ffffff',
-    border: '1px solid #e2e8f0',
-    borderRadius: '12px',
-    padding: '16px',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '12px',
-  } as React.CSSProperties,
-  cardHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  } as React.CSSProperties,
-  cardRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '14px',
-    color: '#4b5563',
-  } as React.CSSProperties,
-  select: {
-    padding: '6px 12px',
-    fontSize: '14px',
-    border: '1px solid #e5e7eb',
-    borderRadius: '6px',
-    outline: 'none',
-    cursor: 'pointer',
-    background: '#ffffff',
-    width: '100%',
-  } as React.CSSProperties,
-  deleteButton: {
-    padding: '8px 12px',
-    fontSize: '13px',
-    color: '#dc2626',
-    background: '#fef2f2',
-    border: '1px solid #fecaca',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '6px',
-    width: '100%',
-  } as React.CSSProperties,
-};
 
 export function MemberCards({
   users,
@@ -80,55 +26,53 @@ export function MemberCards({
   onRoleChange,
   onRemove,
   formatDate,
-  getRoleBadgeStyle
+  getRoleBadgeClass,
 }: MemberCardsProps) {
   return (
-    <div style={styles.cardsContainer}>
+    <div className="flex flex-col gap-4">
       {users.map((u) => (
-        <div key={u.id} style={styles.card}>
-          <div style={styles.cardHeader}>
+        <div
+          key={u.id}
+          className="bg-white dark:bg-gh-bg-dark border border-slate-200 dark:border-gh-border-dark rounded-xl p-4 flex flex-col gap-3"
+        >
+          <div className="flex justify-between items-start">
             <div>
-              <div style={{ fontWeight: 600, color: '#1e293b' }}>
-                {u.name} {u.id === currentUserId && '(You)'}
+              <div className="font-semibold text-slate-900 dark:text-gh-text-dark">
+                {u.name}{' '}
+                {u.id === currentUserId && (
+                  <span className="text-xs font-normal text-slate-400 dark:text-slate-500">(You)</span>
+                )}
               </div>
-              <div style={{ fontSize: '13px', color: '#64748b' }}>
-                {u.email}
-              </div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{u.email}</div>
             </div>
-            {/* Role Badge (Non-Admin View) */}
             {(!isAdmin || u.id === currentUserId) && (
-              <span style={getRoleBadgeStyle(u.role)}>{u.role}</span>
+              <span className={getRoleBadgeClass(u.role)}>{u.role}</span>
             )}
           </div>
 
-          <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
-            <div style={styles.cardRow}>
-              <Clock size={14} /> Joined {formatDate(u.createdAt)}
+          <div className="border-t border-slate-100 dark:border-gh-border-dark pt-3">
+            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <Clock size={12} /> Joined {formatDate(u.createdAt)}
             </div>
           </div>
 
-          {/* Admin Actions */}
           {isAdmin && u.id !== currentUserId && (
-            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-              <div style={{ flex: 1 }}>
-                <select
-                  value={u.role}
-                  onChange={(e) => onRoleChange(u.id, e.target.value)}
-                  style={styles.select}
-                >
-                  <option value="admin">Admin</option>
-                  <option value="developer">Developer</option>
-                  <option value="viewer">Viewer</option>
-                </select>
-              </div>
-              <div style={{ flex: 1 }}>
-                <button
-                  onClick={() => onRemove(u.id, u.name)}
-                  style={styles.deleteButton}
-                >
-                  <Trash2 size={14} /> Remove
-                </button>
-              </div>
+            <div className="flex gap-2 mt-1">
+              <select
+                value={u.role}
+                onChange={(e) => onRoleChange(u.id, e.target.value)}
+                className="flex-1 px-3 py-1.5 text-sm border border-slate-200 dark:border-gh-border-dark rounded-md outline-none cursor-pointer bg-white dark:bg-gh-bg-dark text-slate-700 dark:text-gh-text-dark transition-colors"
+              >
+                <option value="admin">Admin</option>
+                <option value="developer">Developer</option>
+                <option value="viewer">Viewer</option>
+              </select>
+              <button
+                onClick={() => onRemove(u.id, u.name)}
+                className="flex flex-1 items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-md hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-colors cursor-pointer"
+              >
+                <Trash2 size={13} /> Remove
+              </button>
             </div>
           )}
         </div>
