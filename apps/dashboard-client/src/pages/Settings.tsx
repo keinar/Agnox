@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { ProfileTab } from '../components/settings/ProfileTab';
 import { OrganizationTab } from '../components/settings/OrganizationTab';
 import { MembersTab } from '../components/settings/MembersTab';
@@ -22,30 +21,6 @@ const styles = {
   } as React.CSSProperties,
   header: {
     marginBottom: '24px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-  } as React.CSSProperties,
-  headerTopRow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: '16px',
-  } as React.CSSProperties,
-  backButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '8px 12px',
-    fontSize: '14px',
-    fontWeight: 500,
-    color: '#1e293b',
-    textDecoration: 'none',
-    background: '#f1f5f9',
-    border: 'none',
-    borderRadius: '8px',
-    transition: 'all 0.2s',
   } as React.CSSProperties,
   title: {
     fontSize: '24px',
@@ -134,25 +109,10 @@ export function Settings() {
     <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
-        <div style={styles.headerTopRow}>
-          <Link
-            to="/dashboard"
-            style={styles.backButton}
-          >
-            <ArrowLeft size={18} />
-            Back
-          </Link>
-          <div style={{ flex: 1 }}>
-
-          </div>
-        </div>
-
-        <div>
-          <h1 style={styles.title}>Settings</h1>
-          <p style={styles.subtitle}>
-            Manage your organization, team members, and preferences
-          </p>
-        </div>
+        <h1 style={styles.title}>Settings</h1>
+        <p style={styles.subtitle}>
+          Manage your organization, team members, and preferences
+        </p>
       </div>
 
       {/* Settings Card */}

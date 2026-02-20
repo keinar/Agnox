@@ -1,32 +1,117 @@
 import { useState, useCallback } from 'react';
-import { useExecutions } from '../hooks/useExecutions';
+import { useQueryClient } from '@tanstack/react-query';
+import { useExecutions, type IExecutionFilters } from '../hooks/useExecutions';
+import { useGroupedExecutions } from '../hooks/useGroupedExecutions';
 import { useDashboardData } from '../hooks/useDashboardData';
+import { useAnalyticsKPIs } from '../hooks/useAnalyticsKPIs';
 import { useAuth } from '../context/AuthContext';
 import { StatsGrid } from './StatsGrid';
+import { FilterBar } from './FilterBar';
+import { Pagination } from './Pagination';
 import { ExecutionModal } from './ExecutionModal';
-import { DashboardHeader } from './dashboard/DashboardHeader';
 import { ExecutionList } from './dashboard/ExecutionList';
 import { Play } from 'lucide-react';
+import type { ViewMode } from '../types';
 
+// ── localStorage key for view mode persistence ────────────────────────────────
+
+const LS_VIEW_MODE_KEY = 'aac:view-mode';
+
+function loadViewMode(): ViewMode {
+    try {
+        const stored = localStorage.getItem(LS_VIEW_MODE_KEY);
+        if (stored === 'flat' || stored === 'grouped') return stored;
+    } catch { /* ignore */ }
+    return 'flat';
+}
 
 const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
 const API_URL = isProduction
   ? import.meta.env.VITE_API_URL || ''
   : 'http://localhost:3000';
 
+// ── Default filter state — exported so FilterBar can reference the shape ──────
+
+const DEFAULT_FILTERS: IExecutionFilters = {
+  status:      [],
+  environment: '',
+  startAfter:  '',
+  startBefore: '',
+  limit:       25,
+  offset:      0,
+};
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export const Dashboard = () => {
-  const { user, token, logout } = useAuth();
-  const { executions, loading, error, setExecutions } = useExecutions();
+  const { user, token } = useAuth();
+  const queryClient = useQueryClient();
   const { availableFolders, defaults } = useDashboardData(token);
+  const { kpis, isLoading: kpisLoading } = useAnalyticsKPIs();
+
+  // ── View mode — persisted to localStorage ─────────────────────────────────
+  const [viewMode, setViewMode] = useState<ViewMode>(loadViewMode);
+
+  const handleViewModeChange = useCallback((mode: ViewMode) => {
+    setViewMode(mode);
+    try { localStorage.setItem(LS_VIEW_MODE_KEY, mode); } catch { /* ignore */ }
+    // Reset offset when switching modes to avoid stale pagination
+    setFilters((prev) => ({ ...prev, offset: 0 }));
+  }, []);
+
+  // ── Filter + pagination state ─────────────────────────────────────────────
+  // All filter changes reset offset to 0 (back to page 1).
+  // Page navigation only changes offset.
+  const [filters, setFilters] = useState<IExecutionFilters>(DEFAULT_FILTERS);
+
+  const handleFilterChange = useCallback(
+    (patch: Partial<Pick<IExecutionFilters, 'status' | 'environment' | 'startAfter' | 'startBefore'>>) => {
+      setFilters((prev) => ({ ...prev, ...patch, offset: 0 }));
+    },
+    [],
+  );
+
+  const handlePageChange = useCallback((newOffset: number) => {
+    setFilters((prev) => ({ ...prev, offset: newOffset }));
+  }, []);
+
+  // ── Data — flat list ──────────────────────────────────────────────────────
+  const {
+    executions, total, limit, offset,
+    loading, error, setExecutions,
+  } = useExecutions(filters);
+
+  // ── Data — grouped view ───────────────────────────────────────────────────
+  // Groups per page default: 10. Reuse filters; limit/offset map to group units.
+  const {
+    groups,
+    totalGroups,
+    limit: groupLimit,
+    offset: groupOffset,
+    loading: groupsLoading,
+    error: groupsError,
+  } = useGroupedExecutions({
+    status:      filters.status,
+    environment: filters.environment,
+    startAfter:  filters.startAfter,
+    startBefore: filters.startBefore,
+    limit:       10,
+    offset:      filters.offset,
+    enabled:     viewMode === 'grouped',  // Only fetch when grouped view is active
+  });
+
+  // Choose which loading / error state to surface
+  const activeLoading = viewMode === 'grouped' ? groupsLoading : loading;
+  const activeError   = viewMode === 'grouped' ? groupsError   : error;
 
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  // Real-time updates handled by useExecutions hook
+  const [isModalOpen, setIsModalOpen]     = useState(false);
 
   const toggleRow = useCallback((id: string) => {
-    setExpandedRowId(prev => prev === id ? null : id);
+    setExpandedRowId((prev) => (prev === id ? null : id));
   }, []);
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
   const handleRunTest = async (formData: {
     folder: string;
@@ -37,25 +122,25 @@ export const Dashboard = () => {
   }) => {
     try {
       const payload = {
-        taskId: `run-${Date.now()}`,
-        image: formData.image,
+        taskId:  `run-${Date.now()}`,
+        image:   formData.image,
         command: formData.command,
-        folder: formData.folder,
-        tests: [formData.folder],
+        folder:  formData.folder,
+        tests:   [formData.folder],
         config: {
-          environment: formData.environment,
-          baseUrl: formData.baseUrl,
-          retryAttempts: 2
-        }
+          environment:    formData.environment,
+          baseUrl:        formData.baseUrl,
+          retryAttempts:  2,
+        },
       };
 
       const response = await fetch(`${API_URL}/api/execution-request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization:  `Bearer ${token}`,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -65,9 +150,7 @@ export const Dashboard = () => {
 
       await response.json();
       setIsModalOpen(false);
-
     } catch (err: any) {
-      console.error('Run test failed:', err);
       alert(`Error launching test: ${err.message}`);
     }
   };
@@ -76,38 +159,68 @@ export const Dashboard = () => {
     if (!window.confirm('Delete this execution?')) return;
     try {
       await fetch(`${API_URL}/api/executions/${taskId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        method:  'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
       });
       setExecutions((old) => old.filter((exec) => exec.taskId !== taskId));
-    } catch (err) {
+    } catch {
       alert('Delete failed');
     }
   }, [token, setExecutions]);
 
+  // ── Bulk delete — soft-deletes all selected executions in one request ──────
+  const handleBulkDelete = useCallback(async (taskIds: string[]) => {
+    try {
+      const res = await fetch(`${API_URL}/api/executions/bulk`, {
+        method:  'DELETE',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({ taskIds }),
+      });
+      if (!res.ok) throw new Error('Server error');
+      // Optimistic update for the flat view cache
+      setExecutions((old) => old.filter((e) => !taskIds.includes(e.taskId)));
+      // Refresh grouped view so group summaries update too
+      queryClient.invalidateQueries({ queryKey: ['executions-grouped'] });
+    } catch (err: unknown) {
+      alert('Bulk delete failed');
+      throw err; // rethrow so ExecutionList keeps the selection intact
+    }
+  }, [token, setExecutions, queryClient]);
+
+  // ── Bulk group — assigns a groupName to all selected executions ───────────
+  const handleBulkGroup = useCallback(async (taskIds: string[], groupName: string) => {
+    try {
+      const res = await fetch(`${API_URL}/api/executions/bulk`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({ taskIds, data: { groupName } }),
+      });
+      if (!res.ok) throw new Error('Server error');
+      // Optimistic update for the flat view cache
+      setExecutions((old) =>
+        old.map((e) => (taskIds.includes(e.taskId) ? { ...e, groupName } : e)),
+      );
+      // Refresh grouped view to reflect new group memberships
+      queryClient.invalidateQueries({ queryKey: ['executions-grouped'] });
+    } catch (err: unknown) {
+      alert('Bulk group update failed');
+      throw err;
+    }
+  }, [token, setExecutions, queryClient]);
+
   const isViewer = user?.role === 'viewer';
 
-  return (
-    <div className="max-w-7xl mx-auto px-5 py-6">
-      {/* Header with Auth, Settings, Logout */}
-      <DashboardHeader
-        user={user}
-        onLogout={logout}
-        mobileMenuOpen={mobileMenuOpen}
-        onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
-      />
+  // ── Render ────────────────────────────────────────────────────────────────
 
-      {/* Main Header with Title and Run Test Button */}
+  return (
+    <div className="px-6 py-6">
+      {/* Title + Run button */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="m-0 text-3xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
             Automation Center
           </h1>
-          <p className="text-slate-500 mt-1">
-            Live monitoring of test infrastructure
-          </p>
+          <p className="text-slate-500 mt-1">Live monitoring of test infrastructure</p>
         </div>
 
         <button
@@ -124,26 +237,57 @@ export const Dashboard = () => {
         </button>
       </div>
 
-      {/* Stats Grid */}
-      <StatsGrid executions={executions} />
+      {/* KPI stats */}
+      <StatsGrid executions={executions} kpis={kpis} kpisLoading={kpisLoading} />
 
-      {/* Execution Modal */}
+      {/* Filter bar */}
+      <FilterBar
+        filters={filters}
+        onChange={handleFilterChange}
+        viewMode={viewMode}
+        onViewModeChange={handleViewModeChange}
+      />
+
+      {/* Execution table — flat or grouped */}
+      <ExecutionList
+        executions={executions}
+        loading={activeLoading}
+        error={activeError}
+        expandedRowId={expandedRowId}
+        onToggleRow={toggleRow}
+        onDelete={handleDelete}
+        onBulkDelete={handleBulkDelete}
+        onBulkGroup={handleBulkGroup}
+        viewMode={viewMode}
+        groups={groups}
+      />
+
+      {/* Pagination — adapts to flat vs grouped counts */}
+      {viewMode === 'grouped' ? (
+        <Pagination
+          total={totalGroups}
+          limit={groupLimit}
+          offset={groupOffset}
+          onPageChange={handlePageChange}
+          loading={groupsLoading}
+        />
+      ) : (
+        <Pagination
+          total={total}
+          limit={limit}
+          offset={offset}
+          onPageChange={handlePageChange}
+          loading={loading}
+        />
+      )}
+
+      {/* Run modal */}
       <ExecutionModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleRunTest}
         availableFolders={availableFolders}
         defaults={defaults}
-      />
-
-      {/* Execution List Table */}
-      <ExecutionList
-        executions={executions}
-        loading={loading}
-        error={error}
-        expandedRowId={expandedRowId}
-        onToggleRow={toggleRow}
-        onDelete={handleDelete}
       />
     </div>
   );
