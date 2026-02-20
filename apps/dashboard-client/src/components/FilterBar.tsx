@@ -1,19 +1,21 @@
 import React from 'react';
-import { Filter, X, List, LayoutList } from 'lucide-react';
+import { Filter, X, List, LayoutList, Tag } from 'lucide-react';
 import type { IExecutionFilters } from '../hooks/useExecutions';
 import type { ViewMode } from '../types';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type FilterPatch = Partial<
-    Pick<IExecutionFilters, 'status' | 'environment' | 'startAfter' | 'startBefore'>
+    Pick<IExecutionFilters, 'status' | 'environment' | 'startAfter' | 'startBefore' | 'groupName'>
 >;
 
 interface FilterBarProps {
-    filters: Pick<IExecutionFilters, 'status' | 'environment' | 'startAfter' | 'startBefore'>;
+    filters: Pick<IExecutionFilters, 'status' | 'environment' | 'startAfter' | 'startBefore' | 'groupName'>;
     onChange: (patch: FilterPatch) => void;
     viewMode: ViewMode;
     onViewModeChange: (mode: ViewMode) => void;
+    /** Available group names for the filter combobox datalist. */
+    groupNames?: string[];
 }
 
 // ── Static config ─────────────────────────────────────────────────────────────
@@ -61,14 +63,29 @@ const DATE_INPUT_CLASS =
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, viewMode, onViewModeChange }) => {
-    const { status = [], environment = '', startAfter = '', startBefore = '' } = filters;
+export const FilterBar: React.FC<FilterBarProps> = ({
+    filters,
+    onChange,
+    viewMode,
+    onViewModeChange,
+    groupNames = [],
+}) => {
+    const { status = [], environment = '', startAfter = '', startBefore = '', groupName = '' } = filters;
 
     const isActive =
         status.length > 0 ||
         environment !== '' ||
         startAfter  !== '' ||
-        startBefore !== '';
+        startBefore !== '' ||
+        groupName   !== '';
+
+    // Count how many filter categories are active (for the badge)
+    const activeCount = [
+        status.length > 0,
+        environment !== '',
+        startAfter !== '' || startBefore !== '',
+        groupName !== '',
+    ].filter(Boolean).length;
 
     // Toggle a status chip on/off in the multi-select list.
     const toggleStatus = (value: string) => {
@@ -79,7 +96,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, viewMod
     };
 
     const handleClear = () =>
-        onChange({ status: [], environment: '', startAfter: '', startBefore: '' });
+        onChange({ status: [], environment: '', startAfter: '', startBefore: '', groupName: '' });
 
     return (
         <div className="bg-white border border-slate-200 rounded-xl shadow-sm px-4 py-3 mb-4">
@@ -91,8 +108,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, viewMod
                     Filters
                     {isActive && (
                         <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-indigo-600 text-white text-[9px] font-bold">
-                            {[status.length > 0, environment !== '', startAfter !== '' || startBefore !== '']
-                                .filter(Boolean).length}
+                            {activeCount}
                         </span>
                     )}
                 </div>
@@ -173,6 +189,47 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, onChange, viewMod
                         onChange={(e) => onChange({ startBefore: e.target.value })}
                         className={DATE_INPUT_CLASS}
                     />
+                </div>
+
+                {/* ── Divider ── */}
+                <div className="hidden sm:block w-px h-4 bg-slate-200 flex-shrink-0" />
+
+                {/* ── Group filter (searchable combobox) ── */}
+                <div className="flex items-center gap-1.5">
+                    <span className="flex items-center gap-1 text-[11px] text-slate-400 font-medium flex-shrink-0">
+                        <Tag size={10} />
+                        Group:
+                    </span>
+                    <div className="relative">
+                        <input
+                            type="text"
+                            list="aac-group-names-datalist"
+                            value={groupName}
+                            onChange={(e) => onChange({ groupName: e.target.value })}
+                            placeholder="All groups"
+                            className={`
+                                px-2.5 py-1.5 text-xs border rounded-lg bg-white text-slate-700
+                                focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400
+                                transition w-36 placeholder:text-slate-400
+                                ${groupName ? 'pr-6 border-indigo-300' : 'border-slate-200'}
+                            `}
+                        />
+                        <datalist id="aac-group-names-datalist">
+                            {groupNames.map((name) => (
+                                <option key={name} value={name} />
+                            ))}
+                        </datalist>
+                        {groupName && (
+                            <button
+                                type="button"
+                                onClick={() => onChange({ groupName: '' })}
+                                title="Clear group filter"
+                                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                            >
+                                <X size={10} />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* ── Divider ── */}

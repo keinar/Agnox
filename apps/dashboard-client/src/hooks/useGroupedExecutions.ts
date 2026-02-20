@@ -21,6 +21,8 @@ export interface IGroupedFilters {
     startAfter?: string;
     /** ISO date string — include executions starting on or before this date (inclusive). */
     startBefore?: string;
+    /** Exact match on groupName — filters to show only this group. Empty string = all groups. */
+    groupName?: string;
     /** Number of groups per page. Default 10, max 50. */
     limit?: number;
     /** Zero-based group offset. */
@@ -39,6 +41,7 @@ function buildGroupedUrl(filters: IGroupedFilters): string {
     if (filters.environment)     params.set('environment',  filters.environment);
     if (filters.startAfter)      params.set('startAfter',   filters.startAfter);
     if (filters.startBefore)     params.set('startBefore',  filters.startBefore);
+    if (filters.groupName)       params.set('groupName',    filters.groupName);
     return `${API_URL}/api/executions/grouped?${params.toString()}`;
 }
 

@@ -20,6 +20,8 @@ export interface IExecutionFilters {
     startAfter?: string;
     /** ISO date string — include executions starting on or before this date (inclusive). */
     startBefore?: string;
+    /** Exact match on groupName field. Empty string = no filter. */
+    groupName?: string;
     /** Records per page. Default 25, max 100. */
     limit?: number;
     /** Zero-based offset into the result set. */
@@ -43,6 +45,7 @@ function buildExecutionsUrl(filters: IExecutionFilters): string {
     if (filters.environment)     params.set('environment',  filters.environment);
     if (filters.startAfter)      params.set('startAfter',   filters.startAfter);
     if (filters.startBefore)     params.set('startBefore',  filters.startBefore);
+    if (filters.groupName)       params.set('groupName',    filters.groupName);
     return `${API_URL}/api/executions?${params.toString()}`;
 }
 

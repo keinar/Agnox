@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useExecutions, type IExecutionFilters } from '../hooks/useExecutions';
 import { useGroupedExecutions } from '../hooks/useGroupedExecutions';
+import { useGroupNames } from '../hooks/useGroupNames';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useAnalyticsKPIs } from '../hooks/useAnalyticsKPIs';
 import { useAuth } from '../context/AuthContext';
@@ -37,6 +38,7 @@ const DEFAULT_FILTERS: IExecutionFilters = {
   environment: '',
   startAfter:  '',
   startBefore: '',
+  groupName:   '',
   limit:       25,
   offset:      0,
 };
@@ -48,6 +50,7 @@ export const Dashboard = () => {
   const queryClient = useQueryClient();
   const { availableFolders, defaults } = useDashboardData(token);
   const { kpis, isLoading: kpisLoading } = useAnalyticsKPIs();
+  const groupNames = useGroupNames();
 
   // ── View mode — persisted to localStorage ─────────────────────────────────
   const [viewMode, setViewMode] = useState<ViewMode>(loadViewMode);
@@ -65,7 +68,7 @@ export const Dashboard = () => {
   const [filters, setFilters] = useState<IExecutionFilters>(DEFAULT_FILTERS);
 
   const handleFilterChange = useCallback(
-    (patch: Partial<Pick<IExecutionFilters, 'status' | 'environment' | 'startAfter' | 'startBefore'>>) => {
+    (patch: Partial<Pick<IExecutionFilters, 'status' | 'environment' | 'startAfter' | 'startBefore' | 'groupName'>>) => {
       setFilters((prev) => ({ ...prev, ...patch, offset: 0 }));
     },
     [],
@@ -95,6 +98,7 @@ export const Dashboard = () => {
     environment: filters.environment,
     startAfter:  filters.startAfter,
     startBefore: filters.startBefore,
+    groupName:   filters.groupName,
     limit:       10,
     offset:      filters.offset,
     enabled:     viewMode === 'grouped',  // Only fetch when grouped view is active
@@ -119,9 +123,10 @@ export const Dashboard = () => {
     baseUrl: string;
     image: string;
     command: string;
+    groupName?: string;
   }) => {
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         taskId:  `run-${Date.now()}`,
         image:   formData.image,
         command: formData.command,
@@ -133,6 +138,9 @@ export const Dashboard = () => {
           retryAttempts:  2,
         },
       };
+
+      // Include groupName only when the user provided one
+      if (formData.groupName) payload.groupName = formData.groupName;
 
       const response = await fetch(`${API_URL}/api/execution-request`, {
         method: 'POST',
@@ -246,6 +254,7 @@ export const Dashboard = () => {
         onChange={handleFilterChange}
         viewMode={viewMode}
         onViewModeChange={handleViewModeChange}
+        groupNames={groupNames}
       />
 
       {/* Execution table — flat or grouped */}

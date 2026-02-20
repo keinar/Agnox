@@ -435,6 +435,8 @@ export async function setupRoutes(
         environment?: string;
         startAfter?: string;
         startBefore?: string;
+        /** Exact match — filters to show only this group's executions. */
+        groupName?: string;
     }
 
     app.get('/api/executions/grouped', async (request, reply) => {
@@ -466,6 +468,11 @@ export async function setupRoutes(
                 $regex: `^${q.environment.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`,
                 $options: 'i',
             };
+        }
+
+        // Group name filter: exact match (pre-filters executions before aggregation)
+        if (q.groupName) {
+            matchFilter.groupName = q.groupName.trim();
         }
 
         if (q.startAfter || q.startBefore) {
@@ -609,6 +616,21 @@ export async function setupRoutes(
             return reply.status(400).send({ success: false, error: 'No valid fields to update' });
         }
 
+        // Split into $set (non-empty values) and $unset (null or empty string = remove field)
+        const setData: Record<string, unknown> = {};
+        const unsetData: Record<string, 1> = {};
+        for (const [key, val] of Object.entries(sanitizedData)) {
+            if (val === null || val === '') {
+                unsetData[key] = 1;
+            } else {
+                setData[key] = val;
+            }
+        }
+
+        const updateOp: Record<string, unknown> = {};
+        if (Object.keys(setData).length > 0)   updateOp.$set   = setData;
+        if (Object.keys(unsetData).length > 0)  updateOp.$unset = unsetData;
+
         const organizationId = request.user!.organizationId;
 
         try {
@@ -619,7 +641,7 @@ export async function setupRoutes(
                     organizationId,
                     deletedAt: { $exists: false },
                 },
-                { $set: sanitizedData },
+                updateOp,
             );
 
             app.log.info(`[bulk-update] Updated ${result.modifiedCount} executions for org ${organizationId}`);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Info, X, Play, Folder, Server, Globe, Box, Terminal, ChevronDown, ChevronRight } from 'lucide-react';
+import { Info, X, Play, Folder, Server, Globe, Box, Terminal, Tag, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface ExecutionModalProps {
     isOpen: boolean;
@@ -10,6 +10,7 @@ interface ExecutionModalProps {
         baseUrl: string;
         image: string;
         command: string;
+        groupName?: string;
     }) => void;
     availableFolders: string[];
     defaults?: {
@@ -24,6 +25,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
     const [environment, setEnvironment] = useState('development');
     const [baseUrl, setBaseUrl] = useState('');
     const [selectedFolder, setSelectedFolder] = useState('all');
+    const [groupName, setGroupName] = useState('');
     const [showAdvanced, setShowAdvanced] = useState(false);
 
     // Agnostic defaults
@@ -71,17 +73,24 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
         setCommand(`Agnostic Execution Mode: Running [${targetFolder}] via entrypoint.sh`);
     }, [selectedFolder, showAdvanced]);
 
+    // Reset groupName field when the modal closes so it does not persist across opens
+    useEffect(() => {
+        if (!isOpen) setGroupName('');
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const finalFolder = selectedFolder;
+        const trimmedGroup = groupName.trim();
         onSubmit({
             folder: finalFolder,
             environment,
             baseUrl,
             image,
-            command
+            command,
+            ...(trimmedGroup ? { groupName: trimmedGroup } : {}),
         });
     };
 
@@ -172,6 +181,23 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
                             className={inputClass}
                             placeholder={defaults?.baseUrl ? undefined : 'Not configured — go to Settings → Run Settings'}
                         />
+                    </div>
+
+                    {/* Group Name (optional) */}
+                    <div className="flex flex-col gap-1.5">
+                        <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                            <Tag size={16} className="text-slate-400" /> Group Name
+                            <span className="text-xs text-slate-400 font-normal">(optional)</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={groupName}
+                            onChange={(e) => setGroupName(e.target.value)}
+                            className={inputClass}
+                            placeholder="e.g. Nightly Sanity, Regression Suite"
+                            maxLength={128}
+                        />
+                        <p className="text-xs text-slate-400">Assign this run to a logical group for easier filtering and grouped view</p>
                     </div>
 
                     {/* Execution Strategy Preview */}

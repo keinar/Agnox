@@ -1,17 +1,28 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Trash2, Tag, X, Loader2 } from 'lucide-react';
+import { Trash2, Tag, Unlink, X, Loader2 } from 'lucide-react';
 
 interface BulkActionsBarProps {
   count: number;
+  /** True when at least one selected execution already belongs to a group. */
+  hasGroupedSelected: boolean;
   onDelete: () => Promise<void>;
   onGroup: (groupName: string) => Promise<void>;
+  /** Removes the groupName from all selected executions. */
+  onUngroup: () => Promise<void>;
   onClear: () => void;
 }
 
-export function BulkActionsBar({ count, onDelete, onGroup, onClear }: BulkActionsBarProps) {
+export function BulkActionsBar({
+  count,
+  hasGroupedSelected,
+  onDelete,
+  onGroup,
+  onUngroup,
+  onClear,
+}: BulkActionsBarProps) {
   const [groupPopoverOpen, setGroupPopoverOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
-  const [loading, setLoading] = useState<'delete' | 'group' | null>(null);
+  const [loading, setLoading] = useState<'delete' | 'group' | 'ungroup' | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -40,6 +51,17 @@ export function BulkActionsBar({ count, onDelete, onGroup, onClear }: BulkAction
       await onDelete();
     } catch {
       // Error is alerted upstream; keep bar visible so user can retry
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleUngroup = async () => {
+    setLoading('ungroup');
+    try {
+      await onUngroup();
+    } catch {
+      // Error is alerted upstream
     } finally {
       setLoading(null);
     }
@@ -83,7 +105,22 @@ export function BulkActionsBar({ count, onDelete, onGroup, onClear }: BulkAction
         Delete {count}
       </button>
 
-      {/* Group — triggers a small popover for group name input */}
+      {/* Ungroup — only shown when at least one selected execution is in a group */}
+      {hasGroupedSelected && (
+        <button
+          onClick={handleUngroup}
+          disabled={!!loading}
+          title="Remove from group"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-600 hover:bg-slate-500 text-white text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading === 'ungroup'
+            ? <Loader2 size={13} className="animate-spin" />
+            : <Unlink size={13} />}
+          Ungroup
+        </button>
+      )}
+
+      {/* Group / Change Group — triggers a small popover for group name input */}
       <div className="relative" ref={popoverRef}>
         <button
           onClick={() => setGroupPopoverOpen(v => !v)}
@@ -93,13 +130,15 @@ export function BulkActionsBar({ count, onDelete, onGroup, onClear }: BulkAction
           {loading === 'group'
             ? <Loader2 size={13} className="animate-spin" />
             : <Tag size={13} />}
-          Group
+          {hasGroupedSelected ? 'Change Group' : 'Group'}
         </button>
 
         {groupPopoverOpen && (
           <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-2xl border border-slate-200 p-4 w-64">
             <p className="text-xs font-semibold text-slate-700 mb-3">
-              Assign group to {count} execution{count !== 1 ? 's' : ''}
+              {hasGroupedSelected
+                ? `Change group for ${count} execution${count !== 1 ? 's' : ''}`
+                : `Assign group to ${count} execution${count !== 1 ? 's' : ''}`}
             </p>
             <form onSubmit={handleGroupSubmit} className="flex flex-col gap-2">
               <input

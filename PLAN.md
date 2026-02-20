@@ -2,11 +2,12 @@
 
 > **Last updated:** 2026-02-20
 > **Branch:** `epic/v3-architecture`
+> **Status:** ✅ **100% COMPLETE**
 > **Status legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
 
-## Task 5.1 — Maintenance & Cleanup 🔄
+## Task 5.1 — Maintenance & Cleanup ✅
 
 | # | Item | File(s) | Status |
 |---|------|---------|--------|
@@ -76,16 +77,16 @@
 
 ---
 
-## Task 5.5 — Layout Evolution ⬜
+## Task 5.5 — Layout Evolution ✅
 
-- [ ] Refactor `Dashboard.tsx` to full-screen layout (remove max-width container)
-- [ ] Extract collapsible `Sidebar.tsx` with navigation links (Dashboard, Settings, Docs)
-- [ ] `DashboardHeader.tsx` — convert from embedded `<style>` tags to Tailwind-only
-- [ ] Persist sidebar collapsed state in `localStorage`
+- [x] Refactor `Dashboard.tsx` to full-screen layout (remove max-width container)
+- [x] Extract collapsible `Sidebar.tsx` with navigation links (Dashboard, Settings, Docs)
+- [x] `DashboardHeader.tsx` — convert from embedded `<style>` tags to Tailwind-only
+- [x] Persist sidebar collapsed state in `localStorage`
 
 ---
 
-## Task 5.6 — UX Polish, Bulk Actions & Documentation 🔄
+## Task 5.6 — UX Polish, Bulk Actions & Documentation ✅
 
 ### 5.6.1 — Quick UX Wins ✅
 
@@ -96,20 +97,20 @@
 | 5.6.1c | Filter Cleanup — remove "Analyzing", "Pending", "Running" chips from FilterBar | `FilterBar.tsx` | ✅ Done |
 | 5.6.1d | Scroll Locking — add `overscroll-contain` to log `<pre>` in expanded row panel | `ExecutionRow.tsx` | ✅ Done |
 
-### 5.6.2 — Bulk Actions System ⬜
+### 5.6.2 — Bulk Actions System ✅
 
 | # | Item | File(s) | Status |
 |---|------|---------|--------|
-| 5.6.2a | Selection Model — checkbox per `ExecutionRow` + "Select All" in table header | `ExecutionRow.tsx`, `ExecutionList.tsx` | ⬜ Pending |
-| 5.6.2b | Bulk Actions Bar — floating bar (visible when items selected) with "Delete Selected" + "Group Selected" (popover for group name) | New `BulkActionsBar.tsx` | ⬜ Pending |
-| 5.6.2c | API: `PATCH /api/executions/bulk` (grouping) + `DELETE /api/executions/bulk` | `producer-service/config/routes.ts`, new route handler | ⬜ Pending |
+| 5.6.2a | Selection Model — checkbox per `ExecutionRow` + "Select All" in table header | `ExecutionRow.tsx`, `ExecutionList.tsx` | ✅ Done |
+| 5.6.2b | Bulk Actions Bar — floating bar (visible when items selected) with "Delete Selected" + "Group Selected" (popover for group name) | `BulkActionsBar.tsx` | ✅ Done |
+| 5.6.2c | API: `PATCH /api/executions/bulk` (grouping) + `DELETE /api/executions/bulk` | `producer-service/config/routes.ts` | ✅ Done |
 
-### 5.6.3 — Documentation Update ⬜
+### 5.6.3 — Documentation Update ✅
 
 | # | Item | File(s) | Status |
 |---|------|---------|--------|
-| 5.6.3a | README.md — new Layout Architecture section (Sidebar, full-screen), Advanced Features (Analytics, Jira ADF, Run Groups), updated Tech Stack | `README.md` | ⬜ Pending |
-| 5.6.3b | API docs — document pagination (`limit`/`offset`) and analytics (`/api/analytics/kpis`) endpoints | `README.md` | ⬜ Pending |
+| 5.6.3a | README.md — new Layout Architecture section (Sidebar, full-screen), Advanced Features (Analytics, Jira ADF, Run Groups), updated Tech Stack | `README.md` | ✅ Done |
+| 5.6.3b | API docs — document pagination (`limit`/`offset`), analytics (`/api/analytics/kpis`), grouped executions, and bulk operation endpoints | `README.md` | ✅ Done |
 
 ### Constraints
 - All code, comments, and documentation in **English**.

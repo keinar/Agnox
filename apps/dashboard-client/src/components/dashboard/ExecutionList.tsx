@@ -138,6 +138,20 @@ export function ExecutionList({
     });
   }, []);
 
+  // Determines if any selected execution already belongs to a named group.
+  // Used to toggle "Ungroup" visibility and rename "Group" → "Change Group".
+  const hasGroupedSelected = useMemo(() => {
+    if (selectedIds.size === 0) return false;
+    if (viewMode === 'grouped') {
+      return groups.some((g) =>
+        g.executions.some(
+          (e) => selectedIds.has(e.taskId) && e.groupName && e.groupName !== '__ungrouped__',
+        ),
+      );
+    }
+    return executions.some((e) => selectedIds.has(e.taskId) && !!e.groupName);
+  }, [selectedIds, executions, groups, viewMode]);
+
   // Delegates to parent handler; clears selection only on success
   const handleBulkDeleteInternal = useCallback(async () => {
     const ids = [...selectedIds];
@@ -153,6 +167,17 @@ export function ExecutionList({
     const ids = [...selectedIds];
     try {
       await onBulkGroup(ids, groupName);
+      setSelectedIds(new Set());
+    } catch (err) {
+      throw err;
+    }
+  }, [onBulkGroup, selectedIds]);
+
+  // Passes an empty string to onBulkGroup so the backend $unsets the groupName field.
+  const handleBulkUngroup = useCallback(async () => {
+    const ids = [...selectedIds];
+    try {
+      await onBulkGroup(ids, '');
       setSelectedIds(new Set());
     } catch (err) {
       throw err;
@@ -374,8 +399,10 @@ export function ExecutionList({
       {selectedIds.size > 0 && (
         <BulkActionsBar
           count={selectedIds.size}
+          hasGroupedSelected={hasGroupedSelected}
           onDelete={handleBulkDeleteInternal}
           onGroup={handleBulkGroupInternal}
+          onUngroup={handleBulkUngroup}
           onClear={() => setSelectedIds(new Set())}
         />
       )}
