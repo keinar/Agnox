@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import axios from 'axios';
 import logoLight from '../assets/logo-full.png';
-import logoDark from '../assets/logo.png';
+import logoDark from '../assets/logo-full-dark.png';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -45,14 +45,14 @@ const SIGNUP_INITIAL_STATE: SignupState = {
 
 function signupReducer(state: SignupState, action: SignupAction): SignupState {
   switch (action.type) {
-    case 'SET_EMAIL':    return { ...state, email: action.value };
+    case 'SET_EMAIL': return { ...state, email: action.value };
     case 'SET_PASSWORD': return { ...state, password: action.value };
-    case 'SET_NAME':     return { ...state, name: action.value };
-    case 'SET_ORG':      return { ...state, organizationName: action.value };
-    case 'SET_ERROR':    return { ...state, error: action.value };
-    case 'SET_LOADING':  return { ...state, isLoading: action.value };
+    case 'SET_NAME': return { ...state, name: action.value };
+    case 'SET_ORG': return { ...state, organizationName: action.value };
+    case 'SET_ERROR': return { ...state, error: action.value };
+    case 'SET_LOADING': return { ...state, isLoading: action.value };
     case 'PREFILL_EMAIL': return { ...state, email: action.value };
-    default:             return state;
+    default: return state;
   }
 }
 

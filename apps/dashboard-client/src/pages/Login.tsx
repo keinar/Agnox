@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import logoLight from '../assets/logo-full.png';
-import logoDark from '../assets/logo.png';
+import logoDark from '../assets/logo-full-dark.png';
 
 export function Login() {
   const [email, setEmail] = useState('');
