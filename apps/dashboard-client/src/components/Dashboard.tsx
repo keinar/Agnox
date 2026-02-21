@@ -142,6 +142,7 @@ export const Dashboard = () => {
     try {
       const payload: Record<string, unknown> = {
         taskId:  `run-${Date.now()}`,
+        trigger: 'manual',
         image:   formData.image,
         command: formData.command,
         folder:  formData.folder,
@@ -185,10 +186,12 @@ export const Dashboard = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setExecutions((old) => old.filter((exec) => exec.taskId !== taskId));
+      queryClient.invalidateQueries({ queryKey: ['executions'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
     } catch {
       alert('Delete failed');
     }
-  }, [token, setExecutions]);
+  }, [token, setExecutions, queryClient]);
 
   // ── Bulk delete — soft-deletes all selected executions in one request ──────
   const handleBulkDelete = useCallback(async (taskIds: string[]) => {
@@ -201,8 +204,10 @@ export const Dashboard = () => {
       if (!res.ok) throw new Error('Server error');
       // Optimistic update for the flat view cache
       setExecutions((old) => old.filter((e) => !taskIds.includes(e.taskId)));
-      // Refresh grouped view so group summaries update too
+      // Refresh all execution queries and stats so the UI reflects the deletions
+      queryClient.invalidateQueries({ queryKey: ['executions'] });
       queryClient.invalidateQueries({ queryKey: ['executions-grouped'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
     } catch (err: unknown) {
       alert('Bulk delete failed');
       throw err; // rethrow so ExecutionList keeps the selection intact

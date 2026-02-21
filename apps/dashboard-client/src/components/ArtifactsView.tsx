@@ -1,19 +1,18 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import { Loader2, ImageOff, Download } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-interface IArtifact {
+export interface IArtifact {
   type: 'image' | 'video' | 'file';
   name: string;
   url: string;
 }
 
 interface ArtifactsViewProps {
-  taskId: string;
+  /** Artifact list resolved and owned by ExecutionDrawer. */
+  artifacts: IArtifact[];
+  isLoading: boolean;
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -24,22 +23,7 @@ const API_URL = isProduction ? import.meta.env.VITE_API_URL : 'http://localhost:
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
-export function ArtifactsView({ taskId }: ArtifactsViewProps) {
-  const { token } = useAuth();
-
-  const { data: artifacts = [], isLoading } = useQuery<IArtifact[]>({
-    queryKey: ['artifacts', taskId, token],
-    queryFn: async () => {
-      const { data } = await axios.get(
-        `${API_URL}/api/executions/${taskId}/artifacts`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      return data.success ? (data.data.artifacts as IArtifact[]) : [];
-    },
-    enabled: !!token && !!taskId,
-    staleTime: 30_000,
-  });
-
+export function ArtifactsView({ artifacts, isLoading }: ArtifactsViewProps) {
   // ── Loading state ───────────────────────────────────────────────────────────
   if (isLoading) {
     return (

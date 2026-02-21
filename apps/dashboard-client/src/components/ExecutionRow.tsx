@@ -37,10 +37,14 @@ const TRIGGER_CONFIG: Record<TriggerType, { icon: React.ElementType; className: 
     GitHub: { icon: Github, className: 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
 };
 
-const TRIGGER_OPTIONS: TriggerType[] = ['Manual', 'CRON', 'GitHub'];
-
-const getMockTrigger = (taskId: string): TriggerType =>
-    TRIGGER_OPTIONS[taskId.charCodeAt(taskId.length - 1) % 3];
+/** Maps the raw `trigger` field from the API to a display-ready TriggerType. */
+const resolveTrigger = (raw: string | undefined): TriggerType => {
+    if (!raw) return 'Manual';
+    const normalized = raw.toLowerCase();
+    if (normalized === 'cron' || normalized === 'scheduled') return 'CRON';
+    if (normalized === 'github' || normalized === 'ci') return 'GitHub';
+    return 'Manual';
+};
 
 const formatDateSafe = (dateString: string | Date | undefined) => {
     if (!dateString) return '-';
@@ -153,7 +157,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
     const badgeClass = STATUS_BADGE[execution.status] ?? DEFAULT_BADGE;
     const iconBtnBase = 'flex items-center justify-center w-8 h-8 rounded-lg border transition-colors cursor-pointer';
 
-    const trigger = getMockTrigger(execution.taskId);
+    const trigger = resolveTrigger(execution.trigger);
     const triggerCfg = TRIGGER_CONFIG[trigger];
     const TriggerIcon = triggerCfg.icon;
 
