@@ -8,27 +8,26 @@ import Heading from '@theme/Heading';
 import styles from './index.module.css';
 
 function HomepageHeader() {
+  const { siteConfig } = useDocusaurusContext();
   return (
     <header className={clsx('hero', styles.heroBanner)}>
       <div className="container">
         <Heading as="h1" className={styles.heroTitle}>
-          Test Any Framework. Anywhere.
+          {siteConfig.title}
         </Heading>
         <p className={styles.heroSubtitle}>
-          High-performance, multi-tenant test automation infrastructure.
-          <br />
-          Run Playwright, Cypress, or Selenium tests at scale with AI-powered analysis.
+          {siteConfig.tagline}
         </p>
         <div className={styles.buttons}>
           <Link
             className="button button--primary button--lg"
-            to="/docs/integration/quickstart">
-            Get Started →
+            to="/docs/architecture/overview">
+            Read the Docs →
           </Link>
           <Link
             className="button button--secondary button--lg"
-            to="/docs/api">
-            API Reference
+            to="/docs/integration/quickstart">
+            Quick Start
           </Link>
         </div>
       </div>
@@ -44,40 +43,22 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    icon: '🔌',
+    icon: '🐳',
     title: 'Framework Agnostic',
     description:
-      'Run tests from any framework — Playwright, Cypress, Selenium, or custom solutions. Just package your tests in a Docker image and go.',
+      'Run Playwright, Pytest, Mocha, and more in isolated, secure Docker containers. Package your tests once and execute them on any infrastructure without configuration lock-in.',
+  },
+  {
+    icon: '🔬',
+    title: 'The Investigation Hub',
+    description:
+      'Triage failures instantly with a real-time streaming terminal and visual artifact gallery. Drill into screenshots, traces, and logs from a single, unified interface.',
   },
   {
     icon: '🤖',
-    title: 'AI-Powered Analysis',
+    title: 'AI-Powered Triage',
     description:
-      'Gemini-powered root cause analysis automatically identifies why tests fail, saving hours of debugging time.',
-  },
-  {
-    icon: '🏢',
-    title: 'Multi-Tenant Architecture',
-    description:
-      'Complete data isolation between organizations. RBAC, API keys, and audit logs included out of the box.',
-  },
-  {
-    icon: '📊',
-    title: 'Real-Time Streaming',
-    description:
-      'Watch test output live via WebSocket streaming. No waiting for tests to complete to see what\'s happening.',
-  },
-  {
-    icon: '📈',
-    title: 'Usage Tracking',
-    description:
-      'Built-in billing integration with Stripe. Track test runs, storage, and users per organization.',
-  },
-  {
-    icon: '🐳',
-    title: 'Docker Native',
-    description:
-      'Tests run in isolated Docker containers with configurable resource limits. Scale horizontally as needed.',
+      'Automatic root-cause analysis and actionable fix recommendations powered by Gemini. Stop guessing why tests fail — get answers in seconds.',
   },
 ];
 
@@ -111,8 +92,8 @@ export default function Home(): ReactNode {
   const { siteConfig } = useDocusaurusContext();
   return (
     <Layout
-      title="Test Automation Platform"
-      description="High-performance, multi-tenant test automation infrastructure. Run Playwright, Cypress, or Selenium tests at scale.">
+      title={siteConfig.title}
+      description="Enterprise-grade test execution, real-time investigation, and AI-driven analysis for modern engineering teams.">
       <HomepageHeader />
       <main>
         <HomepageFeatures />

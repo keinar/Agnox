@@ -4,8 +4,8 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'Agnostic Automation Center',
-  tagline: 'High-performance, multi-tenant test automation platform',
-  favicon: 'img/favicon.ico',
+  tagline: 'Enterprise-grade test execution, real-time investigation, and AI-driven analysis.',
+  favicon: 'img/favicon.png',
 
   future: {
     v4: true,
