@@ -126,7 +126,7 @@ graph TB
 
 **Key Files:**
 - `worker.ts` - Main consumer and orchestrator
-- `rabbitmq.ts` - RabbitMQ connection management
+- `analysisService.ts` - Google Gemini AI integration
 
 ---
 
@@ -134,13 +134,15 @@ graph TB
 **Purpose:** Primary data store for multi-tenant data
 
 **Collections:**
-- `organizations` - Organization details, plans, limits, AI preferences
+- `organizations` - Organization details, plans, limits, billing (Stripe sub-document), AI preferences
 - `users` - User accounts, roles, authentication data
 - `invitations` - Team member invitations (pending/accepted/expired)
 - `executions` - Test execution history and results
 - `projects` - Project definitions per organization (name, Docker image, test folder)
 - `projectRunSettings` - Per-project environment URLs (Dev, Staging, Production)
-- `subscriptions` - Stripe subscription data (plan, status, billing period)
+- `apiKeys` - Hashed API keys for CI/CD integration
+- `audit_logs` - Admin action audit trail
+- `webhook_logs` - Stripe webhook event log
 
 **Indexes:**
 - `organizationId` - All collections (multi-tenant filtering)
@@ -412,7 +414,7 @@ services:
 | **Queue** | RabbitMQ | Task distribution |
 | **Container** | Docker SDK | Test execution isolation |
 | **AI** | Google Gemini API | Root cause analysis |
-| **Email** | Nodemailer + SMTP | Invitation emails |
+| **Email** | SendGrid (`@sendgrid/mail`) | Invitation emails, transactional notifications |
 | **Auth** | JWT (jsonwebtoken) | Stateless authentication |
 | **Password** | bcrypt | Secure password hashing |
 

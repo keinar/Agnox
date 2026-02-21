@@ -158,7 +158,7 @@ curl -H "x-api-key: pk_live_..." ...
 
 ### Live Results
 - Check the **Dashboard** for real-time logs via WebSocket.
-- Status updates: `QUEUED` → `RUNNING` → `PASSED` / `FAILED`.
+- Status updates: `PENDING` → `RUNNING` → `ANALYZING` → `PASSED` / `FAILED` / `UNSTABLE` / `ERROR`.
 
 ### AI Root Cause Analysis
 If a test fails:
