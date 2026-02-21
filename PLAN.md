@@ -1,8 +1,8 @@
 # Sprint 6 — UI/UX Polish & Theming
 
-> **Last updated:** 2026-02-20
+> **Last updated:** 2026-02-21
 > **Branch:** `epic/v3-redesign`
-> **Status:** ✅ **Task 6.5 Complete** (6.1–6.4 previously completed)
+> **Status:** ✅ **SPRINT 6 — 100% COMPLETE** (Tasks 6.1–6.7 all done)
 > **Status legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
@@ -336,6 +336,71 @@ Target:
 - [ ] Child rows slide in with the `animate-slide-down` animation.
 - [ ] Sidebar width transition is smooth with no layout jump.
 - [ ] KPI cards use the new palette and are readable in both modes.
+
+---
+
+## Task 6.5 — Logo Switching & ThemeContext ✅
+
+Completed in prior session. `ThemeContext` reads from `localStorage`, applies `dark` class to `<html>` before paint, and exposes `useTheme()`. The `Sidebar.tsx` dynamically imports the black/white logo variant based on the active theme.
+
+---
+
+## Task 6.6 — Settings Page & StatsGrid Polish ✅
+
+Completed in prior session. Settings tabs, StatsGrid KPI cards, and all remaining surfaces converted to `gh-*` token classes.
+
+---
+
+## Task 6.7 — Final UI Stabilization & Sprint Closure ✅
+
+### 6.7.1 — Members Table Dark Mode Fix
+
+**Files changed:** `MembersTab.tsx`, `MemberTable.tsx`, `MemberCards.tsx`, `InvitationList.tsx`
+
+- Replaced all inline `React.CSSProperties` style objects with Tailwind utility classes.
+- Table header now uses `dark:bg-gh-bg-subtle-dark` — no more white flash in Dark Mode.
+- `getRoleBadgeStyle` (returning `CSSProperties`) replaced by `getRoleBadgeClass` (returning a `string` of Tailwind classes), enabling proper `dark:` variants on role badges.
+- Select inputs in role column and invite flow use `dark:bg-gh-bg-dark dark:border-gh-border-dark`.
+
+### 6.7.2 — Settings Nav Scrollbar
+
+**File:** `tailwind.config.js` + `Settings.tsx`
+
+- Added `scrollbar-hide` plugin utility (hides `-webkit-scrollbar` + sets `scrollbar-width: none`) so the horizontal overflow on the Settings tab nav is invisible but still scrollable. The `scrollbar-hide` class was already applied in `Settings.tsx`.
+
+### 6.7.3 — FilterBar Full Dark Mode
+
+**File:** `FilterBar.tsx`
+
+- Container: `dark:bg-gh-bg-subtle-dark dark:border-gh-border-dark`
+- Status chips (inactive state): dark variants for `emerald`, `rose`, `amber` chip families.
+- Environment & View Mode segmented controls: `dark:bg-gh-bg-dark dark:text-slate-300`, active state uses `dark:bg-gh-accent-dark`.
+- Date inputs and Group combobox: `dark:bg-gh-bg-dark dark:border-gh-border-dark dark:text-slate-300`.
+- Dividers: `dark:bg-gh-border-dark`.
+- Clear button: `dark:bg-gh-bg-dark dark:text-slate-400 dark:hover:bg-gh-bg-subtle-dark`.
+
+### 6.7.4 — ExecutionModal Verification
+
+**File:** `ExecutionModal.tsx`
+
+- Confirmed: modal panel `dark:bg-gh-bg-subtle-dark`, all inputs `dark:bg-gh-bg-dark`, footer `dark:border-gh-border-dark`. No regressions introduced.
+
+### 6.7.5 — Documentation Update
+
+**File:** `apps/dashboard-client/README.md`
+
+- Replaced outdated "Pure CSS" framing with Tailwind CSS + GitHub-style Dark Mode.
+- Added "Visual Identity & Theming" section documenting dynamic logo switching, the semantic token palette table, and ThemeContext usage.
+- Updated Contributing guidelines to enforce Tailwind-only, dark-mode-paired styling.
+
+### Acceptance Criteria — 6.7
+- [x] Team Members table header uses `dark:bg-gh-bg-subtle-dark` — no white header in Dark Mode.
+- [x] Settings nav scrollbar is hidden (via `scrollbar-hide` Tailwind utility).
+- [x] FilterBar is fully dark-mode compatible with correct chip, button, and input styling.
+- [x] ExecutionModal has no white backgrounds in Dark Mode.
+- [x] README Visual Identity section documents logo switching and GitHub-style Dark Mode.
+- [x] PLAN.md Sprint 6 marked 100% complete.
+- [x] Clean commit created.
 
 ---
 

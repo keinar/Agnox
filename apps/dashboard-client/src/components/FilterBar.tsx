@@ -24,26 +24,26 @@ const STATUS_CHIPS = [
     {
         value: 'PASSED',
         label: 'Passed',
-        inactive: 'bg-emerald-50  text-emerald-700 border-emerald-200 hover:bg-emerald-100',
-        active:   'bg-emerald-600 text-white        border-emerald-600',
+        inactive: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50',
+        active:   'bg-emerald-600 text-white border-emerald-600',
     },
     {
         value: 'FAILED',
         label: 'Failed',
-        inactive: 'bg-rose-50  text-rose-700 border-rose-200 hover:bg-rose-100',
-        active:   'bg-rose-600 text-white     border-rose-600',
+        inactive: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/50',
+        active:   'bg-rose-600 text-white border-rose-600',
     },
     {
         value: 'ERROR',
         label: 'Error',
-        inactive: 'bg-rose-50  text-rose-700 border-rose-200 hover:bg-rose-100',
-        active:   'bg-rose-600 text-white     border-rose-600',
+        inactive: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/50',
+        active:   'bg-rose-600 text-white border-rose-600',
     },
     {
         value: 'UNSTABLE',
         label: 'Unstable',
-        inactive: 'bg-amber-50  text-amber-700 border-amber-200 hover:bg-amber-100',
-        active:   'bg-amber-500 text-white      border-amber-500',
+        inactive: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50',
+        active:   'bg-amber-500 text-white border-amber-500',
     },
 ] as const;
 
@@ -60,8 +60,9 @@ const EMPTY_GROUP_NAMES: string[] = [];
 // ── Shared classes ────────────────────────────────────────────────────────────
 
 const DATE_INPUT_CLASS =
-    'px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg bg-white text-slate-700 ' +
-    'focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 ' +
+    'px-2.5 py-1.5 text-xs border border-slate-200 dark:border-gh-border-dark rounded-lg ' +
+    'bg-white dark:bg-gh-bg-dark text-slate-700 dark:text-slate-300 ' +
+    'focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-gh-accent-dark focus:border-blue-400 ' +
     'transition cursor-pointer';
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -102,11 +103,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         onChange({ status: [], environment: '', startAfter: '', startBefore: '', groupName: '' });
 
     return (
-        <div className="bg-white border border-slate-200 rounded-xl shadow-sm px-4 py-3 mb-4">
+        <div className="bg-white dark:bg-gh-bg-subtle-dark border border-slate-200 dark:border-gh-border-dark rounded-xl shadow-sm px-4 py-3 mb-4">
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5">
 
                 {/* ── Label ── */}
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wide flex-shrink-0">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-500 uppercase tracking-wide flex-shrink-0">
                     <Filter size={12} />
                     Filters
                     {isActive && (
@@ -117,11 +118,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 </div>
 
                 {/* ── Divider ── */}
-                <div className="hidden sm:block w-px h-4 bg-slate-200 flex-shrink-0" />
+                <div className="hidden sm:block w-px h-4 bg-slate-200 dark:bg-gh-border-dark flex-shrink-0" />
 
                 {/* ── Status chips ── */}
                 <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[11px] text-slate-400 font-medium flex-shrink-0">Status:</span>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium flex-shrink-0">Status:</span>
                     {STATUS_CHIPS.map((chip) => {
                         const isSelected = status.includes(chip.value);
                         return (
@@ -142,12 +143,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 </div>
 
                 {/* ── Divider ── */}
-                <div className="hidden sm:block w-px h-4 bg-slate-200 flex-shrink-0" />
+                <div className="hidden sm:block w-px h-4 bg-slate-200 dark:bg-gh-border-dark flex-shrink-0" />
 
                 {/* ── Environment ── */}
                 <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-slate-400 font-medium flex-shrink-0">Env:</span>
-                    <div className="flex rounded-lg overflow-hidden border border-slate-200">
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium flex-shrink-0">Env:</span>
+                    <div className="flex rounded-lg overflow-hidden border border-slate-200 dark:border-gh-border-dark">
                         {ENV_OPTIONS.map((opt, i) => {
                             const isSelected = environment === opt.value;
                             return (
@@ -157,10 +158,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                                     onClick={() => onChange({ environment: opt.value })}
                                     className={`
                                         px-2.5 py-1 text-[11px] font-semibold transition-colors duration-100 cursor-pointer
-                                        ${i > 0 ? 'border-l border-slate-200' : ''}
+                                        ${i > 0 ? 'border-l border-slate-200 dark:border-gh-border-dark' : ''}
                                         ${isSelected
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-white text-slate-600 hover:bg-slate-50'
+                                            ? 'bg-blue-600 dark:bg-gh-accent-dark text-white'
+                                            : 'bg-white dark:bg-gh-bg-dark text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark'
                                         }
                                     `}
                                 >
@@ -172,13 +173,13 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 </div>
 
                 {/* ── Divider ── */}
-                <div className="hidden sm:block w-px h-4 bg-slate-200 flex-shrink-0" />
+                <div className="hidden sm:block w-px h-4 bg-slate-200 dark:bg-gh-border-dark flex-shrink-0" />
 
                 {/* ── Date range ── */}
                 <div className="flex items-center gap-2">
                     <label
                         htmlFor="filter-start-after"
-                        className="text-[11px] text-slate-400 font-medium flex-shrink-0"
+                        className="text-[11px] text-slate-400 dark:text-slate-500 font-medium flex-shrink-0"
                     >
                         From:
                     </label>
@@ -192,7 +193,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                     />
                     <label
                         htmlFor="filter-start-before"
-                        className="text-[11px] text-slate-400 font-medium"
+                        className="text-[11px] text-slate-400 dark:text-slate-500 font-medium"
                     >
                         To:
                     </label>
@@ -207,11 +208,11 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 </div>
 
                 {/* ── Divider ── */}
-                <div className="hidden sm:block w-px h-4 bg-slate-200 flex-shrink-0" />
+                <div className="hidden sm:block w-px h-4 bg-slate-200 dark:bg-gh-border-dark flex-shrink-0" />
 
                 {/* ── Group filter (searchable combobox) ── */}
                 <div className="flex items-center gap-1.5">
-                    <span className="flex items-center gap-1 text-[11px] text-slate-400 font-medium flex-shrink-0">
+                    <span className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500 font-medium flex-shrink-0">
                         <Tag size={10} />
                         Group:
                     </span>
@@ -223,10 +224,14 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                             onChange={(e) => onChange({ groupName: e.target.value })}
                             placeholder="All groups"
                             className={`
-                                px-2.5 py-1.5 text-xs border rounded-lg bg-white text-slate-700
-                                focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400
-                                transition w-36 placeholder:text-slate-400
-                                ${groupName ? 'pr-6 border-blue-300' : 'border-slate-200'}
+                                px-2.5 py-1.5 text-xs border rounded-lg
+                                bg-white dark:bg-gh-bg-dark text-slate-700 dark:text-slate-300
+                                focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-gh-accent-dark focus:border-blue-400
+                                transition w-36 placeholder:text-slate-400 dark:placeholder:text-slate-600
+                                ${groupName
+                                    ? 'pr-6 border-blue-300 dark:border-gh-accent-dark'
+                                    : 'border-slate-200 dark:border-gh-border-dark'
+                                }
                             `}
                         />
                         <datalist id="aac-group-names-datalist">
@@ -239,7 +244,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                                 type="button"
                                 onClick={() => onChange({ groupName: '' })}
                                 title="Clear group filter"
-                                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                             >
                                 <X size={10} />
                             </button>
@@ -248,12 +253,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                 </div>
 
                 {/* ── Divider ── */}
-                <div className="hidden sm:block w-px h-4 bg-slate-200 flex-shrink-0" />
+                <div className="hidden sm:block w-px h-4 bg-slate-200 dark:bg-gh-border-dark flex-shrink-0" />
 
                 {/* ── View mode segmented control ── */}
                 <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-slate-400 font-medium flex-shrink-0">View:</span>
-                    <div className="flex rounded-lg overflow-hidden border border-slate-200">
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium flex-shrink-0">View:</span>
+                    <div className="flex rounded-lg overflow-hidden border border-slate-200 dark:border-gh-border-dark">
                         <button
                             type="button"
                             title="Flat list — one row per execution"
@@ -262,8 +267,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                                 inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold
                                 transition-colors duration-100 cursor-pointer
                                 ${viewMode === 'flat'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-white text-slate-600 hover:bg-slate-50'
+                                    ? 'bg-blue-600 dark:bg-gh-accent-dark text-white'
+                                    : 'bg-white dark:bg-gh-bg-dark text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark'
                                 }
                             `}
                         >
@@ -276,10 +281,10 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                             onClick={() => onViewModeChange('grouped')}
                             className={`
                                 inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold
-                                border-l border-slate-200 transition-colors duration-100 cursor-pointer
+                                border-l border-slate-200 dark:border-gh-border-dark transition-colors duration-100 cursor-pointer
                                 ${viewMode === 'grouped'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-white text-slate-600 hover:bg-slate-50'
+                                    ? 'bg-blue-600 dark:bg-gh-accent-dark text-white'
+                                    : 'bg-white dark:bg-gh-bg-dark text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark'
                                 }
                             `}
                         >
@@ -294,7 +299,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                     <button
                         type="button"
                         onClick={handleClear}
-                        className="ml-auto flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 rounded-lg hover:bg-slate-200 hover:text-slate-700 transition-colors cursor-pointer"
+                        className="ml-auto flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-gh-bg-dark border border-slate-200 dark:border-gh-border-dark rounded-lg hover:bg-slate-200 dark:hover:bg-gh-bg-subtle-dark hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
                     >
                         <X size={11} />
                         Clear
