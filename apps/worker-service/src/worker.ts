@@ -371,7 +371,8 @@ async function startWorker() {
                 { path: '/app/pytest-report', alias: 'native-report' },
                 { path: '/app/mochawesome-report', alias: 'native-report' },
                 { path: '/app/allure-results', alias: 'allure-results' },
-                { path: '/app/allure-report', alias: 'allure-report' }
+                { path: '/app/allure-report', alias: 'allure-report' },
+                { path: '/app/test-results', alias: 'test-results' },
             ];
 
             for (const m of mappings) {

@@ -1,54 +1,101 @@
+import React, { useEffect, useRef, useState } from 'react';
 import Ansi from 'ansi-to-react';
-import { Sparkles } from 'lucide-react'; // Optional: for a "magic" icon
+import { ChevronsDown, Download } from 'lucide-react';
 
-interface Props {
-    output?: string;
-    error?: string;
-    analysis?: string; // Added new prop
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+interface TerminalViewProps {
+  output?: string;
+  error?: string;
 }
 
-export const TerminalView = ({ output, error, analysis }: Props) => {
-    return (
-        <div className="terminal-window">
-            <div className="terminal-header">
-                <div className="dot red"></div>
-                <div className="dot yellow"></div>
-                <div className="dot green"></div>
-                <span style={{ marginLeft: '10px', fontSize: '12px', color: '#8b949e' }}>
-                    console output
-                </span>
-            </div>
-            <div className="terminal-body">
-                {/* AI Analysis Section */}
-                {analysis && (
-                    <div className="ai-analysis-box" style={{
-                        backgroundColor: 'rgba(126, 34, 206, 0.1)',
-                        borderLeft: '4px solid #a855f7',
-                        padding: '12px',
-                        marginBottom: '15px',
-                        borderRadius: '4px',
-                        color: '#e9d5ff'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', fontWeight: 'bold' }}>
-                            <Sparkles size={16} style={{ marginRight: '8px' }} />
-                            AI Failure Analysis
-                        </div>
-                        <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5' }}>{analysis}</p>
-                    </div>
-                )}
+// ── Component ─────────────────────────────────────────────────────────────────
 
-                {output ? (
-                    <Ansi>{output}</Ansi>
-                ) : (
-                    <span style={{ color: '#666' }}>Waiting for logs...</span>
-                )}
-                
-                {error && (
-                    <div style={{ marginTop: '10px', color: '#ff5f56' }}>
-                        <strong>Error:</strong> {error}
-                    </div>
-                )}
-            </div>
+export function TerminalView({ output, error }: TerminalViewProps) {
+  const [autoScroll, setAutoScroll] = useState(true);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to bottom whenever new output arrives, if auto-scroll is active.
+  useEffect(() => {
+    if (autoScroll && bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [output, autoScroll]);
+
+  // Download the raw log content as a plain-text file.
+  const handleDownload = () => {
+    const parts: string[] = [];
+    if (output) parts.push(output);
+    if (error)  parts.push(`\n--- ERROR ---\n${error}`);
+    const blob   = new Blob([parts.join('')], { type: 'text/plain' });
+    const url    = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href     = url;
+    anchor.download = 'execution-log.txt';
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const hasContent = !!(output || error);
+
+  return (
+    <div className="flex flex-col">
+
+      {/* ── Utility bar ───────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between gap-3 px-4 py-2 bg-gh-bg-subtle-dark border-b border-gh-border-dark shrink-0">
+        <span className="text-[10px] uppercase tracking-widest font-semibold text-slate-500 select-none">
+          console output
+        </span>
+
+        <div className="flex items-center gap-2">
+
+          {/* Auto-scroll toggle */}
+          <button
+            onClick={() => setAutoScroll((prev) => !prev)}
+            title={autoScroll ? 'Auto-scroll enabled — click to disable' : 'Auto-scroll disabled — click to enable'}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border transition-colors duration-150 cursor-pointer ${
+              autoScroll
+                ? 'bg-gh-accent-dark/20 text-gh-accent-dark border-gh-accent-dark/40 hover:bg-gh-accent-dark/30'
+                : 'bg-transparent text-slate-500 border-gh-border-dark hover:text-slate-300 hover:border-slate-500'
+            }`}
+          >
+            <ChevronsDown size={13} />
+            Auto-scroll
+          </button>
+
+          {/* Download raw log */}
+          <button
+            onClick={handleDownload}
+            disabled={!hasContent}
+            title="Download raw log as .txt"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium text-slate-400 border border-gh-border-dark hover:text-slate-200 hover:border-slate-500 transition-colors duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Download size={13} />
+            Download
+          </button>
         </div>
-    );
-};
+      </div>
+
+      {/* ── Terminal body ──────────────────────────────────────────────────────── */}
+      <div className="h-[calc(100vh-200px)] overflow-y-auto bg-gh-bg-dark px-5 py-4 font-mono text-sm leading-relaxed text-slate-300">
+
+        {output ? (
+          <Ansi>{output}</Ansi>
+        ) : (
+          <span className="text-slate-600 italic">Waiting for logs…</span>
+        )}
+
+        {error && (
+          <div className="mt-3 text-red-400">
+            <span className="font-semibold text-red-300">Error:&nbsp;</span>
+            {error}
+          </div>
+        )}
+
+        {/* Invisible anchor for auto-scroll */}
+        <div ref={bottomRef} aria-hidden="true" />
+      </div>
+
+    </div>
+  );
+}

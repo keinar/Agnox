@@ -685,7 +685,7 @@ See the [Deployment Guide](docs/setup/deployment.md) for full deployment instruc
 - **Tailwind CSS** — Utility-first CSS framework (all styling; no inline styles or custom CSS)
 - **TanStack Query v5** — Server state management with caching, background refetch, and optimistic updates
 - **Socket.io Client** — Real-time WebSocket connections
-- **React Router v6** — Nested layout routing with AppLayout/Outlet pattern
+- **React Router v7** — Nested layout routing with AppLayout/Outlet pattern
 
 ### Backend
 - **Fastify** — High-performance web framework
@@ -820,6 +820,7 @@ Please read our [Contributing Guide](CONTRIBUTING.md) _(coming soon)_ for detail
 | **Phase 5:** Email Integration | ✅ Complete | 100% |
 | **Sprint 5:** Dashboard Evolution | ✅ Complete | 100% |
 | **Sprint 6:** Enterprise UI Overhaul | ✅ Complete | 100% |
+| **Sprint 7:** The Investigation Hub | 🔄 In Progress | Phase 7A active |
 
 ---
 

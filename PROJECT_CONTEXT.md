@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md — Agnostic Automation Center
 
-> Generated: 2026-02-19 | Current Phase: Sprint 7 — The Investigation Hub (V3 Architecture)
+> Generated: 2026-02-21 | Current Phase: Sprint 7 — The Investigation Hub (V3 Architecture)
 > Source: Full monorepo scan of code, docs, configs, and shared types.
 
 ---
@@ -122,6 +122,7 @@ Agnostic-Automation-Center/
 | 4 | Project Run Settings | Per-project Docker image, target URLs, test folder config, shared-types package |
 | 5 | Email Integration | SendGrid transactional emails (invitations, welcome, payment events), console fallback |
 | 6 | Enterprise UI Overhaul | Full Tailwind CSS migration (zero inline styles), GitHub-inspired semantic token palette (`gh-bg`, `gh-border`, etc.), `ThemeContext` with Light/Dark toggle, collapsible sidebar, version footer with Changelog modal, DateRangeFilter, responsive filter drawer |
+| 7 (**In Progress**) | The Investigation Hub | Unified side-drawer (`ExecutionDrawer.tsx`) with URL-state deep-linking (`?drawerId=<taskId>`), 3-tab layout: Terminal / Artifacts / AI Analysis. `ArtifactsView.tsx` media gallery. ⚠️ Tasks 7.1–7.5 in progress; not yet committed. |
 
 ### Security Posture (Score: 92/100)
 
@@ -436,9 +437,11 @@ App
 │       │   ├── StatsGrid (total runs, pass rate, active services)
 │       │   ├── ExecutionModal (form: folder, env, URL, image)
 │       │   └── ExecutionList
-│       │       └── ExecutionRow[] (expandable)
-│       │           ├── TerminalView (ANSI output via ansi-to-react)
-│       │           └── AIAnalysisView (portal modal, markdown rendering)
+│       │       └── ExecutionRow[] (flat — click sets ?drawerId= URL param)
+│       │           └── ⚠️ NEEDS REVIEW: Sprint 7 in progress — ExecutionDrawer.tsx (slide-over)
+│       │               ├── TerminalView (tab 1, moved from inline accordion)
+│       │               ├── ArtifactsView (tab 2, media gallery — 7B)
+│       │               └── AIAnalysisView (tab 3, moved from portal modal)
 │       └── /settings → ProtectedRoute → Settings
 │           └── [7 tab components listed above]
 ```

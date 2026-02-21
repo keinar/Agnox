@@ -1,3 +1,48 @@
+# SPRINT 7 — The Investigation Hub (V3 Architecture)
+
+## 🎯 Sprint Goal
+Transform the debugging and triage experience by consolidating logs, AI analysis, and test artifacts into a unified Side Drawer. 
+
+**Execution Strategy:** We are splitting this into Phase 7A (Core Drawer & Text) and Phase 7B (Artifacts Pipeline) to mitigate backend storage blockers.
+
+---
+
+## 🛠️ PHASE 7A: Drawer, Terminal & AI
+
+### [ ] Task 7.1: Overlay Drawer Architecture & URL State
+**Goal:** Build the slide-over shell with deep-linking support.
+- **Action:** Create `ExecutionDrawer.tsx` utilizing `@headlessui/react` `Dialog`. This IS intended to be a modal overlay (with a backdrop) that slides in from the right, taking ~60% width on desktop.
+- **Action:** State Management MUST use URL search parameters (e.g., `?drawerId=<taskId>`) via React Router's `useSearchParams`. This enables sharing direct links to specific execution failures.
+- **Action:** Implement a 3-tab header: "Terminal", "Artifacts", and "AI Analysis".
+- **Notes for Claude:** The semantic tokens `gh-bg-dark`, `gh-border-dark`, etc., ARE already configured in `tailwind.config.js`. Use them confidently.
+
+### [ ] Task 7.2: The Live Terminal Tab
+**Goal:** Port existing real-time logging into the Drawer.
+- **Action:** Move the existing `TerminalView` into the first tab of the Drawer.
+- **Action:** Ensure Socket.io events (`execution-log`, `execution-updated`) correctly target the active `drawerId`.
+- **Action:** Add utility controls: "Auto-scroll to bottom" toggle, and "Download Logs" button (.txt export).
+
+### [ ] Task 7.3: AI Analysis Integration & UI Cleanup
+**Goal:** Move the AI diagnosis out of the blocking modal and clean up the list.
+- **Action:** Refactor `AIAnalysisView.tsx` to render as the third tab inside the Drawer.
+- **Action:** Remove the old inline Accordion logs from `ExecutionRow.tsx`. The main Execution List must be perfectly flat. Clicking a row sets the `drawerId` URL param.
+
+---
+
+## 📦 PHASE 7B: Artifacts Pipeline (Media Gallery)
+
+### [ ] Task 7.4-PRE: Artifact Storage Audit
+**Goal:** Confirm backend readiness for serving images/videos.
+- **Action:** Analyze `apps/worker-service/src/worker.ts` and `docker-compose.yml` to understand exactly how test-results (png, webm, zip) are extracted and shared with `producer-service`.
+- **Checkpoint:** Do not proceed to 7.5 until the storage and transfer mechanism for media files is confirmed and documented.
+
+### [ ] Task 7.5: Artifacts API & Gallery UI
+**Goal:** Serve and display test media.
+- **Action (Backend):** Create `GET /api/executions/:taskId/artifacts` in Producer to list available media files.
+- **Action (Frontend):** Build `ArtifactsView.tsx` in the second tab. Fetch the list via TanStack Query and display a CSS Grid gallery for images/videos, and download links for traces/zips.
+
+## Archive / Completed Sprints
+
 # Sprint 6 — UI/UX Polish & Theming
 
 > **Last updated:** 2026-02-21
