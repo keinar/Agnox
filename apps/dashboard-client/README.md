@@ -2,7 +2,7 @@
 
 > Modern React-based UI for the Agnostic Automation Center
 
-Built with React 19, TypeScript, Vite, and Pure CSS. Provides real-time test monitoring, team management, and organization settings.
+Built with React 19, TypeScript, Vite, and Tailwind CSS. Provides real-time test monitoring, team management, and organization settings — with a full GitHub-style light/dark mode.
 
 ---
 
@@ -24,9 +24,15 @@ Built with React 19, TypeScript, Vite, and Pure CSS. Provides real-time test mon
 - AI analysis privacy controls
 - Security settings
 
+### Visual Identity & Theming
+- **Dynamic Logo Switching** — black logo in light mode, white logo in dark mode (driven by `ThemeContext`)
+- **GitHub-style Dark Mode** — full `dark:` Tailwind class coverage on every surface (sidebar, header, tables, modals, filter bar, settings tabs)
+- **Semantic Token Palette** — `gh-bg`, `gh-border`, `gh-text`, `gh-accent` tokens map exactly to GitHub's `#0d1117` / `#161b22` / `#30363d` dark surfaces and `#ffffff` / `#f6f8fa` light surfaces
+- **Zero flash** — theme is read from `localStorage` before first paint so the correct `dark` class is applied to `<html>` on load
+
 ### Mobile Responsive
-- Pure CSS responsive design (inline styles + custom CSS)
-- Mobile-first approach
+- Tailwind CSS responsive design (utility classes + responsive prefixes)
+- Mobile-first approach with `useIsMobile` hook for complex layout switches
 - Tablet and desktop optimizations
 
 ---
@@ -36,7 +42,7 @@ Built with React 19, TypeScript, Vite, and Pure CSS. Provides real-time test mon
 - **React 19** - UI framework
 - **TypeScript** - Type safety
 - **Vite** - Build tool (lightning fast HMR)
-- **Pure CSS** - Inline styles + custom CSS modules
+- **Tailwind CSS** - Utility-first styling with `dark:` class-based theming
 - **Socket.io Client** - Real-time WebSocket
 - **React Router** - Client-side routing
 - **Axios** - HTTP client
@@ -139,77 +145,69 @@ socket.on('execution-log', ({ taskId, log }) => {
 
 ---
 
-## 🎨 Styling with Pure CSS
+## 🎨 Styling & Visual Identity
 
 ### Styling Approach
 
-This project uses **Pure CSS** (inline styles + custom CSS files) for maximum control and performance.
+This project uses **Tailwind CSS** (utility classes, no inline styles, no separate CSS modules) for maximum consistency and dark mode support.
 
-**Inline Styles (Preferred for component-specific styling):**
 ```tsx
-<div style={{
-  display: 'flex',
-  alignItems: 'center',
-  gap: '12px',
-  padding: '16px',
-  backgroundColor: '#1e293b',
-  borderRadius: '8px'
-}}>
-  {/* Component content */}
+// Component example — Tailwind only, no style={{ ... }}
+<div className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gh-bg-dark border border-slate-200 dark:border-gh-border-dark rounded-xl">
+  <span className="text-sm font-semibold text-slate-900 dark:text-gh-text-dark">Label</span>
 </div>
 ```
 
-**Custom CSS Classes (Shared styles in App.css):**
-```tsx
-// App.css
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
+### GitHub-style Dark Mode
 
-// Component
-<span className="badge passed">PASSED</span>
+Dark mode is driven by the `ThemeContext` which:
+1. Reads `localStorage.getItem('aac:theme')` on mount (default `'light'`)
+2. Applies/removes the `dark` class on `<html>` before first paint — **zero flash**
+3. Exposes `useTheme()` → `{ theme, toggleTheme }` to any component
+
+```tsx
+import { useTheme } from '../context/ThemeContext';
+
+function MyComponent() {
+  const { theme, toggleTheme } = useTheme();
+  return <button onClick={toggleTheme}>{theme === 'dark' ? 'Light' : 'Dark'}</button>;
+}
 ```
+
+### Semantic Token Palette (`tailwind.config.js`)
+
+| Token | Light value | Dark counterpart |
+|-------|------------|-----------------|
+| `gh-bg` | `#ffffff` | `gh-bg-dark` → `#0d1117` |
+| `gh-bg-subtle` | `#f6f8fa` | `gh-bg-subtle-dark` → `#161b22` |
+| `gh-border` | `#d0d7de` | `gh-border-dark` → `#30363d` |
+| `gh-text` | `#1f2328` | `gh-text-dark` → `#e6edf3` |
+| `gh-accent` | `#0969da` | `gh-accent-dark` → `#2f81f7` |
+
+### Dynamic Logo Switching
+
+The sidebar logo switches automatically based on the active theme:
+- **Light mode** → black logo (`logo-full.png`)
+- **Dark mode** → white logo (`logo.png`)
+
+This is handled in `Sidebar.tsx` via the `useTheme()` hook — no CSS filter tricks needed.
 
 ### Responsive Design Patterns
 
-**Media Queries (CSS):**
-```css
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.5rem;
-}
-
-@media (max-width: 768px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-}
-```
-
-**Responsive Hook (TypeScript):**
 ```tsx
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
   return isMobile;
 }
 
-// Usage
+// Usage: switch between table (desktop) and card (mobile) layouts
 const isMobile = useIsMobile();
-{isMobile ? <MobileView /> : <DesktopView />}
+{isMobile ? <MemberCards ... /> : <MemberTable ... />}
 ```
 
 ---
@@ -336,25 +334,15 @@ export default defineConfig({
 })
 ```
 
-### CSS Variables
+### Tailwind Token Reference
 
-Global CSS variables are defined in `App.css`:
-```css
-:root {
-  --bg-color: #0f172a;       /* Slate 900 */
-  --card-bg: #1e293b;        /* Slate 800 */
-  --text-primary: #f8fafc;   /* Slate 50 */
-  --text-secondary: #94a3b8; /* Slate 400 */
-  --accent-blue: #3b82f6;    /* Blue 500 */
-  --border-color: #334155;   /* Slate 700 */
-}
-
-/* Usage */
-.stat-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-}
+Custom semantic tokens are defined in `tailwind.config.js` under `theme.extend.colors`:
+```js
+// Usage in components
+'bg-white dark:bg-gh-bg-dark'         // card background
+'border-slate-200 dark:border-gh-border-dark'  // borders
+'text-slate-900 dark:text-gh-text-dark'        // primary text
+'text-gh-accent dark:text-gh-accent-dark'      // links / active states
 ```
 
 ---
@@ -412,13 +400,13 @@ npm run build
 When contributing to the dashboard:
 
 1. Follow the existing component structure
-2. Use Pure CSS (inline styles preferred, shared styles in App.css)
-3. Maintain mobile-responsive design (mobile-first with useIsMobile hook)
+2. Use **Tailwind CSS only** — no inline `style={{...}}` props, no new CSS files
+3. Every surface must have a `dark:` counterpart using the `gh-*` semantic tokens
 4. Use TypeScript for type safety
-5. Test on multiple screen sizes
-6. Prefer inline styles for component-specific styling
-7. Use CSS classes for shared/reusable styles
+5. Test on multiple screen sizes in both light and dark mode
+6. Never use `console.log` — use the designated logger utilities
+7. All new API calls must include the `organizationId` tenant filter
 
 ---
 
-**Built with React 19 + Vite + Pure CSS**
+**Built with React 19 + Vite + Tailwind CSS + GitHub-style Dark Mode**
