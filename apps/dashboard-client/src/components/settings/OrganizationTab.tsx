@@ -22,72 +22,18 @@ interface Organization {
   updatedAt: string;
 }
 
-const styles = {
-  section: {
-    marginBottom: '32px',
-  } as React.CSSProperties,
-  sectionTitle: {
-    fontSize: '18px',
-    fontWeight: 600,
-    color: '#1e293b',
-    marginBottom: '16px',
-  } as React.CSSProperties,
-  fieldGroup: {
-    marginBottom: '24px',
-  } as React.CSSProperties,
-  label: {
-    display: 'block',
-    fontSize: '14px',
-    fontWeight: 500,
-    color: '#374151',
-    marginBottom: '8px',
-  } as React.CSSProperties,
-  input: {
-    width: '100%',
-    maxWidth: '400px',
-    padding: '10px 12px',
-    fontSize: '14px',
-    border: '1px solid #e2e8f0',
-    borderRadius: '6px',
-    outline: 'none',
-    transition: 'border-color 0.2s',
-  } as React.CSSProperties,
-  button: {
-    marginTop: '12px',
-    padding: '10px 20px',
-    fontSize: '14px',
-    fontWeight: 600,
-    color: '#ffffff',
-    background: 'linear-gradient(to right, #4f46e5, #7c3aed)',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    transition: 'opacity 0.2s',
-  } as React.CSSProperties,
-  planBadge: {
-    display: 'inline-block',
-    padding: '4px 12px',
-    borderRadius: '6px',
-    fontSize: '12px',
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    background: 'linear-gradient(to right, #4f46e5, #7c3aed)',
-    color: 'white',
-    letterSpacing: '0.05em',
-  } as React.CSSProperties,
-  limitsGrid: {
-    display: 'grid',
+// ── Shared class strings ───────────────────────────────────────────────────────
 
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-    gap: '16px',
-  } as React.CSSProperties,
-  limitCard: {
-    background: '#f8fafc',
-    padding: '16px',
-    borderRadius: '8px',
-    border: '1px solid #f1f5f9',
-  } as React.CSSProperties,
-};
+const INPUT_CLASS =
+  'w-full max-w-sm px-3 py-2.5 text-sm border border-slate-300 dark:border-gh-border-dark rounded-lg ' +
+  'bg-white dark:bg-gh-bg-dark text-slate-900 dark:text-slate-200 ' +
+  'focus:outline-none focus:ring-2 focus:ring-gh-accent dark:focus:ring-gh-accent-dark focus:border-transparent transition';
+
+const INPUT_DISABLED_CLASS =
+  'w-full max-w-sm px-3 py-2.5 text-sm border border-slate-200 dark:border-gh-border-dark rounded-lg ' +
+  'bg-slate-100 dark:bg-gh-bg-subtle-dark text-slate-500 dark:text-slate-500 cursor-not-allowed';
+
+// ── Component ──────────────────────────────────────────────────────────────────
 
 export function OrganizationTab() {
   const { user, token } = useAuth();
@@ -108,13 +54,11 @@ export function OrganizationTab() {
       const response = await axios.get(`${API_URL}/api/organization`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (response.data.success) {
         setOrganization(response.data.organization);
         setName(response.data.organization.name);
       }
     } catch (error: any) {
-      console.error('Failed to fetch organization:', error);
       setMessage({
         type: 'error',
         text: error.response?.data?.message || 'Failed to load organization details',
@@ -134,16 +78,14 @@ export function OrganizationTab() {
       const response = await axios.patch(
         `${API_URL}/api/organization`,
         { name: name.trim() },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
-
       if (response.data.success) {
         setOrganization((prev) => (prev ? { ...prev, name: name.trim() } : null));
         setMessage({ type: 'success', text: 'Organization name updated successfully' });
         setTimeout(() => setMessage(null), 3000);
       }
     } catch (error: any) {
-      console.error('Failed to update organization:', error);
       setMessage({
         type: 'error',
         text: error.response?.data?.message || 'Failed to update organization name',
@@ -153,102 +95,103 @@ export function OrganizationTab() {
     }
   }
 
-  if (loading) return <div style={{ color: '#6b7280', fontSize: '14px' }}>Loading organization details...</div>;
-  if (!organization) return <div style={{ color: '#dc2626', fontSize: '14px' }}>Failed to load organization details</div>;
+  if (loading) {
+    return <p className="text-sm text-slate-500 dark:text-slate-400">Loading organization details...</p>;
+  }
+  if (!organization) {
+    return <p className="text-sm text-red-600 dark:text-red-400">Failed to load organization details.</p>;
+  }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric', month: 'long', day: 'numeric',
     });
-  };
 
   return (
     <div>
+      {/* Feedback banner */}
       {message && (
-        <div style={{
-          padding: '12px 16px',
-          borderRadius: '8px',
-          marginBottom: '16px',
-          fontSize: '14px',
-          background: message.type === 'success' ? '#ecfdf5' : '#fef2f2',
-          color: message.type === 'success' ? '#047857' : '#b91c1c',
-          border: `1px solid ${message.type === 'success' ? '#a7f3d0' : '#fecaca'}`,
-        }}>
+        <div className={`mb-4 px-4 py-3 rounded-lg text-sm border ${
+          message.type === 'success'
+            ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
+            : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
+        }`}>
           {message.text}
         </div>
       )}
 
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>Organization Details</h2>
+      {/* ── Organization Details ──────────────────────────────────────────── */}
+      <section className="mb-8">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Organization Details</h2>
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>Organization Name</label>
+        {/* Name */}
+        <div className="mb-5">
+          <label htmlFor="org-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            Organization Name
+          </label>
           <input
+            id="org-name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            style={{
-              ...styles.input,
-              borderColor: isAdmin ? '#e2e8f0' : '#e2e8f0',
-              background: isAdmin ? '#fff' : '#f9fafb',
-              cursor: isAdmin ? 'text' : 'not-allowed',
-            }}
             disabled={!isAdmin}
+            className={isAdmin ? INPUT_CLASS : INPUT_DISABLED_CLASS}
           />
           {isAdmin && (
             <button
               onClick={handleSave}
               disabled={saving || !name.trim() || name === organization.name}
-              style={{
-                ...styles.button,
-                opacity: saving || !name.trim() || name === organization.name ? 0.5 : 1,
-                cursor: saving || !name.trim() || name === organization.name ? 'not-allowed' : 'pointer',
-              }}
+              className="mt-3 px-5 py-2.5 text-sm font-semibold text-white bg-gh-accent dark:bg-gh-accent-dark hover:opacity-90 rounded-lg transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
           )}
         </div>
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>Current Plan</label>
-          <div style={styles.planBadge}>{organization.plan}</div>
+        {/* Plan badge */}
+        <div className="mb-5">
+          <p className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            Current Plan
+          </p>
+          <span className="inline-block px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wide bg-blue-600 dark:bg-blue-500 text-white">
+            {organization.plan}
+          </span>
         </div>
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>Organization ID</label>
-          <code style={{ fontSize: '13px', color: '#4b5563', background: '#f1f5f9', padding: '4px 8px', borderRadius: '4px', wordBreak: 'break-all' }}>
+        {/* Organization ID */}
+        <div className="mb-5">
+          <p className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+            Organization ID
+          </p>
+          <code className="text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-gh-bg-dark px-2 py-1 rounded break-all">
             {organization.id}
           </code>
         </div>
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>Created</label>
-          <span style={{ fontSize: '14px', color: '#374151' }}>{formatDate(organization.createdAt)}</span>
+        {/* Created */}
+        <div className="mb-5">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Created</p>
+          <span className="text-sm text-slate-700 dark:text-slate-300">{formatDate(organization.createdAt)}</span>
         </div>
-      </div>
+      </section>
 
-      {/* Plan Limits - Responsive Grid */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>Plan Limits</h2>
-        <div style={styles.limitsGrid}>
+      {/* ── Plan Limits ───────────────────────────────────────────────────── */}
+      <section className="mb-8">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Plan Limits</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { label: 'Test Runs / Month', value: organization.limits.maxTestRuns.toLocaleString() },
-            { label: 'Team Members', value: organization.limits.maxUsers },
-            { label: 'Concurrent Runs', value: organization.limits.maxConcurrentRuns },
-            { label: 'Projects', value: organization.limits.maxProjects },
-          ].map((item, i) => (
-            <div key={i} style={styles.limitCard}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: '#64748b', marginBottom: '4px' }}>
-                {item.label}
-              </label>
-              <div style={{ fontSize: '20px', fontWeight: 600, color: '#1e293b' }}>
-                {item.value}
-              </div>
+            { label: 'Team Members',      value: organization.limits.maxUsers },
+            { label: 'Concurrent Runs',   value: organization.limits.maxConcurrentRuns },
+            { label: 'Projects',          value: organization.limits.maxProjects },
+          ].map((item) => (
+            <div key={item.label} className="bg-slate-50 dark:bg-gh-bg-dark p-4 rounded-lg border border-slate-200 dark:border-gh-border-dark">
+              <span className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{item.label}</span>
+              <span className="text-xl font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{item.value}</span>
             </div>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

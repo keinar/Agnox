@@ -25,7 +25,7 @@ const getApiUrl = () =>
 // Shared input class — consistent across all fields in this tab
 const INPUT_CLASS =
     'w-full pl-9 pr-3 py-2 text-sm border border-slate-300 dark:border-gh-border-dark rounded-lg ' +
-    'bg-white dark:bg-gh-bg-dark text-slate-900 dark:text-gh-text-dark ' +
+    'bg-white dark:bg-gh-bg-dark text-slate-900 dark:text-slate-200 ' +
     'placeholder-slate-400 dark:placeholder-slate-500 ' +
     'focus:outline-none focus:ring-2 focus:ring-gh-accent dark:focus:ring-gh-accent-dark focus:border-gh-accent dark:focus:border-gh-accent-dark transition';
 

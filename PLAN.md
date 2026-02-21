@@ -1,8 +1,8 @@
 # Sprint 6 — UI/UX Polish & Theming
 
-> **Last updated:** 2026-02-20
+> **Last updated:** 2026-02-21
 > **Branch:** `epic/v3-redesign`
-> **Status:** ✅ **Task 6.5 Complete** (6.1–6.4 previously completed)
+> **Status:** ✅ **SPRINT 6 — 100% COMPLETE** (Tasks 6.1–6.9 all done)
 > **Status legend:** ✅ Done · 🔄 In Progress · ⬜ Pending
 
 ---
@@ -336,6 +336,197 @@ Target:
 - [ ] Child rows slide in with the `animate-slide-down` animation.
 - [ ] Sidebar width transition is smooth with no layout jump.
 - [ ] KPI cards use the new palette and are readable in both modes.
+
+---
+
+## Task 6.5 — Logo Switching & ThemeContext ✅
+
+Completed in prior session. `ThemeContext` reads from `localStorage`, applies `dark` class to `<html>` before paint, and exposes `useTheme()`. The `Sidebar.tsx` dynamically imports the black/white logo variant based on the active theme.
+
+---
+
+## Task 6.6 — Settings Page & StatsGrid Polish ✅
+
+Completed in prior session. Settings tabs, StatsGrid KPI cards, and all remaining surfaces converted to `gh-*` token classes.
+
+---
+
+## Task 6.7 — Final UI Stabilization & Sprint Closure ✅
+
+### 6.7.1 — Members Table Dark Mode Fix
+
+**Files changed:** `MembersTab.tsx`, `MemberTable.tsx`, `MemberCards.tsx`, `InvitationList.tsx`
+
+- Replaced all inline `React.CSSProperties` style objects with Tailwind utility classes.
+- Table header now uses `dark:bg-gh-bg-subtle-dark` — no more white flash in Dark Mode.
+- `getRoleBadgeStyle` (returning `CSSProperties`) replaced by `getRoleBadgeClass` (returning a `string` of Tailwind classes), enabling proper `dark:` variants on role badges.
+- Select inputs in role column and invite flow use `dark:bg-gh-bg-dark dark:border-gh-border-dark`.
+
+### 6.7.2 — Settings Nav Scrollbar
+
+**File:** `tailwind.config.js` + `Settings.tsx`
+
+- Added `scrollbar-hide` plugin utility (hides `-webkit-scrollbar` + sets `scrollbar-width: none`) so the horizontal overflow on the Settings tab nav is invisible but still scrollable. The `scrollbar-hide` class was already applied in `Settings.tsx`.
+
+### 6.7.3 — FilterBar Full Dark Mode
+
+**File:** `FilterBar.tsx`
+
+- Container: `dark:bg-gh-bg-subtle-dark dark:border-gh-border-dark`
+- Status chips (inactive state): dark variants for `emerald`, `rose`, `amber` chip families.
+- Environment & View Mode segmented controls: `dark:bg-gh-bg-dark dark:text-slate-300`, active state uses `dark:bg-gh-accent-dark`.
+- Date inputs and Group combobox: `dark:bg-gh-bg-dark dark:border-gh-border-dark dark:text-slate-300`.
+- Dividers: `dark:bg-gh-border-dark`.
+- Clear button: `dark:bg-gh-bg-dark dark:text-slate-400 dark:hover:bg-gh-bg-subtle-dark`.
+
+### 6.7.4 — ExecutionModal Verification
+
+**File:** `ExecutionModal.tsx`
+
+- Confirmed: modal panel `dark:bg-gh-bg-subtle-dark`, all inputs `dark:bg-gh-bg-dark`, footer `dark:border-gh-border-dark`. No regressions introduced.
+
+### 6.7.5 — Documentation Update
+
+**File:** `apps/dashboard-client/README.md`
+
+- Replaced outdated "Pure CSS" framing with Tailwind CSS + GitHub-style Dark Mode.
+- Added "Visual Identity & Theming" section documenting dynamic logo switching, the semantic token palette table, and ThemeContext usage.
+- Updated Contributing guidelines to enforce Tailwind-only, dark-mode-paired styling.
+
+### Acceptance Criteria — 6.7
+- [x] Team Members table header uses `dark:bg-gh-bg-subtle-dark` — no white header in Dark Mode.
+- [x] Settings nav scrollbar is hidden (via `scrollbar-hide` Tailwind utility).
+- [x] FilterBar is fully dark-mode compatible with correct chip, button, and input styling.
+- [x] ExecutionModal has no white backgrounds in Dark Mode.
+- [x] README Visual Identity section documents logo switching and GitHub-style Dark Mode.
+- [x] PLAN.md Sprint 6 marked 100% complete.
+- [x] Clean commit created.
+
+---
+
+## Task 6.8 — Post-Audit Theme Hardening ✅
+
+> **Triggered by:** Manual dark-mode audit revealing residual white-flash surfaces and purple/indigo regressions across Settings, Billing, and KPI cards.
+
+### 6.8.1 — StatsGrid KPI Cards (`StatsGrid.tsx`)
+
+- Replaced `bg-gh-bg` / `border-gh-border` / `bg-gh-bg-subtle` / `text-gh-text` with explicit paired tokens:
+  `bg-white dark:bg-gh-bg-subtle-dark`, `border-slate-200 dark:border-gh-border-dark`,
+  `bg-slate-100 dark:bg-gh-bg-dark`, `text-slate-900 dark:text-slate-100`.
+- Added `tabular-nums` to KPI value for consistent number width.
+- Replaced `text-violet-500` on the Timer icon with `text-amber-500` (no purple remnants).
+- Loading skeleton: `bg-slate-200 dark:bg-slate-700`.
+
+### 6.8.2 — BillingTab Full Tailwind Rewrite (`BillingTab.tsx`)
+
+- Deleted the entire `styles` constant (229 lines of inline `React.CSSProperties`).
+- Removed all `onMouseOver`/`onMouseOut` JS hover handlers; replaced with Tailwind `hover:` classes.
+- **Plan cards**: `bg-white dark:bg-gh-bg-subtle-dark border-2 border-slate-200 dark:border-gh-border-dark`.
+  Current plan card: `border-blue-500 dark:border-blue-600 bg-blue-50 dark:bg-blue-950/20`.
+- **Upgrade buttons**: replaced `linear-gradient(135deg, #667eea 0%, #764ba2 100%)` → `bg-gh-accent dark:bg-gh-accent-dark`.
+- **Manage Subscription button**: indigo secondary style → `text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30`.
+- **Status badges**: semantic per-status classes (`emerald` active, `amber` past_due, `slate` canceled) with full dark: variants.
+- **Alert banners**: `bg-blue-50/amber-50/red-50` with `dark:bg-*-950/30` variants.
+- **Section titles / info labels**: `dark:text-slate-100` / `dark:text-slate-400`.
+
+### 6.8.3 — OrganizationTab Full Tailwind Rewrite (`OrganizationTab.tsx`)
+
+- Deleted inline `styles` object (90 lines).
+- **Save Changes button**: `linear-gradient(to right, #4f46e5, #7c3aed)` → `bg-gh-accent dark:bg-gh-accent-dark`.
+- **Plan badge**: purple gradient → `bg-blue-600 dark:bg-blue-500 text-white`.
+- **Name input**: inline style → `bg-white dark:bg-gh-bg-dark text-slate-900 dark:text-slate-200 border-slate-300 dark:border-gh-border-dark`.
+- **Disabled input** (non-admin): `bg-slate-100 dark:bg-gh-bg-subtle-dark text-slate-500`.
+- **Plan limits grid**: `bg-slate-50 dark:bg-gh-bg-dark border border-slate-200 dark:border-gh-border-dark`.
+- All labels: `text-slate-700 dark:text-slate-300`.
+
+### 6.8.4 — RunSettingsTab Full Tailwind Rewrite (`RunSettingsTab.tsx`)
+
+- Deleted inline `styles` object (128 lines).
+- **Save Settings button**: purple gradient → `bg-gh-accent dark:bg-gh-accent-dark`.
+- **Create (secondary) button**: indigo text → `text-slate-700 dark:text-slate-300 bg-white dark:bg-gh-bg-dark border border-slate-300 dark:border-gh-border-dark`.
+- **All inputs / select**: `bg-white dark:bg-gh-bg-dark text-slate-900 dark:text-slate-200 border-slate-300 dark:border-gh-border-dark`.
+- Divider: `border-t border-slate-200 dark:border-gh-border-dark`.
+- Upgrade banner: `bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800`.
+
+### 6.8.5 — InviteModal Full Tailwind Rewrite (`InviteModal.tsx`)
+
+- Deleted inline `styles` object (164 lines) and all `onMouseOver`/`onMouseOut` handlers.
+- Modal backdrop: `bg-black/50` fixed overlay.
+- Modal panel: `bg-white dark:bg-gh-bg-subtle-dark border border-slate-200 dark:border-gh-border-dark`.
+- **Send Invitation button**: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)` → `bg-gh-accent dark:bg-gh-accent-dark`.
+- **Usage info banner**: indigo `#667eea` text → `text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/30`.
+- Email / Role inputs: `bg-white dark:bg-gh-bg-dark border-2 border-slate-200 dark:border-gh-border-dark focus:border-gh-accent`.
+
+### 6.8.6 — ProfileTab Full Tailwind Rewrite (`ProfileTab.tsx`)
+
+- Deleted inline `styles` object (191 lines).
+- **Save Changes / Generate Key / Copy Key buttons**: purple gradient → `bg-gh-accent dark:bg-gh-accent-dark`.
+- **Admin role badge**: `bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800`.
+- **API key table**: `bg-slate-50 dark:bg-gh-bg-dark` header, `dark:border-gh-border-dark` rows, mono key prefix with `dark:bg-slate-800 dark:text-slate-300`.
+- **New Key modal**: dark panel `dark:bg-gh-bg-subtle-dark`, key display stays `bg-slate-950 text-emerald-400`.
+- **Revoke button**: `text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30`.
+
+### 6.8.7 — SecurityTab Full Tailwind Rewrite (`SecurityTab.tsx`)
+
+- Deleted inline `styles` object (131 lines).
+- **AI toggle**: `backgroundColor: '#4f46e5'` → `bg-gh-accent dark:bg-gh-accent-dark` (on), `bg-slate-300 dark:bg-slate-600` (off).
+- **Privacy Policy link**: `color: '#4f46e5'` → `text-gh-accent dark:text-gh-accent-dark`.
+- Alert banners: info/warning/disabled use proper semantic color classes with dark: variants.
+- Toggle row container: `bg-slate-50 dark:bg-gh-bg-dark border border-slate-200 dark:border-gh-border-dark`.
+
+### 6.8.8 — UsageTab Full Tailwind Rewrite (`UsageTab.tsx`)
+
+- Deleted inline `styles` object (167 lines) and all `onMouseOver`/`onMouseOut` handlers.
+- **Metric cards**: `bg-white dark:bg-gh-bg-subtle-dark border border-slate-200 dark:border-gh-border-dark`.
+- **Progress bar (normal)**: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)` → `bg-gh-accent dark:bg-gh-accent-dark`. Warning → `bg-amber-500`, Danger → `bg-red-500`.
+- **Upgrade button**: purple gradient → `bg-gh-accent dark:bg-gh-accent-dark`.
+- **Upgrade section**: indigo gradient background → `bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800`.
+- Extracted `MetricCard` and `AlertBanner` sub-components for readability.
+
+### 6.8.9 — PrivacyPolicy Full Tailwind Rewrite (`PrivacyPolicy.tsx`)
+
+- Deleted inline `styles` object (68 lines) and all `onMouseOver`/`onMouseOut` handlers.
+- **Page background**: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)` → `bg-slate-50 dark:bg-gh-bg-dark`.
+- **Content card**: `bg-white dark:bg-gh-bg-subtle-dark border border-slate-200 dark:border-gh-border-dark`.
+- **Back link** and **email link**: `#667eea` → `text-gh-accent dark:text-gh-accent-dark`.
+
+### Acceptance Criteria — 6.8
+- [x] KPI cards no longer flash white in Dark Mode — use explicit `dark:bg-gh-bg-subtle-dark`.
+- [x] All Settings tab labels are readable: `text-slate-700 dark:text-slate-300`.
+- [x] Zero `purple-` or `indigo-` Tailwind classes remain anywhere in `dashboard-client/src`.
+- [x] Zero purple/indigo hex codes (`#4f46e5`, `#7c3aed`, `#667eea`, `#764ba2`) remain in any `.tsx` file.
+- [x] All upgrade/save/invite buttons use `bg-gh-accent dark:bg-gh-accent-dark` (GitHub blue).
+- [x] BillingTab plan cards are dark-mode aware (`dark:bg-gh-bg-subtle-dark`).
+- [x] No inline `React.CSSProperties` style objects remain in the audited settings components.
+- [x] PLAN.md updated to reflect Task 6.8 completion.
+
+---
+
+## Task 6.9 — Final Holdout Dark Mode Fixes ✅
+
+> **Triggered by:** Post-sprint manual dark-mode audit identifying two remaining white-flash surfaces.
+
+### 6.9.1 — GroupHeaderRow Dark Mode (`GroupHeaderRow.tsx`)
+
+- `<tr>` background: added `dark:bg-gh-bg-subtle-dark dark:border-gh-border-dark` and `dark:hover:bg-slate-700/30`.
+- Group name `<span>`: added `dark:text-slate-300` alongside existing `text-slate-700`.
+- `getPassRateBadgeClass`: updated all four return values with full `dark:` variants:
+  - Zero total: `dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700/50`
+  - 100% pass: `dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/50`
+  - ≥75% pass (amber): `dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/50`
+  - <75% pass (rose): `dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900/50`
+
+### 6.9.2 — IntegrationsTab Input Dark Mode (`IntegrationsTab.tsx`)
+
+- `INPUT_CLASS` constant: replaced undefined token `dark:text-gh-text-dark` with `dark:text-slate-200`.
+- All three inputs (`jira-domain`, `jira-email`, `jira-token`) inherit the fix via the shared constant.
+
+### Acceptance Criteria — 6.9
+- [x] GroupHeaderRow `<tr>` uses `dark:bg-gh-bg-subtle-dark` — no bright white/gray flash.
+- [x] Group name text uses `dark:text-slate-300` — readable on dark background.
+- [x] All pass-rate badge variants have correct `dark:` color pairs.
+- [x] All three Jira inputs use `dark:bg-gh-bg-dark dark:text-slate-200` — no white fields.
+- [x] Zero `indigo-`, `purple-`, or `violet-` Tailwind classes remain in `dashboard-client/src`.
 
 ---
 

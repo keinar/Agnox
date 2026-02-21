@@ -15,167 +15,22 @@ interface InviteModalProps {
   onSuccess: () => void;
 }
 
-const styles = {
-  overlay: {
-    position: 'fixed' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'rgba(0, 0, 0, 0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-    padding: '20px',
-  } as React.CSSProperties,
-  modal: {
-    background: '#ffffff',
-    borderRadius: '16px',
-    maxWidth: '480px',
-    width: '100%',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    maxHeight: '90vh',
-    overflow: 'auto',
-  } as React.CSSProperties,
-  header: {
-    padding: '24px 24px 20px 24px',
-    borderBottom: '1px solid #f3f4f6',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  } as React.CSSProperties,
-  title: {
-    fontSize: '20px',
-    fontWeight: 600,
-    color: '#1e293b',
-  } as React.CSSProperties,
-  closeButton: {
-    background: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    padding: '4px',
-    borderRadius: '4px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#6b7280',
-    transition: 'all 0.2s ease',
-  } as React.CSSProperties,
-  content: {
-    padding: '24px',
-  } as React.CSSProperties,
-  usageInfo: {
-    padding: '12px 16px',
-    background: '#f0f4ff',
-    border: '1px solid #c7d2fe',
-    borderRadius: '8px',
-    fontSize: '14px',
-    color: '#667eea',
-    marginBottom: '24px',
-  } as React.CSSProperties,
-  warningInfo: {
-    padding: '12px 16px',
-    background: '#fef2f2',
-    border: '1px solid #fecaca',
-    borderRadius: '8px',
-    fontSize: '14px',
-    color: '#dc2626',
-    marginBottom: '24px',
-  } as React.CSSProperties,
-  fieldGroup: {
-    marginBottom: '20px',
-  } as React.CSSProperties,
-  label: {
-    display: 'block',
-    fontSize: '14px',
-    fontWeight: 500,
-    color: '#374151',
-    marginBottom: '8px',
-  } as React.CSSProperties,
-  input: {
-    width: '100%',
-    padding: '12px 14px 12px 42px',
-    fontSize: '15px',
-    border: '2px solid #e5e7eb',
-    borderRadius: '8px',
-    outline: 'none',
-    transition: 'all 0.2s ease',
-    boxSizing: 'border-box' as const,
-  } as React.CSSProperties,
-  inputWrapper: {
-    position: 'relative' as const,
-  } as React.CSSProperties,
-  inputIcon: {
-    position: 'absolute' as const,
-    left: '14px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    color: '#9ca3af',
-  } as React.CSSProperties,
-  select: {
-    width: '100%',
-    padding: '12px 14px 12px 42px',
-    fontSize: '15px',
-    border: '2px solid #e5e7eb',
-    borderRadius: '8px',
-    outline: 'none',
-    cursor: 'pointer',
-    background: '#ffffff',
-    transition: 'all 0.2s ease',
-  } as React.CSSProperties,
-  roleOption: {
-    padding: '8px',
-    fontSize: '14px',
-  } as React.CSSProperties,
-  roleDescription: {
-    fontSize: '13px',
-    color: '#6b7280',
-    marginTop: '6px',
-  } as React.CSSProperties,
-  footer: {
-    padding: '20px 24px',
-    borderTop: '1px solid #f3f4f6',
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'flex-end',
-  } as React.CSSProperties,
-  cancelButton: {
-    padding: '10px 20px',
-    fontSize: '14px',
-    fontWeight: 600,
-    color: '#6b7280',
-    background: '#ffffff',
-    border: '1px solid #e5e7eb',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  } as React.CSSProperties,
-  submitButton: {
-    padding: '10px 20px',
-    fontSize: '14px',
-    fontWeight: 600,
-    color: '#ffffff',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  } as React.CSSProperties,
-  submitButtonDisabled: {
-    opacity: 0.5,
-    cursor: 'not-allowed',
-  } as React.CSSProperties,
-  errorMessage: {
-    padding: '12px 16px',
-    background: '#fef2f2',
-    border: '1px solid #fecaca',
-    borderRadius: '8px',
-    color: '#dc2626',
-    fontSize: '14px',
-    marginBottom: '16px',
-  } as React.CSSProperties,
-};
+// ── Shared class strings ───────────────────────────────────────────────────────
+
+const INPUT_CLASS =
+  'w-full pl-10 pr-3 py-3 text-sm border-2 border-slate-200 dark:border-gh-border-dark rounded-lg ' +
+  'bg-white dark:bg-gh-bg-dark text-slate-900 dark:text-slate-200 ' +
+  'placeholder-slate-400 dark:placeholder-slate-500 ' +
+  'focus:outline-none focus:border-gh-accent dark:focus:border-gh-accent-dark focus:ring-2 focus:ring-gh-accent/20 dark:focus:ring-gh-accent-dark/20 ' +
+  'disabled:opacity-50 disabled:cursor-not-allowed transition';
+
+const SELECT_CLASS =
+  'w-full pl-10 pr-3 py-3 text-sm border-2 border-slate-200 dark:border-gh-border-dark rounded-lg ' +
+  'bg-white dark:bg-gh-bg-dark text-slate-900 dark:text-slate-200 ' +
+  'focus:outline-none focus:border-gh-accent dark:focus:border-gh-accent-dark focus:ring-2 focus:ring-gh-accent/20 dark:focus:ring-gh-accent-dark/20 ' +
+  'disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer';
+
+// ── Component ──────────────────────────────────────────────────────────────────
 
 export function InviteModal({ onClose, onSuccess }: InviteModalProps) {
   const { token } = useAuth();
@@ -186,16 +41,13 @@ export function InviteModal({ onClose, onSuccess }: InviteModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchOrganization();
-  }, []);
+  useEffect(() => { fetchOrganization(); }, []);
 
   async function fetchOrganization() {
     try {
       const response = await axios.get(`${API_URL}/api/organization`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (response.data.success) {
         setOrganization({
           userCount: response.data.organization.userCount,
@@ -203,7 +55,6 @@ export function InviteModal({ onClose, onSuccess }: InviteModalProps) {
         });
       }
     } catch (error: any) {
-      console.error('Failed to fetch organization:', error);
       setError('Failed to load organization details');
     } finally {
       setLoading(false);
@@ -214,19 +65,14 @@ export function InviteModal({ onClose, onSuccess }: InviteModalProps) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
-
     try {
       const response = await axios.post(
         `${API_URL}/api/invitations`,
         { email, role },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
-
-      if (response.data.success) {
-        onSuccess();
-      }
+      if (response.data.success) { onSuccess(); }
     } catch (error: any) {
-      console.error('Failed to send invitation:', error);
       setError(error.response?.data?.message || 'Failed to send invitation');
     } finally {
       setSubmitting(false);
@@ -236,140 +82,122 @@ export function InviteModal({ onClose, onSuccess }: InviteModalProps) {
   const canInvite = organization && organization.userCount < organization.userLimit;
 
   return (
-    <div style={styles.overlay} onClick={onClose}>
-      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+    <div
+      role="presentation"
+      className="fixed inset-0 z-[1000] flex items-center justify-center p-5 bg-black/50"
+      onClick={onClose}
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="invite-modal-title"
+        className="bg-white dark:bg-gh-bg-subtle-dark rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-auto border border-slate-200 dark:border-gh-border-dark"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div style={styles.header}>
-          <h2 style={styles.title}>Invite Team Member</h2>
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200 dark:border-gh-border-dark">
+          <h2 id="invite-modal-title" className="text-lg font-semibold text-slate-900 dark:text-slate-100">Invite Team Member</h2>
           <button
             onClick={onClose}
-            style={styles.closeButton}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = '#f3f4f6';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'transparent';
-            }}
+            className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-gh-bg-dark transition-colors cursor-pointer"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* Content */}
+        {/* Form body */}
         <form onSubmit={handleSubmit}>
-          <div style={styles.content}>
+          <div className="px-6 py-5 space-y-5">
             {loading ? (
-              <div style={{ color: '#6b7280', fontSize: '14px' }}>Loading...</div>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Loading...</p>
             ) : (
               <>
-                {/* Usage Info */}
+                {/* Usage info */}
                 {organization && (
-                  <div style={canInvite ? styles.usageInfo : styles.warningInfo}>
-                    <strong>
-                      Team Members: {organization.userCount} / {organization.userLimit}
-                    </strong>
+                  <div className={`px-4 py-3 rounded-lg text-sm border ${
+                    canInvite
+                      ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300'
+                      : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
+                  }`}>
+                    <strong>Team Members: {organization.userCount} / {organization.userLimit}</strong>
                     {!canInvite && (
-                      <div style={{ marginTop: '8px' }}>
+                      <p className="mt-2">
                         You've reached your user limit. Upgrade your plan to invite more members.
-                      </div>
+                      </p>
                     )}
                   </div>
                 )}
 
-                {/* Error Message */}
-                {error && <div style={styles.errorMessage}>{error}</div>}
+                {/* Error */}
+                {error && (
+                  <div className="px-4 py-3 rounded-lg text-sm bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400">
+                    {error}
+                  </div>
+                )}
 
-                {/* Email Input */}
-                <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Email Address</label>
-                  <div style={styles.inputWrapper}>
-                    <Mail size={18} style={styles.inputIcon} />
+                {/* Email */}
+                <div>
+                  <label htmlFor="invite-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                     <input
+                      id="invite-email"
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      style={styles.input}
+                      className={INPUT_CLASS}
                       placeholder="colleague@company.com"
                       required
                       disabled={!canInvite || submitting}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#667eea';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '#e5e7eb';
-                      }}
                     />
                   </div>
                 </div>
 
-                {/* Role Selector */}
-                <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Role</label>
-                  <div style={styles.inputWrapper}>
-                    <Shield size={18} style={styles.inputIcon} />
+                {/* Role */}
+                <div>
+                  <label htmlFor="invite-role" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Role</label>
+                  <div className="relative">
+                    <Shield size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                     <select
+                      id="invite-role"
                       value={role}
-                      onChange={(e) => setRole(e.target.value as any)}
-                      style={styles.select}
+                      onChange={(e) => setRole(e.target.value as 'developer' | 'viewer' | 'admin')}
+                      className={SELECT_CLASS}
                       disabled={!canInvite || submitting}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#667eea';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '#e5e7eb';
-                      }}
                     >
-                      <option value="developer">Developer - Can run tests and view reports</option>
-                      <option value="viewer">Viewer - Read-only access</option>
-                      <option value="admin">Admin - Full access (use sparingly)</option>
+                      <option value="developer">Developer — can run tests and view reports</option>
+                      <option value="viewer">Viewer — read-only access</option>
+                      <option value="admin">Admin — full access (use sparingly)</option>
                     </select>
                   </div>
-                  <div style={styles.roleDescription}>
+                  <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
                     {role === 'developer' && 'Can run tests, edit tests, and view all reports.'}
                     {role === 'viewer' && 'Can view test results and reports, but cannot run or edit tests.'}
-                    {role === 'admin' &&
-                      'Full organization access including managing members, billing, and settings.'}
-                  </div>
+                    {role === 'admin' && 'Full organization access including managing members, billing, and settings.'}
+                  </p>
                 </div>
               </>
             )}
           </div>
 
           {/* Footer */}
-          <div style={styles.footer}>
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 dark:border-gh-border-dark">
             <button
               type="button"
               onClick={onClose}
-              style={styles.cancelButton}
               disabled={submitting}
-              onMouseOver={(e) => {
-                if (!submitting) {
-                  e.currentTarget.style.background = '#f9fafb';
-                }
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = '#ffffff';
-              }}
+              className="px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-gh-bg-dark border border-slate-200 dark:border-gh-border-dark rounded-lg hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark disabled:opacity-50 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!canInvite || submitting || loading}
-              style={{
-                ...styles.submitButton,
-                ...(!canInvite || submitting || loading ? styles.submitButtonDisabled : {}),
-              }}
-              onMouseOver={(e) => {
-                if (canInvite && !submitting && !loading) {
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
-                }
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
+              className="px-4 py-2.5 text-sm font-semibold text-white bg-gh-accent dark:bg-gh-accent-dark hover:opacity-90 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-opacity cursor-pointer"
             >
               {submitting ? 'Sending...' : 'Send Invitation'}
             </button>
