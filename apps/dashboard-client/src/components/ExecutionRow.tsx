@@ -1,8 +1,8 @@
 import React from 'react';
 import {
     Trash2, ChevronRight, CheckCircle, XCircle,
-    Clock, PlayCircle, FileText, BarChart2, Laptop, Server,
-    Turtle, Zap, Box, Sparkles, Loader2, AlertTriangle,
+    Clock, PlayCircle, FileText, BarChart2,
+    Sparkles, Loader2, AlertTriangle,
     User2, Timer, Github, Clipboard, Check, Bug,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -108,33 +108,6 @@ function getStatusIcon(status: string) {
         case 'PENDING':   return <Clock size={13} className="animate-pulse" />;
         default:          return <Clock size={13} />;
     }
-}
-
-// ── PerformanceInsight sub-component ──────────────────────────────────────────
-
-interface PerformanceInsightProps {
-    metrics: any;
-}
-
-function PerformanceInsight({ metrics }: PerformanceInsightProps) {
-    if (!metrics || metrics.status === 'NO_DATA') return null;
-    const avg = (metrics.averageDuration / 1000).toFixed(1);
-
-    if (metrics.isRegression) {
-        return (
-            <span title={`Slower than average (${avg}s)`} className="flex items-center text-amber-500 ml-1">
-                <Turtle size={12} />
-            </span>
-        );
-    }
-    if (metrics.lastRunDuration < metrics.averageDuration * 0.8) {
-        return (
-            <span title={`Faster than average (${avg}s)`} className="flex items-center text-emerald-500 ml-1">
-                <Zap size={12} />
-            </span>
-        );
-    }
-    return null;
 }
 
 // ── ExecutionRow component ─────────────────────────────────────────────────────
@@ -279,27 +252,6 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                             <TriggerIcon size={11} />
                             {trigger}
                         </span>
-                    </td>
-                )}
-
-                {/* Source — optional */}
-                {visibleColumns.has('source') && (
-                    <td className="px-4 py-4">
-                        <div className="flex flex-col gap-1">
-                            <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold w-fit border ${
-                                isRunLocal
-                                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-                                    : 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800'
-                            }`}>
-                                {isRunLocal ? <Laptop size={11} /> : <Server size={11} />}
-                                {isRunLocal ? 'LOCAL' : 'CLOUD'}
-                                <PerformanceInsight metrics={metrics} />
-                            </div>
-                            <div className="flex items-center gap-1 text-[11px] text-slate-400">
-                                <Box size={10} />
-                                <span className="font-mono">{execution.image?.split('/').pop() || 'container'}</span>
-                            </div>
-                        </div>
                     </td>
                 )}
 

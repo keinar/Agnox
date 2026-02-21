@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { LayoutDashboard, Settings, BookOpen, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Settings, BookOpen, X, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import logoLight from '../assets/logo.png';
 import logoDark from '../assets/logo-dark.png';
 import { useTheme } from '../context/ThemeContext';
+import { APP_VERSION } from '../config/version';
+import { ChangelogModal } from './ChangelogModal';
 
 interface SidebarProps {
   isMobileOpen: boolean;
@@ -22,6 +25,8 @@ const DEFAULT_CLASS = 'text-slate-600 hover:bg-gh-bg-subtle hover:text-gh-text d
 
 export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: SidebarProps) {
   const { theme } = useTheme();
+  const [showChangelog, setShowChangelog] = useState(false);
+
   // Switch logo based on current theme: black logo for light backgrounds, white for dark
   const logo = theme === 'dark' ? logoDark : logoLight;
 
@@ -109,6 +114,30 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
     </nav>
   );
 
+  // ── Version footer — clickable to open the changelog modal ──────────────
+  const versionFooter = (
+    <div className="px-3 py-3 border-t border-gh-border dark:border-gh-border-dark flex items-center justify-center">
+      {isCollapsed ? (
+        <button
+          onClick={() => setShowChangelog(true)}
+          title={`Version ${APP_VERSION} — What's New`}
+          aria-label="Open changelog"
+          className="flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+        >
+          <Info size={14} />
+        </button>
+      ) : (
+        <button
+          onClick={() => setShowChangelog(true)}
+          aria-label="Open changelog"
+          className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors font-mono tracking-wide"
+        >
+          {APP_VERSION}
+        </button>
+      )}
+    </div>
+  );
+
   // ── Desktop sidebar ───────────────────────────────────────────────────────
   const desktopSidebar = (
     <aside
@@ -117,6 +146,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
     >
       {logoBlock}
       {navLinks}
+      {versionFooter}
     </aside>
   );
 
@@ -203,6 +233,17 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
             );
           })}
         </nav>
+
+        {/* Mobile version footer */}
+        <div className="px-4 py-3 border-t border-gh-border dark:border-gh-border-dark">
+          <button
+            onClick={() => { onMobileClose(); setShowChangelog(true); }}
+            aria-label="Open changelog"
+            className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors font-mono tracking-wide"
+          >
+            {APP_VERSION}
+          </button>
+        </div>
       </aside>
     </>
   );
@@ -211,6 +252,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
     <>
       {desktopSidebar}
       {mobileOverlay}
+      {showChangelog && <ChangelogModal onClose={() => setShowChangelog(false)} />}
     </>
   );
 }
