@@ -819,6 +819,7 @@ Please read our [Contributing Guide](CONTRIBUTING.md) _(coming soon)_ for detail
 | **Phase 4:** Project Run Settings | ✅ Complete | 100% |
 | **Phase 5:** Email Integration | ✅ Complete | 100% |
 | **Sprint 5:** Dashboard Evolution | ✅ Complete | 100% |
+| **Sprint 6:** Enterprise UI Overhaul | ✅ Complete | 100% |
 
 ---
 
@@ -831,6 +832,7 @@ Please read our [Contributing Guide](CONTRIBUTING.md) _(coming soon)_ for detail
 - Phase 4: Per-project Run Settings
 - Phase 5: Email integration (SendGrid)
 - Sprint 5: Full-screen layout, real-time analytics, run groups, bulk actions, Jira ADF integration
+- Sprint 6: GitHub-inspired Theme Engine, Dark Mode, and UI Hardening
 
 ### Q2 2026
 - Advanced analytics dashboards and trend charts

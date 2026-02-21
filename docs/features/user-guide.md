@@ -22,7 +22,19 @@ Complete walkthrough of the Agnostic Automation Center platform features.
 
 ---
 
-## 2. Project & Run Settings
+## 2. Navigating the Dashboard
+
+### Light / Dark Theme
+
+The dashboard supports a **Light** and **Dark** theme. Use the theme toggle icon in the top-right of the header to switch between modes. Your preference is persisted in `localStorage` and applied automatically on every subsequent visit.
+
+### Changelog
+
+The current application version is shown at the bottom of the sidebar. Click the version number (e.g., `v3.0.0`) to open the **Changelog** modal, which summarises the features and fixes shipped in recent sprints.
+
+---
+
+## 3. Project & Run Settings
 
 Before running tests, you must configure your project settings.
 
@@ -44,7 +56,7 @@ These URLs are injected into your test container as `BASE_URL` at runtime.
 
 ---
 
-## 3. Running Tests
+## 4. Running Tests
 
 ### Option A: Via Dashboard (Recommended)
 
@@ -57,14 +69,14 @@ These URLs are injected into your test container as `BASE_URL` at runtime.
 > **Note:** The AAC CLI (`npx @keinar/aac-cli@latest init`) is used for **onboarding only** — generating your Dockerfile and pushing your image. Test execution is triggered via the Dashboard or API.
 
 ### Option B: Via API
-See [API Keys section](#7-api-keys-cicd-integration) below.
+See [API Keys section](#9-api-keys-cicd-integration) below.
 
 ### Option C: CI/CD Integration (GitHub Actions)
 Generate an API key and use the API to trigger tests from your CI pipeline.
 
 ---
 
-## 4. Execution Management
+## 5. Execution Management
 
 The dashboard provides powerful tools for organizing and acting on test runs at scale.
 
@@ -87,7 +99,7 @@ Select one or more execution rows using the checkboxes on the left. A floating *
 
 ---
 
-## 5. Team Management (Admin Only)
+## 6. Team Management (Admin Only)
 
 ### Inviting Members
 1. Go to **Settings** → **Team Members**.
@@ -103,7 +115,7 @@ Select one or more execution rows using the checkboxes on the left. A floating *
 
 ---
 
-## 6. Billing & Plans
+## 7. Billing & Plans
 
 Manage subscriptions in **Settings** → **Billing & Plans**.
 
@@ -122,7 +134,7 @@ Manage subscriptions in **Settings** → **Billing & Plans**.
 
 ---
 
-## 7. API Keys (CI/CD Integration)
+## 8. API Keys (CI/CD Integration)
 
 Use API keys to authenticate CI/CD pipelines without sharing personal credentials.
 
@@ -141,7 +153,7 @@ curl -H "x-api-key: pk_live_..." ...
 
 ---
 
-## 8. AI Analysis & Results
+## 9. AI Analysis & Results
 
 ### Live Results
 - Check the **Dashboard** for real-time logs via WebSocket.
@@ -155,7 +167,7 @@ If a test fails:
 
 ---
 
-## 9. Support
+## 10. Support
 
 - **Documentation**: [docs.automation.keinar.com](https://docs.automation.keinar.com)
 - **Email**: info@digital-solution.co.il

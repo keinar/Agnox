@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md — Agnostic Automation Center
 
-> Generated: 2026-02-19 | Sprint 0 — Workspace Discovery
+> Generated: 2026-02-19 | Current Phase: Sprint 7 — The Investigation Hub (V3 Architecture)
 > Source: Full monorepo scan of code, docs, configs, and shared types.
 
 ---
@@ -122,6 +122,7 @@ Agnostic-Automation-Center/
 | 3 | Billing Integration | Stripe subscriptions (Free/Team/Enterprise), webhook processing, plan limit enforcement, usage alerts |
 | 4 | Project Run Settings | Per-project Docker image, target URLs, test folder config, shared-types package |
 | 5 | Email Integration | SendGrid transactional emails (invitations, welcome, payment events), console fallback |
+| 6 | Enterprise UI Overhaul | Full Tailwind CSS migration (zero inline styles), GitHub-inspired semantic token palette (`gh-bg`, `gh-border`, etc.), `ThemeContext` with Light/Dark toggle, collapsible sidebar, version footer with Changelog modal, DateRangeFilter, responsive filter drawer |
 
 ### Security Posture (Score: 92/100)
 
