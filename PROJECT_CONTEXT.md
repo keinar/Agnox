@@ -33,7 +33,6 @@ Agnostic-Automation-Center/
 │   ├── dashboard-client/          # React 19 SPA (port 8080 via nginx)
 │   │   ├── src/
 │   │   │   ├── App.tsx            # Router + QueryClient + AuthProvider
-│   │   │   ├── App.css            # Design system (323 lines, CSS variables)
 │   │   │   ├── context/           # AuthContext.tsx (JWT + user state)
 │   │   │   ├── hooks/             # useExecutions, useDashboardData, useSettings
 │   │   │   ├── pages/             # Login, Signup, Settings
@@ -430,7 +429,7 @@ processedAt      Date
 App
 ├── AuthProvider (JWT context)
 │   └── BrowserRouter
-│       ├── /login → Login (inline styles, gradient background)
+│       ├── /login → Login (Tailwind semantic tokens, logo fade-in)
 │       ├── /signup → Signup (invitation validation, 2 flows)
 │       ├── /dashboard → ProtectedRoute → Dashboard
 │       │   ├── DashboardHeader (sticky, mobile menu)
