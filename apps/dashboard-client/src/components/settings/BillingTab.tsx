@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
-import { CreditCard, ExternalLink, CheckCircle, AlertCircle, Clock, TrendingUp } from 'lucide-react';
+import { CreditCard, ExternalLink, CheckCircle, CheckCircle2, AlertCircle, Clock, TrendingUp } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -23,210 +23,6 @@ interface UsageAlert {
   message: string;
   percentUsed: number;
 }
-
-const styles = {
-  section: {
-    marginBottom: '32px',
-  } as React.CSSProperties,
-  sectionTitle: {
-    fontSize: '18px',
-    fontWeight: 600,
-    color: '#1e293b',
-    marginBottom: '16px',
-  } as React.CSSProperties,
-  card: {
-    padding: '24px',
-    background: '#ffffff',
-    border: '2px solid #f3f4f6',
-    borderRadius: '12px',
-    marginBottom: '16px',
-    transition: 'all 0.2s ease',
-  } as React.CSSProperties,
-  planHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: '20px',
-    flexWrap: 'wrap' as const,
-    gap: '12px',
-  } as React.CSSProperties,
-  planTitle: {
-    fontSize: '24px',
-    fontWeight: 700,
-    color: '#1e293b',
-    margin: 0,
-  } as React.CSSProperties,
-  planBadge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '6px 14px',
-    borderRadius: '8px',
-    fontSize: '12px',
-    fontWeight: 700,
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.5px',
-  } as React.CSSProperties,
-  statusActive: {
-    background: '#ecfdf5',
-    color: '#047857',
-    border: '1px solid #a7f3d0',
-  } as React.CSSProperties,
-  statusPastDue: {
-    background: '#fffbeb',
-    color: '#92400e',
-    border: '1px solid #fde68a',
-  } as React.CSSProperties,
-  statusCanceled: {
-    background: '#f3f4f6',
-    color: '#4b5563',
-    border: '1px solid #d1d5db',
-  } as React.CSSProperties,
-  infoGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '16px',
-    marginBottom: '20px',
-  } as React.CSSProperties,
-  infoItem: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '4px',
-  } as React.CSSProperties,
-  infoLabel: {
-    fontSize: '12px',
-    fontWeight: 600,
-    color: '#64748b',
-    textTransform: 'uppercase' as const,
-    letterSpacing: '0.5px',
-  } as React.CSSProperties,
-  infoValue: {
-    fontSize: '15px',
-    fontWeight: 500,
-    color: '#1e293b',
-  } as React.CSSProperties,
-  buttonGroup: {
-    display: 'flex',
-    gap: '12px',
-    flexWrap: 'wrap' as const,
-    marginTop: '20px',
-  } as React.CSSProperties,
-  primaryButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px 24px',
-    fontSize: '15px',
-    fontWeight: 600,
-    color: '#ffffff',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  } as React.CSSProperties,
-  secondaryButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px 24px',
-    fontSize: '15px',
-    fontWeight: 600,
-    color: '#4f46e5',
-    background: '#f0f4ff',
-    border: '2px solid #c7d2fe',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    textDecoration: 'none',
-  } as React.CSSProperties,
-  alert: {
-    padding: '16px',
-    borderRadius: '8px',
-    fontSize: '14px',
-    marginBottom: '16px',
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '10px',
-    lineHeight: '1.6',
-  } as React.CSSProperties,
-  alertInfo: {
-    background: '#eff6ff',
-    border: '1px solid #bfdbfe',
-    color: '#1e40af',
-  } as React.CSSProperties,
-  alertWarning: {
-    background: '#fffbeb',
-    border: '1px solid #fde68a',
-    color: '#92400e',
-  } as React.CSSProperties,
-  alertCritical: {
-    background: '#fef2f2',
-    border: '1px solid #fecaca',
-    color: '#991b1b',
-  } as React.CSSProperties,
-  plansGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '20px',
-  } as React.CSSProperties,
-  planCard: {
-    padding: '24px',
-    background: '#ffffff',
-    border: '2px solid #e5e7eb',
-    borderRadius: '12px',
-    transition: 'all 0.2s ease',
-    cursor: 'pointer',
-  } as React.CSSProperties,
-  planCardCurrent: {
-    border: '2px solid #667eea',
-    background: 'linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%)',
-  } as React.CSSProperties,
-  planName: {
-    fontSize: '20px',
-    fontWeight: 700,
-    color: '#1e293b',
-    marginBottom: '8px',
-  } as React.CSSProperties,
-  planPrice: {
-    fontSize: '32px',
-    fontWeight: 700,
-    color: '#1e293b',
-    marginBottom: '4px',
-  } as React.CSSProperties,
-  planPeriod: {
-    fontSize: '14px',
-    color: '#64748b',
-    marginBottom: '16px',
-  } as React.CSSProperties,
-  planFeatures: {
-    listStyle: 'none',
-    padding: 0,
-    margin: 0,
-    marginBottom: '20px',
-  } as React.CSSProperties,
-  planFeature: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '14px',
-    color: '#4b5563',
-    marginBottom: '8px',
-  } as React.CSSProperties,
-  errorMessage: {
-    padding: '12px 16px',
-    background: '#fef2f2',
-    border: '1px solid #fecaca',
-    borderRadius: '8px',
-    color: '#dc2626',
-    fontSize: '14px',
-    marginBottom: '16px',
-  } as React.CSSProperties,
-  loadingText: {
-    color: '#6b7280',
-    fontSize: '14px',
-  } as React.CSSProperties,
-};
 
 const PLANS = [
   {
@@ -270,6 +66,49 @@ const PLANS = [
   },
 ];
 
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function getAlertClass(type: string): string {
+  switch (type) {
+    case 'critical':
+      return 'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300';
+    case 'warning':
+      return 'bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300';
+    default:
+      return 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300';
+  }
+}
+
+function getStatusBadgeClass(status: string): string {
+  switch (status) {
+    case 'active':
+      return 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800';
+    case 'past_due':
+      return 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800';
+    default:
+      return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700';
+  }
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const icon =
+    status === 'active' ? <CheckCircle size={14} /> :
+    status === 'past_due' ? <AlertCircle size={14} /> :
+    <Clock size={14} />;
+  const label =
+    status === 'active' ? 'Active' :
+    status === 'past_due' ? 'Past Due' : 'Canceled';
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide ${getStatusBadgeClass(status)}`}>
+      {icon}
+      {label}
+    </span>
+  );
+}
+
+// ── Component ──────────────────────────────────────────────────────────────────
+
 export function BillingTab() {
   const { token } = useAuth();
   const [billing, setBilling] = useState<BillingInfo | null>(null);
@@ -288,12 +127,10 @@ export function BillingTab() {
       const response = await axios.get(`${API_URL}/api/billing/subscription`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (response.data.success) {
         setBilling(response.data.subscription);
       }
-    } catch (error: any) {
-      console.error('Failed to fetch billing info:', error);
+    } catch (err: any) {
       setError('Failed to load billing information');
     } finally {
       setLoading(false);
@@ -305,40 +142,31 @@ export function BillingTab() {
       const response = await axios.get(`${API_URL}/api/organization/usage/alerts`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (response.data.success) {
         setAlerts(response.data.alerts);
       }
-    } catch (error: any) {
-      console.error('Failed to fetch usage alerts:', error);
+    } catch {
+      // Non-critical — silently ignore
     }
   }
 
   async function handleUpgrade(priceId: string) {
-    if (!priceId) {
-      setError('Invalid plan selected');
-      return;
-    }
-
+    if (!priceId) { setError('Invalid plan selected'); return; }
     setUpgrading(true);
     setError(null);
-
     try {
       const response = await axios.post(
         `${API_URL}/api/billing/checkout`,
         { priceId },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
-
       if (response.data.success && response.data.checkoutUrl) {
-        // Redirect to Stripe Checkout
         window.location.href = response.data.checkoutUrl;
       } else {
         setError('Failed to create checkout session');
       }
-    } catch (error: any) {
-      console.error('Failed to upgrade:', error);
-      setError(error.response?.data?.message || 'Failed to start upgrade process');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to start upgrade process');
       setUpgrading(false);
     }
   }
@@ -348,82 +176,40 @@ export function BillingTab() {
       const response = await axios.post(
         `${API_URL}/api/billing/portal`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
-
       if (response.data.success && response.data.portalUrl) {
         window.open(response.data.portalUrl, '_blank');
       } else {
         setError('Failed to open customer portal');
       }
-    } catch (error: any) {
-      console.error('Failed to open portal:', error);
-      setError(error.response?.data?.message || 'Failed to open customer portal');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to open customer portal');
     }
   }
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+      year: 'numeric', month: 'long', day: 'numeric',
     });
   };
 
   const formatCurrency = (amount: number | null) => {
     if (amount === null) return 'N/A';
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount / 100);
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { style: React.CSSProperties; icon: JSX.Element; text: string }> = {
-      active: {
-        style: styles.statusActive,
-        icon: <CheckCircle size={14} />,
-        text: 'Active',
-      },
-      past_due: {
-        style: styles.statusPastDue,
-        icon: <AlertCircle size={14} />,
-        text: 'Past Due',
-      },
-      canceled: {
-        style: styles.statusCanceled,
-        icon: <Clock size={14} />,
-        text: 'Canceled',
-      },
-    };
-
-    const statusInfo = statusMap[status] || statusMap.canceled;
-    return (
-      <div style={{ ...styles.planBadge, ...statusInfo.style }}>
-        {statusInfo.icon}
-        {statusInfo.text}
-      </div>
-    );
-  };
-
-  const getAlertStyle = (type: string) => {
-    switch (type) {
-      case 'critical':
-        return styles.alertCritical;
-      case 'warning':
-        return styles.alertWarning;
-      default:
-        return styles.alertInfo;
-    }
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount / 100);
   };
 
   if (loading) {
-    return <div style={styles.loadingText}>Loading billing information...</div>;
+    return <p className="text-sm text-slate-500 dark:text-slate-400">Loading billing information...</p>;
   }
 
   if (error && !billing) {
-    return <div style={styles.errorMessage}>{error}</div>;
+    return (
+      <div className="px-4 py-3 rounded-lg text-sm bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400">
+        {error}
+      </div>
+    );
   }
 
   const currentPlan = billing?.plan || 'free';
@@ -432,15 +218,19 @@ export function BillingTab() {
 
   return (
     <div>
-      {/* Error Message */}
-      {error && <div style={styles.errorMessage}>{error}</div>}
+      {/* Inline error (when billing is also partially loaded) */}
+      {error && (
+        <div className="mb-4 px-4 py-3 rounded-lg text-sm bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400">
+          {error}
+        </div>
+      )}
 
       {/* Usage Alerts */}
       {alerts.length > 0 && (
-        <div style={{ marginBottom: '24px' }}>
-          {alerts.map((alert, index) => (
-            <div key={index} style={{ ...styles.alert, ...getAlertStyle(alert.type) }}>
-              <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+        <div className="mb-6 flex flex-col gap-3">
+          {alerts.map((alert) => (
+            <div key={`${alert.resource}-${alert.type}`} className={`flex items-start gap-2.5 px-4 py-3 rounded-lg text-sm leading-relaxed ${getAlertClass(alert.type)}`}>
+              <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
               <div>
                 <strong>{alert.resource}:</strong> {alert.message}
               </div>
@@ -449,81 +239,83 @@ export function BillingTab() {
         </div>
       )}
 
-      {/* Current Subscription */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>Current Subscription</h2>
-        <div
-          style={styles.card}
-          onMouseOver={(e) => {
-            e.currentTarget.style.borderColor = '#c7d2fe';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.15)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.borderColor = '#f3f4f6';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-        >
-          <div style={styles.planHeader}>
-            <h3 style={styles.planTitle}>{currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)} Plan</h3>
-            {billing && getStatusBadge(billing.status)}
+      {/* ── Current Subscription ──────────────────────────────────────────── */}
+      <section className="mb-8">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Current Subscription</h2>
+        <div className="p-6 bg-white dark:bg-gh-bg-subtle-dark border border-slate-200 dark:border-gh-border-dark rounded-xl">
+          <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              {currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)} Plan
+            </h3>
+            {billing && <StatusBadge status={billing.status} />}
           </div>
 
-          <div style={styles.infoGrid}>
-            {billing?.currentPeriodStart && (
-              <>
-                <div style={styles.infoItem}>
-                  <span style={styles.infoLabel}>Billing Period Start</span>
-                  <span style={styles.infoValue}>{formatDate(billing.currentPeriodStart)}</span>
-                </div>
-                <div style={styles.infoItem}>
-                  <span style={styles.infoLabel}>Billing Period End</span>
-                  <span style={styles.infoValue}>{formatDate(billing.currentPeriodEnd)}</span>
-                </div>
-              </>
-            )}
-            {billing?.lastPaymentDate && (
-              <>
-                <div style={styles.infoItem}>
-                  <span style={styles.infoLabel}>Last Payment</span>
-                  <span style={styles.infoValue}>{formatDate(billing.lastPaymentDate)}</span>
-                </div>
-                <div style={styles.infoItem}>
-                  <span style={styles.infoLabel}>Amount Paid</span>
-                  <span style={styles.infoValue}>{formatCurrency(billing.lastPaymentAmount)}</span>
-                </div>
-              </>
-            )}
-          </div>
+          {billing && (billing.currentPeriodStart || billing.lastPaymentDate) && (
+            <div className="grid sm:grid-cols-2 gap-4 mb-5">
+              {billing.currentPeriodStart && (
+                <>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Billing Period Start
+                    </span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {formatDate(billing.currentPeriodStart)}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Billing Period End
+                    </span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {formatDate(billing.currentPeriodEnd)}
+                    </span>
+                  </div>
+                </>
+              )}
+              {billing.lastPaymentDate && (
+                <>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Last Payment
+                    </span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {formatDate(billing.lastPaymentDate)}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Amount Paid
+                    </span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {formatCurrency(billing.lastPaymentAmount)}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
-          <div style={styles.buttonGroup}>
-            {hasActiveSubscription && (
+          {hasActiveSubscription && (
+            <div className="flex flex-wrap gap-3 mt-5">
               <button
-                style={styles.secondaryButton}
                 onClick={openCustomerPortal}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(79, 70, 229, 0.2)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-950/50 transition-colors cursor-pointer"
               >
-                <CreditCard size={18} />
+                <CreditCard size={16} />
                 Manage Subscription
-                <ExternalLink size={14} />
+                <ExternalLink size={13} />
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-      </div>
+      </section>
 
-      {/* Available Plans */}
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>
+      {/* ── Available Plans ───────────────────────────────────────────────── */}
+      <section className="mb-8">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
           {isFreePlan ? 'Upgrade Your Plan' : 'Available Plans'}
         </h2>
-        <div style={styles.plansGrid}>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {PLANS.map((plan) => {
             const isCurrent = plan.id === currentPlan;
             const canUpgrade = plan.id !== 'free' && !isCurrent;
@@ -531,74 +323,42 @@ export function BillingTab() {
             return (
               <div
                 key={plan.id}
-                style={{
-                  ...styles.planCard,
-                  ...(isCurrent ? styles.planCardCurrent : {}),
-                }}
-                onMouseOver={(e) => {
-                  if (!isCurrent) {
-                    e.currentTarget.style.borderColor = '#667eea';
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.boxShadow = '0 8px 16px rgba(102, 126, 234, 0.2)';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!isCurrent) {
-                    e.currentTarget.style.borderColor = '#e5e7eb';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }
-                }}
+                className={`p-6 rounded-xl border-2 transition-all duration-200 ${
+                  isCurrent
+                    ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-500 dark:border-blue-600'
+                    : 'bg-white dark:bg-gh-bg-subtle-dark border-slate-200 dark:border-gh-border-dark hover:border-blue-400 dark:hover:border-blue-700 hover:-translate-y-1 hover:shadow-lg'
+                }`}
               >
-                <div style={styles.planName}>{plan.name}</div>
-                <div style={styles.planPrice}>
+                <div className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">{plan.name}</div>
+                <div className="text-3xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
                   ${plan.price}
-                  <span style={styles.planPeriod}>/month</span>
+                  <span className="text-sm font-normal text-slate-500 dark:text-slate-400 ml-1">/month</span>
                 </div>
-                <ul style={styles.planFeatures}>
-                  {plan.features.map((feature, index) => (
-                    <li key={index} style={styles.planFeature}>
-                      <CheckCircle size={16} color="#10b981" style={{ flexShrink: 0 }} />
+                <ul className="mt-4 mb-5 space-y-2">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                      <CheckCircle2 size={15} className="flex-shrink-0 text-emerald-500" />
                       {feature}
                     </li>
                   ))}
                 </ul>
+
                 {isCurrent ? (
                   <button
-                    style={{
-                      ...styles.secondaryButton,
-                      width: '100%',
-                      justifyContent: 'center',
-                      cursor: 'default',
-                    }}
                     disabled
+                    className="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg cursor-default"
                   >
                     Current Plan
                   </button>
                 ) : canUpgrade ? (
                   <button
-                    style={{
-                      ...styles.primaryButton,
-                      width: '100%',
-                      justifyContent: 'center',
-                      opacity: upgrading ? 0.6 : 1,
-                    }}
                     onClick={() => plan.priceId && handleUpgrade(plan.priceId)}
                     disabled={upgrading || !plan.priceId}
-                    onMouseOver={(e) => {
-                      if (!upgrading) {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 8px 16px rgba(102, 126, 234, 0.3)';
-                      }
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-gh-accent dark:bg-gh-accent-dark hover:opacity-90 rounded-lg transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {upgrading ? 'Processing...' : (
                       <>
-                        <TrendingUp size={18} />
+                        <TrendingUp size={16} />
                         Upgrade to {plan.name}
                       </>
                     )}
@@ -608,7 +368,7 @@ export function BillingTab() {
             );
           })}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

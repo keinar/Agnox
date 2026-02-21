@@ -34,103 +34,26 @@ const EMPTY_SETTINGS: RunSettings = {
     defaultTestFolder: '',
 };
 
-const styles = {
-    section: {
-        marginBottom: '32px',
-    } as React.CSSProperties,
-    sectionTitle: {
-        fontSize: '18px',
-        fontWeight: 600,
-        color: '#1e293b',
-        marginBottom: '16px',
-    } as React.CSSProperties,
-    sectionDescription: {
-        fontSize: '13px',
-        color: '#64748b',
-        marginBottom: '20px',
-        lineHeight: 1.5,
-    } as React.CSSProperties,
-    fieldGroup: {
-        marginBottom: '20px',
-    } as React.CSSProperties,
-    label: {
-        display: 'block',
-        fontSize: '14px',
-        fontWeight: 500,
-        color: '#374151',
-        marginBottom: '8px',
-    } as React.CSSProperties,
-    input: {
-        width: '100%',
-        maxWidth: '500px',
-        padding: '10px 12px',
-        fontSize: '14px',
-        border: '1px solid #e2e8f0',
-        borderRadius: '6px',
-        outline: 'none',
-        transition: 'border-color 0.2s',
-        boxSizing: 'border-box',
-    } as React.CSSProperties,
-    select: {
-        width: '100%',
-        maxWidth: '500px',
-        padding: '10px 12px',
-        fontSize: '14px',
-        border: '1px solid #e2e8f0',
-        borderRadius: '6px',
-        outline: 'none',
-        background: '#fff',
-        cursor: 'pointer',
-        boxSizing: 'border-box',
-    } as React.CSSProperties,
-    button: {
-        padding: '10px 20px',
-        fontSize: '14px',
-        fontWeight: 600,
-        color: '#ffffff',
-        background: 'linear-gradient(to right, #4f46e5, #7c3aed)',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        transition: 'opacity 0.2s',
-    } as React.CSSProperties,
-    secondaryButton: {
-        padding: '10px 20px',
-        fontSize: '14px',
-        fontWeight: 500,
-        color: '#4f46e5',
-        background: '#f1f5f9',
-        border: '1px solid #e2e8f0',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-    } as React.CSSProperties,
-    divider: {
-        border: 'none',
-        borderTop: '1px solid #f1f5f9',
-        margin: '28px 0',
-    } as React.CSSProperties,
-    createRow: {
-        display: 'flex',
-        gap: '8px',
-        alignItems: 'center',
-        maxWidth: '500px',
-    } as React.CSSProperties,
-    upgradeBanner: {
-        padding: '12px 16px',
-        borderRadius: '8px',
-        fontSize: '13px',
-        background: '#fefce8',
-        color: '#854d0e',
-        border: '1px solid #fde68a',
-        marginTop: '8px',
-    } as React.CSSProperties,
-};
+// ── Shared class strings ───────────────────────────────────────────────────────
+
+const INPUT_CLASS =
+    'w-full max-w-lg px-3 py-2.5 text-sm border border-slate-300 dark:border-gh-border-dark rounded-lg ' +
+    'bg-white dark:bg-gh-bg-dark text-slate-900 dark:text-slate-200 ' +
+    'placeholder-slate-400 dark:placeholder-slate-500 ' +
+    'focus:outline-none focus:ring-2 focus:ring-gh-accent dark:focus:ring-gh-accent-dark focus:border-transparent transition ' +
+    'box-border';
+
+const SELECT_CLASS =
+    'w-full max-w-lg px-3 py-2.5 text-sm border border-slate-300 dark:border-gh-border-dark rounded-lg ' +
+    'bg-white dark:bg-gh-bg-dark text-slate-900 dark:text-slate-200 ' +
+    'focus:outline-none focus:ring-2 focus:ring-gh-accent dark:focus:ring-gh-accent-dark focus:border-transparent transition cursor-pointer ' +
+    'box-border';
+
+// ── Component ──────────────────────────────────────────────────────────────────
 
 export function RunSettingsTab() {
-    const { token, user } = useAuth();
+    const { token } = useAuth();
 
-    // Project state
     const [projects, setProjects] = useState<Project[]>([]);
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
     const [newProjectName, setNewProjectName] = useState('');
@@ -138,18 +61,13 @@ export function RunSettingsTab() {
     const [projectLimitReached, setProjectLimitReached] = useState(false);
     const [projectLimitMessage, setProjectLimitMessage] = useState('');
 
-    // Settings state
     const [settings, setSettings] = useState<RunSettings>({ ...EMPTY_SETTINGS });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    // Fetch projects on mount
-    useEffect(() => {
-        fetchProjects();
-    }, []);
+    useEffect(() => { fetchProjects(); }, []);
 
-    // Fetch settings when selected project changes
     useEffect(() => {
         if (selectedProjectId) {
             fetchSettings(selectedProjectId);
@@ -163,18 +81,14 @@ export function RunSettingsTab() {
             const response = await axios.get(`${API_URL}/api/projects`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-
             if (response.data.success) {
                 const projectList: Project[] = response.data.projects;
                 setProjects(projectList);
-
-                // Auto-select the first project if available
                 if (projectList.length > 0 && !selectedProjectId) {
                     setSelectedProjectId(projectList[0].id);
                 }
             }
         } catch (error: any) {
-            console.error('Failed to fetch projects:', error);
             setMessage({
                 type: 'error',
                 text: error.response?.data?.error || 'Failed to load projects',
@@ -189,12 +103,10 @@ export function RunSettingsTab() {
             const response = await axios.get(`${API_URL}/api/projects/${projectId}/settings`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-
             if (response.data.success) {
                 setSettings(response.data.settings);
             }
-        } catch (error: any) {
-            console.error('Failed to fetch settings:', error);
+        } catch {
             setSettings({ ...EMPTY_SETTINGS });
         }
     }
@@ -210,9 +122,8 @@ export function RunSettingsTab() {
             const response = await axios.post(
                 `${API_URL}/api/projects`,
                 { name: newProjectName.trim() },
-                { headers: { Authorization: `Bearer ${token}` } }
+                { headers: { Authorization: `Bearer ${token}` } },
             );
-
             if (response.data.success) {
                 const created = response.data.project;
                 setProjects(prev => [created, ...prev]);
@@ -246,16 +157,14 @@ export function RunSettingsTab() {
             const response = await axios.put(
                 `${API_URL}/api/projects/${selectedProjectId}/settings`,
                 settings,
-                { headers: { Authorization: `Bearer ${token}` } }
+                { headers: { Authorization: `Bearer ${token}` } },
             );
-
             if (response.data.success) {
                 setSettings(response.data.settings);
                 setMessage({ type: 'success', text: 'Run settings saved successfully' });
                 setTimeout(() => setMessage(null), 3000);
             }
         } catch (error: any) {
-            console.error('Failed to save settings:', error);
             setMessage({
                 type: 'error',
                 text: error.response?.data?.error || 'Failed to save settings',
@@ -266,78 +175,72 @@ export function RunSettingsTab() {
     }
 
     if (loading) {
-        return <div style={{ color: '#6b7280', fontSize: '14px' }}>Loading run settings...</div>;
+        return <p className="text-sm text-slate-500 dark:text-slate-400">Loading run settings...</p>;
     }
 
     return (
         <div>
-            {/* Status Message */}
+            {/* Feedback banner */}
             {message && (
-                <div style={{
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    marginBottom: '16px',
-                    fontSize: '14px',
-                    background: message.type === 'success' ? '#ecfdf5' : '#fef2f2',
-                    color: message.type === 'success' ? '#047857' : '#b91c1c',
-                    border: `1px solid ${message.type === 'success' ? '#a7f3d0' : '#fecaca'}`,
-                }}>
+                <div className={`mb-4 px-4 py-3 rounded-lg text-sm border ${
+                    message.type === 'success'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
+                        : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
+                }`}>
                     {message.text}
                 </div>
             )}
 
-            {/* Project Selector Section */}
-            <div style={styles.section}>
-                <h2 style={styles.sectionTitle}>Project</h2>
-                <p style={styles.sectionDescription}>
+            {/* ── Project Selector ──────────────────────────────────────────────── */}
+            <section className="mb-8">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">Project</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
                     Select a project to configure its test execution defaults. These settings pre-fill the Launch Modal.
                 </p>
 
-                {projects.length > 0 ? (
-                    <div style={styles.fieldGroup}>
-                        <label style={styles.label}>Active Project</label>
+                {projects.length > 0 && (
+                    <div className="mb-5">
+                        <label htmlFor="active-project" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Active Project
+                        </label>
                         <select
+                            id="active-project"
                             value={selectedProjectId || ''}
                             onChange={(e) => setSelectedProjectId(e.target.value)}
-                            style={styles.select}
+                            className={SELECT_CLASS}
                         >
                             {projects.map(p => (
                                 <option key={p.id} value={p.id}>{p.name}</option>
                             ))}
                         </select>
                     </div>
-                ) : (
-                    <div style={styles.fieldGroup}>
-                        <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '12px' }}>
-                            No projects yet. Create your first project to configure run settings.
-                        </p>
-                    </div>
                 )}
 
-                {/* Create Project */}
+                {projects.length === 0 && (
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                        No projects yet. Create your first project to configure run settings.
+                    </p>
+                )}
+
+                {/* Create project row */}
                 {!projectLimitReached && (
-                    <div style={styles.fieldGroup}>
-                        <label style={styles.label}>
+                    <div className="mb-5">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                             {projects.length === 0 ? 'Create Your First Project' : 'Add Another Project'}
                         </label>
-                        <div style={styles.createRow}>
+                        <div className="flex gap-2 items-center max-w-lg">
                             <input
                                 type="text"
                                 value={newProjectName}
                                 onChange={(e) => setNewProjectName(e.target.value)}
                                 placeholder="e.g. My E2E Tests"
-                                style={{ ...styles.input, flex: 1, maxWidth: 'none' }}
+                                className={`flex-1 min-w-0 px-3 py-2.5 text-sm border border-slate-300 dark:border-gh-border-dark rounded-lg bg-white dark:bg-gh-bg-dark text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-gh-accent dark:focus:ring-gh-accent-dark focus:border-transparent transition`}
                                 onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()}
                             />
                             <button
                                 onClick={handleCreateProject}
                                 disabled={creatingProject || !newProjectName.trim()}
-                                style={{
-                                    ...styles.secondaryButton,
-                                    opacity: creatingProject || !newProjectName.trim() ? 0.5 : 1,
-                                    cursor: creatingProject || !newProjectName.trim() ? 'not-allowed' : 'pointer',
-                                    whiteSpace: 'nowrap',
-                                }}
+                                className="px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-gh-bg-dark border border-slate-300 dark:border-gh-border-dark rounded-lg hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer whitespace-nowrap"
                             >
                                 {creatingProject ? 'Creating...' : 'Create'}
                             </button>
@@ -345,45 +248,56 @@ export function RunSettingsTab() {
                     </div>
                 )}
 
-                {/* Plan Limit Banner */}
+                {/* Plan limit banner */}
                 {projectLimitReached && (
-                    <div style={styles.upgradeBanner}>
+                    <div className="mt-2 px-4 py-3 rounded-lg text-sm bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                         ⚡ {projectLimitMessage}.{' '}
-                        <a href="/settings?tab=billing" style={{ color: '#92400e', fontWeight: 600 }}>
+                        <a
+                            href="/settings?tab=billing"
+                            className="font-semibold underline hover:no-underline"
+                        >
                             Upgrade your plan
                         </a>{' '}
                         to add more projects.
                     </div>
                 )}
-            </div>
+            </section>
 
-            {/* Settings Form — only shown when a project is selected */}
+            {/* ── Execution Defaults ─────────────────────────────────────────────── */}
             {selectedProjectId && (
                 <>
-                    <hr style={styles.divider} />
+                    <hr className="border-0 border-t border-slate-200 dark:border-gh-border-dark my-7" />
 
-                    <div style={styles.section}>
-                        <h2 style={styles.sectionTitle}>Execution Defaults</h2>
-                        <p style={styles.sectionDescription}>
+                    <section className="mb-8">
+                        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">
+                            Execution Defaults
+                        </h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
                             These values pre-fill the Launch Modal when triggering a new test run.
                         </p>
 
                         {/* Docker Image */}
-                        <div style={styles.fieldGroup}>
-                            <label style={styles.label}>Docker Image</label>
+                        <div className="mb-5">
+                            <label htmlFor="rs-docker-image" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Docker Image
+                            </label>
                             <input
+                                id="rs-docker-image"
                                 type="text"
                                 value={settings.dockerImage}
                                 onChange={(e) => setSettings(prev => ({ ...prev, dockerImage: e.target.value }))}
                                 placeholder="e.g. myorg/playwright-tests:latest"
-                                style={styles.input}
+                                className={INPUT_CLASS}
                             />
                         </div>
 
-                        {/* Target URLs */}
-                        <div style={styles.fieldGroup}>
-                            <label style={styles.label}>DEV URL</label>
+                        {/* DEV URL */}
+                        <div className="mb-5">
+                            <label htmlFor="rs-dev-url" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                DEV URL
+                            </label>
                             <input
+                                id="rs-dev-url"
                                 type="text"
                                 value={settings.targetUrls.dev}
                                 onChange={(e) => setSettings(prev => ({
@@ -391,13 +305,17 @@ export function RunSettingsTab() {
                                     targetUrls: { ...prev.targetUrls, dev: e.target.value },
                                 }))}
                                 placeholder="e.g. https://dev.myapp.com"
-                                style={styles.input}
+                                className={INPUT_CLASS}
                             />
                         </div>
 
-                        <div style={styles.fieldGroup}>
-                            <label style={styles.label}>Staging URL</label>
+                        {/* Staging URL */}
+                        <div className="mb-5">
+                            <label htmlFor="rs-staging-url" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Staging URL
+                            </label>
                             <input
+                                id="rs-staging-url"
                                 type="text"
                                 value={settings.targetUrls.staging}
                                 onChange={(e) => setSettings(prev => ({
@@ -405,13 +323,17 @@ export function RunSettingsTab() {
                                     targetUrls: { ...prev.targetUrls, staging: e.target.value },
                                 }))}
                                 placeholder="e.g. https://staging.myapp.com"
-                                style={styles.input}
+                                className={INPUT_CLASS}
                             />
                         </div>
 
-                        <div style={styles.fieldGroup}>
-                            <label style={styles.label}>Production URL</label>
+                        {/* Production URL */}
+                        <div className="mb-5">
+                            <label htmlFor="rs-prod-url" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Production URL
+                            </label>
                             <input
+                                id="rs-prod-url"
                                 type="text"
                                 value={settings.targetUrls.prod}
                                 onChange={(e) => setSettings(prev => ({
@@ -419,35 +341,34 @@ export function RunSettingsTab() {
                                     targetUrls: { ...prev.targetUrls, prod: e.target.value },
                                 }))}
                                 placeholder="e.g. https://myapp.com"
-                                style={styles.input}
+                                className={INPUT_CLASS}
                             />
                         </div>
 
                         {/* Default Test Folder */}
-                        <div style={styles.fieldGroup}>
-                            <label style={styles.label}>Default Test Folder</label>
+                        <div className="mb-5">
+                            <label htmlFor="rs-test-folder" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Default Test Folder
+                            </label>
                             <input
+                                id="rs-test-folder"
                                 type="text"
                                 value={settings.defaultTestFolder}
                                 onChange={(e) => setSettings(prev => ({ ...prev, defaultTestFolder: e.target.value }))}
                                 placeholder="e.g. tests/e2e"
-                                style={styles.input}
+                                className={INPUT_CLASS}
                             />
                         </div>
 
-                        {/* Save Button */}
+                        {/* Save button */}
                         <button
                             onClick={handleSave}
                             disabled={saving}
-                            style={{
-                                ...styles.button,
-                                opacity: saving ? 0.5 : 1,
-                                cursor: saving ? 'not-allowed' : 'pointer',
-                            }}
+                            className="px-5 py-2.5 text-sm font-semibold text-white bg-gh-accent dark:bg-gh-accent-dark hover:opacity-90 rounded-lg transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {saving ? 'Saving...' : 'Save Settings'}
                         </button>
-                    </div>
+                    </section>
                 </>
             )}
         </div>

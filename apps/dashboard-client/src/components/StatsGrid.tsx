@@ -54,7 +54,7 @@ export const StatsGrid = ({ executions, kpis, kpisLoading }: Props) => {
                 subtitle={kpis ? `${kpis.passedRuns} / ${kpis.finishedRuns} finished` : undefined}
             />
             <StatCard
-                icon={<Timer size={20} className="text-violet-500" />}
+                icon={<Timer size={20} className="text-amber-500" />}
                 title="Avg. Duration"
                 value={kpisLoading && kpis === null ? '---' : formatAvgDuration(avgDurMs)}
                 loading={kpisLoading && kpis === null}
@@ -75,16 +75,16 @@ interface StatCardProps {
 }
 
 const StatCard = ({ icon, title, value, loading = false, subtitle }: StatCardProps) => (
-    <div className="bg-gh-bg rounded-xl shadow-sm border border-gh-border p-5 flex items-center gap-4 transition-shadow duration-200 hover:shadow-md">
-        <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-gh-bg-subtle flex items-center justify-center">
+    <div className="bg-white dark:bg-gh-bg-subtle-dark rounded-xl shadow-sm border border-slate-200 dark:border-gh-border-dark p-5 flex items-center gap-4 transition-shadow duration-200 hover:shadow-md">
+        <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-slate-100 dark:bg-gh-bg-dark flex items-center justify-center">
             {icon}
         </div>
         <div className="min-w-0">
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{title}</div>
+            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{title}</div>
             {loading ? (
-                <div className="mt-1 h-7 w-16 bg-slate-200 rounded animate-pulse" />
+                <div className="mt-1 h-7 w-16 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
             ) : (
-                <div className="text-2xl font-bold text-gh-text leading-tight">{value}</div>
+                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 leading-tight tabular-nums">{value}</div>
             )}
             {subtitle && !loading && (
                 <div className="text-xs text-slate-400 mt-0.5 truncate">{subtitle}</div>

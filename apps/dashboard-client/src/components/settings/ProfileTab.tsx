@@ -12,183 +12,32 @@ interface ApiKey {
     lastUsed: string | null;
 }
 
-const styles = {
-    section: {
-        marginBottom: '32px',
-    } as React.CSSProperties,
-    sectionTitle: {
-        fontSize: '18px',
-        fontWeight: 600,
-        color: '#1e293b',
-        marginBottom: '16px',
-    } as React.CSSProperties,
-    fieldGroup: {
-        marginBottom: '24px',
-    } as React.CSSProperties,
-    label: {
-        display: 'block',
-        fontSize: '14px',
-        fontWeight: 500,
-        color: '#374151',
-        marginBottom: '8px',
-    } as React.CSSProperties,
-    input: {
-        width: '100%',
-        maxWidth: '400px',
-        padding: '10px 12px',
-        fontSize: '14px',
-        border: '1px solid #e2e8f0',
-        borderRadius: '6px',
-        outline: 'none',
-        transition: 'border-color 0.2s',
-        boxSizing: 'border-box' as const,
-    } as React.CSSProperties,
-    inputDisabled: {
-        background: '#f9fafb',
-        color: '#6b7280',
-        cursor: 'not-allowed',
-    } as React.CSSProperties,
-    button: {
-        marginTop: '12px',
-        padding: '10px 20px',
-        fontSize: '14px',
-        fontWeight: 600,
-        color: '#ffffff',
-        background: 'linear-gradient(to right, #4f46e5, #7c3aed)',
-        border: 'none',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        transition: 'opacity 0.2s',
-    } as React.CSSProperties,
-    secondaryButton: {
-        padding: '8px 16px',
-        fontSize: '13px',
-        fontWeight: 500,
-        color: '#374151',
-        background: '#f3f4f6',
-        border: '1px solid #d1d5db',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-    } as React.CSSProperties,
-    dangerButton: {
-        padding: '6px 12px',
-        fontSize: '12px',
-        fontWeight: 500,
-        color: '#dc2626',
-        background: '#fef2f2',
-        border: '1px solid #fecaca',
-        borderRadius: '4px',
-        cursor: 'pointer',
-    } as React.CSSProperties,
-    roleBadge: {
-        display: 'inline-block',
-        padding: '6px 14px',
-        borderRadius: '6px',
-        fontSize: '13px',
-        fontWeight: 600,
-        textTransform: 'uppercase' as const,
-    } as React.CSSProperties,
-    adminBadge: {
-        background: 'linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%)',
-        color: '#667eea',
-        border: '1px solid #c7d2fe',
-    },
-    developerBadge: {
-        background: '#f0fdf4',
-        color: '#16a34a',
-        border: '1px solid #86efac',
-    },
-    viewerBadge: {
-        background: '#f3f4f6',
-        color: '#6b7280',
-        border: '1px solid #d1d5db',
-    },
-    message: {
-        padding: '12px 16px',
-        borderRadius: '8px',
-        marginBottom: '16px',
-        fontSize: '14px',
-    } as React.CSSProperties,
-    successMessage: {
-        background: '#ecfdf5',
-        color: '#047857',
-        border: '1px solid #a7f3d0',
-    },
-    errorMessage: {
-        background: '#fef2f2',
-        color: '#b91c1c',
-        border: '1px solid #fecaca',
-    },
-    // API Key specific styles
-    keyTable: {
-        width: '100%',
-        borderCollapse: 'collapse' as const,
-        marginTop: '16px',
-    } as React.CSSProperties,
-    keyRow: {
-        borderBottom: '1px solid #e5e7eb',
-    } as React.CSSProperties,
-    keyCell: {
-        padding: '12px 8px',
-        fontSize: '14px',
-        color: '#374151',
-        textAlign: 'left' as const,
-    } as React.CSSProperties,
-    keyPrefix: {
-        fontFamily: 'monospace',
-        fontSize: '13px',
-        background: '#f3f4f6',
-        padding: '4px 8px',
-        borderRadius: '4px',
-        color: '#4b5563',
-    } as React.CSSProperties,
-    modalOverlay: {
-        position: 'fixed' as const,
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-    } as React.CSSProperties,
-    modal: {
-        background: 'white',
-        borderRadius: '12px',
-        padding: '24px',
-        maxWidth: '500px',
-        width: '90%',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-    } as React.CSSProperties,
-    keyDisplay: {
-        fontFamily: 'monospace',
-        fontSize: '14px',
-        background: '#1e293b',
-        color: '#22c55e',
-        padding: '16px',
-        borderRadius: '8px',
-        wordBreak: 'break-all' as const,
-        marginBottom: '12px',
-    } as React.CSSProperties,
-    warningBox: {
-        background: '#fef3c7',
-        border: '1px solid #fcd34d',
-        borderRadius: '8px',
-        padding: '12px',
-        fontSize: '13px',
-        color: '#92400e',
-        marginBottom: '16px',
-    } as React.CSSProperties,
-    emptyState: {
-        textAlign: 'center' as const,
-        padding: '32px',
-        color: '#6b7280',
-        fontSize: '14px',
-    } as React.CSSProperties,
-};
+// ── Shared class strings ───────────────────────────────────────────────────────
+
+const INPUT_CLASS =
+    'w-full max-w-sm px-3 py-2.5 text-sm border border-slate-300 dark:border-gh-border-dark rounded-lg ' +
+    'bg-white dark:bg-gh-bg-dark text-slate-900 dark:text-slate-200 ' +
+    'placeholder-slate-400 dark:placeholder-slate-500 ' +
+    'focus:outline-none focus:ring-2 focus:ring-gh-accent dark:focus:ring-gh-accent-dark focus:border-transparent transition box-border';
+
+const PRIMARY_BTN =
+    'px-5 py-2.5 text-sm font-semibold text-white bg-gh-accent dark:bg-gh-accent-dark hover:opacity-90 ' +
+    'rounded-lg transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function getRoleBadgeClass(role: string): string {
+    switch (role) {
+        case 'admin':
+            return 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800';
+        case 'developer':
+            return 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800';
+        default:
+            return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700';
+    }
+}
+
+// ── Component ──────────────────────────────────────────────────────────────────
 
 export function ProfileTab() {
     const { user, token } = useAuth();
@@ -196,7 +45,6 @@ export function ProfileTab() {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-    // API Key state
     const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
     const [loadingKeys, setLoadingKeys] = useState(true);
     const [newKeyName, setNewKeyName] = useState('');
@@ -205,34 +53,16 @@ export function ProfileTab() {
     const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
     const [copiedKey, setCopiedKey] = useState(false);
 
-    const getRoleBadgeStyle = (role: string) => {
-        switch (role) {
-            case 'admin':
-                return { ...styles.roleBadge, ...styles.adminBadge };
-            case 'developer':
-                return { ...styles.roleBadge, ...styles.developerBadge };
-            case 'viewer':
-                return { ...styles.roleBadge, ...styles.viewerBadge };
-            default:
-                return styles.roleBadge;
-        }
-    };
-
-    // Fetch API keys on mount
-    useEffect(() => {
-        fetchApiKeys();
-    }, []);
+    useEffect(() => { fetchApiKeys(); }, []);
 
     async function fetchApiKeys() {
         try {
             const response = await axios.get(`${API_URL}/api/auth/api-keys`, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` },
             });
-            if (response.data.success) {
-                setApiKeys(response.data.data);
-            }
-        } catch (error) {
-            console.error('Failed to fetch API keys:', error);
+            if (response.data.success) { setApiKeys(response.data.data); }
+        } catch {
+            // Non-critical
         } finally {
             setLoadingKeys(false);
         }
@@ -240,27 +70,20 @@ export function ProfileTab() {
 
     async function handleSave() {
         if (!name.trim() || name === user?.name) return;
-
         setSaving(true);
         setMessage(null);
-
         try {
             const response = await axios.patch(
                 `${API_URL}/api/auth/profile`,
                 { name: name.trim() },
-                { headers: { Authorization: `Bearer ${token}` } }
+                { headers: { Authorization: `Bearer ${token}` } },
             );
-
             if (response.data.success) {
                 setMessage({ type: 'success', text: 'Profile updated successfully. Refresh the page to see changes.' });
                 setTimeout(() => setMessage(null), 3000);
             }
         } catch (error: any) {
-            console.error('Failed to update profile:', error);
-            setMessage({
-                type: 'error',
-                text: error.response?.data?.message || 'Failed to update profile',
-            });
+            setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to update profile' });
         } finally {
             setSaving(false);
         }
@@ -272,44 +95,32 @@ export function ProfileTab() {
             const response = await axios.post(
                 `${API_URL}/api/auth/api-keys`,
                 { name: newKeyName.trim() || 'Unnamed Key' },
-                { headers: { Authorization: `Bearer ${token}` } }
+                { headers: { Authorization: `Bearer ${token}` } },
             );
-
             if (response.data.success) {
                 setNewlyCreatedKey(response.data.apiKey);
                 setShowNewKeyModal(true);
                 setNewKeyName('');
-                fetchApiKeys(); // Refresh the list
+                fetchApiKeys();
             }
         } catch (error: any) {
-            console.error('Failed to generate API key:', error);
-            setMessage({
-                type: 'error',
-                text: error.response?.data?.message || 'Failed to generate API key',
-            });
+            setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to generate API key' });
         } finally {
             setGeneratingKey(false);
         }
     }
 
     async function handleRevokeKey(keyId: string) {
-        if (!confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
-            return;
-        }
-
+        if (!confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) return;
         try {
             await axios.delete(`${API_URL}/api/auth/api-keys/${keyId}`, {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` },
             });
-            fetchApiKeys(); // Refresh the list
+            fetchApiKeys();
             setMessage({ type: 'success', text: 'API key revoked successfully.' });
             setTimeout(() => setMessage(null), 3000);
         } catch (error: any) {
-            console.error('Failed to revoke API key:', error);
-            setMessage({
-                type: 'error',
-                text: error.response?.data?.message || 'Failed to revoke API key',
-            });
+            setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to revoke API key' });
         }
     }
 
@@ -329,187 +140,195 @@ export function ProfileTab() {
 
     function formatDate(dateString: string | null) {
         if (!dateString) return 'Never';
-        return new Date(dateString).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-        });
+        return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
 
     return (
         <div>
+            {/* Feedback banner */}
             {message && (
-                <div style={{
-                    ...styles.message,
-                    ...(message.type === 'success' ? styles.successMessage : styles.errorMessage),
-                }}>
+                <div className={`mb-4 px-4 py-3 rounded-lg text-sm border ${
+                    message.type === 'success'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
+                        : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
+                }`}>
                     {message.text}
                 </div>
             )}
 
-            {/* Profile Section */}
-            <div style={styles.section}>
-                <h2 style={styles.sectionTitle}>My Profile</h2>
+            {/* ── Profile Section ───────────────────────────────────────────────── */}
+            <section className="mb-8">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">My Profile</h2>
 
-                <div style={styles.fieldGroup}>
-                    <label style={styles.label}>Name</label>
+                {/* Name */}
+                <div className="mb-5">
+                    <label htmlFor="profile-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Name</label>
                     <input
+                        id="profile-name"
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        style={styles.input}
+                        className={INPUT_CLASS}
                         placeholder="Your name"
                     />
                     <button
                         onClick={handleSave}
                         disabled={saving || !name.trim() || name === user?.name}
-                        style={{
-                            ...styles.button,
-                            opacity: saving || !name.trim() || name === user?.name ? 0.5 : 1,
-                            cursor: saving || !name.trim() || name === user?.name ? 'not-allowed' : 'pointer',
-                        }}
+                        className={`mt-3 ${PRIMARY_BTN}`}
                     >
                         {saving ? 'Saving...' : 'Save Changes'}
                     </button>
                 </div>
 
-                <div style={styles.fieldGroup}>
-                    <label style={styles.label}>Email</label>
+                {/* Email (read-only) */}
+                <div className="mb-5">
+                    <label htmlFor="profile-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email</label>
                     <input
+                        id="profile-email"
                         type="email"
                         value={user?.email || ''}
                         disabled
-                        style={{ ...styles.input, ...styles.inputDisabled }}
+                        className="w-full max-w-sm px-3 py-2.5 text-sm border border-slate-200 dark:border-gh-border-dark rounded-lg bg-slate-100 dark:bg-gh-bg-subtle-dark text-slate-500 dark:text-slate-500 cursor-not-allowed box-border"
                     />
-                    <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
-                        Email cannot be changed
-                    </p>
+                    <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Email cannot be changed</p>
                 </div>
 
-                <div style={styles.fieldGroup}>
-                    <label style={styles.label}>Role</label>
-                    <span style={getRoleBadgeStyle(user?.role || 'viewer')}>
+                {/* Role badge */}
+                <div className="mb-5">
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Role</p>
+                    <span className={`inline-block px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wide ${getRoleBadgeClass(user?.role || 'viewer')}`}>
                         {user?.role || 'viewer'}
                     </span>
-                    <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '8px' }}>
-                        Your role is assigned by an administrator
-                    </p>
+                    <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">Your role is assigned by an administrator</p>
                 </div>
-            </div>
+            </section>
 
-            {/* API Access Section */}
-            <div style={styles.section}>
-                <h2 style={styles.sectionTitle}>🔑 API Access</h2>
-                <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
+            {/* ── API Access ────────────────────────────────────────────────────── */}
+            <section className="mb-8">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">API Access</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
                     Generate API keys for CI/CD integration. Use these keys instead of username/password.
                 </p>
 
-                {/* Generate New Key */}
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', marginBottom: '24px' }}>
-                    <div style={{ flex: 1, maxWidth: '300px' }}>
-                        <label style={styles.label}>Key Name (optional)</label>
+                {/* Generate key row */}
+                <div className="flex gap-3 items-end mb-6">
+                    <div className="flex-1 max-w-xs">
+                        <label htmlFor="new-key-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Key Name (optional)
+                        </label>
                         <input
+                            id="new-key-name"
                             type="text"
                             value={newKeyName}
                             onChange={(e) => setNewKeyName(e.target.value)}
-                            style={styles.input}
+                            className={INPUT_CLASS}
                             placeholder="e.g., GitHub Actions"
                         />
                     </div>
                     <button
                         onClick={handleGenerateKey}
                         disabled={generatingKey}
-                        style={{
-                            ...styles.button,
-                            marginTop: 0,
-                            opacity: generatingKey ? 0.5 : 1,
-                        }}
+                        className={PRIMARY_BTN}
                     >
                         {generatingKey ? 'Generating...' : '+ Generate New Key'}
                     </button>
                 </div>
 
-                {/* Keys List */}
+                {/* Keys list */}
                 {loadingKeys ? (
-                    <div style={styles.emptyState}>Loading API keys...</div>
+                    <p className="text-center py-8 text-sm text-slate-500 dark:text-slate-400">Loading API keys...</p>
                 ) : apiKeys.length === 0 ? (
-                    <div style={styles.emptyState}>
+                    <p className="text-center py-8 text-sm text-slate-500 dark:text-slate-400">
                         No API keys yet. Generate one to get started with CI/CD integration.
-                    </div>
+                    </p>
                 ) : (
-                    <table style={styles.keyTable}>
-                        <thead>
-                            <tr style={styles.keyRow}>
-                                <th style={{ ...styles.keyCell, fontWeight: 600 }}>Name</th>
-                                <th style={{ ...styles.keyCell, fontWeight: 600 }}>Key</th>
-                                <th style={{ ...styles.keyCell, fontWeight: 600 }}>Created</th>
-                                <th style={{ ...styles.keyCell, fontWeight: 600 }}>Last Used</th>
-                                <th style={{ ...styles.keyCell, fontWeight: 600 }}></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {apiKeys.map((key) => (
-                                <tr key={key.id} style={styles.keyRow}>
-                                    <td style={styles.keyCell}>{key.name}</td>
-                                    <td style={styles.keyCell}>
-                                        <code style={styles.keyPrefix}>{key.prefix}</code>
-                                    </td>
-                                    <td style={styles.keyCell}>{formatDate(key.createdAt)}</td>
-                                    <td style={styles.keyCell}>{formatDate(key.lastUsed)}</td>
-                                    <td style={styles.keyCell}>
-                                        <button
-                                            onClick={() => handleRevokeKey(key.id)}
-                                            style={styles.dangerButton}
-                                        >
-                                            Revoke
-                                        </button>
-                                    </td>
+                    <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-gh-border-dark">
+                        <table className="w-full border-collapse text-sm">
+                            <thead>
+                                <tr className="bg-slate-50 dark:bg-gh-bg-dark border-b border-slate-200 dark:border-gh-border-dark">
+                                    {['Name', 'Key', 'Created', 'Last Used', 'Actions'].map((h) => (
+                                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                            {h === 'Actions' ? '' : h}
+                                        </th>
+                                    ))}
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {apiKeys.map((key) => (
+                                    <tr key={key.id} className="border-b border-slate-100 dark:border-gh-border-dark last:border-0 hover:bg-slate-50 dark:hover:bg-gh-bg-dark transition-colors">
+                                        <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{key.name}</td>
+                                        <td className="px-4 py-3">
+                                            <code className="font-mono text-xs bg-slate-100 dark:bg-slate-800 dark:text-slate-300 px-2 py-1 rounded">
+                                                {key.prefix}
+                                            </code>
+                                        </td>
+                                        <td className="px-4 py-3 text-slate-600 dark:text-slate-400 tabular-nums">{formatDate(key.createdAt)}</td>
+                                        <td className="px-4 py-3 text-slate-600 dark:text-slate-400 tabular-nums">{formatDate(key.lastUsed)}</td>
+                                        <td className="px-4 py-3">
+                                            <button
+                                                onClick={() => handleRevokeKey(key.id)}
+                                                className="px-3 py-1 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors cursor-pointer"
+                                            >
+                                                Revoke
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
-            </div>
+            </section>
 
-            {/* New Key Modal */}
+            {/* ── New Key Modal ─────────────────────────────────────────────────── */}
             {showNewKeyModal && newlyCreatedKey && (
-                <div style={styles.modalOverlay} onClick={closeModal}>
-                    <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-                        <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '16px' }}>
-                            🎉 API Key Created
+                <div
+                    role="presentation"
+                    className="fixed inset-0 z-[1000] flex items-center justify-center p-5 bg-black/50"
+                    onClick={closeModal}
+                    onKeyDown={(e) => e.key === 'Escape' && closeModal()}
+                >
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="apikey-modal-title"
+                        className="bg-white dark:bg-gh-bg-subtle-dark rounded-xl shadow-2xl p-6 w-full max-w-md border border-slate-200 dark:border-gh-border-dark"
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => e.stopPropagation()}
+                    >
+                        <h3 id="apikey-modal-title" className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+                            API Key Created
                         </h3>
 
-                        <div style={styles.warningBox}>
-                            ⚠️ <strong>Important:</strong> This is the only time you'll see this key.
-                            Copy it now and store it securely.
+                        <div className="mb-4 px-4 py-3 rounded-lg text-sm bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300">
+                            <strong>Important:</strong> This is the only time you'll see this key. Copy it now and store it securely.
                         </div>
 
-                        <div style={styles.keyDisplay}>
+                        <div className="mb-4 font-mono text-sm bg-slate-950 text-emerald-400 px-4 py-4 rounded-lg break-all">
                             {newlyCreatedKey}
                         </div>
 
-                        <div style={{ display: 'flex', gap: '12px' }}>
+                        <div className="flex gap-3">
                             <button
                                 onClick={handleCopyKey}
-                                style={{
-                                    ...styles.button,
-                                    flex: 1,
-                                    marginTop: 0,
-                                    background: copiedKey ? '#22c55e' : undefined,
-                                }}
+                                className={`flex-1 py-2.5 text-sm font-semibold text-white rounded-lg transition-colors cursor-pointer ${
+                                    copiedKey
+                                        ? 'bg-emerald-500 hover:bg-emerald-600'
+                                        : 'bg-gh-accent dark:bg-gh-accent-dark hover:opacity-90'
+                                }`}
                             >
                                 {copiedKey ? '✓ Copied!' : 'Copy Key'}
                             </button>
                             <button
                                 onClick={closeModal}
-                                style={{ ...styles.secondaryButton, flex: 1 }}
+                                className="flex-1 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-gh-bg-dark border border-slate-200 dark:border-gh-border-dark rounded-lg hover:bg-slate-200 dark:hover:bg-gh-bg-subtle-dark transition-colors cursor-pointer"
                             >
                                 Done
                             </button>
                         </div>
 
-                        <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '16px' }}>
-                            Use this key in the <code>x-api-key</code> header for API requests.
+                        <p className="mt-4 text-xs text-slate-400 dark:text-slate-500">
+                            Use this key in the <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">x-api-key</code> header for API requests.
                         </p>
                     </div>
                 </div>

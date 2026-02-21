@@ -5,130 +5,7 @@ import { Shield, AlertCircle, Info } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-const styles = {
-  section: {
-    marginBottom: '32px',
-  } as React.CSSProperties,
-  sectionTitle: {
-    fontSize: '18px',
-    fontWeight: 600,
-    color: '#1e293b',
-    marginBottom: '8px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  } as React.CSSProperties,
-  sectionDescription: {
-    fontSize: '14px',
-    color: '#6b7280',
-    marginBottom: '20px',
-    lineHeight: '1.6',
-    maxWidth: '800px',
-  } as React.CSSProperties,
-  toggleContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '16px',
-    background: '#f9fafb',
-    borderRadius: '8px',
-    marginBottom: '16px',
-    flexWrap: 'wrap',
-  } as React.CSSProperties,
-  toggle: {
-    position: 'relative' as const,
-    width: '48px',
-    height: '28px',
-    borderRadius: '9999px',
-    transition: 'background-color 0.2s',
-    cursor: 'pointer',
-    border: 'none',
-    padding: 0,
-    flexShrink: 0,
-  } as React.CSSProperties,
-  toggleActive: {
-    backgroundColor: '#4f46e5',
-  } as React.CSSProperties,
-  toggleDisabled: {
-    opacity: 0.5,
-    cursor: 'not-allowed',
-    backgroundColor: '#e5e7eb',
-  } as React.CSSProperties,
-  toggleSlider: {
-    position: 'absolute' as const,
-    top: '2px',
-    left: '2px',
-    width: '24px',
-    height: '24px',
-    backgroundColor: 'white',
-    borderRadius: '50%',
-    transition: 'transform 0.2s',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-  } as React.CSSProperties,
-  toggleSliderActive: {
-    transform: 'translateX(20px)',
-  } as React.CSSProperties,
-  toggleLabel: {
-    fontSize: '14px',
-    fontWeight: 500,
-    color: '#374151',
-    userSelect: 'none' as const,
-  } as React.CSSProperties,
-  alert: {
-    display: 'flex',
-    gap: '12px',
-    padding: '16px',
-    borderRadius: '8px',
-    fontSize: '14px',
-    lineHeight: '1.5',
-    marginBottom: '24px',
-  } as React.CSSProperties,
-  alertInfo: {
-    backgroundColor: '#eff6ff',
-    border: '1px solid #dbeafe',
-    color: '#1e40af',
-  } as React.CSSProperties,
-  alertWarning: {
-    backgroundColor: '#fffbeb',
-    border: '1px solid #fef3c7',
-    color: '#92400e',
-  } as React.CSSProperties,
-  alertDisabled: {
-    backgroundColor: '#f9fafb',
-    border: '1px solid #e5e7eb',
-    color: '#4b5563',
-  } as React.CSSProperties,
-  disclosure: {
-    marginTop: '32px',
-    paddingTop: '24px',
-    borderTop: '1px solid #f1f5f9',
-  } as React.CSSProperties,
-  disclosureTitle: {
-    fontSize: '14px',
-    fontWeight: 600,
-    color: '#1e293b',
-    marginBottom: '12px',
-  } as React.CSSProperties,
-  disclosureText: {
-    fontSize: '13px',
-    color: '#64748b',
-    lineHeight: '1.6',
-    margin: 0,
-  } as React.CSSProperties,
-  link: {
-    color: '#4f46e5',
-    textDecoration: 'none',
-  } as React.CSSProperties,
-  errorMessage: {
-    marginBottom: '24px',
-    padding: '16px',
-    backgroundColor: '#fef2f2',
-    border: '1px solid #fecaca',
-    borderRadius: '8px',
-    color: '#991b1b',
-    fontSize: '14px',
-  } as React.CSSProperties,
-};
+// ── Component ──────────────────────────────────────────────────────────────────
 
 export function SecurityTab() {
   const { user, token } = useAuth();
@@ -139,21 +16,17 @@ export function SecurityTab() {
 
   const isAdmin = user?.role === 'admin';
 
-  useEffect(() => {
-    fetchOrganization();
-  }, []);
+  useEffect(() => { fetchOrganization(); }, []);
 
   async function fetchOrganization() {
     try {
       const response = await axios.get(`${API_URL}/api/organization`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (response.data.success) {
         setAiAnalysisEnabled(response.data.organization.aiAnalysisEnabled);
       }
     } catch (error: any) {
-      console.error('Failed to fetch organization:', error);
       setError('Failed to load security settings');
     } finally {
       setLoading(false);
@@ -162,23 +35,17 @@ export function SecurityTab() {
 
   async function handleToggleAiAnalysis() {
     if (!isAdmin || updating) return;
-
     const newValue = !aiAnalysisEnabled;
     setUpdating(true);
     setError(null);
-
     try {
       const response = await axios.patch(
         `${API_URL}/api/organization`,
         { aiAnalysisEnabled: newValue },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
-
-      if (response.data.success) {
-        setAiAnalysisEnabled(newValue);
-      }
+      if (response.data.success) { setAiAnalysisEnabled(newValue); }
     } catch (error: any) {
-      console.error('Failed to update AI analysis setting:', error);
       setError(error.response?.data?.message || 'Failed to update AI analysis setting');
     } finally {
       setUpdating(false);
@@ -186,72 +53,82 @@ export function SecurityTab() {
   }
 
   if (loading) {
-    return <div style={{ color: '#6b7280', fontSize: '14px' }}>Loading security settings...</div>;
+    return <p className="text-sm text-slate-500 dark:text-slate-400">Loading security settings...</p>;
   }
 
   return (
     <div>
-      {error && <div style={styles.errorMessage}>{error}</div>}
+      {/* Error */}
+      {error && (
+        <div className="mb-6 px-4 py-3 rounded-lg text-sm bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400">
+          {error}
+        </div>
+      )}
 
-      <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>
+      {/* ── AI Analysis ───────────────────────────────────────────────────── */}
+      <section className="mb-8">
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
           <Shield size={20} />
           AI-Powered Test Analysis
         </h2>
-        <p style={styles.sectionDescription}>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-5 max-w-2xl leading-relaxed">
           When enabled, test failures are automatically analyzed by Google's Gemini AI to provide intelligent
           insights, root cause analysis, and debugging suggestions.
         </p>
 
         {isAdmin ? (
           <>
-            <div style={styles.toggleContainer}>
+            {/* Toggle row */}
+            <div className="flex items-center gap-3 px-4 py-4 bg-slate-50 dark:bg-gh-bg-dark border border-slate-200 dark:border-gh-border-dark rounded-lg mb-4 flex-wrap">
+              {/* Custom toggle */}
               <button
+                type="button"
+                role="switch"
+                aria-checked={aiAnalysisEnabled}
                 onClick={handleToggleAiAnalysis}
-                style={{
-                  ...styles.toggle,
-                  ...(aiAnalysisEnabled ? styles.toggleActive : { backgroundColor: '#e5e7eb' }),
-                  ...(updating ? styles.toggleDisabled : {}),
-                }}
                 disabled={updating}
+                className={`relative flex-shrink-0 w-12 h-7 rounded-full border-0 p-0 transition-colors duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gh-accent dark:focus:ring-gh-accent-dark focus:ring-offset-2 dark:focus:ring-offset-gh-bg-dark ${
+                  aiAnalysisEnabled
+                    ? 'bg-gh-accent dark:bg-gh-accent-dark'
+                    : 'bg-slate-300 dark:bg-slate-600'
+                }`}
               >
-                <div
-                  style={{
-                    ...styles.toggleSlider,
-                    ...(aiAnalysisEnabled ? styles.toggleSliderActive : {}),
-                  }}
+                <span
+                  className={`absolute top-[3px] left-[3px] w-[22px] h-[22px] bg-white rounded-full shadow transition-transform duration-200 ${
+                    aiAnalysisEnabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
                 />
               </button>
-              <label style={styles.toggleLabel}>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300 select-none">
                 {updating
                   ? 'Updating...'
                   : aiAnalysisEnabled
                     ? 'AI Analysis Enabled'
                     : 'AI Analysis Disabled'}
-              </label>
+              </span>
             </div>
 
+            {/* Status alert */}
             {aiAnalysisEnabled ? (
-              <div style={{ ...styles.alert, ...styles.alertInfo }}>
-                <Info size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div className="flex items-start gap-3 px-4 py-4 rounded-lg text-sm leading-relaxed bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300">
+                <Info size={18} className="flex-shrink-0 mt-0.5" />
                 <div>
                   <strong>AI analysis is active.</strong> Failed and unstable test runs will be automatically
                   analyzed to help identify issues faster.
                 </div>
               </div>
             ) : (
-              <div style={{ ...styles.alert, ...styles.alertWarning }}>
-                <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div className="flex items-start gap-3 px-4 py-4 rounded-lg text-sm leading-relaxed bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300">
+                <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
                 <div>
-                  <strong>AI analysis is currently disabled.</strong> Test failures will not receive AI-powered
-                  insights.
+                  <strong>AI analysis is currently disabled.</strong> Test failures will not receive AI-powered insights.
                 </div>
               </div>
             )}
           </>
         ) : (
-          <div style={{ ...styles.alert, ...styles.alertDisabled }}>
-            <Shield size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+          <div className="flex items-start gap-3 px-4 py-4 rounded-lg text-sm leading-relaxed bg-slate-50 dark:bg-gh-bg-dark border border-slate-200 dark:border-gh-border-dark text-slate-600 dark:text-slate-400">
+            <Shield size={18} className="flex-shrink-0 mt-0.5" />
             <div>
               AI Analysis is currently{' '}
               <strong>{aiAnalysisEnabled ? 'enabled' : 'disabled'}</strong> for your organization. Only
@@ -260,17 +137,24 @@ export function SecurityTab() {
           </div>
         )}
 
-        <div style={styles.disclosure}>
-          <h3 style={styles.disclosureTitle}>Data Processing & Privacy</h3>
-          <p style={styles.disclosureText}>
+        {/* Disclosure */}
+        <div className="mt-8 pt-6 border-t border-slate-200 dark:border-gh-border-dark">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">
+            Data Processing & Privacy
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-3">
             When AI analysis is enabled, test failure logs and relevant diagnostic information are sent to Google's
             Gemini API for processing. The data is analyzed in real-time and is not stored by Google.
           </p>
-          <p style={{ ...styles.disclosureText, marginTop: '12px' }}>
-            All data transmission is encrypted using TLS 1.3. See our <a href="/privacy" style={styles.link}>Privacy Policy</a> for details.
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            All data transmission is encrypted using TLS 1.3. See our{' '}
+            <a href="/privacy" className="text-gh-accent dark:text-gh-accent-dark hover:underline">
+              Privacy Policy
+            </a>{' '}
+            for details.
           </p>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
