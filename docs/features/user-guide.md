@@ -57,14 +57,37 @@ These URLs are injected into your test container as `BASE_URL` at runtime.
 > **Note:** The AAC CLI (`npx @keinar/aac-cli@latest init`) is used for **onboarding only** — generating your Dockerfile and pushing your image. Test execution is triggered via the Dashboard or API.
 
 ### Option B: Via API
-See [API Keys section](#8-api-keys-cicd-integration) below.
+See [API Keys section](#7-api-keys-cicd-integration) below.
 
 ### Option C: CI/CD Integration (GitHub Actions)
 Generate an API key and use the API to trigger tests from your CI pipeline.
 
 ---
 
-## 4. Team Management (Admin Only)
+## 4. Execution Management
+
+The dashboard provides powerful tools for organizing and acting on test runs at scale.
+
+### Flat vs. Grouped Views
+
+Use the **View** toggle (top-right of the execution list) to switch between two display modes:
+
+- **Flat View (default):** All executions are listed in reverse-chronological order. Best for reviewing recent activity at a glance.
+- **Grouped View:** Executions are aggregated by their `groupName`. Each group header displays a pass/fail summary badge and the timestamp of the most recent run. Click any group header to expand or collapse its child executions.
+
+Both views support the full filter bar (status, environment, date range) and pagination controls.
+
+### Bulk Actions
+
+Select one or more execution rows using the checkboxes on the left. A floating **Bulk Actions** bar appears at the bottom of the screen with the following operations:
+
+- **Assign Group** — Opens a popover where you can type a group name and apply it to all selected executions simultaneously.
+- **Ungroup** — Removes the `groupName` assignment from all selected executions, returning them to the ungrouped pool.
+- **Delete** — Soft-deletes up to 100 selected executions in a single API call. Deleted records are retained in the database to preserve billing accuracy and are excluded from all dashboard views.
+
+---
+
+## 5. Team Management (Admin Only)
 
 ### Inviting Members
 1. Go to **Settings** → **Team Members**.
@@ -80,7 +103,7 @@ Generate an API key and use the API to trigger tests from your CI pipeline.
 
 ---
 
-## 5. Billing & Plans
+## 6. Billing & Plans
 
 Manage subscriptions in **Settings** → **Billing & Plans**.
 
@@ -99,7 +122,7 @@ Manage subscriptions in **Settings** → **Billing & Plans**.
 
 ---
 
-## 6. API Keys (CI/CD Integration)
+## 7. API Keys (CI/CD Integration)
 
 Use API keys to authenticate CI/CD pipelines without sharing personal credentials.
 
@@ -118,7 +141,7 @@ curl -H "x-api-key: pk_live_..." ...
 
 ---
 
-## 7. AI Analysis & Results
+## 8. AI Analysis & Results
 
 ### Live Results
 - Check the **Dashboard** for real-time logs via WebSocket.
@@ -132,7 +155,7 @@ If a test fails:
 
 ---
 
-## 8. Support
+## 9. Support
 
 - **Documentation**: [docs.automation.keinar.com](https://docs.automation.keinar.com)
 - **Email**: info@digital-solution.co.il

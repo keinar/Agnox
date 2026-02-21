@@ -94,7 +94,6 @@ First-class bug-filing directly from the dashboard.
 - **ADF Formatting:** Issue descriptions are built using Atlassian Document Format (ADF) for rich, structured content including code blocks, bullet lists, and paragraph nodes
 - **Bidirectional Linkage:** Filed tickets are stored in MongoDB and linked back to their originating execution record
 - **Assignee Selection:** Supports dynamic assignee lookup and selection within the modal
-- **Localized Context:** The "Source" field in the Jira ticket body is populated dynamically from `window.location.hostname` at modal open time — resolving to `LOCAL` for local development hosts and `CLOUD` for all other environments
 
 ### Enterprise-Grade Security
 
@@ -669,11 +668,10 @@ See the [Deployment Guide](docs/setup/deployment.md) for full deployment instruc
 
 - **Layout Overhaul:** Full-screen layout with collapsible Sidebar and AppLayout/Outlet routing pattern
 - **Real-Time Analytics:** MongoDB aggregation pipeline for KPI cards (Total Runs, Success Rate, Avg Duration), powered by TanStack Query v5 with 60-second stale window
-- **Advanced Pagination & Filtering:** Server-side pagination with `limit`/`offset`, multi-select status chips, environment filter, and date range inputs
+- **Advanced Pagination & Filtering:** Server-side pagination with `limit`/`offset`, multi-select status chips, environment filter, Unified Date Range Popover, and Mobile Filter Drawer
 - **Run Groups:** `groupName` / `batchId` fields on executions; `GET /api/executions/grouped` endpoint with `$group`+`$facet` aggregation; collapsible group rows with pass/fail summary badges
 - **Bulk Actions:** Multi-select checkboxes, floating action bar with Group / Ungroup / Delete operations; `PATCH /api/executions/bulk` and `DELETE /api/executions/bulk` endpoints using indexed soft-delete pattern
 - **Dynamic Jira Integration:** `createmeta`-driven custom field rendering, ADF-formatted descriptions, bidirectional execution↔ticket linkage
-- **Localized Context:** `window.location.hostname`-based LOCAL/CLOUD source detection
 - **UX Polish:** Persistent view mode in `localStorage`, scroll-locking on log panels, filter chip cleanup
 
 ---
