@@ -297,6 +297,7 @@ export const Dashboard = () => {
         onSubmit={handleRunTest}
         availableFolders={availableFolders}
         defaults={defaults}
+        existingGroupNames={groupNames}
       />
     </div>
   );

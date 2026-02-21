@@ -1,4 +1,5 @@
-import React, { useReducer, useEffect } from 'react';
+import React, { useReducer, useEffect, useState, useMemo } from 'react';
+import { Combobox, ComboboxInput, ComboboxButton, ComboboxOptions, ComboboxOption } from '@headlessui/react';
 import { Info, X, Play, Folder, Server, Globe, Box, Terminal, Tag, ChevronDown, ChevronRight } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -15,6 +16,7 @@ interface ExecutionModalProps {
         groupName?: string;
     }) => void;
     availableFolders: string[];
+    existingGroupNames?: string[];
     defaults?: {
         image: string;
         baseUrl: string;
@@ -89,9 +91,22 @@ function modalReducer(state: ModalState, action: ModalAction): ModalState {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose, onSubmit, availableFolders, defaults }) => {
+export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose, onSubmit, availableFolders, existingGroupNames, defaults }) => {
     const [state, dispatch] = useReducer(modalReducer, MODAL_INITIAL_STATE);
     const { environment, baseUrl, selectedFolder, groupName, showAdvanced, image, command } = state;
+
+    const [comboQuery, setComboQuery] = useState('');
+
+    const filteredGroupNames = useMemo(
+        () => (existingGroupNames ?? []).filter((n) => n.toLowerCase().includes(comboQuery.toLowerCase())),
+        [existingGroupNames, comboQuery],
+    );
+
+    const showCreateOption =
+        comboQuery.trim().length > 0 &&
+        !filteredGroupNames.some((n) => n.toLowerCase() === comboQuery.trim().toLowerCase());
+
+    const hasDropdownOptions = filteredGroupNames.length > 0 || showCreateOption;
 
     // Sync baseUrl when environment selection changes and envMapping is available
     useEffect(() => {
@@ -134,9 +149,12 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
         });
     }, [selectedFolder, showAdvanced]);
 
-    // Reset groupName field when the modal closes so it does not persist across opens
+    // Reset groupName field and comboQuery when the modal closes so they do not persist across opens
     useEffect(() => {
-        if (!isOpen) dispatch({ type: 'RESET_GROUP_NAME' });
+        if (!isOpen) {
+            dispatch({ type: 'RESET_GROUP_NAME' });
+            setComboQuery('');
+        }
     }, [isOpen]);
 
     if (!isOpen) return null;
@@ -262,7 +280,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
                         />
                     </div>
 
-                    {/* Group Name (optional) */}
+                    {/* Group Name (optional) — smart combobox: select existing or type to create */}
                     <div className="flex flex-col gap-1.5">
                         <label
                             htmlFor="modal-group"
@@ -271,16 +289,73 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose,
                             <Tag size={16} className="text-slate-400 dark:text-slate-500" /> Group Name
                             <span className="text-xs text-slate-400 dark:text-slate-500 font-normal">(optional)</span>
                         </label>
-                        <input
-                            id="modal-group"
-                            type="text"
+                        <Combobox
+                            as="div"
+                            className="relative"
                             value={groupName}
-                            onChange={(e) => dispatch({ type: 'SET_GROUP_NAME', value: e.target.value })}
-                            className={inputClass}
-                            placeholder="e.g. Nightly Sanity, Regression Suite"
-                            maxLength={128}
-                        />
-                        <p className="text-xs text-slate-400">Assign this run to a logical group for easier filtering and grouped view</p>
+                            onChange={(val: string | null) => {
+                                dispatch({ type: 'SET_GROUP_NAME', value: val ?? '' });
+                                setComboQuery('');
+                            }}
+                        >
+                            <div className="relative">
+                                <ComboboxInput
+                                    id="modal-group"
+                                    className={`${inputClass} ${existingGroupNames?.length ? 'pr-8' : ''}`}
+                                    placeholder="e.g. Nightly Sanity, Regression Suite"
+                                    maxLength={128}
+                                    displayValue={(val: string) => val}
+                                    onChange={(e) => {
+                                        setComboQuery(e.target.value);
+                                        dispatch({ type: 'SET_GROUP_NAME', value: e.target.value });
+                                    }}
+                                />
+                                {existingGroupNames && existingGroupNames.length > 0 && (
+                                    <ComboboxButton
+                                        aria-label="Show existing groups"
+                                        className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                                    >
+                                        <ChevronDown size={14} />
+                                    </ComboboxButton>
+                                )}
+                            </div>
+
+                            {hasDropdownOptions && (
+                                <ComboboxOptions className="absolute z-20 mt-1 w-full rounded-lg border border-slate-200 dark:border-gh-border-dark bg-white dark:bg-gh-bg-dark shadow-lg max-h-48 overflow-y-auto focus:outline-none py-1">
+                                    {filteredGroupNames.map((name) => (
+                                        <ComboboxOption
+                                            key={name}
+                                            value={name}
+                                            className={({ active }: { active: boolean }) =>
+                                                `cursor-pointer select-none px-3 py-2 text-sm transition-colors ${
+                                                    active
+                                                        ? 'bg-slate-100 dark:bg-gh-bg-subtle-dark text-slate-900 dark:text-gh-text-dark'
+                                                        : 'text-slate-700 dark:text-slate-300'
+                                                }`
+                                            }
+                                        >
+                                            {name}
+                                        </ComboboxOption>
+                                    ))}
+                                    {showCreateOption && (
+                                        <ComboboxOption
+                                            value={comboQuery.trim()}
+                                            className={({ active }: { active: boolean }) =>
+                                                `cursor-pointer select-none px-3 py-2 text-sm transition-colors ${
+                                                    active
+                                                        ? 'bg-slate-100 dark:bg-gh-bg-subtle-dark text-slate-900 dark:text-gh-text-dark'
+                                                        : 'text-slate-700 dark:text-slate-300'
+                                                }`
+                                            }
+                                        >
+                                            <span className="font-medium text-gh-accent dark:text-gh-accent-dark">Create</span>{' '}
+                                            &ldquo;{comboQuery.trim()}&rdquo;
+                                        </ComboboxOption>
+                                    )}
+                                </ComboboxOptions>
+                            )}
+                        </Combobox>
+                        <p className="text-xs text-slate-400">Select an existing group or type a new name to create one</p>
                     </div>
 
                     {/* Execution Strategy Preview */}
