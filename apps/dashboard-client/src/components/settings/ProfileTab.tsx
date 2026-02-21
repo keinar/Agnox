@@ -147,11 +147,10 @@ export function ProfileTab() {
         <div>
             {/* Feedback banner */}
             {message && (
-                <div className={`mb-4 px-4 py-3 rounded-lg text-sm border ${
-                    message.type === 'success'
-                        ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
-                        : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
-                }`}>
+                <div className={`mb-4 px-4 py-3 rounded-lg text-sm border ${message.type === 'success'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
+                    : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
+                    }`}>
                     {message.text}
                 </div>
             )}
@@ -168,7 +167,7 @@ export function ProfileTab() {
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className={INPUT_CLASS}
+                        className={`mr-2.5 ${INPUT_CLASS}`}
                         placeholder="Your name"
                     />
                     <button
@@ -311,11 +310,10 @@ export function ProfileTab() {
                         <div className="flex gap-3">
                             <button
                                 onClick={handleCopyKey}
-                                className={`flex-1 py-2.5 text-sm font-semibold text-white rounded-lg transition-colors cursor-pointer ${
-                                    copiedKey
-                                        ? 'bg-emerald-500 hover:bg-emerald-600'
-                                        : 'bg-gh-accent dark:bg-gh-accent-dark hover:opacity-90'
-                                }`}
+                                className={`flex-1 py-2.5 text-sm font-semibold text-white rounded-lg transition-colors cursor-pointer ${copiedKey
+                                    ? 'bg-emerald-500 hover:bg-emerald-600'
+                                    : 'bg-gh-accent dark:bg-gh-accent-dark hover:opacity-90'
+                                    }`}
                             >
                                 {copiedKey ? '✓ Copied!' : 'Copy Key'}
                             </button>

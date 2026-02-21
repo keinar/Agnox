@@ -111,11 +111,10 @@ export function OrganizationTab() {
     <div>
       {/* Feedback banner */}
       {message && (
-        <div className={`mb-4 px-4 py-3 rounded-lg text-sm border ${
-          message.type === 'success'
+        <div className={`mb-4 px-4 py-3 rounded-lg text-sm border ${message.type === 'success'
             ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
             : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
-        }`}>
+          }`}>
           {message.text}
         </div>
       )}
@@ -135,7 +134,7 @@ export function OrganizationTab() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={!isAdmin}
-            className={isAdmin ? INPUT_CLASS : INPUT_DISABLED_CLASS}
+            className={`${isAdmin ? INPUT_CLASS : INPUT_DISABLED_CLASS} mr-2.5`}
           />
           {isAdmin && (
             <button
@@ -181,9 +180,9 @@ export function OrganizationTab() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { label: 'Test Runs / Month', value: organization.limits.maxTestRuns.toLocaleString() },
-            { label: 'Team Members',      value: organization.limits.maxUsers },
-            { label: 'Concurrent Runs',   value: organization.limits.maxConcurrentRuns },
-            { label: 'Projects',          value: organization.limits.maxProjects },
+            { label: 'Team Members', value: organization.limits.maxUsers },
+            { label: 'Concurrent Runs', value: organization.limits.maxConcurrentRuns },
+            { label: 'Projects', value: organization.limits.maxProjects },
           ].map((item) => (
             <div key={item.label} className="bg-slate-50 dark:bg-gh-bg-dark p-4 rounded-lg border border-slate-200 dark:border-gh-border-dark">
               <span className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{item.label}</span>
