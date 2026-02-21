@@ -230,8 +230,6 @@ interface ExecutionListProps {
   executions: Execution[];
   loading: boolean;
   error: string | null;
-  expandedRowId: string | null;
-  onToggleRow: (id: string) => void;
   onDelete: (taskId: string) => Promise<void>;
   onBulkDelete: (taskIds: string[]) => Promise<void>;
   onBulkGroup: (taskIds: string[], groupName: string) => Promise<void>;
@@ -243,8 +241,6 @@ export function ExecutionList({
   executions,
   loading,
   error,
-  expandedRowId,
-  onToggleRow,
   onDelete,
   onBulkDelete,
   onBulkGroup,
@@ -420,13 +416,10 @@ export function ExecutionList({
                     <ExecutionRow
                       key={exec._id || exec.taskId}
                       execution={exec}
-                      isExpanded={expandedRowId === (exec._id || exec.taskId)}
-                      onToggle={() => onToggleRow(exec._id || exec.taskId)}
                       onDelete={onDelete}
                       onSelect={handleSelect}
                       isSelected={selectedIds.has(exec.taskId)}
                       visibleColumns={visibleColumns}
-                      visibleColCount={visibleColCount}
                       animateIn
                     />
                   ))}
@@ -439,13 +432,10 @@ export function ExecutionList({
               <ExecutionRow
                 key={exec._id || exec.taskId}
                 execution={exec}
-                isExpanded={expandedRowId === (exec._id || exec.taskId)}
-                onToggle={() => onToggleRow(exec._id || exec.taskId)}
                 onDelete={onDelete}
                 onSelect={handleSelect}
                 isSelected={selectedIds.has(exec.taskId)}
                 visibleColumns={visibleColumns}
-                visibleColCount={visibleColCount}
               />
             ))}
           </tbody>

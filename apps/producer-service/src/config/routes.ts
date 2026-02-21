@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { MongoClient } from 'mongodb';
 import Redis from 'ioredis';
 import * as fs from 'fs';
+import * as path from 'path';
 import { TestExecutionRequestSchema } from '../../../../packages/shared-types/index.js';
 import { rabbitMqService } from '../rabbitmq.js';
 import { authRoutes } from '../routes/auth.js';
@@ -692,6 +693,72 @@ export async function setupRoutes(
             return { success: true, message: 'Execution deleted successfully' };
         } catch (error) {
             return reply.status(500).send({ error: 'Failed to delete' });
+        }
+    });
+
+    // ── GET /api/executions/:taskId/artifacts — List Playwright media artifacts ──
+    // Pure filesystem listing scoped to the org/task directory on the shared volume.
+    // No DB query needed — path structure already enforces multi-tenant isolation.
+    app.get('/api/executions/:taskId/artifacts', async (request, reply) => {
+        const REPORTS_DIR = process.env.REPORTS_DIR || path.join(process.cwd(), 'reports');
+        const ALLOWED_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.webm', '.mp4', '.zip']);
+        const IMAGE_EXTENSIONS  = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
+        const VIDEO_EXTENSIONS  = new Set(['.webm', '.mp4']);
+
+        const organizationId = request.user!.organizationId;
+        const { taskId } = request.params as { taskId: string };
+
+        // Sanitize both segments to strip any directory traversal sequences
+        const safeOrgId  = path.basename(organizationId);
+        const safeTaskId = path.basename(taskId);
+
+        const artifactsDir = path.resolve(REPORTS_DIR, safeOrgId, safeTaskId, 'test-results');
+
+        // Path-traversal guard: resolved path must stay within REPORTS_DIR
+        if (!artifactsDir.startsWith(path.resolve(REPORTS_DIR) + path.sep)) {
+            return reply.status(400).send({ success: false, error: 'Invalid task identifier' });
+        }
+
+        if (!fs.existsSync(artifactsDir)) {
+            return reply.send({ success: true, data: { artifacts: [] } });
+        }
+
+        try {
+            // Recursively collect files up to depth 5
+            const collectFiles = (dir: string, base: string, depth: number): string[] => {
+                if (depth > 5) return [];
+                const entries = fs.readdirSync(dir, { withFileTypes: true });
+                const results: string[] = [];
+                for (const entry of entries) {
+                    const relPath = base ? `${base}/${entry.name}` : entry.name;
+                    if (entry.isDirectory()) {
+                        results.push(...collectFiles(path.join(dir, entry.name), relPath, depth + 1));
+                    } else if (entry.isFile()) {
+                        results.push(relPath);
+                    }
+                }
+                return results;
+            };
+
+            const allFiles = collectFiles(artifactsDir, '', 0);
+            const artifacts = allFiles
+                .filter(f => ALLOWED_EXTENSIONS.has(path.extname(f).toLowerCase()))
+                .map(f => {
+                    const ext = path.extname(f).toLowerCase();
+                    const type: 'image' | 'video' | 'file' =
+                        IMAGE_EXTENSIONS.has(ext) ? 'image' :
+                        VIDEO_EXTENSIONS.has(ext) ? 'video' : 'file';
+                    return {
+                        type,
+                        name: f,
+                        url: `/reports/${safeOrgId}/${safeTaskId}/test-results/${f}`,
+                    };
+                });
+
+            return reply.send({ success: true, data: { artifacts } });
+        } catch (error) {
+            app.log.error(error, '[artifacts] Failed to list artifact files');
+            return reply.status(500).send({ success: false, error: 'Failed to list artifacts' });
         }
     });
 

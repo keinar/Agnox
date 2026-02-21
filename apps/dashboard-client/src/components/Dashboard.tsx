@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useExecutions, type IExecutionFilters } from '../hooks/useExecutions';
 import { useGroupedExecutions } from '../hooks/useGroupedExecutions';
@@ -11,6 +12,7 @@ import { FilterBar } from './FilterBar';
 import { Pagination } from './Pagination';
 import { ExecutionModal } from './ExecutionModal';
 import { ExecutionList } from './dashboard/ExecutionList';
+import { ExecutionDrawer, type DrawerTab } from './ExecutionDrawer';
 import { Play } from 'lucide-react';
 import type { ViewMode } from '../types';
 
@@ -108,12 +110,24 @@ export const Dashboard = () => {
   const activeLoading = viewMode === 'grouped' ? groupsLoading : loading;
   const activeError   = viewMode === 'grouped' ? groupsError   : error;
 
-  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen]     = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const toggleRow = useCallback((id: string) => {
-    setExpandedRowId((prev) => (prev === id ? null : id));
-  }, []);
+  // ── Drawer — URL-based state ──────────────────────────────────────────────
+  const [searchParams, setSearchParams] = useSearchParams();
+  const drawerId  = searchParams.get('drawerId');
+  const drawerTab = (searchParams.get('drawerTab') ?? undefined) as DrawerTab | undefined;
+
+  // Resolve the full execution object from the current page cache so TerminalView
+  // receives live socket-driven updates without a second connection.
+  const drawerExecution = executions.find((e) => e.taskId === drawerId) ?? null;
+
+  const handleCloseDrawer = useCallback(() => {
+    setSearchParams((prev) => {
+      prev.delete('drawerId');
+      prev.delete('drawerTab');
+      return prev;
+    });
+  }, [setSearchParams]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -262,8 +276,6 @@ export const Dashboard = () => {
         executions={executions}
         loading={activeLoading}
         error={activeError}
-        expandedRowId={expandedRowId}
-        onToggleRow={toggleRow}
         onDelete={handleDelete}
         onBulkDelete={handleBulkDelete}
         onBulkGroup={handleBulkGroup}
@@ -298,6 +310,14 @@ export const Dashboard = () => {
         availableFolders={availableFolders}
         defaults={defaults}
         existingGroupNames={groupNames}
+      />
+
+      {/* Execution detail drawer — driven by ?drawerId= URL param */}
+      <ExecutionDrawer
+        executionId={drawerId}
+        execution={drawerExecution}
+        onClose={handleCloseDrawer}
+        defaultTab={drawerTab}
       />
     </div>
   );
