@@ -1,3 +1,33 @@
+# SPRINT 10 — PDF Reporting & Automation Infrastructure
+
+## 🎯 Sprint Goal
+Deliver exportable PDF test reports for cycles and executions, and harden the automation infrastructure by eliminating all remaining manual version synchronisation points across the monorepo.
+
+---
+
+## 📋 Task Breakdown
+
+### [ ] Task 10.1: PDF Cycle Report Generation (Backend)
+**Goal:** Generate a downloadable PDF summary for a completed test cycle.
+- **Action:** Add `GET /api/test-cycles/:cycleId/report/pdf` endpoint in the Producer service using a PDF library (e.g., `pdfkit`).
+- **Action:** PDF must include: cycle name, date range, overall pass/fail/skip counts, automation rate, and per-item status table.
+
+### [ ] Task 10.2: PDF Download UI (Frontend)
+**Goal:** Surface the PDF export as a one-click button inside the Test Cycles page.
+- **Action:** Add a "Download PDF" button (`FileDown` Lucide icon) in the cycle row actions.
+- **Action:** Trigger a `blob` download via Axios with `responseType: 'blob'` and `URL.createObjectURL`.
+
+### [x] Task 10.3: Automated Version Infrastructure ✅
+**Goal:** Eliminate the hardcoded `APP_VERSION` constant so the UI always reflects the root `package.json` version without manual intervention.
+- **Action:** Updated `vite.config.ts` to read root `package.json` via `fs.readFileSync` and inject `__APP_VERSION__` via Vite `define`.
+- **Action:** Replaced hardcoded string in `apps/dashboard-client/src/config/version.ts` with a Vite-injected build constant.
+- **Action:** Created `VersionDisplay.tsx` — a single-responsibility component that reads the injected version and renders it with `gh-*` muted styling.
+- **Action:** Updated `Sidebar.tsx` to use `<VersionDisplay />` in both desktop and mobile version footers.
+- **Action:** Updated `ChangelogModal.tsx` with the `v3.1.0` release entry.
+- **Action:** Bumped root `package.json` to `3.1.0` and prepended the `[3.1.0]` entry to `CHANGELOG.md`.
+
+---
+
 # SPRINT 9 — Quality Hub: Manual Testing & Hybrid Cycles
 
 ## 🎯 Sprint Goal

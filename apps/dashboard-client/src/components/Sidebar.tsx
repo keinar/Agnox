@@ -6,6 +6,8 @@ import logoDark from '../assets/logo-dark.png';
 import { useTheme } from '../context/ThemeContext';
 import { APP_VERSION } from '../config/version';
 import { ChangelogModal } from './ChangelogModal';
+import { VersionDisplay } from './VersionDisplay';
+import { useOrganizationFeatures } from '../hooks/useOrganizationFeatures';
 
 interface SidebarProps {
   isMobileOpen: boolean;
@@ -28,6 +30,13 @@ const DEFAULT_CLASS = 'text-slate-600 hover:bg-gh-bg-subtle hover:text-gh-text d
 export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: SidebarProps) {
   const { theme } = useTheme();
   const [showChangelog, setShowChangelog] = useState(false);
+  const { features } = useOrganizationFeatures();
+
+  const visibleNavItems = NAV_ITEMS.filter(({ to }) => {
+    if (to === '/test-cases' && !features.testCasesEnabled) return false;
+    if (to === '/test-cycles' && !features.testCyclesEnabled) return false;
+    return true;
+  });
 
   // Switch logo based on current theme: black logo for light backgrounds, white for dark
   const logo = theme === 'dark' ? logoDark : logoLight;
@@ -68,7 +77,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
 
   const navLinks = (
     <nav className="flex-1 px-2 py-4 flex flex-col gap-1">
-      {NAV_ITEMS.map(({ icon: Icon, label, to, href, disabled }) => {
+      {visibleNavItems.map(({ icon: Icon, label, to, href, disabled }) => {
         if (disabled) {
           return (
             <div
@@ -132,9 +141,9 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
         <button
           onClick={() => setShowChangelog(true)}
           aria-label="Open changelog"
-          className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors font-mono tracking-wide"
+          className="hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors"
         >
-          {APP_VERSION}
+          <VersionDisplay />
         </button>
       )}
     </div>
@@ -190,7 +199,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
         </div>
 
         <nav className="flex-1 px-2 py-4 flex flex-col gap-1">
-          {NAV_ITEMS.map(({ icon: Icon, label, to, href, disabled }) => {
+          {visibleNavItems.map(({ icon: Icon, label, to, href, disabled }) => {
             if (disabled) {
               return (
                 <div
@@ -241,9 +250,9 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
           <button
             onClick={() => { onMobileClose(); setShowChangelog(true); }}
             aria-label="Open changelog"
-            className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors font-mono tracking-wide"
+            className="hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors"
           >
-            {APP_VERSION}
+            <VersionDisplay />
           </button>
         </div>
       </aside>

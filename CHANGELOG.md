@@ -3,6 +3,20 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.1.0] — 2026-02-22
+
+### Added
+- **VersionDisplay component** (`VersionDisplay.tsx`) — reads application version at build time from root `package.json` via Vite `define` injection; renders as small, muted `gh-*`-styled text in the sidebar footer
+- **Automated version pipeline** — `vite.config.ts` injects `__APP_VERSION__` constant from root `package.json` so the UI version always matches the monorepo version field without manual updates
+- **Sprint 10 foundation** — Sprint 10 section added to `PLAN.md`; Task 10.3 (Automated Version Infrastructure) marked complete
+
+### Changed
+- Root `package.json` version bumped from `1.1.0` to `3.1.0`
+- `apps/dashboard-client/src/config/version.ts` — removed hardcoded `'v3.0.0'` string; now reads from Vite-injected build constant
+- `Sidebar.tsx` — replaced bare `{APP_VERSION}` text nodes with `<VersionDisplay />` component in both desktop and mobile version footers
+- `ChangelogModal.tsx` — added `v3.1.0` release entry for Sprint 10: PDF Reporting & Automation Infrastructure
+- `PROJECT_CONTEXT.md` — advanced current phase to Sprint 10; updated version references
+
 ## [1.1.0] — 2026-02-22
 
 ### Added

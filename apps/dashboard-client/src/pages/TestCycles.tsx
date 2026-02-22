@@ -11,6 +11,7 @@
 
 import { useState, Fragment } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
     Layers, Plus, Loader2, AlertCircle, FolderKanban,
@@ -118,6 +119,7 @@ const ITEM_STATUS_ICONS: Record<string, React.ReactNode> = {
 export function TestCycles() {
     const { token } = useAuth();
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
     const [selectedProjectId, setSelectedProjectId] = useState<string>('');
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [expandedCycleId, setExpandedCycleId] = useState<string | null>(null);
@@ -328,6 +330,9 @@ export function TestCycles() {
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                         Created
                                     </th>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                        Report
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-gh-border-dark">
@@ -388,12 +393,22 @@ export function TestCycles() {
                                                 <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">
                                                     {formatDate(cycle.createdAt)}
                                                 </td>
+                                                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                                    <button
+                                                        onClick={() => navigate(`/test-cycles/${cycle._id}/report`)}
+                                                        title="View cycle report"
+                                                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400 hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors"
+                                                    >
+                                                        <Eye size={11} />
+                                                        View Report
+                                                    </button>
+                                                </td>
                                             </tr>
 
                                             {/* ── Expanded items ──────────── */}
                                             {isExpanded && cycle.items && cycle.items.length > 0 && (
                                                 <tr>
-                                                    <td colSpan={7} className="p-0">
+                                                    <td colSpan={8} className="p-0">
                                                         <div className="bg-slate-50 dark:bg-gh-bg-subtle-dark border-t border-slate-200 dark:border-gh-border-dark">
                                                             <div className="px-6 py-2 border-b border-slate-200 dark:border-gh-border-dark">
                                                                 <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
@@ -503,7 +518,7 @@ export function TestCycles() {
 
                                             {isExpanded && (!cycle.items || cycle.items.length === 0) && (
                                                 <tr>
-                                                    <td colSpan={7} className="px-6 py-4 text-center text-sm text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-gh-bg-subtle-dark">
+                                                    <td colSpan={8} className="px-6 py-4 text-center text-sm text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-gh-bg-subtle-dark">
                                                         No items in this cycle.
                                                     </td>
                                                 </tr>

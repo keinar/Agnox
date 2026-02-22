@@ -9,11 +9,12 @@ import { UsageTab } from '../components/settings/UsageTab';
 import { RunSettingsTab } from '../components/settings/RunSettingsTab';
 import { IntegrationsTab } from '../components/settings/IntegrationsTab';
 import { SchedulesList } from '../components/settings/SchedulesList';
+import { FeaturesTab } from '../components/settings/FeaturesTab';
 
 // Lazy load BillingTab (largest component - 615 lines) to reduce initial bundle
 const BillingTab = lazy(() => import('../components/settings/BillingTab').then(m => ({ default: m.BillingTab })));
 
-type TabId = 'profile' | 'organization' | 'members' | 'billing' | 'security' | 'usage' | 'run-settings' | 'integrations' | 'schedules';
+type TabId = 'profile' | 'organization' | 'members' | 'billing' | 'security' | 'usage' | 'run-settings' | 'integrations' | 'schedules' | 'features';
 
 export function Settings() {
   const { user } = useAuth();
@@ -29,12 +30,13 @@ export function Settings() {
     { id: 'run-settings' as const, label: 'Run Settings', component: RunSettingsTab },
     { id: 'integrations' as const, label: 'Integrations', component: IntegrationsTab },
     { id: 'schedules' as const, label: 'Schedules', component: SchedulesList },
+    { id: 'features' as const, label: 'Features', component: FeaturesTab },
   ];
 
-  // Filter billing tab for non-admins to prevent 403 errors
+  // Filter admin-only tabs for non-admins to prevent 403 errors
   const tabs = user?.role === 'admin'
     ? allTabs
-    : allTabs.filter(t => t.id !== 'billing');
+    : allTabs.filter(t => t.id !== 'billing' && t.id !== 'features');
 
   // Get active tab from URL, validate, and default to 'organization'
   const tabParam = searchParams.get('tab') as TabId | null;

@@ -12,6 +12,15 @@ interface IChangelogEntry {
 
 const CHANGELOG: IChangelogEntry[] = [
   {
+    version: 'v3.1.0',
+    title: 'Sprint 10: PDF Reporting & Automation Infrastructure',
+    items: [
+      'Automated version pipeline — UI version is now injected at build time from root package.json; no more manual updates.',
+      'VersionDisplay component replaces hardcoded version strings across the sidebar.',
+      'Sprint 10 foundation: PDF cycle report generation and download UI (Tasks 10.1–10.2) in progress.',
+    ],
+  },
+  {
     version: 'v3.0.0',
     title: 'The Enterprise Update',
     items: [

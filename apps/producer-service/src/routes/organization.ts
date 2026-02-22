@@ -195,6 +195,10 @@ export async function organizationRoutes(
           userLimit,
           aiAnalysisEnabled: org.aiAnalysisEnabled !== false, // default: true
           slackWebhookUrl: org.slackWebhookUrl ?? null,
+          features: {
+            testCasesEnabled: org.features?.testCasesEnabled !== false,
+            testCyclesEnabled: org.features?.testCyclesEnabled !== false,
+          },
           createdAt: org.createdAt,
           updatedAt: org.updatedAt
         }
@@ -395,6 +399,119 @@ export async function organizationRoutes(
   });
 
   /**
+   * PATCH /api/organization/features
+   * Update feature flags for the organization (Admin only)
+   *
+   * Request Body:
+   * - testCasesEnabled?: boolean
+   * - testCyclesEnabled?: boolean
+   *
+   * Response (200):
+   * - success: true
+   * - features: { testCasesEnabled, testCyclesEnabled }
+   *
+   * Errors:
+   * - 400: No valid fields / non-boolean values
+   * - 401: Authentication required
+   * - 403: Not admin
+   * - 404: Organization not found
+   * - 500: Failed to update features
+   */
+  app.patch('/api/organization/features', {
+    preHandler: [authMiddleware, adminOnly, apiRateLimit]
+  }, async (request, reply) => {
+    const { testCasesEnabled, testCyclesEnabled } = request.body as any;
+    const currentUser = request.user!;
+
+    try {
+      // Validate at least one field is provided
+      if (testCasesEnabled === undefined && testCyclesEnabled === undefined) {
+        return reply.code(400).send({
+          success: false,
+          error: 'Missing fields',
+          message: 'At least one field (testCasesEnabled or testCyclesEnabled) is required'
+        });
+      }
+
+      // Validate both are boolean if provided
+      if (testCasesEnabled !== undefined && typeof testCasesEnabled !== 'boolean') {
+        return reply.code(400).send({
+          success: false,
+          error: 'Invalid testCasesEnabled',
+          message: 'testCasesEnabled must be a boolean'
+        });
+      }
+
+      if (testCyclesEnabled !== undefined && typeof testCyclesEnabled !== 'boolean') {
+        return reply.code(400).send({
+          success: false,
+          error: 'Invalid testCyclesEnabled',
+          message: 'testCyclesEnabled must be a boolean'
+        });
+      }
+
+      const orgId = new ObjectId(currentUser.organizationId);
+
+      // Build $set payload with dot-notation keys
+      const setFields: Record<string, any> = { updatedAt: new Date() };
+      if (testCasesEnabled !== undefined) {
+        setFields['features.testCasesEnabled'] = testCasesEnabled;
+      }
+      if (testCyclesEnabled !== undefined) {
+        setFields['features.testCyclesEnabled'] = testCyclesEnabled;
+      }
+
+      const result = await orgsCollection.updateOne(
+        { _id: orgId },
+        { $set: setFields }
+      );
+
+      if (result.matchedCount === 0) {
+        return reply.code(404).send({
+          success: false,
+          error: 'Organization not found'
+        });
+      }
+
+      // Fetch updated org to return accurate values
+      const updatedOrg = await orgsCollection.findOne({ _id: orgId });
+
+      // Audit log
+      await logAuditEvent(
+        db,
+        {
+          organizationId: currentUser.organizationId,
+          userId: currentUser.userId,
+          action: 'org.features_updated',
+          targetType: 'organization',
+          targetId: currentUser.organizationId,
+          details: { changes: setFields },
+          ip: request.ip
+        },
+        app.log
+      );
+
+      app.log.info(`Feature flags updated for org ${currentUser.organizationId}: ${JSON.stringify(setFields)}`);
+
+      return reply.send({
+        success: true,
+        features: {
+          testCasesEnabled: updatedOrg?.features?.testCasesEnabled !== false,
+          testCyclesEnabled: updatedOrg?.features?.testCyclesEnabled !== false,
+        }
+      });
+
+    } catch (error: any) {
+      app.log.error(`Update organization features error: ${error?.message || error}`);
+      return reply.code(500).send({
+        success: false,
+        error: 'Failed to update organization features',
+        message: error.message
+      });
+    }
+  });
+
+  /**
    * GET /api/organization/usage
    * Get usage statistics (All roles can view)
    *
@@ -574,6 +691,7 @@ export async function organizationRoutes(
   app.log.info('✅ Organization routes registered');
   app.log.info('  - GET /api/organization (All roles)');
   app.log.info('  - PATCH /api/organization (Admin only)');
+  app.log.info('  - PATCH /api/organization/features (Admin only)');
   app.log.info('  - GET /api/organization/usage (All roles)');
   app.log.info('  - GET /api/organization/usage/alerts (All roles)');
 }
