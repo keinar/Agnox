@@ -332,7 +332,7 @@ export function TestCases() {
             </div>
 
             {/* ── Test cases (accordion by suite) ─────────────────────── */}
-            <div className="flex-1 overflow-y-auto flex flex-col gap-3">
+            <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3">
 
                 {testCasesLoading ? (
                     <div className="flex items-center justify-center gap-2 h-48 text-slate-500 dark:text-slate-400">
@@ -360,7 +360,7 @@ export function TestCases() {
                         return (
                             <div
                                 key={suiteName}
-                                className="rounded-xl border border-slate-200 dark:border-gh-border-dark bg-white dark:bg-gh-bg-dark overflow-hidden"
+                                className="rounded-xl border border-slate-200 dark:border-gh-border-dark bg-white dark:bg-gh-bg-dark"
                             >
                                 {/* ── Suite folder header ────────────── */}
                                 <button
@@ -397,8 +397,8 @@ export function TestCases() {
                                 {isExpanded && (
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-sm">
-                                            <thead>
-                                                <tr className="border-t border-b border-slate-200 dark:border-gh-border-dark bg-slate-50/50 dark:bg-gh-bg-subtle-dark/50">
+                                            <thead className="sticky top-0 z-10">
+                                                <tr className="border-t border-b border-slate-200 dark:border-gh-border-dark bg-slate-50 dark:bg-gh-bg-subtle-dark">
                                                     <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                                         Title
                                                     </th>

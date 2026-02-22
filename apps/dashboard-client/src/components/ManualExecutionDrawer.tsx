@@ -7,11 +7,11 @@
  * the individual step statuses and sent to the backend.
  */
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react';
 import {
     X, Loader2, AlertCircle, CheckCircle2, XCircle, SkipForward,
-    ClipboardCheck, ChevronRight,
+    ClipboardCheck, ChevronRight, Clock, Eye,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
@@ -41,6 +41,9 @@ interface ManualExecutionDrawerProps {
     itemId: string;
     itemTitle: string;
     initialSteps: IManualStep[];
+    /** Overall item status. When this is a terminal value (not PENDING or RUNNING)
+     *  the drawer renders in read-only Review Mode instead of execution mode. */
+    itemStatus?: string;
     onClose: () => void;
 }
 
@@ -65,14 +68,25 @@ const STATUS_BUTTON_STYLES: Record<StepStatus, string> = {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+/** Status icon map for read-only review display */
+const REVIEW_STATUS_ICONS: Record<string, React.ReactNode> = {
+    PASSED: <CheckCircle2 size={12} className="text-green-600 dark:text-green-400" />,
+    FAILED: <XCircle size={12} className="text-red-600 dark:text-red-400" />,
+    SKIPPED: <SkipForward size={12} className="text-amber-600 dark:text-amber-400" />,
+    PENDING: <Clock size={12} className="text-slate-400 dark:text-slate-500" />,
+};
+
 export function ManualExecutionDrawer({
     isOpen,
     cycleId,
     itemId,
     itemTitle,
     initialSteps,
+    itemStatus,
     onClose,
 }: ManualExecutionDrawerProps) {
+    // Read-only review mode when the item has already reached a terminal state
+    const isReadOnly = !!itemStatus && itemStatus !== 'PENDING' && itemStatus !== 'RUNNING';
     const { token } = useAuth();
     const queryClient = useQueryClient();
 
@@ -178,11 +192,22 @@ export function ManualExecutionDrawer({
                                 {/* ── Header ──────────────────────────── */}
                                 <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-200 dark:border-gh-border-dark shrink-0">
                                     <div className="flex items-center gap-2 min-w-0">
-                                        <ClipboardCheck size={18} className="shrink-0 text-green-600 dark:text-green-400" />
+                                        {isReadOnly
+                                            ? <Eye size={18} className="shrink-0 text-slate-500 dark:text-slate-400" />
+                                            : <ClipboardCheck size={18} className="shrink-0 text-green-600 dark:text-green-400" />
+                                        }
                                         <div className="min-w-0">
-                                            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                                                Manual Execution
-                                            </h2>
+                                            <div className="flex items-center gap-2">
+                                                <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
+                                                    {isReadOnly ? 'Execution Review' : 'Manual Execution'}
+                                                </h2>
+                                                {isReadOnly && itemStatus && (
+                                                    <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium ${STATUS_BUTTON_STYLES[itemStatus as StepStatus] ?? STATUS_BUTTON_STYLES.PENDING}`}>
+                                                        {REVIEW_STATUS_ICONS[itemStatus] ?? REVIEW_STATUS_ICONS.PENDING}
+                                                        {itemStatus}
+                                                    </span>
+                                                )}
+                                            </div>
                                             <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                                                 {itemTitle}
                                             </p>
@@ -250,32 +275,48 @@ export function ManualExecutionDrawer({
                                                         </div>
                                                     </div>
 
-                                                    {/* Status buttons */}
+                                                    {/* Status section: read-only badge in review mode, action buttons in execute mode */}
                                                     <div className="flex items-center gap-2 pl-9">
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => { e.stopPropagation(); setStepStatus(index, 'PASSED'); }}
-                                                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${step.status === 'PASSED' ? STATUS_BUTTON_STYLES.PASSED : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-green-50 dark:hover:bg-green-950/20 hover:text-green-600 dark:hover:text-green-400'
-                                                                }`}
-                                                        >
-                                                            <CheckCircle2 size={12} /> Pass
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => { e.stopPropagation(); setStepStatus(index, 'FAILED'); }}
-                                                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${step.status === 'FAILED' ? STATUS_BUTTON_STYLES.FAILED : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 dark:hover:text-red-400'
-                                                                }`}
-                                                        >
-                                                            <XCircle size={12} /> Fail
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => { e.stopPropagation(); setStepStatus(index, 'SKIPPED'); }}
-                                                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${step.status === 'SKIPPED' ? STATUS_BUTTON_STYLES.SKIPPED : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-amber-50 dark:hover:bg-amber-950/20 hover:text-amber-600 dark:hover:text-amber-400'
-                                                                }`}
-                                                        >
-                                                            <SkipForward size={12} /> Skip
-                                                        </button>
+                                                        {isReadOnly ? (
+                                                            <>
+                                                                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium ${STATUS_BUTTON_STYLES[step.status] ?? STATUS_BUTTON_STYLES.PENDING}`}>
+                                                                    {REVIEW_STATUS_ICONS[step.status] ?? REVIEW_STATUS_ICONS.PENDING}
+                                                                    {step.status}
+                                                                </span>
+                                                                {step.comment && (
+                                                                    <p className="text-xs text-slate-500 dark:text-slate-400 italic truncate">
+                                                                        &ldquo;{step.comment}&rdquo;
+                                                                    </p>
+                                                                )}
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => { e.stopPropagation(); setStepStatus(index, 'PASSED'); }}
+                                                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${step.status === 'PASSED' ? STATUS_BUTTON_STYLES.PASSED : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-green-50 dark:hover:bg-green-950/20 hover:text-green-600 dark:hover:text-green-400'
+                                                                        }`}
+                                                                >
+                                                                    <CheckCircle2 size={12} /> Pass
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => { e.stopPropagation(); setStepStatus(index, 'FAILED'); }}
+                                                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${step.status === 'FAILED' ? STATUS_BUTTON_STYLES.FAILED : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 dark:hover:text-red-400'
+                                                                        }`}
+                                                                >
+                                                                    <XCircle size={12} /> Fail
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => { e.stopPropagation(); setStepStatus(index, 'SKIPPED'); }}
+                                                                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${step.status === 'SKIPPED' ? STATUS_BUTTON_STYLES.SKIPPED : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-amber-50 dark:hover:bg-amber-950/20 hover:text-amber-600 dark:hover:text-amber-400'
+                                                                        }`}
+                                                                >
+                                                                    <SkipForward size={12} /> Skip
+                                                                </button>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
                                             );
@@ -293,7 +334,7 @@ export function ManualExecutionDrawer({
                                 {/* ── Footer ──────────────────────────── */}
                                 <div className="flex items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 dark:border-gh-border-dark shrink-0">
                                     <div className="min-w-0">
-                                        {saveError && (
+                                        {!isReadOnly && saveError && (
                                             <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1.5">
                                                 <AlertCircle size={13} className="shrink-0" />
                                                 {saveError}
@@ -301,31 +342,45 @@ export function ManualExecutionDrawer({
                                         )}
                                     </div>
                                     <div className="flex items-center gap-3 shrink-0">
-                                        <button
-                                            type="button"
-                                            onClick={onClose}
-                                            className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={handleComplete}
-                                            disabled={isSaving}
-                                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors duration-150"
-                                        >
-                                            {isSaving ? (
-                                                <>
-                                                    <Loader2 size={14} className="animate-spin" />
-                                                    Saving…
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <CheckCircle2 size={14} />
-                                                    Complete Test
-                                                </>
-                                            )}
-                                        </button>
+                                        {isReadOnly ? (
+                                            // Review mode: close only
+                                            <button
+                                                type="button"
+                                                onClick={onClose}
+                                                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                            >
+                                                Close
+                                            </button>
+                                        ) : (
+                                            // Execute mode: cancel + complete
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={onClose}
+                                                    className="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleComplete}
+                                                    disabled={isSaving}
+                                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors duration-150"
+                                                >
+                                                    {isSaving ? (
+                                                        <>
+                                                            <Loader2 size={14} className="animate-spin" />
+                                                            Saving…
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <CheckCircle2 size={14} />
+                                                            Complete Test
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
 

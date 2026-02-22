@@ -162,16 +162,56 @@ export async function testCycleRoutes(
             }
         }
 
-        // Check if there are automated items — if so, image is required
+        // Check if there are automated items — if so, an image must be resolved
         const automatedItems = items.filter((i) => i.type === 'AUTOMATED');
         const hasAutomated = automatedItems.length > 0;
 
+        // Resolved config for automated execution (populated below when hasAutomated is true)
+        let resolvedImage = '';
+        let resolvedBaseUrl = '';
+        let envVarsToInject: Record<string, string> = {};
+
         if (hasAutomated) {
-            if (typeof body.image !== 'string' || body.image.trim().length === 0) {
+            // Fetch project run settings so we can fall back to stored image / baseUrl
+            // and so the worker receives the same env-var injections as a direct run.
+            let projectSettings: Record<string, any> | null = null;
+            try {
+                projectSettings = await db.collection('projectRunSettings').findOne({
+                    organizationId,
+                    projectId: body.projectId.trim(),
+                });
+            } catch (settingsErr: unknown) {
+                app.log.warn(settingsErr, '[test-cycles] Could not fetch projectRunSettings — proceeding with request body values');
+            }
+
+            // Resolve image: explicit body value takes precedence, then project settings
+            const bodyImage = typeof body.image === 'string' ? body.image.trim() : '';
+            resolvedImage = bodyImage || projectSettings?.dockerImage || '';
+
+            if (!resolvedImage) {
                 return reply.status(400).send({
                     success: false,
-                    error: 'image is required when the cycle contains AUTOMATED items',
+                    error: 'No Docker image configured. Set one in Project Settings or pass it in the request body.',
                 });
+            }
+
+            // Resolve baseUrl: explicit body value takes precedence, then project settings (prod → staging → dev)
+            const bodyBaseUrl = typeof body.baseUrl === 'string' ? body.baseUrl.trim() : '';
+            resolvedBaseUrl =
+                bodyBaseUrl ||
+                projectSettings?.targetUrls?.prod ||
+                projectSettings?.targetUrls?.staging ||
+                projectSettings?.targetUrls?.dev ||
+                '';
+
+            // Inject server-side env vars — same mechanism used by /api/execution-request.
+            // These typically carry API keys / auth tokens that the test suite needs.
+            const varsToInject = (process.env.INJECT_ENV_VARS || '').split(',');
+            for (const varName of varsToInject) {
+                const name = varName.trim();
+                if (name && process.env[name]) {
+                    envVarsToInject[name] = process.env[name]!;
+                }
             }
         }
 
@@ -198,8 +238,8 @@ export async function testCycleRoutes(
 
             // ── Push AUTOMATED items to RabbitMQ ──────────────────────────────
             if (hasAutomated) {
-                const image = (body.image as string).trim();
-                const baseUrl = typeof body.baseUrl === 'string' ? body.baseUrl.trim() : '';
+                const image = resolvedImage;
+                const baseUrl = resolvedBaseUrl;
                 const folder = typeof body.folder === 'string' && body.folder.trim() ? body.folder.trim() : 'all';
 
                 for (const item of automatedItems) {
@@ -217,6 +257,9 @@ export async function testCycleRoutes(
                         config: {
                             baseUrl,
                             environment: 'production',
+                            // Inject server-side env vars so the worker has the same auth
+                            // credentials it receives during a direct /api/execution-request run.
+                            envVars: envVarsToInject,
                         },
                         // Cycle linkage — allows the worker to update the correct cycle item
                         cycleId,

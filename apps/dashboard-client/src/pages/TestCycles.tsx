@@ -9,17 +9,19 @@
  *  - MANUAL items: status badge + "Play" button → ManualExecutionDrawer
  */
 
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import {
     Layers, Plus, Loader2, AlertCircle, FolderKanban,
     CheckCircle2, XCircle, Clock, ChevronDown, ChevronRight,
-    Play, Bot, ClipboardCheck, SkipForward,
+    Play, Bot, ClipboardCheck, SkipForward, Eye, FileText,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { CycleBuilderDrawer } from '../components/CycleBuilderDrawer';
 import { ManualExecutionDrawer } from '../components/ManualExecutionDrawer';
+import { ExecutionDrawer } from '../components/ExecutionDrawer';
+import type { Execution } from '../types';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -120,14 +122,18 @@ export function TestCycles() {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [expandedCycleId, setExpandedCycleId] = useState<string | null>(null);
 
-    // Manual player state
+    // Manual player / review state
     const [manualDrawer, setManualDrawer] = useState<{
         isOpen: boolean;
         cycleId: string;
         itemId: string;
         itemTitle: string;
+        itemStatus: string;
         steps: IManualStep[];
-    }>({ isOpen: false, cycleId: '', itemId: '', itemTitle: '', steps: [] });
+    }>({ isOpen: false, cycleId: '', itemId: '', itemTitle: '', itemStatus: 'PENDING', steps: [] });
+
+    // Automated execution review state
+    const [reviewExecutionId, setReviewExecutionId] = useState<string | null>(null);
 
     // ── Fetch projects ──────────────────────────────────────────────────────
     const {
@@ -169,6 +175,22 @@ export function TestCycles() {
 
     const cycles = cyclesData?.cycles ?? [];
 
+    // ── Fetch execution for automated review drawer ─────────────────────────
+    const { data: reviewExecutionResponse } = useQuery<{ execution: Execution } | null>({
+        queryKey: ['execution-review', reviewExecutionId, token],
+        queryFn: async () => {
+            const { data } = await axios.get(
+                `${API_URL}/api/executions/${reviewExecutionId}`,
+                { headers: { Authorization: `Bearer ${token}` } },
+            );
+            return data.success ? data.data : null;
+        },
+        enabled: !!token && !!reviewExecutionId,
+        staleTime: 30_000,
+    });
+
+    const reviewExecution: Execution | null = reviewExecutionResponse?.execution ?? null;
+
     // ── Handlers ────────────────────────────────────────────────────────────
 
     function toggleExpand(cycleId: string) {
@@ -181,6 +203,7 @@ export function TestCycles() {
             cycleId: cycle._id,
             itemId: item.id,
             itemTitle: item.title,
+            itemStatus: item.status,
             steps: (item.manualSteps ?? []).map((s) => ({
                 id: s.id,
                 action: s.action,
@@ -189,6 +212,10 @@ export function TestCycles() {
                 comment: s.comment,
             })),
         });
+    }
+
+    function openExecutionReview(executionId: string) {
+        setReviewExecutionId(executionId);
     }
 
     // ── Render ──────────────────────────────────────────────────────────────
@@ -257,7 +284,7 @@ export function TestCycles() {
             </div>
 
             {/* ── Cycles table ────────────────────────────────────────── */}
-            <div className="flex-1 overflow-hidden rounded-xl border border-slate-200 dark:border-gh-border-dark bg-white dark:bg-gh-bg-dark">
+            <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-slate-200 dark:border-gh-border-dark bg-white dark:bg-gh-bg-dark">
 
                 {cyclesLoading ? (
                     <div className="flex items-center justify-center gap-2 h-48 text-slate-500 dark:text-slate-400">
@@ -280,7 +307,7 @@ export function TestCycles() {
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                            <thead>
+                            <thead className="sticky top-0 z-10">
                                 <tr className="border-b border-slate-200 dark:border-gh-border-dark bg-slate-50 dark:bg-gh-bg-subtle-dark">
                                     <th className="px-4 py-3 w-8" />
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -307,10 +334,9 @@ export function TestCycles() {
                                 {cycles.map((cycle) => {
                                     const isExpanded = expandedCycleId === cycle._id;
                                     return (
-                                        <>
+                                        <Fragment key={cycle._id}>
                                             {/* ── Cycle row ────────────────── */}
                                             <tr
-                                                key={cycle._id}
                                                 onClick={() => toggleExpand(cycle._id)}
                                                 className="cursor-pointer hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark transition-colors duration-100"
                                             >
@@ -366,7 +392,7 @@ export function TestCycles() {
 
                                             {/* ── Expanded items ──────────── */}
                                             {isExpanded && cycle.items && cycle.items.length > 0 && (
-                                                <tr key={`${cycle._id}-items`}>
+                                                <tr>
                                                     <td colSpan={7} className="p-0">
                                                         <div className="bg-slate-50 dark:bg-gh-bg-subtle-dark border-t border-slate-200 dark:border-gh-border-dark">
                                                             <div className="px-6 py-2 border-b border-slate-200 dark:border-gh-border-dark">
@@ -378,7 +404,16 @@ export function TestCycles() {
                                                                 {cycle.items.map((item) => (
                                                                     <div
                                                                         key={item.id}
-                                                                        className="flex items-center gap-3 px-6 py-2.5"
+                                                                        className={`flex items-center gap-3 px-6 py-2.5 transition-colors duration-100 ${
+                                                                            item.type === 'MANUAL'
+                                                                                ? 'cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/40'
+                                                                                : ''
+                                                                        }`}
+                                                                        onClick={() => {
+                                                                            if (item.type === 'MANUAL') {
+                                                                                openManualPlayer(cycle, item);
+                                                                            }
+                                                                        }}
                                                                     >
                                                                         {/* Type icon */}
                                                                         <div className="shrink-0">
@@ -399,13 +434,27 @@ export function TestCycles() {
                                                                             {item.type}
                                                                         </span>
 
-                                                                        {/* Status badge */}
-                                                                        <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium ${ITEM_STATUS_STYLES[item.status] ?? ITEM_STATUS_STYLES.PENDING}`}>
-                                                                            {ITEM_STATUS_ICONS[item.status] ?? ITEM_STATUS_ICONS.PENDING}
-                                                                            {item.status}
-                                                                        </span>
+                                                                        {/* Status badge — clickable for AUTOMATED items with an execution */}
+                                                                        {item.type === 'AUTOMATED' && item.executionId ? (
+                                                                            <button
+                                                                                title="Click to view execution logs"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    openExecutionReview(item.executionId!);
+                                                                                }}
+                                                                                className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium hover:opacity-75 transition-opacity ${ITEM_STATUS_STYLES[item.status] ?? ITEM_STATUS_STYLES.PENDING}`}
+                                                                            >
+                                                                                {ITEM_STATUS_ICONS[item.status] ?? ITEM_STATUS_ICONS.PENDING}
+                                                                                {item.status}
+                                                                            </button>
+                                                                        ) : (
+                                                                            <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium ${ITEM_STATUS_STYLES[item.status] ?? ITEM_STATUS_STYLES.PENDING}`}>
+                                                                                {ITEM_STATUS_ICONS[item.status] ?? ITEM_STATUS_ICONS.PENDING}
+                                                                                {item.status}
+                                                                            </span>
+                                                                        )}
 
-                                                                        {/* Action button */}
+                                                                        {/* MANUAL: Execute (pending/running) or Review (completed) */}
                                                                         {item.type === 'MANUAL' && (item.status === 'PENDING' || item.status === 'RUNNING') && (
                                                                             <button
                                                                                 onClick={(e) => {
@@ -417,11 +466,29 @@ export function TestCycles() {
                                                                                 <Play size={11} /> Execute
                                                                             </button>
                                                                         )}
+                                                                        {item.type === 'MANUAL' && item.status !== 'PENDING' && item.status !== 'RUNNING' && (
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    openManualPlayer(cycle, item);
+                                                                                }}
+                                                                                className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                                                            >
+                                                                                <Eye size={11} /> Review
+                                                                            </button>
+                                                                        )}
 
+                                                                        {/* AUTOMATED: Logs button when execution exists */}
                                                                         {item.type === 'AUTOMATED' && item.executionId && (
-                                                                            <span className="shrink-0 text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate max-w-[100px]">
-                                                                                {item.executionId.slice(0, 8)}…
-                                                                            </span>
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    openExecutionReview(item.executionId!);
+                                                                                }}
+                                                                                className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-colors"
+                                                                            >
+                                                                                <FileText size={11} /> Logs
+                                                                            </button>
                                                                         )}
                                                                     </div>
                                                                 ))}
@@ -432,13 +499,13 @@ export function TestCycles() {
                                             )}
 
                                             {isExpanded && (!cycle.items || cycle.items.length === 0) && (
-                                                <tr key={`${cycle._id}-empty`}>
+                                                <tr>
                                                     <td colSpan={7} className="px-6 py-4 text-center text-sm text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-gh-bg-subtle-dark">
                                                         No items in this cycle.
                                                     </td>
                                                 </tr>
                                             )}
-                                        </>
+                                        </Fragment>
                                     );
                                 })}
                             </tbody>
@@ -455,14 +522,22 @@ export function TestCycles() {
                 onCreated={() => queryClient.invalidateQueries({ queryKey: ['test-cycles'] })}
             />
 
-            {/* ── Manual Execution Drawer ───────────────────────────────── */}
+            {/* ── Manual Execution / Review Drawer ─────────────────────── */}
             <ManualExecutionDrawer
                 isOpen={manualDrawer.isOpen}
                 cycleId={manualDrawer.cycleId}
                 itemId={manualDrawer.itemId}
                 itemTitle={manualDrawer.itemTitle}
+                itemStatus={manualDrawer.itemStatus}
                 initialSteps={manualDrawer.steps}
                 onClose={() => setManualDrawer((prev) => ({ ...prev, isOpen: false }))}
+            />
+
+            {/* ── Automated Execution Review Drawer ────────────────────── */}
+            <ExecutionDrawer
+                executionId={reviewExecutionId}
+                execution={reviewExecution}
+                onClose={() => setReviewExecutionId(null)}
             />
         </div>
     );

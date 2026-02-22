@@ -765,6 +765,33 @@ export async function setupRoutes(
         }
     });
 
+    // ── GET /api/executions/:taskId — Fetch a single execution by taskId ────────
+    // Used by the Quality Hub review mode to load automated execution details.
+    app.get('/api/executions/:taskId', async (request, reply) => {
+        if (!dbClient) return reply.status(500).send({ success: false, error: 'Database not connected' });
+
+        const organizationId = request.user!.organizationId;
+        const { taskId } = request.params as { taskId: string };
+
+        try {
+            const collection = dbClient.db(DB_NAME).collection('executions');
+            const execution = await collection.findOne({
+                taskId,
+                organizationId,
+                deletedAt: { $exists: false },
+            });
+
+            if (!execution) {
+                return reply.status(404).send({ success: false, error: 'Execution not found' });
+            }
+
+            return reply.send({ success: true, data: { execution } });
+        } catch (error) {
+            app.log.error(error, '[executions] Failed to fetch execution by taskId');
+            return reply.status(500).send({ success: false, error: 'Failed to fetch execution' });
+        }
+    });
+
     // Soft-delete execution by ID
     // NOTE: We use soft delete to prevent billing quota abuse.
     // The record remains in the database so usage counts stay accurate.
