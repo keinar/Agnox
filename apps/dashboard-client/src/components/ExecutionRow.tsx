@@ -3,7 +3,7 @@ import {
     Trash2, CheckCircle, XCircle,
     Clock, PlayCircle, FileText, BarChart2,
     Sparkles, Loader2, AlertTriangle,
-    User2, Timer, Github, Bug,
+    User2, Timer, Github, Gitlab, Settings2, Link2, Bug,
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns';
@@ -27,23 +27,32 @@ interface ExecutionRowProps {
     animateIn?: boolean;
 }
 
-type TriggerType = 'Manual' | 'CRON' | 'GitHub';
+type TriggerType = 'Manual' | 'CRON' | 'GitHub' | 'GitLab' | 'Jenkins' | 'Webhook';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const TRIGGER_CONFIG: Record<TriggerType, { icon: React.ElementType; className: string }> = {
-    Manual: { icon: User2,  className: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
-    CRON:   { icon: Timer,  className: 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' },
-    GitHub: { icon: Github, className: 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
+    Manual:  { icon: User2,     className: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
+    CRON:    { icon: Timer,     className: 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' },
+    GitHub:  { icon: Github,    className: 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
+    GitLab:  { icon: Gitlab,    className: 'bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800' },
+    Jenkins: { icon: Settings2, className: 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800' },
+    Webhook: { icon: Link2,     className: 'bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-800' },
 };
 
 /** Maps the raw `trigger` field from the API to a display-ready TriggerType. */
 const resolveTrigger = (raw: string | undefined): TriggerType => {
     if (!raw) return 'Manual';
-    const normalized = raw.toLowerCase();
-    if (normalized === 'cron' || normalized === 'scheduled') return 'CRON';
-    if (normalized === 'github' || normalized === 'ci') return 'GitHub';
-    return 'Manual';
+    switch (raw.toLowerCase()) {
+        case 'cron':
+        case 'scheduled': return 'CRON';
+        case 'github':
+        case 'ci':        return 'GitHub';
+        case 'gitlab':    return 'GitLab';
+        case 'jenkins':   return 'Jenkins';
+        case 'webhook':   return 'Webhook';
+        default:          return 'Manual';
+    }
 };
 
 const formatDateSafe = (dateString: string | Date | undefined) => {

@@ -1,7 +1,7 @@
 ---
 name: doc-sync
-description: Syncs all project documentation to match the current state of the codebase. Run after a major feature or sprint with "Run DocSync" or "Sync Docs" to purge stale content and inject accurate, up-to-date information.
-version: 1.0.0
+description: Syncs all project documentation to match the current state of the codebase. Run after a major feature or sprint with "Run DocSync" or "Sync Docs" to purge stale content, inject accurate information, bump the project version, and update the changelog.
+version: 1.1.0
 ---
 
 # DocSync
@@ -20,6 +20,7 @@ Audits and reconciles all core project documentation against the current state o
 3. `README.md` — Public-facing overview, setup, and feature list
 4. `docs/architecture/overview.md` — System design and service topology
 5. `docs/features/user-guide.md` — End-user feature documentation
+6. `CHANGELOG.md` — Versioned record of all releases (created if missing)
 
 ## Workflow
 
@@ -52,11 +53,45 @@ Inject accurate content into the correct sections:
 - **Architecture Diagrams / Descriptions** → reflect any new services, queue changes, or auth flow changes
 - **API Reference** → note any new or removed endpoints
 
-### Step 5 — Report
+### Step 5 — Version & Changelog
+
+This step is **mandatory** and must run after all document updates are complete.
+
+1. **Read the current version** from the root `package.json` (`version` field).
+2. **Determine the bump type**:
+   - **Minor** (`x.Y.0`) — when the sprint introduced new features or new API surface.
+   - **Patch** (`x.y.Z`) — when the sync only corrected docs, fixed bugs, or made no functional changes.
+3. **Bump the version** following semver: increment the chosen segment and reset lower segments to `0`.
+4. **Write the new version** back into the root `package.json` `version` field.
+5. **Update `CHANGELOG.md`** (create the file at the repository root if it does not exist):
+   - Prepend a new entry at the top of the changelog (below any existing header) in this exact format:
+
+```
+## [X.Y.Z] — YYYY-MM-DD
+
+### Changed
+- <bullet summarising each documentation update made in Steps 3–4>
+- <bullet for each ghost purged>
+- <bullet for each new section or feature entry added>
+```
+
+   - If `CHANGELOG.md` does not yet exist, create it with the following header before the first entry:
+
+```
+# Changelog
+
+All notable changes to this project will be documented in this file.
+This project adheres to [Semantic Versioning](https://semver.org/).
+```
+
+### Step 6 — Report
 Output a structured summary in this exact format:
 
 ```
 ## DocSync Report — [DATE]
+
+### Version Bump
+- Previous: X.Y.Z → New: X.Y.Z (minor | patch)
 
 ### Files Modified
 - `FILE_PATH` — [brief description of what changed]

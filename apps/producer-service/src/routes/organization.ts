@@ -194,6 +194,7 @@ export async function organizationRoutes(
           userCount,
           userLimit,
           aiAnalysisEnabled: org.aiAnalysisEnabled !== false, // default: true
+          slackWebhookUrl: org.slackWebhookUrl ?? null,
           createdAt: org.createdAt,
           updatedAt: org.updatedAt
         }
@@ -232,16 +233,16 @@ export async function organizationRoutes(
   app.patch('/api/organization', {
     preHandler: [authMiddleware, adminOnly, apiRateLimit]
   }, async (request, reply) => {
-    const { name, aiAnalysisEnabled } = request.body as any;
+    const { name, aiAnalysisEnabled, slackWebhookUrl } = request.body as any;
     const currentUser = request.user!;
 
     try {
       // Validate at least one field is provided
-      if (name === undefined && aiAnalysisEnabled === undefined) {
+      if (name === undefined && aiAnalysisEnabled === undefined && slackWebhookUrl === undefined) {
         return reply.code(400).send({
           success: false,
           error: 'Missing fields',
-          message: 'At least one field (name or aiAnalysisEnabled) is required'
+          message: 'At least one field (name, aiAnalysisEnabled, or slackWebhookUrl) is required'
         });
       }
 
@@ -294,6 +295,28 @@ export async function organizationRoutes(
 
       if (aiAnalysisEnabled !== undefined) {
         updateFields.aiAnalysisEnabled = aiAnalysisEnabled;
+      }
+
+      // Validate and set slackWebhookUrl if provided
+      if (slackWebhookUrl !== undefined) {
+        if (slackWebhookUrl === null || slackWebhookUrl === '') {
+          // Allow clearing the webhook URL
+          updateFields.slackWebhookUrl = null;
+        } else if (typeof slackWebhookUrl !== 'string') {
+          return reply.code(400).send({
+            success: false,
+            error: 'Invalid slackWebhookUrl',
+            message: 'slackWebhookUrl must be a string or null'
+          });
+        } else if (!slackWebhookUrl.startsWith('https://')) {
+          return reply.code(400).send({
+            success: false,
+            error: 'Invalid slackWebhookUrl',
+            message: 'Slack webhook URL must start with https://'
+          });
+        } else {
+          updateFields.slackWebhookUrl = slackWebhookUrl.trim();
+        }
       }
 
       // Update organization
@@ -356,7 +379,8 @@ export async function organizationRoutes(
         organization: {
           id: updatedOrg?._id.toString(),
           name: updatedOrg?.name,
-          aiAnalysisEnabled: updatedOrg?.aiAnalysisEnabled !== false
+          aiAnalysisEnabled: updatedOrg?.aiAnalysisEnabled !== false,
+          slackWebhookUrl: updatedOrg?.slackWebhookUrl ?? null
         }
       });
 

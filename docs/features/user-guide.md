@@ -160,15 +160,54 @@ curl -H "x-api-key: pk_live_..." ...
 - Check the **Dashboard** for real-time logs via WebSocket.
 - Status updates: `PENDING` → `RUNNING` → `ANALYZING` → `PASSED` / `FAILED` / `UNSTABLE` / `ERROR`.
 
-### AI Root Cause Analysis
+### AI Root Cause Analysis (Investigation Hub)
 If a test fails:
-1. Click the **✨** icon next to the failure.
-2. View the AI-generated diagnosis and suggested fix.
+1. Click on any execution row in the dashboard to open the **Investigation Hub** (side drawer).
+2. Select the **AI Analysis** tab (third tab) to view the Gemini-generated diagnosis and suggested fix.
 3. AI analysis can be disabled per-organization in **Settings** → **Organization**.
+
+### Investigation Hub
+Click any execution row to open the slide-over **Investigation Hub** drawer:
+- **Terminal tab:** Live log stream with auto-scroll toggle and `.txt` download.
+- **Artifacts tab:** Media gallery of screenshots, videos, and downloadable trace zips from the test run.
+- **AI Analysis tab:** Gemini-powered root cause analysis for failed executions.
+
+The drawer URL updates with `?drawerId=<taskId>` — links can be copied and shared directly.
 
 ---
 
-## 10. Support
+## 10. CRON Schedules
+
+Automate recurring test runs without CI/CD pipelines.
+
+### Creating a Schedule
+1. Click **Run New Test** to open the Execution Modal.
+2. Switch to the **Schedule Run** tab (top of the modal).
+3. Fill in the standard run fields (project, environment, folder).
+4. Enter a **Schedule Name** (used as the `groupName` for all triggered executions).
+5. Enter or select a **CRON Expression** (e.g., `0 2 * * *` = daily at 02:00 UTC). Use the preset buttons for common intervals.
+6. Click **Save Schedule**.
+
+The schedule is immediately registered in the live scheduler — no server restart needed.
+
+### Managing Schedules
+Go to **Settings** → **Schedules** to see a table of all active CRON schedules for your organization:
+- **Name**, **CRON Expression**, **Environment**, **Folder**
+- Click **Delete** to permanently remove a schedule and cancel its next execution.
+
+> **Note:** Viewer role cannot delete schedules.
+
+### Slack Notifications
+To receive a Slack message whenever a test run completes:
+1. Go to **Settings** → **Integrations**.
+2. Under the **Slack** card, paste your Slack **Incoming Webhook URL**.
+3. Click **Save Webhook**.
+
+Notifications are sent for `PASSED`, `FAILED`, `ERROR`, and `UNSTABLE` statuses. Failed executions include a truncated AI analysis snippet and a direct link to the Investigation Hub.
+
+---
+
+## 11. Support
 
 - **Documentation**: [docs.automation.keinar.com](https://docs.automation.keinar.com)
 - **Email**: info@digital-solution.co.il

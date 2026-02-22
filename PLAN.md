@@ -1,3 +1,43 @@
+# SPRINT 9 — Quality Hub: Manual Testing & Hybrid Cycles
+
+## 🎯 Sprint Goal
+Transform the AAC from a pure execution engine into a comprehensive Test Management System (TMS). We will introduce manual test case repositories, AI-assisted test generation, and "Hybrid Cycles" that consolidate automated and manual test results into a single, unified report.
+
+---
+
+## 📋 Task Breakdown
+
+### [ ] Task 9.1: Data Schema Evolution (MongoDB Foundation)
+**Goal:** Expand the database to support manual tests and hybrid cycles.
+- **Action:** Create Mongoose schemas and TS interfaces for `TestCases` (type: MANUAL | AUTOMATED, includes `steps` array for manual).
+- **Action:** Create schemas for `TestCycles` (aggregating multiple test executions/manual results under one cycle ID).
+- **Action:** Implement the necessary CRUD API routes in the Producer service for these new entities.
+
+### [ ] Task 9.2: Manual Test Management Screen
+**Goal:** Build a dedicated repository view for manual tests.
+- **Action:** Create a new Dashboard view (e.g., "Test Cases") listing all manual tests.
+- **Action:** Build a creation/edit Side Drawer.
+- **Action:** **AI Integration:** Add a "Generate Steps with AI" button where the user inputs a single sentence (e.g., "Login flow with invalid credentials") and Gemini generates the structured JSON array of test steps.
+
+### [ ] Task 9.3: The Hybrid Cycle Builder UI
+**Goal:** Allow users to package manual and automated tests into executable cycles.
+- **Action:** Create a "New Cycle" wizard/modal.
+- **Action:** Implement a multi-select interface to choose from connected automated frameworks and the manual test repository.
+- **Action:** Add a "Launch Cycle" button that creates the `TestCycle` document and pushes the automated tasks to RabbitMQ.
+
+### [ ] Task 9.4: Manual Execution Player (In-Drawer)
+**Goal:** The interactive checklist for QA engineers during a cycle.
+- **Action:** When clicking a manual test within an active cycle, open the Drawer.
+- **Action:** Render the `TestStep` array as an interactive checklist.
+- **Action:** Allow the tester to mark Pass/Fail per step and upload screenshot artifacts.
+
+### [ ] Task 9.5: Consolidated Cycle Report & UX Polish
+**Goal:** Deliver the executive summary view.
+- **Action:** Build the Cycle Summary view displaying total success rate, automation vs. manual ratio, and duration.
+- **Action:** Implement the Dual Progress Bar (one automating moving via RabbitMQ events, one moving via manual QA input) for a true "Command Center" feel.
+
+## Archive / Completed Sprints
+
 # SPRINT 7 — The Investigation Hub (V3 Architecture)
 
 ## 🎯 Sprint Goal
@@ -40,8 +80,6 @@ Transform the debugging and triage experience by consolidating logs, AI analysis
 **Goal:** Serve and display test media.
 - **Action (Backend):** Create `GET /api/executions/:taskId/artifacts` in Producer to list available media files.
 - **Action (Frontend):** Build `ArtifactsView.tsx` in the second tab. Fetch the list via TanStack Query and display a CSS Grid gallery for images/videos, and download links for traces/zips.
-
-## Archive / Completed Sprints
 
 # Sprint 6 — UI/UX Polish & Theming
 

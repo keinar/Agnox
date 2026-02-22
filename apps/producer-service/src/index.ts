@@ -6,6 +6,7 @@ import { setupSecurityHeaders, setupGlobalAuth } from './config/middleware.js';
 import { setupRoutes } from './config/routes.js';
 import { rabbitMqService } from './rabbitmq.js';
 import { createAuthRateLimiter, createApiRateLimiter, createStrictRateLimiter } from './middleware/rateLimiter.js';
+import { initScheduler, stopAllJobs } from './utils/scheduler.js';
 
 // Load environment variables
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
@@ -46,8 +47,21 @@ const start = async () => {
         // Step 8: Setup Socket.IO connection handler (after server is listening)
         setupSocketIO(app);
 
+        // Step 9: Initialize CRON scheduler (loads active schedules from DB)
+        await initScheduler(dbClient);
+
         app.log.info('🚀 Producer Service started successfully');
         app.log.info('📍 Listening on port 3000');
+
+        // Graceful shutdown: stop all cron jobs before the process exits
+        const shutdown = () => {
+            app.log.info('Received shutdown signal — stopping cron jobs...');
+            stopAllJobs();
+            process.exit(0);
+        };
+
+        process.on('SIGTERM', shutdown);
+        process.on('SIGINT', shutdown);
     } catch (err) {
         console.error(err);
         process.exit(1);

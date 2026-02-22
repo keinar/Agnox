@@ -14,6 +14,25 @@ export const ExecutionConfigSchema = z.object({
     envVars: z.record(z.string(), z.string()).optional()
 });
 
+export const CiTriggerSourceSchema = z.enum([
+    'manual', 'cron', 'github', 'gitlab', 'jenkins', 'webhook',
+]);
+
+export type CiTriggerSource = z.infer<typeof CiTriggerSourceSchema>;
+
+/**
+ * Supported automation frameworks.
+ * 'maestro' is a mobile-native framework (stub — Sprint 9 will wire the full execution path).
+ */
+export const AutomationFrameworkSchema = z.enum([
+    'playwright',
+    'pytest',
+    'cypress',
+    'maestro',
+]);
+
+export type AutomationFramework = z.infer<typeof AutomationFrameworkSchema>;
+
 export const TestExecutionRequestSchema = z.object({
     taskId: z.string().min(1),
     image: z.string().min(1).default('mcr.microsoft.com/playwright:v1.57.0-jammy'),
@@ -26,6 +45,10 @@ export const TestExecutionRequestSchema = z.object({
     groupName: z.string().max(128).optional(),
     /** Optional: shared identifier that links runs triggered in the same CI batch. */
     batchId: z.string().max(128).optional(),
+    /** Optional: CI/CD source override — detected from headers when omitted. */
+    trigger: CiTriggerSourceSchema.optional(),
+    /** Optional: automation framework hint — used by the worker to select the correct execution path. */
+    framework: AutomationFrameworkSchema.optional(),
 });
 
 export type TestExecutionRequest = z.infer<typeof TestExecutionRequestSchema>;
@@ -49,6 +72,8 @@ export interface IOrganization {
         maxUsers: number;
         maxConcurrentRuns: number;
     };
+    /** Optional Slack incoming webhook URL for execution notifications. */
+    slackWebhookUrl?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -135,6 +160,10 @@ export interface IExecution {
     groupName?: string;
     /** CI-level batch identifier shared by runs triggered together. */
     batchId?: string;
+    /** Source that triggered this execution. */
+    trigger?: CiTriggerSource;
+    /** Automation framework used for this execution. */
+    framework?: AutomationFramework;
 }
 
 // ============================================================================
@@ -300,3 +329,40 @@ export type UserStatus = 'active' | 'invited' | 'suspended';
 export type InvitationStatus = 'pending' | 'accepted' | 'expired';
 export type OrganizationPlan = 'free' | 'team' | 'enterprise';
 export type ExecutionStatus = 'PENDING' | 'RUNNING' | 'PASSED' | 'FAILED' | 'ERROR' | 'UNSTABLE' | 'ANALYZING';
+// AutomationFramework is re-exported from the schema definition above
+
+// ============================================================================
+// SCHEDULE INTERFACES (Task 8.2)
+// ============================================================================
+
+/**
+ * Schedule entity
+ * Represents a recurring CRON-based test execution schedule.
+ */
+export interface ISchedule {
+    _id: ObjectId;
+    organizationId: string;
+    projectId?: string;
+    name: string;
+    cronExpression: string;
+    environment: 'development' | 'staging' | 'production';
+    isActive: boolean;
+    createdAt: Date;
+    /** Execution payload fields mirrored from the run-settings at creation time. */
+    image: string;
+    folder: string;
+    baseUrl: string;
+}
+
+/**
+ * API payload for creating a schedule (POST /api/schedules).
+ */
+export interface ICreateScheduleRequest {
+    name: string;
+    cronExpression: string;
+    environment: 'development' | 'staging' | 'production';
+    projectId?: string;
+    image: string;
+    folder: string;
+    baseUrl: string;
+}

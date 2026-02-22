@@ -676,6 +676,31 @@ See the [Deployment Guide](docs/setup/deployment.md) for full deployment instruc
 
 ---
 
+### Sprint 7: The Investigation Hub ✅
+
+**Status:** Production Ready
+
+- **ExecutionDrawer:** Slide-over panel with URL-state deep-linking (`?drawerId=<taskId>`). Click any execution row to open the drawer without leaving the page
+- **3-Tab Layout:** Terminal (real-time log stream), Artifacts (media gallery), AI Analysis (Gemini root-cause report)
+- **ArtifactsView:** CSS Grid gallery for PNG/WebM screenshots and videos; download links for zip traces. Backed by `GET /api/executions/:taskId/artifacts`
+- **TerminalView:** Live Socket.io log streaming with auto-scroll toggle and `.txt` download
+- **AIAnalysisView:** Gemini-generated markdown analysis rendered in the third tab
+
+---
+
+### Sprint 8: CRON Scheduling & Slack Notifications ✅
+
+**Status:** Production Ready
+
+- **Native CRON Scheduler:** `node-cron` powered engine (`scheduler.ts`) loads all active schedules on startup and registers in-memory jobs. Jobs survive individual failures without crashing the server
+- **Schedule API:** `POST /api/schedules` (create + validate CRON expression), `GET /api/schedules` (list), `DELETE /api/schedules/:id` (delete + deregister live job)
+- **Dual-Mode Execution Modal:** Toggle between "Immediate" and "Schedule Run" modes. Schedule mode adds a name and CRON expression field with one-click preset buttons
+- **Schedules Settings Tab:** `Settings → Schedules` lists all CRON schedules with environment badge, CRON expression, folder, and delete action (hidden for Viewer role)
+- **Slack Webhook Notifications:** `notifier.ts` sends Block Kit messages to a configured Slack Incoming Webhook when an execution reaches a final status (PASSED / FAILED / ERROR / UNSTABLE). Includes AI analysis snippet for failures and a deep link to the Investigation Hub
+- **Slack Configuration:** `Settings → Integrations → Slack` card — admins enter and save the org-level Incoming Webhook URL. Persisted on `organizations.slackWebhookUrl`
+
+---
+
 ## Technology Stack
 
 ### Frontend
@@ -820,7 +845,8 @@ Please read our [Contributing Guide](CONTRIBUTING.md) _(coming soon)_ for detail
 | **Phase 5:** Email Integration | ✅ Complete | 100% |
 | **Sprint 5:** Dashboard Evolution | ✅ Complete | 100% |
 | **Sprint 6:** Enterprise UI Overhaul | ✅ Complete | 100% |
-| **Sprint 7:** The Investigation Hub | 🔄 In Progress | Phase 7A active |
+| **Sprint 7:** The Investigation Hub | ✅ Complete | 100% |
+| **Sprint 8:** CRON Scheduling & Slack Notifications | ✅ Complete | 100% |
 
 ---
 
@@ -834,11 +860,12 @@ Please read our [Contributing Guide](CONTRIBUTING.md) _(coming soon)_ for detail
 - Phase 5: Email integration (SendGrid)
 - Sprint 5: Full-screen layout, real-time analytics, run groups, bulk actions, Jira ADF integration
 - Sprint 6: GitHub-inspired Theme Engine, Dark Mode, and UI Hardening
+- Sprint 7: Investigation Hub — ExecutionDrawer, ArtifactsView, AI Analysis tab
+- Sprint 8: CRON scheduling engine, Slack webhook notifications, Schedules settings tab
 
 ### Q2 2026
 - Advanced analytics dashboards and trend charts
 - Audit logging and compliance features
-- Webhook integrations for external notifications
 - x86 Worker Support for dedicated Chrome/Edge infrastructure
 
 ### Q3 2026

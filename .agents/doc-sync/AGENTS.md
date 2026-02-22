@@ -15,6 +15,7 @@ Audit and reconcile all core project documentation against the current state of 
 | `README.md` | Public-facing overview, setup steps, feature list |
 | `docs/architecture/overview.md` | System design, service topology, data flows |
 | `docs/features/user-guide.md` | End-user feature documentation |
+| `CHANGELOG.md` | Versioned release history — created if missing |
 
 ## Ghost Detection Checklist
 
@@ -35,12 +36,33 @@ When reading a target document, flag any of the following as ghosts:
 4. **Scope creep is banned.** Do not rewrite style, improve prose, or reorganize sections unless the content is factually incorrect.
 5. **Missing files.** If a target document is missing, report it — do not create it.
 
+## Version & Changelog Step (Mandatory)
+
+After all document updates are applied, the agent MUST:
+
+1. Read `version` from the root `package.json`.
+2. Choose bump type:
+   - **Minor** — new feature content was added or new sprint work landed.
+   - **Patch** — only corrections, ghost purges, or minor copy fixes.
+3. Write the bumped version back into root `package.json`.
+4. Prepend a new entry to `CHANGELOG.md` (at the repository root). If the file does not exist, create it with the standard Semantic Versioning header first, then append the entry:
+
+```
+## [X.Y.Z] — YYYY-MM-DD
+
+### Changed
+- <one bullet per meaningful documentation change, ghost purged, or new section added>
+```
+
 ## Output Format
 
 Always end with a DocSync Report:
 
 ```
 ## DocSync Report — [DATE]
+
+### Version Bump
+- Previous: X.Y.Z → New: X.Y.Z (minor | patch)
 
 ### Files Modified
 - `FILE_PATH` — [what changed]

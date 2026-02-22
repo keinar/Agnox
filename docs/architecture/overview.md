@@ -32,6 +32,7 @@ graph TB
     subgraph "External Services"
         Gemini[Google Gemini AI<br/>Root Cause Analysis]
         Email[Email Service<br/>SMTP/SendGrid]
+        Slack[Slack<br/>Webhook Notifications]
     end
 
     UI -->|HTTPS/WSS| Producer
@@ -98,10 +99,11 @@ graph TB
 **Routes:**
 - `/api/auth/*` - Authentication (signup, login, logout)
 - `/api/users/*` - User management (admin only)
-- `/api/organization/*` - Organization settings
+- `/api/organization/*` - Organization settings (including `slackWebhookUrl`)
 - `/api/invitations/*` - Team member invitations (admin only)
-- `/api/executions/*` - Test execution history
+- `/api/executions/*` - Test execution history, bulk ops, artifact listing
 - `/api/execution-request` - Queue new test execution
+- `/api/schedules/*` - CRON schedule management (create, list, delete)
 - `/api/metrics/:image` - Performance insights
 - `/reports/*` - Static HTML test reports
 
@@ -134,7 +136,7 @@ graph TB
 **Purpose:** Primary data store for multi-tenant data
 
 **Collections:**
-- `organizations` - Organization details, plans, limits, billing (Stripe sub-document), AI preferences
+- `organizations` - Organization details, plans, limits, billing (Stripe sub-document), AI preferences, `slackWebhookUrl`
 - `users` - User accounts, roles, authentication data
 - `invitations` - Team member invitations (pending/accepted/expired)
 - `executions` - Test execution history and results
@@ -143,6 +145,7 @@ graph TB
 - `apiKeys` - Hashed API keys for CI/CD integration
 - `audit_logs` - Admin action audit trail
 - `webhook_logs` - Stripe webhook event log
+- `schedules` - CRON schedule definitions (Sprint 8): expression, environment, image, folder, baseUrl
 
 **Indexes:**
 - `organizationId` - All collections (multi-tenant filtering)

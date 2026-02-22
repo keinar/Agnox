@@ -1,6 +1,6 @@
 import React from 'react';
 import axios from 'axios';
-import { Loader2, CheckCircle2, XCircle, ExternalLink, KeyRound, Globe, Mail } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, ExternalLink, KeyRound, Globe, Mail, Webhook } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 interface IJiraConfig {
@@ -30,8 +30,9 @@ const INPUT_CLASS =
     'focus:outline-none focus:ring-2 focus:ring-gh-accent dark:focus:ring-gh-accent-dark focus:border-gh-accent dark:focus:border-gh-accent-dark transition';
 
 export function IntegrationsTab() {
-    const { token } = useAuth();
+    const { user, token } = useAuth();
 
+    // ── Jira state ────────────────────────────────────────────────────────────
     const [form, setForm] = React.useState<IFormState>({ domain: '', email: '', apiToken: '' });
     const [isConfigured, setIsConfigured] = React.useState(false);
     const [loading, setLoading] = React.useState(true);
@@ -39,6 +40,14 @@ export function IntegrationsTab() {
     const [testing, setTesting] = React.useState(false);
     const [saveFeedback, setSaveFeedback] = React.useState<FeedbackState>(null);
     const [testFeedback, setTestFeedback] = React.useState<FeedbackState>(null);
+
+    // ── Slack state ───────────────────────────────────────────────────────────
+    const isAdmin = user?.role === 'admin';
+    const [slackUrl, setSlackUrl] = React.useState('');
+    const [slackOriginalUrl, setSlackOriginalUrl] = React.useState('');
+    const [slackLoading, setSlackLoading] = React.useState(true);
+    const [slackSaving, setSlackSaving] = React.useState(false);
+    const [slackFeedback, setSlackFeedback] = React.useState<FeedbackState>(null);
 
     const authHeaders = React.useMemo(
         () => ({ Authorization: `Bearer ${token}` }),
@@ -70,6 +79,61 @@ export function IntegrationsTab() {
         fetchConfig();
         return () => { cancelled = true; };
     }, [authHeaders]);
+
+    // ── Slack fetch ───────────────────────────────────────────────────────────
+    React.useEffect(() => {
+        let cancelled = false;
+        const API_URL = getApiUrl();
+
+        const fetchSlack = async (): Promise<void> => {
+            try {
+                const res = await axios.get<{ success: boolean; organization: { slackWebhookUrl?: string | null } }>(
+                    `${API_URL}/api/organization`,
+                    { headers: authHeaders },
+                );
+                if (!cancelled && res.data.success) {
+                    const url = res.data.organization.slackWebhookUrl ?? '';
+                    setSlackUrl(url);
+                    setSlackOriginalUrl(url);
+                }
+            } catch {
+                // Non-critical — silently ignore
+            } finally {
+                if (!cancelled) setSlackLoading(false);
+            }
+        };
+
+        fetchSlack();
+        return () => { cancelled = true; };
+    }, [authHeaders]);
+
+    const handleSlackSave = async (e: React.FormEvent): Promise<void> => {
+        e.preventDefault();
+        setSlackSaving(true);
+        setSlackFeedback(null);
+        const API_URL = getApiUrl();
+
+        try {
+            const payload = { slackWebhookUrl: slackUrl.trim() || null };
+            const res = await axios.patch<{ success: boolean }>(
+                `${API_URL}/api/organization`,
+                payload,
+                { headers: authHeaders },
+            );
+            if (res.data.success) {
+                setSlackOriginalUrl(slackUrl.trim());
+                setSlackFeedback({ type: 'success', message: 'Slack webhook saved successfully.' });
+                setTimeout(() => setSlackFeedback(null), 3000);
+            }
+        } catch (err: any) {
+            setSlackFeedback({
+                type: 'error',
+                message: err?.response?.data?.message ?? 'Failed to save Slack webhook.',
+            });
+        } finally {
+            setSlackSaving(false);
+        }
+    };
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -290,6 +354,101 @@ export function IntegrationsTab() {
                             </button>
                         )}
                     </div>
+                </form>
+            </div>
+
+            {/* ── Slack Card ────────────────────────────────────────────────── */}
+            <div className="mt-6 rounded-xl border border-slate-300 dark:border-gh-border-dark bg-white dark:bg-gh-bg-dark shadow-sm overflow-hidden">
+                {/* Card header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-gh-border-dark">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-[#4A154B] flex items-center justify-center flex-shrink-0">
+                            <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white" aria-hidden="true">
+                                <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zm1.271 0a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zm0 1.271a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zm10.122 2.521a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zm-1.268 0a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zm-2.523 10.122a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zm0-1.268a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-semibold text-slate-800 dark:text-gh-text-dark">Slack</h3>
+                            <p className="text-xs text-slate-400 dark:text-slate-500">Incoming Webhook Notifications</p>
+                        </div>
+                    </div>
+                    {slackOriginalUrl && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                            <CheckCircle2 size={12} />
+                            Connected
+                        </span>
+                    )}
+                </div>
+
+                {/* Form */}
+                <form onSubmit={handleSlackSave} className="px-5 py-5 space-y-4">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                        Receive a Slack message with a deep link to the Investigation Hub whenever a test
+                        execution finishes. Leave empty to disable notifications.
+                    </p>
+
+                    {slackLoading ? (
+                        <div className="flex items-center gap-2">
+                            <Loader2 size={16} className="animate-spin text-slate-400" />
+                            <span className="text-sm text-slate-400">Loading...</span>
+                        </div>
+                    ) : (
+                        <>
+                            <div>
+                                <label
+                                    htmlFor="slack-webhook-url"
+                                    className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5"
+                                >
+                                    <Webhook size={12} />
+                                    Webhook URL
+                                </label>
+                                <div className="relative">
+                                    <Webhook size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                                    <input
+                                        id="slack-webhook-url"
+                                        type="url"
+                                        value={slackUrl}
+                                        onChange={(e) => setSlackUrl(e.target.value)}
+                                        disabled={!isAdmin}
+                                        placeholder="https://hooks.slack.com/services/..."
+                                        className={isAdmin ? INPUT_CLASS : INPUT_CLASS + ' opacity-60 cursor-not-allowed'}
+                                    />
+                                </div>
+                                {!isAdmin && (
+                                    <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                                        Only organization admins can modify notification settings.
+                                    </p>
+                                )}
+                            </div>
+
+                            {slackFeedback && (
+                                <div className={`flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm ${
+                                    slackFeedback.type === 'success'
+                                        ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
+                                        : 'bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-400'
+                                }`}>
+                                    {slackFeedback.type === 'success'
+                                        ? <CheckCircle2 size={15} className="flex-shrink-0 mt-0.5" />
+                                        : <XCircle size={15} className="flex-shrink-0 mt-0.5" />
+                                    }
+                                    <span>{slackFeedback.message}</span>
+                                </div>
+                            )}
+
+                            {isAdmin && (
+                                <div className="pt-1">
+                                    <button
+                                        type="submit"
+                                        disabled={slackSaving || slackUrl.trim() === slackOriginalUrl}
+                                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#4A154B] hover:bg-[#611f69] rounded-lg disabled:opacity-60 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-[#4A154B] focus:ring-offset-2 dark:focus:ring-offset-gh-bg-dark"
+                                    >
+                                        {slackSaving && <Loader2 size={14} className="animate-spin" />}
+                                        {slackSaving ? 'Saving…' : 'Save Webhook'}
+                                    </button>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </form>
             </div>
         </div>

@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md — Agnostic Automation Center
 
-> Generated: 2026-02-21 | Current Phase: Sprint 7 — The Investigation Hub (V3 Architecture)
+> Generated: 2026-02-22 | Current Phase: Sprint 8 — CRON Scheduling & Slack Notifications
 > Source: Full monorepo scan of code, docs, configs, and shared types.
 
 ---
@@ -122,7 +122,8 @@ Agnostic-Automation-Center/
 | 4 | Project Run Settings | Per-project Docker image, target URLs, test folder config, shared-types package |
 | 5 | Email Integration | SendGrid transactional emails (invitations, welcome, payment events), console fallback |
 | 6 | Enterprise UI Overhaul | Full Tailwind CSS migration (zero inline styles), GitHub-inspired semantic token palette (`gh-bg`, `gh-border`, etc.), `ThemeContext` with Light/Dark toggle, collapsible sidebar, version footer with Changelog modal, DateRangeFilter, responsive filter drawer |
-| 7 (**In Progress**) | The Investigation Hub | Unified side-drawer (`ExecutionDrawer.tsx`) with URL-state deep-linking (`?drawerId=<taskId>`), 3-tab layout: Terminal / Artifacts / AI Analysis. `ArtifactsView.tsx` media gallery. ⚠️ Tasks 7.1–7.5 in progress; not yet committed. |
+| 7 (**Complete**) | The Investigation Hub | Unified side-drawer (`ExecutionDrawer.tsx`) with URL-state deep-linking (`?drawerId=<taskId>`), 3-tab layout: Terminal / Artifacts / AI Analysis. `ArtifactsView.tsx` media gallery. `GET /api/executions/:taskId/artifacts` endpoint for filesystem artifact listing. |
+| 8 (**Complete**) | CRON Scheduling & Slack Notifications | Native CRON scheduling engine (`node-cron`) with `scheduler.ts` in-memory job registry, 3 REST endpoints (`POST/GET/DELETE /api/schedules`), `schedules` MongoDB collection. Dual-mode Execution Modal (Immediate / Schedule Run). `SchedulesList` settings tab. Slack Incoming Webhook notifications (`notifier.ts`) on final execution statuses — configured per-org via Integrations tab. |
 
 ### Security Posture (Score: 92/100)
 
@@ -213,12 +214,24 @@ Agnostic-Automation-Center/
 
 | Method | Path | Auth | Rate Limit | Description |
 |--------|------|------|-----------|-------------|
-| GET | `/api/executions` | JWT | 100/min/org | List org executions (last 50, excludes soft-deleted) |
-| POST | `/api/execution-request` | JWT + TestRunLimit | 100/min/org | Queue test run to RabbitMQ. Zod-validated. |
+| GET | `/api/executions` | JWT | 100/min/org | List org executions (paginated, excludes soft-deleted) |
+| GET | `/api/executions/grouped` | JWT | 100/min/org | Executions aggregated by `groupName` (`$group`+`$facet` pipeline) |
+| PATCH | `/api/executions/bulk` | JWT | 100/min/org | Bulk-update `groupName` on up to 100 executions |
+| DELETE | `/api/executions/bulk` | JWT | 100/min/org | Soft-delete up to 100 executions in one call |
 | DELETE | `/api/executions/:id` | JWT | 100/min/org | Soft-delete (sets `deletedAt`) |
-| POST | `/executions/update` | Internal (Worker) | None | Worker callback: status update → Socket.io broadcast |
+| GET | `/api/executions/:taskId/artifacts` | JWT | 100/min/org | List artifact files (images, videos, zips) from shared reports volume |
+| POST | `/api/execution-request` | JWT + TestRunLimit | 100/min/org | Queue test run to RabbitMQ. Zod-validated. |
+| POST | `/executions/update` | Internal (Worker) | None | Worker callback: status update → Socket.io broadcast + Slack notification |
 | POST | `/executions/log` | Internal (Worker) | None | Worker callback: log line → Socket.io broadcast |
 | GET | `/api/metrics/:image` | JWT | 100/min/org | Performance metrics (avg duration, regression detection) |
+
+### Schedules (`/api/schedules*`)
+
+| Method | Path | Auth | Rate Limit | Description |
+|--------|------|------|-----------|-------------|
+| POST | `/api/schedules` | JWT | 100/min/org | Create a CRON schedule. Validates expression with `cron.validate()`. Registers job immediately. |
+| GET | `/api/schedules` | JWT | 100/min/org | List all schedules for the organization (sorted by `createdAt` desc) |
+| DELETE | `/api/schedules/:id` | JWT | 100/min/org | Delete schedule and remove from live in-memory job registry |
 
 ### Public / Health
 
@@ -229,7 +242,7 @@ Agnostic-Automation-Center/
 | GET | `/config/defaults` | Public | Default image, baseUrl, folder, env mapping |
 | GET | `/api/tests-structure` | Public | Available test folders from `/app/tests-source` |
 
-**Total: 44 endpoints**
+**Total: 50 endpoints**
 
 ---
 
@@ -257,6 +270,7 @@ billing.cancelAtPeriodEnd      Boolean
 billing.lastPaymentDate        Date | null
 billing.lastPaymentAmount      Number | null
 aiAnalysisEnabled  Boolean (default: true)
+slackWebhookUrl    String | null (optional — Incoming Webhook URL for Slack notifications)
 createdAt          Date
 updatedAt          Date
 ```
@@ -394,7 +408,24 @@ createdAt        Date
 processedAt      Date
 ```
 
-**Total: 9 collections**
+### `schedules`
+
+```
+_id              ObjectId
+organizationId   String (FK → organizations, multi-tenant isolation)
+projectId        String | undefined (optional FK → projects)
+name             String (user-defined label, also used as groupName on fired executions)
+cronExpression   String (validated via node-cron before insert)
+environment      'development' | 'staging' | 'production'
+isActive         Boolean (default: true)
+image            String (Docker image — mirrored from run-settings at creation time)
+folder           String (default: 'all')
+baseUrl          String (target URL for the scheduled run)
+createdAt        Date
+Index: { organizationId: 1 }
+```
+
+**Total: 10 collections**
 
 ---
 
@@ -423,6 +454,8 @@ processedAt      Date
 | `security` | SecurityTab | All roles | AI analysis toggle, privacy disclosure |
 | `usage` | UsageTab | All roles | Test runs, users, storage usage stats |
 | `run-settings` | RunSettingsTab | All roles | Per-project docker image, URLs, test folder |
+| `integrations` | IntegrationsTab | All roles | Jira credentials (AES-encrypted) + Slack webhook URL |
+| `schedules` | SchedulesList | All roles | View and delete CRON schedules (delete hidden for Viewer role) |
 
 ### Key Component Hierarchy
 
@@ -438,10 +471,10 @@ App
 │       │   ├── ExecutionModal (form: folder, env, URL, image)
 │       │   └── ExecutionList
 │       │       └── ExecutionRow[] (flat — click sets ?drawerId= URL param)
-│       │           └── ⚠️ NEEDS REVIEW: Sprint 7 in progress — ExecutionDrawer.tsx (slide-over)
-│       │               ├── TerminalView (tab 1, moved from inline accordion)
-│       │               ├── ArtifactsView (tab 2, media gallery — 7B)
-│       │               └── AIAnalysisView (tab 3, moved from portal modal)
+│       │           └── ExecutionDrawer.tsx (slide-over, ?drawerId= URL state — Sprint 7 ✅)
+│       │               ├── TerminalView (tab 1, real-time logs via Socket.io)
+│       │               ├── ArtifactsView (tab 2, media gallery — images/videos/zips)
+│       │               └── AIAnalysisView (tab 3, Gemini root-cause analysis)
 │       └── /settings → ProtectedRoute → Settings
 │           └── [7 tab components listed above]
 ```
@@ -603,6 +636,7 @@ CLAUDE.md mandates: **"Styling is STRICTLY Tailwind CSS (Pure CSS is deprecated.
 | **Billing** | `stripe` | ^20.3.0 | Stripe SDK |
 | **Email** | `@sendgrid/mail` | ^8.1.6 | SendGrid |
 | **Validation** | `zod` | ^4.2.1 | Schema validation |
+| **Scheduling** | `node-cron` | ^4.2.1 | CRON job scheduling engine |
 | **Env** | `dotenv` | ^17.2.3 | .env loading |
 
 ### Worker Service (`apps/worker-service/package.json`)
@@ -648,7 +682,6 @@ CLAUDE.md mandates: **"Styling is STRICTLY Tailwind CSS (Pure CSS is deprecated.
 
 | Category | Missing | Impact |
 |----------|---------|--------|
-| Scheduling | No cron/scheduler lib | No scheduled jobs exist |
 | Encryption (secrets) | No AES library | CLAUDE.md says "AES-256-GCM for secrets" but no implementation exists yet |
 | Testing (frontend) | No vitest/jest | Zero frontend tests |
 
@@ -745,4 +778,6 @@ Admin clicks "Upgrade" → POST /api/billing/checkout
 | 10 | LOW | Frontend | `StatsGrid` "Active Services" hardcoded to `"3"`. |
 | 11 | LOW | Docs | `/api/projects`, `/api/projectRunSettings`, `/api/execution-request` POST body not documented in `docs/api/`. |
 | 12 | LOW | Worker | No graceful shutdown handler (`SIGTERM` not caught). |
-| 13 | LOW | Worker | ObjectId parsing without `ObjectId.isValid()` check. |
+| 13 | LOW | Worker | ObjectId parsing without `ObjectId.isValid()` check (resolved in schedules.ts; not in all routes). |
+| 14 | LOW | Scheduler | `scheduler.ts` uses `console.error`/`console.info` instead of the Fastify `app.log` logger (violates logging convention). |
+| 15 | LOW | Config | `notifier.ts` references `DASHBOARD_BASE_URL` env var not listed in `env.example`. |

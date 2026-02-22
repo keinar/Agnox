@@ -111,7 +111,7 @@ async function startWorker() {
         if (!msg) return;
 
         const task = JSON.parse(msg.content.toString());
-        const { taskId, image: rawImage, command, config, organizationId, groupName, batchId } = task;
+        const { taskId, image: rawImage, command, config, organizationId, groupName, batchId, framework } = task;
         const image = rawImage?.trim();
 
         if (!image) {
@@ -201,7 +201,26 @@ async function startWorker() {
             }
 
             await ensureImageExists(image);
-            const agnosticCommand = ['/bin/sh', '/app/entrypoint.sh', task.folder || 'all'];
+
+            // --- Framework-aware command resolution ---
+            // 'maestro' is a STUB: the worker queues the correct CLI invocation so that
+            // when a Maestro-capable image is provided the execution path is already wired.
+            // Full operability (cloud device farm, dedicated mobile worker pool) is Sprint 9.
+            let containerCmd: string[];
+            if (framework === 'maestro') {
+                logger.info({ taskId, framework }, '[Mobile] Maestro framework detected — using stubbed execution path');
+                containerCmd = [
+                    'maestro',
+                    'test',
+                    '.',
+                    '--format', 'html',
+                    '--output', '/app/maestro-reports/report.html',
+                ];
+            } else {
+                // Default: delegate to the agnostic entrypoint script inside the image
+                containerCmd = ['/bin/sh', '/app/entrypoint.sh', task.folder || 'all'];
+            }
+            const agnosticCommand = containerCmd;
 
             // DEBUG: Trace URL resolution
             logger.info({
@@ -370,6 +389,9 @@ async function startWorker() {
                 { path: '/app/playwright-report', alias: 'native-report' },
                 { path: '/app/pytest-report', alias: 'native-report' },
                 { path: '/app/mochawesome-report', alias: 'native-report' },
+                // Maestro (mobile) — stub: artifact path registered so reports are captured
+                // automatically once a Maestro-capable image is used in Sprint 9.
+                { path: '/app/maestro-reports', alias: 'native-report' },
                 { path: '/app/allure-results', alias: 'allure-results' },
                 { path: '/app/allure-report', alias: 'allure-report' },
                 { path: '/app/test-results', alias: 'test-results' },
@@ -508,4 +530,52 @@ async function notifyProducer(data: any) {
     }
 }
 
+// ============================================================================
+// MOBILE READINESS REPORT — Sprint 8 architectural summary (printed once at boot)
+// Full Maestro operability is planned for Sprint 9.
+// ============================================================================
+function printMobileReadinessReport(): void {
+    logger.info('========================================================');
+    logger.info(' MOBILE AUTOMATION READINESS REPORT — Sprint 8 Stub     ');
+    logger.info('========================================================');
+    logger.info('Framework registered : Maestro (mobile-native)');
+    logger.info('Current status       : STUB — execution path wired, image not bundled');
+    logger.info('');
+    logger.info('ARCHITECTURAL CHANGES REQUIRED IN SPRINT 9');
+    logger.info('--------------------------------------------------');
+    logger.info('1. DEDICATED MOBILE WORKER POOL');
+    logger.info('   Mobile tests require a real device or emulator. The current');
+    logger.info('   Docker-based worker pool cannot host Android/iOS sessions.');
+    logger.info('   Action: Provision a separate worker type (e.g. EC2 metal or');
+    logger.info('   macOS runner) that routes tasks where framework==="maestro".');
+    logger.info('');
+    logger.info('2. CLOUD DEVICE FARM INTEGRATION');
+    logger.info('   For scalable parallel execution, integrate with a cloud device');
+    logger.info('   farm (e.g. BrowserStack App Automate, AWS Device Farm, or');
+    logger.info('   LambdaTest Real Devices). Maestro supports remote execution');
+    logger.info('   via the --device flag pointing to a remote ADB/iOS endpoint.');
+    logger.info('   Action: Add DEVICE_FARM_URL + DEVICE_FARM_TOKEN env vars to the');
+    logger.info('   mobile worker config and pass --device $DEVICE_FARM_URL to the CLI.');
+    logger.info('');
+    logger.info('3. MAESTRO-CAPABLE DOCKER IMAGE');
+    logger.info('   A lightweight image must include: JDK 17+, Maestro CLI, and the');
+    logger.info('   ability to connect to a remote device. NO Android SDK / emulator');
+    logger.info('   should be bundled into this image to keep it small.');
+    logger.info('   Suggested base: eclipse-temurin:17-jre-jammy + maestro install script.');
+    logger.info('');
+    logger.info('4. REPORT PARSING');
+    logger.info('   Maestro outputs HTML to /app/maestro-reports/report.html.');
+    logger.info('   The artifact mapping is already registered (this sprint).');
+    logger.info('   Action: Verify the Dashboard "native-report" viewer renders');
+    logger.info('   Maestro HTML correctly and add a framework badge to the UI.');
+    logger.info('');
+    logger.info('5. QUEUE ROUTING');
+    logger.info('   A new RabbitMQ queue (e.g. "mobile_queue") should be declared');
+    logger.info('   so mobile jobs never compete with browser-based jobs for workers.');
+    logger.info('   Action: Update the producer to route framework==="maestro" tasks');
+    logger.info('   to the mobile_queue; add a mobile worker that consumes it.');
+    logger.info('========================================================');
+}
+
+printMobileReadinessReport();
 startWorker();

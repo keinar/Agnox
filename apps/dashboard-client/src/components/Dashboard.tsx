@@ -315,6 +315,8 @@ export const Dashboard = () => {
         availableFolders={availableFolders}
         defaults={defaults}
         existingGroupNames={groupNames}
+        token={token}
+        apiUrl={API_URL}
       />
 
       {/* Execution detail drawer — driven by ?drawerId= URL param */}

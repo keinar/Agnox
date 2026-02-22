@@ -33,6 +33,37 @@ import {
   sendPaymentFailedEmail,
   sendSubscriptionCanceledEmail
 } from '../utils/email.js';
+import type { CiTriggerSource } from '../../../../packages/shared-types/index.js';
+
+/**
+ * Inspect incoming request headers to identify the CI/CD system that fired
+ * the webhook.  Safe against missing or malformed headers — never throws.
+ *
+ * Priority order:
+ *   1. GitHub  — `x-github-event` present, OR user-agent contains "GitHub-Hookshot"
+ *   2. GitLab  — `x-gitlab-event` present
+ *   3. Jenkins — `x-jenkins` present, OR user-agent contains "Jenkins"
+ *   4. Fallback — `'webhook'` (authenticated API call from an unknown CI system)
+ */
+export function detectCiSource(
+  headers: Record<string, string | string[] | undefined>
+): CiTriggerSource {
+  const ua = (typeof headers['user-agent'] === 'string' ? headers['user-agent'] : '').toLowerCase();
+
+  if (headers['x-github-event'] !== undefined || ua.includes('github-hookshot')) {
+    return 'github';
+  }
+
+  if (headers['x-gitlab-event'] !== undefined) {
+    return 'gitlab';
+  }
+
+  if (headers['x-jenkins'] !== undefined || ua.includes('jenkins')) {
+    return 'jenkins';
+  }
+
+  return 'webhook';
+}
 
 const DB_NAME = 'automation_platform';
 

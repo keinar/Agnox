@@ -1,9 +1,10 @@
 import { FastifyInstance } from 'fastify';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import Redis from 'ioredis';
 import * as fs from 'fs';
 import * as path from 'path';
 import { TestExecutionRequestSchema } from '../../../../packages/shared-types/index.js';
+import { detectCiSource } from '../routes/webhooks.js';
 import { rabbitMqService } from '../rabbitmq.js';
 import { authRoutes } from '../routes/auth.js';
 import { invitationRoutes } from '../routes/invitations.js';
@@ -15,6 +16,8 @@ import { billingRoutes } from '../routes/billing.js';
 import { webhookRoutes } from '../routes/webhooks.js';
 import { integrationRoutes } from '../routes/integrations.js';
 import { analyticsRoutes } from '../routes/analytics.js';
+import { scheduleRoutes } from '../routes/schedules.js';
+import { sendExecutionNotification, FINAL_EXECUTION_STATUSES } from '../utils/notifier.js';
 import { createTestRunLimitMiddleware } from '../middleware/planLimits.js';
 import { getDbName } from './server.js';
 
@@ -60,6 +63,9 @@ export async function setupRoutes(
 
     // Analytics routes (MongoDB aggregation KPIs — JWT protected)
     await analyticsRoutes(app, dbClient, apiRateLimit);
+
+    // Schedule routes (CRON scheduling engine — JWT protected)
+    await scheduleRoutes(app, dbClient, apiRateLimit);
 
     // Create plan enforcement middleware
     const db = dbClient.db(DB_NAME);
@@ -175,6 +181,25 @@ export async function setupRoutes(
             // Fallback: Global broadcast (for backwards compatibility during transition)
             app.io.emit('execution-updated', updateData);
             app.log.warn(`⚠️  Execution update missing organizationId (taskId: ${updateData.taskId}), broadcasting globally`);
+        }
+
+        // Fire-and-forget Slack notification on final execution statuses.
+        // This must NOT block the response returned to the worker.
+        if (updateData.organizationId && updateData.taskId && FINAL_EXECUTION_STATUSES.has(updateData.status)) {
+            (async () => {
+                try {
+                    const db = dbClient.db(DB_NAME);
+                    const [execution, org] = await Promise.all([
+                        db.collection('executions').findOne({ taskId: updateData.taskId }),
+                        db.collection('organizations').findOne({ _id: new ObjectId(updateData.organizationId) }),
+                    ]);
+                    if (execution && org) {
+                        await sendExecutionNotification(execution as any, org as any, app.log);
+                    }
+                } catch (err: unknown) {
+                    app.log.error(err, '[notifier] Failed to fetch data for Slack notification');
+                }
+            })();
         }
 
         return { status: 'broadcasted' };
@@ -315,7 +340,7 @@ export async function setupRoutes(
             });
         }
 
-        const { taskId, image: rawImage, command, tests, config, folder, groupName, batchId } = parseResult.data;
+        const { taskId, image: rawImage, command, tests, config, folder, groupName, batchId, trigger: bodyTrigger } = parseResult.data;
         const image = rawImage?.trim();
 
         if (!image) {
@@ -351,6 +376,9 @@ export async function setupRoutes(
                 }
             };
 
+            // Resolve trigger source: explicit body value → header-detected CI → manual (UI)
+            const trigger = bodyTrigger ?? detectCiSource(request.headers as Record<string, string | string[] | undefined>);
+
             // Multi-tenant data isolation: Include organizationId from JWT (as STRING)
             const organizationId = request.user!.organizationId;
 
@@ -375,6 +403,7 @@ export async function setupRoutes(
                     startTime,
                     config: enrichedConfig,
                     tests: tests || [],
+                    trigger,
                 };
 
                 // Optional grouping fields — only write when provided by the caller
@@ -398,6 +427,7 @@ export async function setupRoutes(
                     command,
                     config: enrichedConfig,
                     tests: tests || [],
+                    trigger,
                     ...(groupName && { groupName }),
                     ...(batchId   && { batchId }),
                 });
