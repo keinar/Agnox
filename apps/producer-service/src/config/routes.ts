@@ -17,6 +17,8 @@ import { webhookRoutes } from '../routes/webhooks.js';
 import { integrationRoutes } from '../routes/integrations.js';
 import { analyticsRoutes } from '../routes/analytics.js';
 import { scheduleRoutes } from '../routes/schedules.js';
+import { testCaseRoutes } from '../routes/test-cases.js';
+import { testCycleRoutes } from '../routes/test-cycles.js';
 import { sendExecutionNotification, FINAL_EXECUTION_STATUSES } from '../utils/notifier.js';
 import { createTestRunLimitMiddleware } from '../middleware/planLimits.js';
 import { getDbName } from './server.js';
@@ -66,6 +68,10 @@ export async function setupRoutes(
 
     // Schedule routes (CRON scheduling engine — JWT protected)
     await scheduleRoutes(app, dbClient, apiRateLimit);
+
+    // Quality Hub routes (manual test cases & hybrid test cycles — JWT protected)
+    await testCaseRoutes(app, dbClient, apiRateLimit);
+    await testCycleRoutes(app, dbClient, apiRateLimit);
 
     // Create plan enforcement middleware
     const db = dbClient.db(DB_NAME);

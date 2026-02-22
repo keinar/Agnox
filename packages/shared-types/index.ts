@@ -366,3 +366,84 @@ export interface ICreateScheduleRequest {
     folder: string;
     baseUrl: string;
 }
+
+// ============================================================================
+// QUALITY HUB INTERFACES (Sprint 9)
+// ============================================================================
+
+/** Distinguishes manual test cases from automated ones within a hybrid cycle. */
+export type TestType = 'MANUAL' | 'AUTOMATED';
+
+/** High-level lifecycle status of a test cycle run. */
+export type CycleStatus = 'PENDING' | 'RUNNING' | 'COMPLETED';
+
+/** Fine-grained execution status for an individual test or step. */
+export type TestStatus = 'PASSED' | 'FAILED' | 'SKIPPED' | 'PENDING' | 'RUNNING' | 'ERROR';
+
+/**
+ * A single step within a manual test case.
+ * Stored as embedded sub-documents inside ITestCase.steps.
+ */
+export interface ITestStep {
+    id: string;
+    action: string;
+    expectedResult: string;
+    status: TestStatus;
+    comment?: string;
+    attachmentUrl?: string;
+}
+
+/**
+ * A single entry inside a hybrid test cycle.
+ * Can reference either a manual test case or a linked automated execution.
+ */
+export interface ICycleItem {
+    id: string;
+    testCaseId: string;
+    type: TestType;
+    title: string;
+    status: TestStatus;
+    /** Present when type === 'AUTOMATED': links to an IExecution record. */
+    executionId?: string;
+    /** Present when type === 'MANUAL': step-level progress tracked here. */
+    manualSteps?: ITestStep[];
+}
+
+/**
+ * Manual test case entity.
+ * Stored in the 'test_cases' collection with embedded steps.
+ */
+export interface ITestCase {
+    _id?: any;
+    organizationId: string;
+    projectId: string;
+    title: string;
+    description?: string;
+    type: TestType;
+    steps?: ITestStep[];
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+/**
+ * Hybrid test cycle entity.
+ * Contains a mix of MANUAL and AUTOMATED items resolved at cycle creation time.
+ * Stored in the 'test_cycles' collection with embedded items.
+ */
+export interface ITestCycle {
+    _id?: any;
+    organizationId: string;
+    projectId: string;
+    name: string;
+    status: CycleStatus;
+    items: ICycleItem[];
+    summary: {
+        total: number;
+        passed: number;
+        failed: number;
+        /** Percentage (0–100) of items that are of type AUTOMATED. */
+        automationRate: number;
+    };
+    createdAt: Date;
+    createdBy: string;
+}
