@@ -39,6 +39,9 @@ import type {
 const VALID_TEST_TYPES = new Set<TestType>(['MANUAL', 'AUTOMATED']);
 const VALID_TEST_STATUSES = new Set<TestStatus>(['PASSED', 'FAILED', 'SKIPPED', 'PENDING', 'RUNNING', 'ERROR']);
 
+/** Generate a short, human-readable Run ID for worker task payloads. */
+const generateRunId = () => `run-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+
 /** Validate and normalise the items array received from the request body. */
 function parseItems(raw: unknown[]): ICycleItem[] {
     return raw.map((item: any, index: number) => {
@@ -248,7 +251,7 @@ export async function testCycleRoutes(
                 const folder = typeof body.folder === 'string' && body.folder.trim() ? body.folder.trim() : 'all';
 
                 for (const item of automatedItems) {
-                    const taskId = randomUUID();
+                    const taskId = generateRunId();
 
                     // Set the executionId on the item so it links to the execution record
                     item.executionId = taskId;

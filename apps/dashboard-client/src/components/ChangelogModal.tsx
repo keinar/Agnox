@@ -13,11 +13,11 @@ interface IChangelogEntry {
 const CHANGELOG: IChangelogEntry[] = [
   {
     version: 'v3.1.0',
-    title: 'Sprint 10: PDF Reporting & Automation Infrastructure',
+    title: 'Quality Hub & Reporting Evolution',
     items: [
-      'Automated version pipeline — UI version is now injected at build time from root package.json; no more manual updates.',
-      'VersionDisplay component replaces hardcoded version strings across the sidebar.',
-      'Sprint 10 foundation: PDF cycle report generation and download UI (Tasks 10.1–10.2) in progress.',
+      'Live HTML Reports: Dedicated preview screen for Test Cycles with native browser-print optimization.',
+      'Feature Management: Organization-level toggles for Manual Test Repository and Hybrid Cycles.',
+      'Automated Versioning: Single-source-of-truth versioning injected from package.json to the entire UI.',
     ],
   },
   {
