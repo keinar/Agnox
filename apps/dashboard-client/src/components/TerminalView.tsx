@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Ansi from 'ansi-to-react';
-import { ChevronsDown, Download } from 'lucide-react';
+import { Check, ChevronsDown, Copy, Download } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -13,6 +13,7 @@ interface TerminalViewProps {
 
 export function TerminalView({ output, error }: TerminalViewProps) {
   const [autoScroll, setAutoScroll] = useState(true);
+  const [copied, setCopied] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom whenever new output arrives, if auto-scroll is active.
@@ -26,14 +27,24 @@ export function TerminalView({ output, error }: TerminalViewProps) {
   const handleDownload = () => {
     const parts: string[] = [];
     if (output) parts.push(output);
-    if (error)  parts.push(`\n--- ERROR ---\n${error}`);
-    const blob   = new Blob([parts.join('')], { type: 'text/plain' });
-    const url    = URL.createObjectURL(blob);
+    if (error) parts.push(`\n--- ERROR ---\n${error}`);
+    const blob = new Blob([parts.join('')], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
-    anchor.href     = url;
+    anchor.href = url;
     anchor.download = 'execution-log.txt';
     anchor.click();
     URL.revokeObjectURL(url);
+  };
+
+  // Copy the raw log content to clipboard.
+  const handleCopy = async () => {
+    const parts: string[] = [];
+    if (output) parts.push(output);
+    if (error) parts.push(`\n--- ERROR ---\n${error}`);
+    await navigator.clipboard.writeText(parts.join(''));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const hasContent = !!(output || error);
@@ -53,14 +64,24 @@ export function TerminalView({ output, error }: TerminalViewProps) {
           <button
             onClick={() => setAutoScroll((prev) => !prev)}
             title={autoScroll ? 'Auto-scroll enabled — click to disable' : 'Auto-scroll disabled — click to enable'}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border transition-colors duration-150 cursor-pointer ${
-              autoScroll
-                ? 'bg-gh-accent-dark/20 text-gh-accent-dark border-gh-accent-dark/40 hover:bg-gh-accent-dark/30'
-                : 'bg-transparent text-slate-500 border-gh-border-dark hover:text-slate-300 hover:border-slate-500'
-            }`}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium border transition-colors duration-150 cursor-pointer ${autoScroll
+              ? 'bg-gh-accent-dark/20 text-gh-accent-dark border-gh-accent-dark/40 hover:bg-gh-accent-dark/30'
+              : 'bg-transparent text-slate-500 border-gh-border-dark hover:text-slate-300 hover:border-slate-500'
+              }`}
           >
             <ChevronsDown size={13} />
             Auto-scroll
+          </button>
+
+          {/* Copy logs to clipboard */}
+          <button
+            onClick={handleCopy}
+            disabled={!hasContent}
+            title="Copy logs to clipboard"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium text-slate-400 border border-gh-border-dark hover:text-slate-200 hover:border-slate-500 transition-colors duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {copied ? <Check size={13} className="text-green-400" /> : <Copy size={13} />}
+            {copied ? 'Copied!' : 'Copy Logs'}
           </button>
 
           {/* Download raw log */}
@@ -77,10 +98,10 @@ export function TerminalView({ output, error }: TerminalViewProps) {
       </div>
 
       {/* ── Terminal body ──────────────────────────────────────────────────────── */}
-      <div className="h-[calc(100vh-200px)] overflow-y-auto bg-gh-bg-dark px-5 py-4 font-mono text-sm leading-relaxed text-slate-300">
+      <div className="h-[calc(100vh-200px)] overflow-y-auto bg-gh-bg-dark px-6 py-5 font-mono text-[13px] leading-relaxed text-slate-300 whitespace-pre-wrap break-words">
 
         {output ? (
-          <Ansi>{output}</Ansi>
+          <span><Ansi>{output}</Ansi></span>
         ) : (
           <span className="text-slate-600 italic">Waiting for logs…</span>
         )}
