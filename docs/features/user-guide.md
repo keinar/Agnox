@@ -30,7 +30,7 @@ The dashboard supports a **Light** and **Dark** theme. Use the theme toggle icon
 
 ### Changelog
 
-The current application version is shown at the bottom of the sidebar. Click the version number (e.g., `v3.0.0`) to open the **Changelog** modal, which summarises the features and fixes shipped in recent sprints.
+The current application version is shown at the bottom of the sidebar. Click the version number (e.g., `v3.1.0`) to open the **Changelog** modal, which summarises the features and fixes shipped in recent sprints.
 
 ---
 

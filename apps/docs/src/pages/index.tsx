@@ -60,6 +60,18 @@ const FeatureList: FeatureItem[] = [
     description:
       'Automatic root-cause analysis and actionable fix recommendations powered by Gemini. Stop guessing why tests fail — get answers in seconds.',
   },
+  {
+    icon: '🎯',
+    title: 'Quality Hub',
+    description:
+      'Build a living manual test repository with suite-grouped test cases. Generate structured test steps instantly with AI — describe your intent and let Gemini do the rest.',
+  },
+  {
+    icon: '🔄',
+    title: 'Hybrid Test Cycles',
+    description:
+      'Combine manual and automated tests into unified cycles. Execute manual steps with an interactive player while automated items sync results in real time.',
+  },
 ];
 
 function Feature({ icon, title, description }: FeatureItem) {

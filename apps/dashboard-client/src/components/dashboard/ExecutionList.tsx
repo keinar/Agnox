@@ -32,13 +32,13 @@ interface ColumnDef {
 // ── Module-level constants ─────────────────────────────────────────────────────
 
 const COLUMN_DEFS: ColumnDef[] = [
-  { key: 'runId',       label: 'Run ID',       mandatory: true,  defaultVisible: true },
-  { key: 'status',      label: 'Status',       mandatory: true,  defaultVisible: true },
+  { key: 'runId', label: 'Run ID', mandatory: true, defaultVisible: true },
+  { key: 'status', label: 'Status', mandatory: true, defaultVisible: true },
   { key: 'triggeredBy', label: 'Triggered By', mandatory: false, defaultVisible: true },
-  { key: 'environment', label: 'Environment',  mandatory: false, defaultVisible: true },
-  { key: 'startTime',   label: 'Start Time',   mandatory: false, defaultVisible: true },
-  { key: 'duration',    label: 'Duration',     mandatory: false, defaultVisible: true },
-  { key: 'actions',     label: 'Actions',      mandatory: false, defaultVisible: true },
+  { key: 'environment', label: 'Environment', mandatory: false, defaultVisible: true },
+  { key: 'startTime', label: 'Start Time', mandatory: false, defaultVisible: true },
+  { key: 'duration', label: 'Duration', mandatory: false, defaultVisible: true },
+  { key: 'actions', label: 'Actions', mandatory: false, defaultVisible: true },
 ];
 
 const LS_KEY = 'aac:column-visibility';
@@ -46,13 +46,13 @@ const LS_KEY = 'aac:column-visibility';
 const MANDATORY_KEYS = new Set(COLUMN_DEFS.filter((c) => c.mandatory).map((c) => c.key));
 
 const SKELETON_WIDTHS: Record<string, string> = {
-  runId:       'w-32',
-  status:      'w-20',
+  runId: 'w-32',
+  status: 'w-20',
   triggeredBy: 'w-16',
   environment: 'w-14',
-  startTime:   'w-28',
-  duration:    'w-10',
-  actions:     'w-20',
+  startTime: 'w-28',
+  duration: 'w-10',
+  actions: 'w-20',
 };
 
 /** Stable empty array for the `groups` prop default — avoids new reference on every render. */
@@ -121,11 +121,10 @@ function ColumnTogglePopover({ visibleColumns, onToggle }: ColumnTogglePopoverPr
             return (
               <label
                 key={col.key}
-                className={`flex items-center gap-2.5 px-3 py-2 text-sm select-none ${
-                  col.mandatory
+                className={`flex items-center gap-2.5 px-3 py-2 text-sm select-none ${col.mandatory
                     ? 'opacity-50 cursor-not-allowed'
                     : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-gh-bg-dark'
-                }`}
+                  }`}
               >
                 <input
                   type="checkbox"
@@ -183,9 +182,8 @@ function ExecutionTableHeader({
           <th
             key={col.key}
             scope="col"
-            className={`px-4 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap ${
-              col.key === 'actions' ? 'text-right' : ''
-            }`}
+            className={`px-4 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap ${col.key === 'actions' ? 'text-right' : ''
+              }`}
           >
             {col.label}
           </th>
@@ -205,16 +203,15 @@ function SkeletonRows({ visibleDefs }: SkeletonRowsProps) {
   return (
     <>
       {Array.from({ length: 5 }).map((_, i) => (
-        <tr key={i} className="border-b border-slate-100 dark:border-gh-border-dark" aria-hidden="true">
+        <tr key={`skeleton-${i}`} className="border-b border-slate-100 dark:border-gh-border-dark" aria-hidden="true">
           <td className="px-3 py-3.5 w-10">
             <div className="animate-pulse bg-slate-200 dark:bg-slate-700 rounded w-4 h-4" />
           </td>
           {visibleDefs.map((col) => (
             <td key={col.key} className="px-4 py-3.5">
               <div
-                className={`animate-pulse bg-slate-200 dark:bg-slate-700 rounded-md h-4 ${
-                  SKELETON_WIDTHS[col.key] ?? 'w-20'
-                }`}
+                className={`animate-pulse bg-slate-200 dark:bg-slate-700 rounded-md h-4 ${SKELETON_WIDTHS[col.key] ?? 'w-20'
+                  }`}
               />
             </td>
           ))}
@@ -380,8 +377,8 @@ export function ExecutionList({
           {isLoadingEmpty
             ? 'Loading\u2026'
             : viewMode === 'grouped'
-                ? `${groups.length} group${groups.length !== 1 ? 's' : ''}`
-                : `${executions.length} execution${executions.length !== 1 ? 's' : ''}`}
+              ? `${groups.length} group${groups.length !== 1 ? 's' : ''}`
+              : `${executions.length} execution${executions.length !== 1 ? 's' : ''}`}
         </span>
 
         <ColumnTogglePopover visibleColumns={visibleColumns} onToggle={toggleColumn} />

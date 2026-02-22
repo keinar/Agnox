@@ -9,7 +9,7 @@
  *  - MANUAL items: status badge + "Play" button → ManualExecutionDrawer
  */
 
-import { useState, Fragment } from 'react';
+import { useReducer, Fragment } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -42,7 +42,7 @@ interface IManualStep {
     id: string;
     action: string;
     expectedResult: string;
-    status: string;
+    status: 'PENDING' | 'PASSED' | 'FAILED' | 'SKIPPED';
     comment?: string;
 }
 
@@ -68,6 +68,71 @@ interface ICycleRow {
         automationRate: number;
     };
     createdAt: string;
+}
+
+// ── Reducer ───────────────────────────────────────────────────────────────────
+
+interface CyclePageState {
+    selectedProjectId: string;
+    isDrawerOpen: boolean;
+    expandedCycleId: string | null;
+    manualDrawer: {
+        isOpen: boolean;
+        cycleId: string;
+        itemId: string;
+        itemTitle: string;
+        itemStatus: string;
+        steps: IManualStep[];
+    };
+    reviewExecutionId: string | null;
+}
+
+type CyclePageAction =
+    | { type: 'SET_PROJECT'; projectId: string }
+    | { type: 'TOGGLE_DRAWER'; isOpen: boolean }
+    | { type: 'TOGGLE_EXPAND'; cycleId: string }
+    | { type: 'OPEN_MANUAL'; cycleId: string; itemId: string; itemTitle: string; itemStatus: string; steps: IManualStep[] }
+    | { type: 'CLOSE_MANUAL' }
+    | { type: 'SET_REVIEW_EXECUTION'; executionId: string | null };
+
+const initialState: CyclePageState = {
+    selectedProjectId: '',
+    isDrawerOpen: false,
+    expandedCycleId: null,
+    manualDrawer: { isOpen: false, cycleId: '', itemId: '', itemTitle: '', itemStatus: 'PENDING', steps: [] },
+    reviewExecutionId: null,
+};
+
+function cycleReducer(state: CyclePageState, action: CyclePageAction): CyclePageState {
+    switch (action.type) {
+        case 'SET_PROJECT':
+            return { ...state, selectedProjectId: action.projectId };
+        case 'TOGGLE_DRAWER':
+            return { ...state, isDrawerOpen: action.isOpen };
+        case 'TOGGLE_EXPAND':
+            return {
+                ...state,
+                expandedCycleId: state.expandedCycleId === action.cycleId ? null : action.cycleId,
+            };
+        case 'OPEN_MANUAL':
+            return {
+                ...state,
+                manualDrawer: {
+                    isOpen: true,
+                    cycleId: action.cycleId,
+                    itemId: action.itemId,
+                    itemTitle: action.itemTitle,
+                    itemStatus: action.itemStatus,
+                    steps: action.steps,
+                },
+            };
+        case 'CLOSE_MANUAL':
+            return { ...state, manualDrawer: { ...state.manualDrawer, isOpen: false } };
+        case 'SET_REVIEW_EXECUTION':
+            return { ...state, reviewExecutionId: action.executionId };
+        default:
+            return state;
+    }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -114,28 +179,257 @@ const ITEM_STATUS_ICONS: Record<string, React.ReactNode> = {
     SKIPPED: <SkipForward size={11} />,
 };
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+/** Renders the stat cells for a single cycle row (automation rate, pass/fail, total, created). */
+function CycleStatCells({ cycle }: { cycle: ICycleRow }) {
+    return (
+        <>
+            <td className="px-4 py-3">
+                <div className="flex items-center gap-2">
+                    <div className="w-16 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                        <div
+                            className="h-full rounded-full bg-violet-500 dark:bg-violet-400 transition-all"
+                            style={{ width: `${cycle.summary.automationRate}%` }}
+                        />
+                    </div>
+                    <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                        {cycle.summary.automationRate}%
+                    </span>
+                </div>
+            </td>
+            <td className="px-4 py-3">
+                <div className="flex items-center gap-2 text-xs">
+                    <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                        <CheckCircle2 size={12} />
+                        {cycle.summary.passed}
+                    </span>
+                    <span className="text-slate-300 dark:text-slate-600">/</span>
+                    <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
+                        <XCircle size={12} />
+                        {cycle.summary.failed}
+                    </span>
+                </div>
+            </td>
+            <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                {cycle.summary.total}
+            </td>
+            <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">
+                {formatDate(cycle.createdAt)}
+            </td>
+        </>
+    );
+}
+
+/** Renders a single item inside an expanded cycle (type icon, title, badges, action buttons). */
+function CycleItemRow({
+    item,
+    cycle,
+    onPlayManual,
+    onReviewExecution,
+}: {
+    item: ICycleItem;
+    cycle: ICycleRow;
+    onPlayManual: (cycle: ICycleRow, item: ICycleItem) => void;
+    onReviewExecution: (executionId: string) => void;
+}) {
+    return (
+        <div
+            className={`flex items-center gap-3 px-6 py-2.5 transition-colors duration-100 ${item.type === 'MANUAL'
+                ? 'cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/40'
+                : ''
+                }`}
+            {...(item.type === 'MANUAL' && {
+                role: 'button' as const,
+                tabIndex: 0,
+                onClick: () => onPlayManual(cycle, item),
+                onKeyDown: (e: React.KeyboardEvent) => {
+                    if (e.key === 'Enter' || e.key === ' ') onPlayManual(cycle, item);
+                },
+            })}
+        >
+            {/* Type icon */}
+            <div className="shrink-0">
+                {item.type === 'AUTOMATED' ? (
+                    <Bot size={14} className="text-sky-600 dark:text-sky-400" />
+                ) : (
+                    <ClipboardCheck size={14} className="text-violet-600 dark:text-violet-400" />
+                )}
+            </div>
+
+            {/* Title */}
+            <p className="flex-1 min-w-0 text-sm text-slate-700 dark:text-slate-300 truncate">
+                {item.title}
+            </p>
+
+            {/* Type badge */}
+            <span className="shrink-0 text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase">
+                {item.type}
+            </span>
+
+            {/* Status badge — clickable for AUTOMATED items with an execution */}
+            {item.type === 'AUTOMATED' && item.executionId ? (
+                <button
+                    title="Click to view execution logs"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onReviewExecution(item.executionId!);
+                    }}
+                    className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium hover:opacity-75 transition-opacity ${ITEM_STATUS_STYLES[item.status] ?? ITEM_STATUS_STYLES.PENDING}`}
+                >
+                    {ITEM_STATUS_ICONS[item.status] ?? ITEM_STATUS_ICONS.PENDING}
+                    {item.status}
+                </button>
+            ) : (
+                <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium ${ITEM_STATUS_STYLES[item.status] ?? ITEM_STATUS_STYLES.PENDING}`}>
+                    {ITEM_STATUS_ICONS[item.status] ?? ITEM_STATUS_ICONS.PENDING}
+                    {item.status}
+                </span>
+            )}
+
+            {/* MANUAL: Execute (pending/running) or Review (completed) */}
+            {item.type === 'MANUAL' && (item.status === 'PENDING' || item.status === 'RUNNING') && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onPlayManual(cycle, item);
+                    }}
+                    className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                >
+                    <Play size={11} /> Execute
+                </button>
+            )}
+            {item.type === 'MANUAL' && item.status !== 'PENDING' && item.status !== 'RUNNING' && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onPlayManual(cycle, item);
+                    }}
+                    className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                    <Eye size={11} /> Review
+                </button>
+            )}
+
+            {/* AUTOMATED: Logs button when execution exists */}
+            {item.type === 'AUTOMATED' && item.executionId && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onReviewExecution(item.executionId!);
+                    }}
+                    className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-colors"
+                >
+                    <FileText size={11} /> Logs
+                </button>
+            )}
+        </div>
+    );
+}
+
+/** Renders a full cycle table row: the summary row + expanded items section. */
+function CycleTableRow({
+    cycle,
+    isExpanded,
+    onToggle,
+    onNavigateReport,
+    onPlayManual,
+    onReviewExecution,
+}: {
+    cycle: ICycleRow;
+    isExpanded: boolean;
+    onToggle: () => void;
+    onNavigateReport: () => void;
+    onPlayManual: (cycle: ICycleRow, item: ICycleItem) => void;
+    onReviewExecution: (executionId: string) => void;
+}) {
+    return (
+        <Fragment>
+            {/* Cycle summary row */}
+            <tr
+                onClick={onToggle}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onToggle();
+                    }
+                }}
+                tabIndex={0}
+                className="cursor-pointer hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark transition-colors duration-100"
+            >
+                <td className="px-4 py-3">
+                    {isExpanded
+                        ? <ChevronDown size={14} className="text-slate-400" />
+                        : <ChevronRight size={14} className="text-slate-400" />}
+                </td>
+                <td className="px-4 py-3">
+                    <p className="font-medium text-slate-900 dark:text-slate-100 truncate max-w-xs">
+                        {cycle.name}
+                    </p>
+                </td>
+                <td className="px-4 py-3">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${CYCLE_STATUS_STYLES[cycle.status] ?? ''}`}>
+                        {CYCLE_STATUS_ICONS[cycle.status]}
+                        {cycle.status}
+                    </span>
+                </td>
+                <CycleStatCells cycle={cycle} />
+                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                    <button
+                        onClick={onNavigateReport}
+                        title="View cycle report"
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400 hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors"
+                    >
+                        <Eye size={11} />
+                        View Report
+                    </button>
+                </td>
+            </tr>
+
+            {/* Expanded items section */}
+            {isExpanded && cycle.items && cycle.items.length > 0 && (
+                <tr>
+                    <td colSpan={8} className="p-0">
+                        <div className="bg-slate-50 dark:bg-gh-bg-subtle-dark border-t border-slate-200 dark:border-gh-border-dark">
+                            <div className="px-6 py-2 border-b border-slate-200 dark:border-gh-border-dark">
+                                <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                    Cycle Items ({cycle.items.length})
+                                </p>
+                            </div>
+                            <div className="divide-y divide-slate-200 dark:divide-gh-border-dark">
+                                {cycle.items.map((item) => (
+                                    <CycleItemRow
+                                        key={item.id}
+                                        item={item}
+                                        cycle={cycle}
+                                        onPlayManual={onPlayManual}
+                                        onReviewExecution={onReviewExecution}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            )}
+
+            {isExpanded && (!cycle.items || cycle.items.length === 0) && (
+                <tr>
+                    <td colSpan={8} className="px-6 py-4 text-center text-sm text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-gh-bg-subtle-dark">
+                        No items in this cycle.
+                    </td>
+                </tr>
+            )}
+        </Fragment>
+    );
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
 
 export function TestCycles() {
     const { token } = useAuth();
     const queryClient = useQueryClient();
     const navigate = useNavigate();
-    const [selectedProjectId, setSelectedProjectId] = useState<string>('');
-    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [expandedCycleId, setExpandedCycleId] = useState<string | null>(null);
-
-    // Manual player / review state
-    const [manualDrawer, setManualDrawer] = useState<{
-        isOpen: boolean;
-        cycleId: string;
-        itemId: string;
-        itemTitle: string;
-        itemStatus: string;
-        steps: IManualStep[];
-    }>({ isOpen: false, cycleId: '', itemId: '', itemTitle: '', itemStatus: 'PENDING', steps: [] });
-
-    // Automated execution review state
-    const [reviewExecutionId, setReviewExecutionId] = useState<string | null>(null);
+    const [state, dispatch] = useReducer(cycleReducer, initialState);
 
     // ── Fetch projects ──────────────────────────────────────────────────────
     const {
@@ -155,7 +449,7 @@ export function TestCycles() {
 
     const projects = projectsData?.projects ?? [];
     const effectiveProjectId =
-        selectedProjectId || (projects.length > 0 ? projects[0].id : '');
+        state.selectedProjectId || (projects.length > 0 ? projects[0].id : '');
 
     // ── Fetch test cycles ───────────────────────────────────────────────────
     const {
@@ -179,15 +473,15 @@ export function TestCycles() {
 
     // ── Fetch execution for automated review drawer ─────────────────────────
     const { data: reviewExecutionResponse } = useQuery<{ execution: Execution } | null>({
-        queryKey: ['execution-review', reviewExecutionId, token],
+        queryKey: ['execution-review', state.reviewExecutionId, token],
         queryFn: async () => {
             const { data } = await axios.get(
-                `${API_URL}/api/executions/${reviewExecutionId}`,
+                `${API_URL}/api/executions/${state.reviewExecutionId}`,
                 { headers: { Authorization: `Bearer ${token}` } },
             );
             return data.success ? data.data : null;
         },
-        enabled: !!token && !!reviewExecutionId,
+        enabled: !!token && !!state.reviewExecutionId,
         staleTime: 30_000,
     });
 
@@ -195,13 +489,9 @@ export function TestCycles() {
 
     // ── Handlers ────────────────────────────────────────────────────────────
 
-    function toggleExpand(cycleId: string) {
-        setExpandedCycleId((prev) => (prev === cycleId ? null : cycleId));
-    }
-
     function openManualPlayer(cycle: ICycleRow, item: ICycleItem) {
-        setManualDrawer({
-            isOpen: true,
+        dispatch({
+            type: 'OPEN_MANUAL',
             cycleId: cycle._id,
             itemId: item.id,
             itemTitle: item.title,
@@ -217,7 +507,7 @@ export function TestCycles() {
     }
 
     function openExecutionReview(executionId: string) {
-        setReviewExecutionId(executionId);
+        dispatch({ type: 'SET_REVIEW_EXECUTION', executionId });
     }
 
     // ── Render ──────────────────────────────────────────────────────────────
@@ -242,7 +532,7 @@ export function TestCycles() {
                 </div>
 
                 <button
-                    onClick={() => setIsDrawerOpen(true)}
+                    onClick={() => dispatch({ type: 'TOGGLE_DRAWER', isOpen: true })}
                     disabled={!effectiveProjectId}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors duration-150 shrink-0"
                 >
@@ -273,7 +563,7 @@ export function TestCycles() {
                     <select
                         id="cycle-project-select"
                         value={effectiveProjectId}
-                        onChange={(e) => setSelectedProjectId(e.target.value)}
+                        onChange={(e) => dispatch({ type: 'SET_PROJECT', projectId: e.target.value })}
                         className="px-3 py-2 text-sm border border-slate-300 dark:border-gh-border-dark rounded-lg bg-white dark:bg-gh-bg-dark text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 transition cursor-pointer"
                     >
                         {projects.map((p) => (
@@ -336,196 +626,17 @@ export function TestCycles() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-gh-border-dark">
-                                {cycles.map((cycle) => {
-                                    const isExpanded = expandedCycleId === cycle._id;
-                                    return (
-                                        <Fragment key={cycle._id}>
-                                            {/* ── Cycle row ────────────────── */}
-                                            <tr
-                                                onClick={() => toggleExpand(cycle._id)}
-                                                className="cursor-pointer hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark transition-colors duration-100"
-                                            >
-                                                <td className="px-4 py-3">
-                                                    {isExpanded
-                                                        ? <ChevronDown size={14} className="text-slate-400" />
-                                                        : <ChevronRight size={14} className="text-slate-400" />}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <p className="font-medium text-slate-900 dark:text-slate-100 truncate max-w-xs">
-                                                        {cycle.name}
-                                                    </p>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${CYCLE_STATUS_STYLES[cycle.status] ?? ''}`}>
-                                                        {CYCLE_STATUS_ICONS[cycle.status]}
-                                                        {cycle.status}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-16 h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                                                            <div
-                                                                className="h-full rounded-full bg-violet-500 dark:bg-violet-400 transition-all"
-                                                                style={{ width: `${cycle.summary.automationRate}%` }}
-                                                            />
-                                                        </div>
-                                                        <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                                                            {cycle.summary.automationRate}%
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex items-center gap-2 text-xs">
-                                                        <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                                                            <CheckCircle2 size={12} />
-                                                            {cycle.summary.passed}
-                                                        </span>
-                                                        <span className="text-slate-300 dark:text-slate-600">/</span>
-                                                        <span className="flex items-center gap-1 text-red-600 dark:text-red-400">
-                                                            <XCircle size={12} />
-                                                            {cycle.summary.failed}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                                                    {cycle.summary.total}
-                                                </td>
-                                                <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">
-                                                    {formatDate(cycle.createdAt)}
-                                                </td>
-                                                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                                                    <button
-                                                        onClick={() => navigate(`/test-cycles/${cycle._id}/report`)}
-                                                        title="View cycle report"
-                                                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400 hover:bg-violet-200 dark:hover:bg-violet-900/50 transition-colors"
-                                                    >
-                                                        <Eye size={11} />
-                                                        View Report
-                                                    </button>
-                                                </td>
-                                            </tr>
-
-                                            {/* ── Expanded items ──────────── */}
-                                            {isExpanded && cycle.items && cycle.items.length > 0 && (
-                                                <tr>
-                                                    <td colSpan={8} className="p-0">
-                                                        <div className="bg-slate-50 dark:bg-gh-bg-subtle-dark border-t border-slate-200 dark:border-gh-border-dark">
-                                                            <div className="px-6 py-2 border-b border-slate-200 dark:border-gh-border-dark">
-                                                                <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                                                                    Cycle Items ({cycle.items.length})
-                                                                </p>
-                                                            </div>
-                                                            <div className="divide-y divide-slate-200 dark:divide-gh-border-dark">
-                                                                {cycle.items.map((item) => (
-                                                                    <div
-                                                                        key={item.id}
-                                                                        className={`flex items-center gap-3 px-6 py-2.5 transition-colors duration-100 ${
-                                                                            item.type === 'MANUAL'
-                                                                                ? 'cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/40'
-                                                                                : ''
-                                                                        }`}
-                                                                        {...(item.type === 'MANUAL' && {
-                                                                            role: 'button' as const,
-                                                                            tabIndex: 0,
-                                                                            onClick: () => openManualPlayer(cycle, item),
-                                                                            onKeyDown: (e: React.KeyboardEvent) => {
-                                                                                if (e.key === 'Enter' || e.key === ' ') openManualPlayer(cycle, item);
-                                                                            },
-                                                                        })}
-                                                                    >
-                                                                        {/* Type icon */}
-                                                                        <div className="shrink-0">
-                                                                            {item.type === 'AUTOMATED' ? (
-                                                                                <Bot size={14} className="text-sky-600 dark:text-sky-400" />
-                                                                            ) : (
-                                                                                <ClipboardCheck size={14} className="text-violet-600 dark:text-violet-400" />
-                                                                            )}
-                                                                        </div>
-
-                                                                        {/* Title */}
-                                                                        <p className="flex-1 min-w-0 text-sm text-slate-700 dark:text-slate-300 truncate">
-                                                                            {item.title}
-                                                                        </p>
-
-                                                                        {/* Type badge */}
-                                                                        <span className="shrink-0 text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase">
-                                                                            {item.type}
-                                                                        </span>
-
-                                                                        {/* Status badge — clickable for AUTOMATED items with an execution */}
-                                                                        {item.type === 'AUTOMATED' && item.executionId ? (
-                                                                            <button
-                                                                                title="Click to view execution logs"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    openExecutionReview(item.executionId!);
-                                                                                }}
-                                                                                className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium hover:opacity-75 transition-opacity ${ITEM_STATUS_STYLES[item.status] ?? ITEM_STATUS_STYLES.PENDING}`}
-                                                                            >
-                                                                                {ITEM_STATUS_ICONS[item.status] ?? ITEM_STATUS_ICONS.PENDING}
-                                                                                {item.status}
-                                                                            </button>
-                                                                        ) : (
-                                                                            <span className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium ${ITEM_STATUS_STYLES[item.status] ?? ITEM_STATUS_STYLES.PENDING}`}>
-                                                                                {ITEM_STATUS_ICONS[item.status] ?? ITEM_STATUS_ICONS.PENDING}
-                                                                                {item.status}
-                                                                            </span>
-                                                                        )}
-
-                                                                        {/* MANUAL: Execute (pending/running) or Review (completed) */}
-                                                                        {item.type === 'MANUAL' && (item.status === 'PENDING' || item.status === 'RUNNING') && (
-                                                                            <button
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    openManualPlayer(cycle, item);
-                                                                                }}
-                                                                                className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
-                                                                            >
-                                                                                <Play size={11} /> Execute
-                                                                            </button>
-                                                                        )}
-                                                                        {item.type === 'MANUAL' && item.status !== 'PENDING' && item.status !== 'RUNNING' && (
-                                                                            <button
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    openManualPlayer(cycle, item);
-                                                                                }}
-                                                                                className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                                                                            >
-                                                                                <Eye size={11} /> Review
-                                                                            </button>
-                                                                        )}
-
-                                                                        {/* AUTOMATED: Logs button when execution exists */}
-                                                                        {item.type === 'AUTOMATED' && item.executionId && (
-                                                                            <button
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    openExecutionReview(item.executionId!);
-                                                                                }}
-                                                                                className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-colors"
-                                                                            >
-                                                                                <FileText size={11} /> Logs
-                                                                            </button>
-                                                                        )}
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            )}
-
-                                            {isExpanded && (!cycle.items || cycle.items.length === 0) && (
-                                                <tr>
-                                                    <td colSpan={8} className="px-6 py-4 text-center text-sm text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-gh-bg-subtle-dark">
-                                                        No items in this cycle.
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </Fragment>
-                                    );
-                                })}
+                                {cycles.map((cycle) => (
+                                    <CycleTableRow
+                                        key={cycle._id}
+                                        cycle={cycle}
+                                        isExpanded={state.expandedCycleId === cycle._id}
+                                        onToggle={() => dispatch({ type: 'TOGGLE_EXPAND', cycleId: cycle._id })}
+                                        onNavigateReport={() => navigate(`/test-cycles/${cycle._id}/report`)}
+                                        onPlayManual={openManualPlayer}
+                                        onReviewExecution={openExecutionReview}
+                                    />
+                                ))}
                             </tbody>
                         </table>
                     </div>
@@ -534,28 +645,28 @@ export function TestCycles() {
 
             {/* ── Cycle Builder Drawer ──────────────────────────────────── */}
             <CycleBuilderDrawer
-                isOpen={isDrawerOpen}
+                isOpen={state.isDrawerOpen}
                 projectId={effectiveProjectId}
-                onClose={() => setIsDrawerOpen(false)}
+                onClose={() => dispatch({ type: 'TOGGLE_DRAWER', isOpen: false })}
                 onCreated={() => queryClient.invalidateQueries({ queryKey: ['test-cycles'] })}
             />
 
             {/* ── Manual Execution / Review Drawer ─────────────────────── */}
             <ManualExecutionDrawer
-                isOpen={manualDrawer.isOpen}
-                cycleId={manualDrawer.cycleId}
-                itemId={manualDrawer.itemId}
-                itemTitle={manualDrawer.itemTitle}
-                itemStatus={manualDrawer.itemStatus}
-                initialSteps={manualDrawer.steps}
-                onClose={() => setManualDrawer((prev) => ({ ...prev, isOpen: false }))}
+                isOpen={state.manualDrawer.isOpen}
+                cycleId={state.manualDrawer.cycleId}
+                itemId={state.manualDrawer.itemId}
+                itemTitle={state.manualDrawer.itemTitle}
+                itemStatus={state.manualDrawer.itemStatus}
+                initialSteps={state.manualDrawer.steps}
+                onClose={() => dispatch({ type: 'CLOSE_MANUAL' })}
             />
 
             {/* ── Automated Execution Review Drawer ────────────────────── */}
             <ExecutionDrawer
-                executionId={reviewExecutionId}
+                executionId={state.reviewExecutionId}
                 execution={reviewExecution}
-                onClose={() => setReviewExecutionId(null)}
+                onClose={() => dispatch({ type: 'SET_REVIEW_EXECUTION', executionId: null })}
             />
         </div>
     );

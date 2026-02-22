@@ -435,8 +435,8 @@ export function TestCases() {
                                                         <td className="px-4 py-3">
                                                             <span
                                                                 className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${tc.type === 'MANUAL'
-                                                                        ? 'bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-800'
-                                                                        : 'bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-800'
+                                                                    ? 'bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-800'
+                                                                    : 'bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-800'
                                                                     }`}
                                                             >
                                                                 {tc.type}
@@ -549,7 +549,6 @@ export function TestCases() {
                                             placeholder="e.g. Login Screen, Checkout Process, User Profile"
                                             maxLength={200}
                                             className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-gh-border-dark rounded-lg bg-white dark:bg-gh-bg-dark text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition"
-                                            autoFocus
                                         />
                                     </div>
 

@@ -332,7 +332,6 @@ export function CycleBuilderDrawer({ isOpen, projectId, onClose, onCreated }: Cy
                                                 placeholder="e.g. v2.0 Regression, Sprint 14 Smoke"
                                                 maxLength={200}
                                                 className={INPUT_CLASS}
-                                                autoFocus
                                             />
                                         </div>
 
@@ -418,8 +417,8 @@ export function CycleBuilderDrawer({ isOpen, projectId, onClose, onCreated }: Cy
                                                                                 <label
                                                                                     key={tc._id}
                                                                                     className={`flex items-center gap-3 px-3 py-2 pl-9 cursor-pointer transition-colors ${isSelected
-                                                                                            ? 'bg-violet-50 dark:bg-violet-950/20'
-                                                                                            : 'hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark'
+                                                                                        ? 'bg-violet-50 dark:bg-violet-950/20'
+                                                                                        : 'hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark'
                                                                                         }`}
                                                                                 >
                                                                                     <button

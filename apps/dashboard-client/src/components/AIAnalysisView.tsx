@@ -15,9 +15,9 @@ function renderMarkdown(text: string): React.ReactNode[] {
   return text.split('\n').map((line, i) => {
     // H2 section headers
     if (line.startsWith('## ')) {
-      const title    = line.replace('## ', '').replace(/\*\*/g, '');
-      const isRoot   = title.toLowerCase().includes('root cause');
-      const isFix    = title.toLowerCase().includes('fix') || title.toLowerCase().includes('solution');
+      const title = line.replace('## ', '').replace(/\*\*/g, '');
+      const isRoot = title.toLowerCase().includes('root cause');
+      const isFix = title.toLowerCase().includes('fix') || title.toLowerCase().includes('solution');
       const colorCls = isRoot
         ? 'text-rose-600 dark:text-rose-400'
         : isFix
@@ -26,12 +26,12 @@ function renderMarkdown(text: string): React.ReactNode[] {
 
       return (
         <div
-          key={i}
+          key={`line-${i}`}
           className="mt-6 mb-3 pb-2 border-b border-slate-200 dark:border-gh-border-dark first:mt-0"
         >
           <h3 className={`text-base font-bold flex items-center gap-2 m-0 ${colorCls}`}>
             {isRoot && <AlertTriangle size={16} className="shrink-0 text-rose-500 dark:text-rose-400" />}
-            {isFix  && <Sparkles     size={16} className="shrink-0 text-emerald-500 dark:text-emerald-400" />}
+            {isFix && <Sparkles size={16} className="shrink-0 text-emerald-500 dark:text-emerald-400" />}
             {title}
           </h3>
         </div>
@@ -41,7 +41,7 @@ function renderMarkdown(text: string): React.ReactNode[] {
     // Bullet points
     if (line.trim().startsWith('* ')) {
       return (
-        <div key={i} className="flex gap-3 mb-2 pl-2">
+        <div key={`line-${i}`} className="flex gap-3 mb-2 pl-2">
           <span className="mt-2 shrink-0 w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400" />
           <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed m-0">
             {line.replace('* ', '').replace(/\*\*/g, '')}
@@ -54,11 +54,11 @@ function renderMarkdown(text: string): React.ReactNode[] {
     if (line.includes('**')) {
       const parts = line.split('**');
       return (
-        <p key={i} className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-3">
-          {parts.map((part, idx) =>
-            idx % 2 === 1 ? (
+        <p key={`line-${i}`} className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-3">
+          {parts.map((part, pIdx) =>
+            pIdx % 2 === 1 ? (
               <span
-                key={idx}
+                key={`bold-${i}-${pIdx}`}
                 className="font-semibold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-1 rounded"
               >
                 {part}
@@ -70,11 +70,11 @@ function renderMarkdown(text: string): React.ReactNode[] {
     }
 
     // Blank line spacer
-    if (line.trim() === '') return <div key={i} className="h-2" />;
+    if (line.trim() === '') return <div key={`line-${i}`} className="h-2" />;
 
     // Plain paragraph
     return (
-      <p key={i} className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-3">
+      <p key={`line-${i}`} className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-3">
         {line}
       </p>
     );
@@ -85,7 +85,7 @@ function renderMarkdown(text: string): React.ReactNode[] {
 
 export function AIAnalysisView({ analysis, status }: AIAnalysisViewProps) {
   const isAnalyzing = status === 'ANALYZING';
-  const isUnstable  = status === 'UNSTABLE';
+  const isUnstable = status === 'UNSTABLE';
 
   const renderedContent = useMemo(
     () => (analysis ? renderMarkdown(analysis) : null),
@@ -124,11 +124,10 @@ export function AIAnalysisView({ analysis, status }: AIAnalysisViewProps) {
       {/* Panel header — branding strip */}
       <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-200 dark:border-gh-border-dark">
         <div
-          className={`p-2 rounded-lg shrink-0 ${
-            isUnstable
-              ? 'bg-amber-100 dark:bg-amber-950/30 text-amber-500 dark:text-amber-400'
-              : 'bg-rose-100 dark:bg-rose-950/30 text-rose-500 dark:text-rose-400'
-          }`}
+          className={`p-2 rounded-lg shrink-0 ${isUnstable
+            ? 'bg-amber-100 dark:bg-amber-950/30 text-amber-500 dark:text-amber-400'
+            : 'bg-rose-100 dark:bg-rose-950/30 text-rose-500 dark:text-rose-400'
+            }`}
         >
           <Bot size={20} />
         </div>
