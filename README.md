@@ -701,6 +701,20 @@ See the [Deployment Guide](docs/setup/deployment.md) for full deployment instruc
 
 ---
 
+### Sprint 9: Quality Hub — Manual Testing & Hybrid Cycles ✅
+
+**Status:** Production Ready
+
+- **Test Case Repository:** `test_cases` MongoDB collection with full CRUD API. `TestCases.tsx` page with suite-grouped accordion view and `TestCaseDrawer.tsx` slide-over drawer for create/edit
+- **AI-Powered Step Generation:** "Generate with AI" button in the test case drawer — input a natural-language intent and Gemini generates structured test steps automatically
+- **Hybrid Cycle Builder:** `test_cycles` collection, `CycleBuilderDrawer.tsx` for composing manual + automated tests into cycles. Suite-grouped checkbox selection with "Select All" per suite
+- **Test Cycles Page:** `TestCycles.tsx` with expandable rows showing cycle items, automation rate progress bars, pass/fail counters, and status badges
+- **Manual Execution Player:** `ManualExecutionDrawer.tsx` — interactive step-by-step checklist with Pass/Fail/Skip buttons, progress bar, auto-advance, and "Complete Test" submission
+- **Automated Cycle Sync:** Worker forwards `cycleId`/`cycleItemId` in execution callbacks; Producer syncs cycle item status on terminal results. Cycles auto-complete when all items reach terminal state
+- **Manual Item Update API:** `PUT /api/test-cycles/:cycleId/items/:itemId` using MongoDB `arrayFilters` with automatic cycle summary recalculation
+
+---
+
 ## Technology Stack
 
 ### Frontend

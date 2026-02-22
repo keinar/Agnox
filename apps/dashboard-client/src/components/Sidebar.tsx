@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { LayoutDashboard, Settings, BookOpen, X, ChevronLeft, ChevronRight, Info } from 'lucide-react';
+import { LayoutDashboard, Settings, BookOpen, X, ChevronLeft, ChevronRight, Info, ClipboardList, Layers } from 'lucide-react';
 import logoLight from '../assets/logo.png';
 import logoDark from '../assets/logo-dark.png';
 import { useTheme } from '../context/ThemeContext';
@@ -16,6 +16,8 @@ interface SidebarProps {
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard', to: '/dashboard', href: null, disabled: false },
+  { icon: ClipboardList, label: 'Test Cases', to: '/test-cases', href: null, disabled: false },
+  { icon: Layers, label: 'Test Cycles', to: '/test-cycles', href: null, disabled: false },
   { icon: Settings, label: 'Settings', to: '/settings', href: null, disabled: false },
   { icon: BookOpen, label: 'Docs', to: null, href: 'http://docs.automation.keinar.com/', disabled: false },
 ] as const;

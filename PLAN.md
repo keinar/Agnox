@@ -7,29 +7,29 @@ Transform the AAC from a pure execution engine into a comprehensive Test Managem
 
 ## 📋 Task Breakdown
 
-### [ ] Task 9.1: Data Schema Evolution (MongoDB Foundation)
+### [x] Task 9.1: Data Schema Evolution (MongoDB Foundation) ✅
 **Goal:** Expand the database to support manual tests and hybrid cycles.
-- **Action:** Create Mongoose schemas and TS interfaces for `TestCases` (type: MANUAL | AUTOMATED, includes `steps` array for manual).
-- **Action:** Create schemas for `TestCycles` (aggregating multiple test executions/manual results under one cycle ID).
-- **Action:** Implement the necessary CRUD API routes in the Producer service for these new entities.
+- **Action:** Created raw MongoDB collection definitions and TypeScript interfaces for `test_cases` (type: MANUAL | AUTOMATED, includes `steps` array for manual).
+- **Action:** Created `test_cycles` collection schema (aggregating multiple test items under one cycle ID with `items` array and `summary` stats).
+- **Action:** Implemented CRUD API routes in the Producer service (`test-cases.ts`, `test-cycles.ts`) with validation, Gemini AI integration, and rate limiting.
 
-### [ ] Task 9.2: Manual Test Management Screen
-**Goal:** Build a dedicated repository view for manual tests.
-- **Action:** Create a new Dashboard view (e.g., "Test Cases") listing all manual tests.
-- **Action:** Build a creation/edit Side Drawer.
-- **Action:** **AI Integration:** Add a "Generate Steps with AI" button where the user inputs a single sentence (e.g., "Login flow with invalid credentials") and Gemini generates the structured JSON array of test steps.
+### [x] Task 9.2: Manual Test Management Screen ✅
+**Goal:** Built a dedicated repository view for manual tests.
+- **Action:** Created the `TestCases.tsx` page listing all manual tests grouped by suite with accordions.
+- **Action:** Built `TestCaseDrawer.tsx` — a Headless UI creation/edit side drawer.
+- **Action:** **AI Integration:** Added "Generate with AI" button in the drawer that Gemini generates the structured JSON array of test steps from a natural-language intent.
 
-### [ ] Task 9.3: The Hybrid Cycle Builder UI
+### [x] Task 9.3: The Hybrid Cycle Builder UI ✅
 **Goal:** Allow users to package manual and automated tests into executable cycles.
-- **Action:** Create a "New Cycle" wizard/modal.
-- **Action:** Implement a multi-select interface to choose from connected automated frameworks and the manual test repository.
-- **Action:** Add a "Launch Cycle" button that creates the `TestCycle` document and pushes the automated tasks to RabbitMQ.
+- **Action:** Created `CycleBuilderDrawer.tsx` — suite-grouped checkbox selection for manual tests + automated test section.
+- **Action:** Implemented multi-select interface with suite-level "select all" and individual test case checkboxes.
+- **Action:** "Launch Cycle" button creates the `TestCycle` document and pushes AUTOMATED items to RabbitMQ with `cycleId` + `cycleItemId` linkage.
 
-### [ ] Task 9.4: Manual Execution Player (In-Drawer)
+### [x] Task 9.4: Manual Execution Player (In-Drawer) ✅
 **Goal:** The interactive checklist for QA engineers during a cycle.
-- **Action:** When clicking a manual test within an active cycle, open the Drawer.
-- **Action:** Render the `TestStep` array as an interactive checklist.
-- **Action:** Allow the tester to mark Pass/Fail per step and upload screenshot artifacts.
+- **Action:** Created `ManualExecutionDrawer.tsx` — step-by-step interactive player with Pass/Fail/Skip per step, progress bar, auto-advance.
+- **Action:** Worker forwards `cycleId`/`cycleItemId` in execution callbacks; Producer syncs cycle item status on terminal results.
+- **Action:** Added `PUT /api/test-cycles/:cycleId/items/:itemId` endpoint for manual results. Cycles auto-complete when all items reach terminal state.
 
 ### [ ] Task 9.5: Consolidated Cycle Report & UX Polish
 **Goal:** Deliver the executive summary view.

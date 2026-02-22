@@ -1,6 +1,6 @@
 {
   "name": "playwright-full-stack-framework-monorepo",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "workspaces": [
     "apps/*",
@@ -14,7 +14,7 @@
     "test:system": "docker compose --profile test up --build --exit-code-from system-sanity",
     "docs:start": "npm run start --prefix apps/docs",
     "docs:build": "npm run build --prefix apps/docs",
-    "docs:sync": "claude -p 'Read .agents/doc-sync/SKILL.md and execute the DocSync workflow strictly following all steps including version bumping and changelog generation.'"
+    "docs:sync": "claude -p \"Read .agents/doc-sync/SKILL.md and execute the DocSync workflow strictly following all steps including version bumping and changelog generation.\""
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

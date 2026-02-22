@@ -419,6 +419,10 @@ export interface ITestCase {
     projectId: string;
     title: string;
     description?: string;
+    /** Logical grouping — e.g. "Login", "Checkout". Used for suite-level views. */
+    suite?: string;
+    /** Preconditions that must be met before executing this test case. */
+    preconditions?: string;
     type: TestType;
     steps?: ITestStep[];
     createdAt: Date;

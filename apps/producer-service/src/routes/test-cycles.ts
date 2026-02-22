@@ -10,13 +10,18 @@
  *  - Scope every query to the caller's organizationId (multi-tenant isolation).
  *  - Compute the summary sub-document at write time to keep reads fast.
  *  - Store items (and their manualSteps) as embedded sub-documents.
+ *
+ * When a cycle contains AUTOMATED items, the POST handler pushes execution
+ * payloads to RabbitMQ so the worker can pick them up. Each payload includes
+ * cycleId + cycleItemId for the worker to report results back.
  */
 
 import { FastifyInstance } from 'fastify';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import { randomUUID } from 'crypto';
 import { getDbName } from '../config/server.js';
 import { initTestCycleCollection, TEST_CYCLES_COLLECTION } from '../models/TestCycle.js';
+import type { RabbitMqService } from '../rabbitmq.js';
 import type {
     ITestCycle,
     ICycleItem,
@@ -109,6 +114,7 @@ export async function testCycleRoutes(
     app: FastifyInstance,
     dbClient: MongoClient,
     apiRateLimit: (request: any, reply: any) => Promise<void>,
+    rabbitMqService: RabbitMqService,
 ): Promise<void> {
     const DB_NAME = getDbName();
     const db = dbClient.db(DB_NAME);
@@ -125,6 +131,10 @@ export async function testCycleRoutes(
             projectId?: unknown;
             name?: unknown;
             items?: unknown;
+            // Automated execution config (optional — required when AUTOMATED items exist)
+            image?: unknown;
+            baseUrl?: unknown;
+            folder?: unknown;
         };
 
         // Validate required fields
@@ -152,8 +162,22 @@ export async function testCycleRoutes(
             }
         }
 
+        // Check if there are automated items — if so, image is required
+        const automatedItems = items.filter((i) => i.type === 'AUTOMATED');
+        const hasAutomated = automatedItems.length > 0;
+
+        if (hasAutomated) {
+            if (typeof body.image !== 'string' || body.image.trim().length === 0) {
+                return reply.status(400).send({
+                    success: false,
+                    error: 'image is required when the cycle contains AUTOMATED items',
+                });
+            }
+        }
+
         try {
-            const initialStatus: CycleStatus = 'PENDING';
+            // Determine initial status: if there are automated items, the cycle starts as RUNNING
+            const initialStatus: CycleStatus = hasAutomated ? 'RUNNING' : 'PENDING';
             const doc: ITestCycle = {
                 organizationId,
                 projectId: body.projectId.trim(),
@@ -166,10 +190,52 @@ export async function testCycleRoutes(
             };
 
             const result = await db.collection(TEST_CYCLES_COLLECTION).insertOne(doc);
+            const cycleId = result.insertedId.toString();
 
             app.log.info(
-                `[test-cycles] Created cycle "${doc.name}" (id: ${result.insertedId}) for org ${organizationId}`,
+                `[test-cycles] Created cycle "${doc.name}" (id: ${cycleId}) for org ${organizationId}`,
             );
+
+            // ── Push AUTOMATED items to RabbitMQ ──────────────────────────────
+            if (hasAutomated) {
+                const image = (body.image as string).trim();
+                const baseUrl = typeof body.baseUrl === 'string' ? body.baseUrl.trim() : '';
+                const folder = typeof body.folder === 'string' && body.folder.trim() ? body.folder.trim() : 'all';
+
+                for (const item of automatedItems) {
+                    const taskId = randomUUID();
+
+                    // Set the executionId on the item so it links to the execution record
+                    item.executionId = taskId;
+
+                    const taskPayload = {
+                        taskId,
+                        image,
+                        command: `Agnostic Execution Mode: Running [${folder}] via entrypoint.sh`,
+                        folder,
+                        organizationId,
+                        config: {
+                            baseUrl,
+                            environment: 'production',
+                        },
+                        // Cycle linkage — allows the worker to update the correct cycle item
+                        cycleId,
+                        cycleItemId: item.id,
+                    };
+
+                    await rabbitMqService.sendToQueue(taskPayload);
+
+                    app.log.info(
+                        `[test-cycles] Pushed AUTOMATED item "${item.title}" (taskId: ${taskId}) for cycle ${cycleId}`,
+                    );
+                }
+
+                // Update the items in the DB to include the executionId links
+                await db.collection(TEST_CYCLES_COLLECTION).updateOne(
+                    { _id: result.insertedId },
+                    { $set: { items } },
+                );
+            }
 
             return reply.status(201).send({ success: true, data: { ...doc, _id: result.insertedId } });
         } catch (err: unknown) {
@@ -216,7 +282,109 @@ export async function testCycleRoutes(
         }
     });
 
+    // ── PUT /api/test-cycles/:cycleId/items/:itemId ────────────────────────────
+    // Updates a single item within a cycle (manual execution player).
+    //
+    // Body: { status: TestStatus, manualSteps?: ITestStep[] }
+    //
+    // After updating the item, recalculates the cycle summary and
+    // sets the cycle status to COMPLETED if all items are terminal.
+
+    app.put('/api/test-cycles/:cycleId/items/:itemId', { preHandler: [apiRateLimit] }, async (request, reply) => {
+        const organizationId = request.user!.organizationId;
+        const { cycleId, itemId } = request.params as { cycleId: string; itemId: string };
+        const body = request.body as { status?: unknown; manualSteps?: unknown };
+
+        // Validate cycleId
+        let cycleObjectId: ObjectId;
+        try {
+            cycleObjectId = new ObjectId(cycleId);
+        } catch {
+            return reply.status(400).send({ success: false, error: 'Invalid cycleId' });
+        }
+
+        // Validate status
+        if (!body.status || !VALID_TEST_STATUSES.has(body.status as TestStatus)) {
+            return reply.status(400).send({
+                success: false,
+                error: `status is required and must be one of: ${[...VALID_TEST_STATUSES].join(', ')}`,
+            });
+        }
+
+        const newStatus = body.status as TestStatus;
+
+        // Build the $set for the matched item
+        const itemUpdate: Record<string, unknown> = {
+            'items.$[elem].status': newStatus,
+        };
+
+        // If manualSteps are provided, validate and set them
+        if (Array.isArray(body.manualSteps)) {
+            const parsedSteps: ITestStep[] = body.manualSteps.map((s: any, idx: number) => {
+                const step: ITestStep = {
+                    id: typeof s.id === 'string' && s.id.trim() ? s.id.trim() : randomUUID(),
+                    action: typeof s.action === 'string' ? s.action.trim() : `Step ${idx + 1}`,
+                    expectedResult: typeof s.expectedResult === 'string' ? s.expectedResult.trim() : '',
+                    status: VALID_TEST_STATUSES.has(s.status) ? s.status : 'PENDING',
+                };
+                if (typeof s.comment === 'string' && s.comment.trim()) {
+                    step.comment = s.comment.trim();
+                }
+                return step;
+            });
+            itemUpdate['items.$[elem].manualSteps'] = parsedSteps;
+        }
+
+        try {
+            // Step 1: Update the specific item in the cycle
+            const updateResult = await db.collection(TEST_CYCLES_COLLECTION).updateOne(
+                { _id: cycleObjectId, organizationId },
+                { $set: itemUpdate },
+                { arrayFilters: [{ 'elem.id': itemId }] },
+            );
+
+            if (updateResult.matchedCount === 0) {
+                return reply.status(404).send({ success: false, error: 'Cycle not found' });
+            }
+
+            // Step 2: Re-fetch the cycle to recalculate summary
+            const cycle = await db.collection(TEST_CYCLES_COLLECTION).findOne({ _id: cycleObjectId });
+
+            if (cycle && Array.isArray(cycle.items)) {
+                const items = cycle.items as ICycleItem[];
+                const summary = computeSummary(items);
+
+                // Determine if all items have reached a terminal state
+                const TERMINAL = new Set<TestStatus>(['PASSED', 'FAILED', 'ERROR', 'SKIPPED']);
+                const allTerminal = items.every((i) => TERMINAL.has(i.status));
+
+                await db.collection(TEST_CYCLES_COLLECTION).updateOne(
+                    { _id: cycleObjectId },
+                    {
+                        $set: {
+                            summary,
+                            ...(allTerminal ? { status: 'COMPLETED' as CycleStatus } : {}),
+                        },
+                    },
+                );
+
+                app.log.info(
+                    `[test-cycles] Updated item ${itemId} in cycle ${cycleId} → ${newStatus}` +
+                    (allTerminal ? ' (cycle COMPLETED)' : ''),
+                );
+
+                return reply.send({ success: true, data: { ...cycle, summary, status: allTerminal ? 'COMPLETED' : cycle.status } });
+            }
+
+            return reply.send({ success: true });
+        } catch (err: unknown) {
+            app.log.error(err, '[test-cycles] Failed to update cycle item');
+            return reply.status(500).send({ success: false, error: 'Failed to update cycle item' });
+        }
+    });
+
     app.log.info('✅ Test cycle routes registered');
     app.log.info('  - POST  /api/test-cycles');
     app.log.info('  - GET   /api/test-cycles');
+    app.log.info('  - PUT   /api/test-cycles/:cycleId/items/:itemId');
 }

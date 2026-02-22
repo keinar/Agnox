@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md — Agnostic Automation Center
 
-> Generated: 2026-02-22 | Current Phase: Sprint 8 — CRON Scheduling & Slack Notifications
+> Generated: 2026-02-22 | Current Phase: Sprint 9 — Quality Hub: Manual Testing & Hybrid Cycles
 > Source: Full monorepo scan of code, docs, configs, and shared types.
 
 ---
@@ -35,8 +35,8 @@ Agnostic-Automation-Center/
 │   │   │   ├── App.tsx            # Router + QueryClient + AuthProvider
 │   │   │   ├── context/           # AuthContext.tsx (JWT + user state)
 │   │   │   ├── hooks/             # useExecutions, useDashboardData, useSettings
-│   │   │   ├── pages/             # Login, Signup, Settings
-│   │   │   ├── components/        # Dashboard, ExecutionRow, modals, settings tabs
+│   │   │   ├── pages/             # Login, Signup, Settings, TestCases, TestCycles
+│   │   │   ├── components/        # Dashboard, ExecutionRow, modals, settings tabs, drawers
 │   │   │   └── types/             # index.ts (Execution, ExecutionConfig)
 │   │   ├── Dockerfile
 │   │   ├── vite.config.ts
@@ -124,6 +124,7 @@ Agnostic-Automation-Center/
 | 6 | Enterprise UI Overhaul | Full Tailwind CSS migration (zero inline styles), GitHub-inspired semantic token palette (`gh-bg`, `gh-border`, etc.), `ThemeContext` with Light/Dark toggle, collapsible sidebar, version footer with Changelog modal, DateRangeFilter, responsive filter drawer |
 | 7 (**Complete**) | The Investigation Hub | Unified side-drawer (`ExecutionDrawer.tsx`) with URL-state deep-linking (`?drawerId=<taskId>`), 3-tab layout: Terminal / Artifacts / AI Analysis. `ArtifactsView.tsx` media gallery. `GET /api/executions/:taskId/artifacts` endpoint for filesystem artifact listing. |
 | 8 (**Complete**) | CRON Scheduling & Slack Notifications | Native CRON scheduling engine (`node-cron`) with `scheduler.ts` in-memory job registry, 3 REST endpoints (`POST/GET/DELETE /api/schedules`), `schedules` MongoDB collection. Dual-mode Execution Modal (Immediate / Schedule Run). `SchedulesList` settings tab. Slack Incoming Webhook notifications (`notifier.ts`) on final execution statuses — configured per-org via Integrations tab. |
+| 9 (**In Progress**) | Quality Hub: Manual Testing & Hybrid Cycles | Test case repository (`test_cases` collection) with CRUD + AI bulk generation via Gemini. `TestCases.tsx` page with suite-grouped accordions and `TestCaseDrawer.tsx` side drawer. Hybrid cycle builder: `test_cycles` collection, `CycleBuilderDrawer.tsx`, `TestCycles.tsx` page. Manual execution player (`ManualExecutionDrawer.tsx`) with step-by-step Pass/Fail/Skip. Worker→Producer cycle sync via `cycleId`/`cycleItemId`. `PUT /api/test-cycles/:cycleId/items/:itemId` for manual results. |
 
 ### Security Posture (Score: 92/100)
 
@@ -242,7 +243,7 @@ Agnostic-Automation-Center/
 | GET | `/config/defaults` | Public | Default image, baseUrl, folder, env mapping |
 | GET | `/api/tests-structure` | Public | Available test folders from `/app/tests-source` |
 
-**Total: 50 endpoints**
+**Total: 50+ endpoints**
 
 ---
 
@@ -423,9 +424,38 @@ folder           String (default: 'all')
 baseUrl          String (target URL for the scheduled run)
 createdAt        Date
 Index: { organizationId: 1 }
+```### `test_cases`
+
+```
+_id              ObjectId
+organizationId   String (FK → organizations)
+projectId        String (FK → projects)
+title            String
+suite            String (grouping label)
+type             'MANUAL' | 'AUTOMATED'
+priority         'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+steps            Array<{ id, action, expectedResult, status }>
+tags             Array<String>
+createdAt        Date
+updatedAt        Date
+Index: { organizationId: 1, projectId: 1 }
 ```
 
-**Total: 10 collections**
+### `test_cycles`
+
+```
+_id              ObjectId
+organizationId   String (FK → organizations)
+projectId        String (FK → projects)
+name             String
+status           'PENDING' | 'RUNNING' | 'COMPLETED'
+items            Array<{ id, testCaseId, type, title, status, executionId?, manualSteps? }>
+summary          { total, passed, failed, automationRate }
+createdAt        Date
+Index: { organizationId: 1, projectId: 1 }
+```
+
+**Total: 12 collections**
 
 ---
 
@@ -440,6 +470,8 @@ Index: { organizationId: 1 }
 | `/signup` | `Signup` | Public | Registration or invitation join |
 | `/join` | `Signup` | Public | Alias for `/signup` with token |
 | `/privacy` | `PrivacyPolicy` | Public | Privacy policy page |
+| `/test-cases` | `TestCases` | ProtectedRoute | Test case repository — suite-grouped view |
+| `/test-cycles` | `TestCycles` | ProtectedRoute | Hybrid cycle listing with expandable items |
 | `/dashboard` | `Dashboard` | ProtectedRoute | Execution monitoring, stats, run modal |
 | `/settings` | `Settings` | ProtectedRoute | Multi-tab settings (URL param `?tab=`) |
 
@@ -475,6 +507,12 @@ App
 │       │               ├── TerminalView (tab 1, real-time logs via Socket.io)
 │       │               ├── ArtifactsView (tab 2, media gallery — images/videos/zips)
 │       │               └── AIAnalysisView (tab 3, Gemini root-cause analysis)
+│       ├── /test-cases → ProtectedRoute → TestCases
+│       │   └── TestCaseDrawer (Headless UI slide-over for create/edit test cases)
+│       │       └── AI Step Generation (Gemini-powered bulk step creation)
+│       ├── /test-cycles → ProtectedRoute → TestCycles
+│       │   ├── CycleBuilderDrawer (Headless UI slide-over for composing hybrid cycles)
+│       │   └── ManualExecutionDrawer (Step-by-step manual execution player)
 │       └── /settings → ProtectedRoute → Settings
 │           └── [7 tab components listed above]
 ```

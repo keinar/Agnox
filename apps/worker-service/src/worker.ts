@@ -111,7 +111,7 @@ async function startWorker() {
         if (!msg) return;
 
         const task = JSON.parse(msg.content.toString());
-        const { taskId, image: rawImage, command, config, organizationId, groupName, batchId, framework } = task;
+        const { taskId, image: rawImage, command, config, organizationId, groupName, batchId, framework, cycleId, cycleItemId } = task;
         const image = rawImage?.trim();
 
         if (!image) {
@@ -163,7 +163,7 @@ async function startWorker() {
             aiAnalysisEnabled: initialAiAnalysisEnabled,
         };
         if (groupName) runningUpdate.groupName = groupName;
-        if (batchId)   runningUpdate.batchId   = batchId;
+        if (batchId) runningUpdate.batchId = batchId;
 
         // Notify start (DB update) - Multi-tenant: Filter by organizationId
         await executionsCollection.updateOne(
@@ -184,7 +184,7 @@ async function startWorker() {
             reportsBaseUrl: currentReportsBaseUrl,
             aiAnalysisEnabled: initialAiAnalysisEnabled,
             ...(groupName && { groupName }),
-            ...(batchId   && { batchId }),
+            ...(batchId && { batchId }),
         });
 
         let logsBuffer = "";
@@ -428,7 +428,7 @@ async function startWorker() {
             const hasNativeReport = fs.existsSync(path.join(baseTaskDir, 'native-report', 'index.html'));
             const hasAllureReport = fs.existsSync(path.join(baseTaskDir, 'allure-report', 'index.html'));
 
-            const updateData = {
+            const updateData: Record<string, unknown> = {
                 taskId,
                 organizationId,  // Include for room-based broadcasting
                 status: finalStatus,
@@ -442,6 +442,10 @@ async function startWorker() {
                 hasNativeReport,
                 hasAllureReport
             };
+
+            // Forward cycle linkage so the producer can update the parent TestCycle
+            if (cycleId) updateData.cycleId = cycleId;
+            if (cycleItemId) updateData.cycleItemId = cycleItemId;
 
             // Multi-tenant: Filter by organizationId
             await executionsCollection.updateOne(
@@ -465,7 +469,7 @@ async function startWorker() {
                 aiAnalysisEnabledForError = false;
             }
 
-            const errorData = {
+            const errorData: Record<string, unknown> = {
                 taskId,
                 organizationId,  // Include for room-based broadcasting
                 status: 'ERROR',
@@ -474,6 +478,10 @@ async function startWorker() {
                 endTime: new Date(),
                 aiAnalysisEnabled: aiAnalysisEnabledForError  // Audit trail
             };
+
+            // Forward cycle linkage so the producer can update the parent TestCycle
+            if (cycleId) errorData.cycleId = cycleId;
+            if (cycleItemId) errorData.cycleItemId = cycleItemId;
             // Multi-tenant: Filter by organizationId
             await executionsCollection.updateOne(
                 { taskId, organizationId },

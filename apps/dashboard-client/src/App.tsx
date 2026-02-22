@@ -8,6 +8,8 @@ import { Dashboard } from './components/Dashboard';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Settings } from './pages/Settings';
+import { TestCases } from './pages/TestCases';
+import { TestCycles } from './pages/TestCycles';
 import { PrivacyPolicy } from './components/legal/PrivacyPolicy';
 
 function App() {
@@ -16,34 +18,36 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-      <AuthProvider>
-        <div className="min-h-screen bg-gh-bg-subtle dark:bg-gh-bg-dark text-gh-text dark:text-gh-text-dark font-sans antialiased transition-colors duration-200">
-          <BrowserRouter>
-            <Routes>
-              {/* Public routes */}
-              <Route path="/login"   element={<Login />} />
-              <Route path="/signup"  element={<Signup />} />
-              <Route path="/join"    element={<Signup />} />
-              <Route path="/privacy" element={<PrivacyPolicy />} />
+        <AuthProvider>
+          <div className="min-h-screen bg-gh-bg-subtle dark:bg-gh-bg-dark text-gh-text dark:text-gh-text-dark font-sans antialiased transition-colors duration-200">
+            <BrowserRouter>
+              <Routes>
+                {/* Public routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/join" element={<Signup />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
 
-              {/* Protected routes — share the AppLayout shell */}
-              <Route
-                element={
-                  <ProtectedRoute>
-                    <AppLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/settings"  element={<Settings />} />
-              </Route>
+                {/* Protected routes — share the AppLayout shell */}
+                <Route
+                  element={
+                    <ProtectedRoute>
+                      <AppLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/test-cases" element={<TestCases />} />
+                  <Route path="/test-cycles" element={<TestCycles />} />
+                  <Route path="/settings" element={<Settings />} />
+                </Route>
 
-              {/* Redirect root to dashboard */}
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            </Routes>
-          </BrowserRouter>
-        </div>
-      </AuthProvider>
+                {/* Redirect root to dashboard */}
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              </Routes>
+            </BrowserRouter>
+          </div>
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

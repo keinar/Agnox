@@ -19,6 +19,7 @@ import { analyticsRoutes } from '../routes/analytics.js';
 import { scheduleRoutes } from '../routes/schedules.js';
 import { testCaseRoutes } from '../routes/test-cases.js';
 import { testCycleRoutes } from '../routes/test-cycles.js';
+import { aiRoutes } from '../routes/ai.js';
 import { sendExecutionNotification, FINAL_EXECUTION_STATUSES } from '../utils/notifier.js';
 import { createTestRunLimitMiddleware } from '../middleware/planLimits.js';
 import { getDbName } from './server.js';
@@ -71,7 +72,10 @@ export async function setupRoutes(
 
     // Quality Hub routes (manual test cases & hybrid test cycles — JWT protected)
     await testCaseRoutes(app, dbClient, apiRateLimit);
-    await testCycleRoutes(app, dbClient, apiRateLimit);
+    await testCycleRoutes(app, dbClient, apiRateLimit, rabbitMqService);
+
+    // AI generation routes (Gemini-powered — JWT protected)
+    await aiRoutes(app, apiRateLimit);
 
     // Create plan enforcement middleware
     const db = dbClient.db(DB_NAME);
@@ -208,6 +212,78 @@ export async function setupRoutes(
             })();
         }
 
+        // ── Automated Cycle Sync ────────────────────────────────────────────
+        // When the worker sends back a terminal status with cycle linkage,
+        // update the corresponding item in the parent TestCycle and recalculate
+        // the summary to keep cycle-level stats accurate in real time.
+        const TERMINAL_STATUSES = new Set(['PASSED', 'FAILED', 'ERROR', 'UNSTABLE']);
+        if (
+            updateData.cycleId &&
+            updateData.cycleItemId &&
+            TERMINAL_STATUSES.has(updateData.status)
+        ) {
+            (async () => {
+                try {
+                    const db = dbClient.db(DB_NAME);
+                    const cyclesCollection = db.collection('test_cycles');
+
+                    // Map execution status → TestStatus for the cycle item
+                    const itemStatus =
+                        updateData.status === 'PASSED' ? 'PASSED'
+                            : updateData.status === 'FAILED' || updateData.status === 'UNSTABLE' ? 'FAILED'
+                                : 'ERROR';
+
+                    // Step 1: Update the specific cycle item's status + executionId
+                    await cyclesCollection.updateOne(
+                        { _id: new ObjectId(updateData.cycleId as string) },
+                        {
+                            $set: {
+                                'items.$[elem].status': itemStatus,
+                                'items.$[elem].executionId': updateData.taskId,
+                            },
+                        },
+                        { arrayFilters: [{ 'elem.id': updateData.cycleItemId }] },
+                    );
+
+                    // Step 2: Re-fetch the cycle to recalculate the summary
+                    const cycle = await cyclesCollection.findOne({
+                        _id: new ObjectId(updateData.cycleId as string),
+                    });
+
+                    if (cycle && Array.isArray(cycle.items)) {
+                        const items = cycle.items as Array<{ status: string; type: string }>;
+                        const total = items.length;
+                        const passed = items.filter((i) => i.status === 'PASSED').length;
+                        const failed = items.filter((i) => i.status === 'FAILED' || i.status === 'ERROR').length;
+                        const automatedCount = items.filter((i) => i.type === 'AUTOMATED').length;
+                        const automationRate = total > 0 ? Math.round((automatedCount / total) * 100) : 0;
+
+                        // Determine if all items have reached a terminal state
+                        const allTerminal = items.every((i) =>
+                            i.status === 'PASSED' || i.status === 'FAILED' || i.status === 'ERROR' || i.status === 'SKIPPED',
+                        );
+
+                        await cyclesCollection.updateOne(
+                            { _id: new ObjectId(updateData.cycleId as string) },
+                            {
+                                $set: {
+                                    summary: { total, passed, failed, automationRate },
+                                    ...(allTerminal ? { status: 'COMPLETED' } : {}),
+                                },
+                            },
+                        );
+
+                        app.log.info(
+                            `[cycle-sync] Updated cycle ${updateData.cycleId} item ${updateData.cycleItemId} → ${itemStatus}` +
+                            (allTerminal ? ' (cycle COMPLETED)' : ''),
+                        );
+                    }
+                } catch (err: unknown) {
+                    app.log.error(err, '[cycle-sync] Failed to sync automated result to cycle');
+                }
+            })();
+        }
+
         return { status: 'broadcasted' };
     });
 
@@ -260,8 +336,8 @@ export async function setupRoutes(
         const q = request.query as IExecutionQuery;
 
         // Parse and clamp pagination params
-        const limit  = Math.min(Math.max(parseInt(q.limit  ?? '25', 10) || 25, 1), 100);
-        const offset = Math.max(parseInt(q.offset ?? '0',  10) || 0, 0);
+        const limit = Math.min(Math.max(parseInt(q.limit ?? '25', 10) || 25, 1), 100);
+        const offset = Math.max(parseInt(q.offset ?? '0', 10) || 0, 0);
 
         // Base filter — always tenant-scoped, always excludes soft-deleted
         const filter: Record<string, unknown> = {
@@ -414,7 +490,7 @@ export async function setupRoutes(
 
                 // Optional grouping fields — only write when provided by the caller
                 if (groupName) executionDoc.groupName = groupName;
-                if (batchId)   executionDoc.batchId   = batchId;
+                if (batchId) executionDoc.batchId = batchId;
 
                 await collection.updateOne(
                     { taskId },
@@ -435,7 +511,7 @@ export async function setupRoutes(
                     tests: tests || [],
                     trigger,
                     ...(groupName && { groupName }),
-                    ...(batchId   && { batchId }),
+                    ...(batchId && { batchId }),
                 });
                 app.log.info(`📡 Broadcast execution-updated to room ${orgRoom} (taskId: ${taskId}, status: PENDING)`);
             }
@@ -483,8 +559,8 @@ export async function setupRoutes(
         const q = request.query as IGroupedExecutionQuery;
 
         // Groups per page — default 10, max 50
-        const limit  = Math.min(Math.max(parseInt(q.limit  ?? '10', 10) || 10, 1), 50);
-        const offset = Math.max(parseInt(q.offset ?? '0',  10) || 0, 0);
+        const limit = Math.min(Math.max(parseInt(q.limit ?? '10', 10) || 10, 1), 50);
+        const offset = Math.max(parseInt(q.offset ?? '0', 10) || 0, 0);
 
         // Build the same base filter as the flat endpoint
         const matchFilter: Record<string, unknown> = {
@@ -542,12 +618,12 @@ export async function setupRoutes(
                 {
                     $group: {
                         _id: { $ifNull: ['$groupName', '__ungrouped__'] },
-                        groupName:  { $first: { $ifNull: ['$groupName', '__ungrouped__'] } },
+                        groupName: { $first: { $ifNull: ['$groupName', '__ungrouped__'] } },
                         totalCount: { $sum: 1 },
-                        passCount:  {
+                        passCount: {
                             $sum: { $cond: [{ $eq: ['$status', 'PASSED'] }, 1, 0] },
                         },
-                        lastRunAt:  { $first: '$startTime' },
+                        lastRunAt: { $first: '$startTime' },
                         // Keep the 50 most recent executions per group for preview
                         executions: { $push: '$$ROOT' },
                     },
@@ -556,10 +632,10 @@ export async function setupRoutes(
                 {
                     $project: {
                         _id: 0,
-                        groupName:  1,
+                        groupName: 1,
                         totalCount: 1,
-                        passCount:  1,
-                        lastRunAt:  1,
+                        passCount: 1,
+                        lastRunAt: 1,
                         executions: { $slice: ['$executions', 50] },
                     },
                 },
@@ -665,8 +741,8 @@ export async function setupRoutes(
         }
 
         const updateOp: Record<string, unknown> = {};
-        if (Object.keys(setData).length > 0)   updateOp.$set   = setData;
-        if (Object.keys(unsetData).length > 0)  updateOp.$unset = unsetData;
+        if (Object.keys(setData).length > 0) updateOp.$set = setData;
+        if (Object.keys(unsetData).length > 0) updateOp.$unset = unsetData;
 
         const organizationId = request.user!.organizationId;
 
@@ -738,14 +814,14 @@ export async function setupRoutes(
     app.get('/api/executions/:taskId/artifacts', async (request, reply) => {
         const REPORTS_DIR = process.env.REPORTS_DIR || path.join(process.cwd(), 'reports');
         const ALLOWED_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.webm', '.mp4', '.zip']);
-        const IMAGE_EXTENSIONS  = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
-        const VIDEO_EXTENSIONS  = new Set(['.webm', '.mp4']);
+        const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
+        const VIDEO_EXTENSIONS = new Set(['.webm', '.mp4']);
 
         const organizationId = request.user!.organizationId;
         const { taskId } = request.params as { taskId: string };
 
         // Sanitize both segments to strip any directory traversal sequences
-        const safeOrgId  = path.basename(organizationId);
+        const safeOrgId = path.basename(organizationId);
         const safeTaskId = path.basename(taskId);
 
         const artifactsDir = path.resolve(REPORTS_DIR, safeOrgId, safeTaskId, 'test-results');
@@ -783,7 +859,7 @@ export async function setupRoutes(
                     const ext = path.extname(f).toLowerCase();
                     const type: 'image' | 'video' | 'file' =
                         IMAGE_EXTENSIONS.has(ext) ? 'image' :
-                        VIDEO_EXTENSIONS.has(ext) ? 'video' : 'file';
+                            VIDEO_EXTENSIONS.has(ext) ? 'video' : 'file';
                     return {
                         type,
                         name: f,

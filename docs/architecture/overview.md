@@ -104,6 +104,8 @@ graph TB
 - `/api/executions/*` - Test execution history, bulk ops, artifact listing
 - `/api/execution-request` - Queue new test execution
 - `/api/schedules/*` - CRON schedule management (create, list, delete)
+- `/api/test-cases/*` - Manual test case CRUD with AI step generation (Sprint 9)
+- `/api/test-cycles/*` - Hybrid test cycle management + item updates (Sprint 9)
 - `/api/metrics/:image` - Performance insights
 - `/reports/*` - Static HTML test reports
 
@@ -146,6 +148,8 @@ graph TB
 - `audit_logs` - Admin action audit trail
 - `webhook_logs` - Stripe webhook event log
 - `schedules` - CRON schedule definitions (Sprint 8): expression, environment, image, folder, baseUrl
+- `test_cases` - Manual and automated test case definitions (Sprint 9): steps array, suite grouping, AI-generated content
+- `test_cycles` - Hybrid test cycles (Sprint 9): items array with status tracking, summary stats, cycle-level status
 
 **Indexes:**
 - `organizationId` - All collections (multi-tenant filtering)
@@ -184,7 +188,9 @@ graph TB
   "image": "docker-image:tag",
   "command": "npm test",
   "tests": ["test1", "test2"],
-  "config": { "baseUrl": "...", "envVars": {...} }
+  "config": { "baseUrl": "...", "envVars": {} },
+  "cycleId": "optional-cycle-id",
+  "cycleItemId": "optional-cycle-item-id"
 }
 ```
 

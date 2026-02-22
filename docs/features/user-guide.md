@@ -207,7 +207,65 @@ Notifications are sent for `PASSED`, `FAILED`, `ERROR`, and `UNSTABLE` statuses.
 
 ---
 
-## 11. Support
+## 11. Test Cases (Quality Hub)
+
+Build and manage a repository of manual and automated test cases.
+
+### Creating a Test Case
+1. Navigate to **Test Cases** from the sidebar.
+2. Select your **Project** from the dropdown.
+3. Click **New Test Case** to open the creation drawer.
+4. Fill in:
+   - **Title**: Name of the test case (e.g., "Login flow with invalid credentials")
+   - **Suite**: Grouping label (e.g., "Authentication", "Checkout")
+   - **Priority**: LOW / MEDIUM / HIGH / CRITICAL
+   - **Steps**: Add individual test steps with Action and Expected Result
+
+### AI-Powered Step Generation
+1. In the test case drawer, click **Generate with AI**.
+2. Enter a natural-language intent (e.g., "Test the checkout flow with a coupon code").
+3. Gemini generates a structured array of test steps automatically.
+4. Review and edit the generated steps before saving.
+
+### Managing Test Cases
+- Test cases are grouped by **Suite** using collapsible accordions.
+- Click any test case row to open the edit drawer.
+- Delete test cases using the trash icon in the test case row.
+
+---
+
+## 12. Test Cycles & Manual Execution Player
+
+Hybrid test cycles combine manual and automated tests into a single, unified workflow.
+
+### Creating a Hybrid Cycle
+1. Navigate to **Test Cycles** from the sidebar.
+2. Select your **Project**.
+3. Click **Create Cycle** to open the Cycle Builder drawer.
+4. Enter a **Cycle Name**.
+5. Select **Manual Tests** from the suite-grouped checklist.
+6. (Optional) Enable **Include Automated Test Run** — requires run settings (Docker image, base URL) to be configured in Settings.
+7. Click **Launch Cycle**.
+
+> When launched, AUTOMATED items are immediately pushed to RabbitMQ for execution. MANUAL items remain PENDING until a QA engineer executes them.
+
+### Viewing Cycle Details
+- Click any cycle row in the table to **expand** and see all items.
+- **AUTOMATED items**: Display status badge and execution ID.
+- **MANUAL items**: Display status badge and an **Execute** button.
+
+### Manual Execution Player
+1. Click **Execute** on a MANUAL item to open the Manual Execution drawer.
+2. Each test step is displayed as an interactive checklist.
+3. Click **Pass**, **Fail**, or **Skip** on each step.
+4. Steps auto-advance to the next pending item.
+5. Click **Complete Test** to submit results.
+
+> Cycle status automatically transitions to **COMPLETED** when all items (manual + automated) reach a terminal state.
+
+---
+
+## 13. Support
 
 - **Documentation**: [docs.automation.keinar.com](https://docs.automation.keinar.com)
 - **Email**: info@digital-solution.co.il
