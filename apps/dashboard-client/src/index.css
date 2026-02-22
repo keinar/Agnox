@@ -9,3 +9,16 @@
     filter: invert(1) brightness(1.2);
     cursor: pointer;
 }
+
+/* ── Print-friendly overrides ──────────────────────────────────────────────── */
+@media print {
+  /* Force-expand any <details> elements (future-proof safety net) */
+  details { display: block !important; }
+  details > div { display: block !important; visibility: visible !important; opacity: 1 !important; }
+
+  /* Ensure manual steps containers are fully visible */
+  .manual-steps-container { max-height: none !important; display: block !important; }
+
+  /* Remove dark shadows that look muddy on white paper */
+  * { box-shadow: none !important; text-shadow: none !important; }
+}

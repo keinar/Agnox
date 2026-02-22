@@ -7,7 +7,9 @@
  * Features:
  *  - Fetches cycle data from GET /api/test-cycles/:id
  *  - Displays stat cards, item list, and expandable manual steps
- *  - "Download PDF" button streams the PDF blob from /api/test-cycles/:id/report
+ *  - "Print / Save PDF" button triggers the browser's native print dialog
+ *    (window.print()). Add @media print CSS via Tailwind print: variants to
+ *    ensure a clean white-on-white output with navigation hidden.
  *  - Footer shows VersionDisplay
  */
 
@@ -65,34 +67,36 @@ interface ICycleRow {
 // ── Style maps ────────────────────────────────────────────────────────────────
 
 const CYCLE_STATUS_STYLES: Record<string, string> = {
-    PENDING:   'bg-amber-900/30 text-amber-400 border border-amber-700',
-    RUNNING:   'bg-blue-900/30 text-blue-400 border border-blue-700',
+    PENDING: 'bg-amber-900/30 text-amber-400 border border-amber-700',
+    RUNNING: 'bg-blue-900/30 text-blue-400 border border-blue-700',
     COMPLETED: 'bg-green-900/30 text-green-400 border border-green-700',
 };
 
+const PRINT_BADGE = 'print:bg-white print:border print:border-slate-400 print:text-slate-900';
+
 const ITEM_STATUS_STYLES: Record<string, string> = {
-    PENDING: 'bg-slate-700 text-slate-300',
-    RUNNING: 'bg-blue-900/40 text-blue-400',
-    PASSED:  'bg-green-900/40 text-green-400',
-    FAILED:  'bg-red-900/40 text-red-400',
-    ERROR:   'bg-red-900/40 text-red-400',
-    SKIPPED: 'bg-amber-900/40 text-amber-400',
+    PENDING: `bg-slate-700 text-slate-300 ${PRINT_BADGE}`,
+    RUNNING: `bg-blue-900/40 text-blue-400 ${PRINT_BADGE}`,
+    PASSED: `bg-green-900/40 text-green-400 ${PRINT_BADGE}`,
+    FAILED: `bg-red-900/40 text-red-400 ${PRINT_BADGE}`,
+    ERROR: `bg-red-900/40 text-red-400 ${PRINT_BADGE}`,
+    SKIPPED: `bg-amber-900/40 text-amber-400 ${PRINT_BADGE}`,
 };
 
 const ITEM_STATUS_ICONS: Record<string, React.ReactNode> = {
     PENDING: <Clock size={11} />,
     RUNNING: <Loader2 size={11} className="animate-spin" />,
-    PASSED:  <CheckCircle2 size={11} />,
-    FAILED:  <XCircle size={11} />,
-    ERROR:   <AlertCircle size={11} />,
+    PASSED: <CheckCircle2 size={11} />,
+    FAILED: <XCircle size={11} />,
+    ERROR: <AlertCircle size={11} />,
     SKIPPED: <SkipForward size={11} />,
 };
 
 const STEP_STATUS_STYLES: Record<string, string> = {
-    PENDING: 'bg-slate-700 text-slate-300',
-    PASSED:  'bg-green-900/40 text-green-400',
-    FAILED:  'bg-red-900/40 text-red-400',
-    SKIPPED: 'bg-amber-900/40 text-amber-400',
+    PENDING: `bg-slate-700 text-slate-300 ${PRINT_BADGE}`,
+    PASSED: `bg-green-900/40 text-green-400 ${PRINT_BADGE}`,
+    FAILED: `bg-red-900/40 text-red-400 ${PRINT_BADGE}`,
+    SKIPPED: `bg-amber-900/40 text-amber-400 ${PRINT_BADGE}`,
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -111,7 +115,7 @@ function formatDate(iso: string): string {
 
 function StatCard({ label, value, accent }: { label: string; value: string | number; accent: string }) {
     return (
-        <div className={`flex flex-col gap-1 rounded-xl border p-4 ${accent}`}>
+        <div className={`flex flex-col gap-1 rounded-xl border p-4 print:bg-white print:border-slate-200 print:text-slate-900 ${accent}`}>
             <span className="text-[11px] font-semibold uppercase tracking-widest opacity-70">{label}</span>
             <span className="text-2xl font-bold">{value}</span>
         </div>
@@ -120,16 +124,16 @@ function StatCard({ label, value, accent }: { label: string; value: string | num
 
 function ManualStepRow({ step }: { step: IManualStep }) {
     return (
-        <div className="flex items-start gap-3 px-4 py-2 border-t border-[#21262d]">
+        <div className="flex items-start gap-3 px-4 py-2 border-t border-[#21262d] print:border-slate-200">
             <span className={`mt-0.5 shrink-0 flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium ${STEP_STATUS_STYLES[step.status] ?? 'bg-slate-700 text-slate-300'}`}>
                 {ITEM_STATUS_ICONS[step.status]}
                 {step.status}
             </span>
             <div className="min-w-0 flex-1">
-                <p className="text-xs text-slate-300 leading-snug">{step.action}</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">Expected: {step.expectedResult}</p>
+                <p className="text-xs text-slate-300 leading-snug print:text-slate-900">{step.action}</p>
+                <p className="text-[10px] text-slate-500 mt-0.5 print:text-slate-700">Expected: {step.expectedResult}</p>
                 {step.comment && (
-                    <p className="text-[10px] text-slate-400 italic mt-0.5">"{step.comment}"</p>
+                    <p className="text-[10px] text-slate-400 italic mt-0.5 print:text-slate-600">"{step.comment}"</p>
                 )}
             </div>
         </div>
@@ -141,7 +145,7 @@ function CycleItemRow({ item }: { item: ICycleItem }) {
     const hasSteps = item.type === 'MANUAL' && Array.isArray(item.manualSteps) && item.manualSteps.length > 0;
 
     return (
-        <div className="rounded-lg border border-[#21262d] bg-[#161b22] overflow-hidden">
+        <div className="rounded-lg border border-[#21262d] bg-[#161b22] overflow-hidden print:bg-white print:border-slate-200">
             <div
                 className={`flex items-center gap-3 px-4 py-2.5 ${hasSteps ? 'cursor-pointer hover:bg-[#1c2129] transition-colors' : ''}`}
                 onClick={hasSteps ? () => setExpanded((v) => !v) : undefined}
@@ -162,14 +166,13 @@ function CycleItemRow({ item }: { item: ICycleItem }) {
                 </span>
 
                 {/* Title */}
-                <span className="flex-1 text-sm text-slate-200 truncate">{item.title}</span>
+                <span className="flex-1 text-sm text-slate-200 truncate print:text-slate-900">{item.title}</span>
 
                 {/* Type badge */}
-                <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-medium ${
-                    item.type === 'AUTOMATED'
+                <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-medium ${item.type === 'AUTOMATED'
                         ? 'bg-violet-900/40 text-violet-400'
                         : 'bg-sky-900/40 text-sky-400'
-                }`}>
+                    } ${PRINT_BADGE}`}>
                     {item.type}
                 </span>
 
@@ -180,8 +183,8 @@ function CycleItemRow({ item }: { item: ICycleItem }) {
                 </span>
             </div>
 
-            {expanded && hasSteps && (
-                <div className="bg-[#0d1117]">
+            {hasSteps && (
+                <div className={`bg-[#0d1117] print:bg-white ${expanded ? '' : 'hidden print:!block'}`}>
                     {item.manualSteps!.map((step) => (
                         <ManualStepRow key={step.id} step={step} />
                     ))}
@@ -197,7 +200,6 @@ export function CycleReportPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { token } = useAuth();
-    const [downloading, setDownloading] = useState(false);
 
     const { data, isLoading, isError, error } = useQuery<ICycleRow>({
         queryKey: ['cycle', id],
@@ -214,36 +216,6 @@ export function CycleReportPage() {
         enabled: Boolean(id && token),
         retry: 1,
     });
-
-    async function downloadPdf() {
-        if (downloading || !data) return;
-        setDownloading(true);
-        try {
-            const res = await fetch(`${API_URL}/api/test-cycles/${id}/report`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (!res.ok) throw new Error(`Server returned ${res.status}`);
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            const safeName = data.name
-                .replace(/[^\w\s-]/g, '')
-                .trim()
-                .replace(/\s+/g, '-')
-                .toLowerCase()
-                .slice(0, 80);
-            a.href = url;
-            a.download = `cycle-report-${safeName}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        } catch (err: unknown) {
-            // Error surfaced to user via future toast; silently ignore for now
-        } finally {
-            setDownloading(false);
-        }
-    }
 
     // ── Loading state ──────────────────────────────────────────────────────────
     if (isLoading) {
@@ -280,15 +252,15 @@ export function CycleReportPage() {
     const cycle = data;
     const failed = cycle.summary.failed;
     const passed = cycle.summary.passed;
-    const total  = cycle.summary.total;
+    const total = cycle.summary.total;
     const automationRate = cycle.summary.automationRate ?? 0;
 
     // ── Full report layout ─────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen bg-[#0d1117] text-slate-200">
+        <div className="min-h-screen bg-[#0d1117] text-slate-200 print:bg-white print:text-slate-900">
 
-            {/* ── Fixed top bar ─────────────────────────────────────────── */}
-            <header className="sticky top-0 z-30 flex items-center gap-3 px-4 sm:px-6 h-14 border-b border-[#21262d] bg-[#0d1117]/90 backdrop-blur-sm">
+            {/* ── Fixed top bar — hidden when printing ─────────────────── */}
+            <header className="sticky top-0 z-30 flex items-center gap-3 px-4 sm:px-6 h-14 border-b border-[#21262d] bg-[#0d1117]/90 backdrop-blur-sm print:hidden">
                 <button
                     onClick={() => navigate('/test-cycles')}
                     className="shrink-0 flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors"
@@ -303,15 +275,10 @@ export function CycleReportPage() {
                 <h1 className="flex-1 text-sm font-semibold text-slate-100 truncate">{cycle.name}</h1>
 
                 <button
-                    onClick={downloadPdf}
-                    disabled={downloading}
-                    className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium transition-colors"
+                    onClick={() => window.print()}
+                    className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium transition-colors"
                 >
-                    {downloading ? (
-                        <><Loader2 size={13} className="animate-spin" /> Generating…</>
-                    ) : (
-                        <><Download size={13} /> Download PDF</>
-                    )}
+                    <Download size={13} /> Print / Save PDF
                 </button>
             </header>
 
@@ -319,28 +286,28 @@ export function CycleReportPage() {
             <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">
 
                 {/* ── Header card ─────────────────────────────────────── */}
-                <div className="rounded-xl border border-[#21262d] bg-[#161b22] p-5 flex flex-wrap items-center gap-4">
+                <div className="rounded-xl border border-[#21262d] bg-[#161b22] p-5 flex flex-wrap items-center gap-4 print:bg-white print:border-slate-200">
                     <span className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${CYCLE_STATUS_STYLES[cycle.status] ?? 'bg-slate-700 text-slate-300 border border-slate-600'}`}>
                         {cycle.status === 'COMPLETED' && <CheckCircle2 size={12} />}
-                        {cycle.status === 'RUNNING'   && <Loader2 size={12} className="animate-spin" />}
-                        {cycle.status === 'PENDING'   && <Clock size={12} />}
+                        {cycle.status === 'RUNNING' && <Loader2 size={12} className="animate-spin" />}
+                        {cycle.status === 'PENDING' && <Clock size={12} />}
                         {cycle.status}
                     </span>
                     <span className="text-sm text-slate-400">{formatDate(cycle.createdAt)}</span>
-                    <span className="text-xs font-mono text-slate-500 ml-auto">ID: {cycle._id}</span>
+                    <span className="text-xs font-mono text-slate-500 ml-auto print:text-slate-700">ID: {cycle._id}</span>
                 </div>
 
                 {/* ── Stat cards ─────────────────────────────────────────── */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <StatCard label="Total"      value={total}            accent="border-[#21262d] bg-[#161b22] text-slate-200" />
-                    <StatCard label="Passed"     value={passed}           accent="border-green-800 bg-green-900/20 text-green-300" />
-                    <StatCard label="Failed"     value={failed}           accent="border-red-800 bg-red-900/20 text-red-300" />
-                    <StatCard label="Auto Rate"  value={`${automationRate}%`} accent="border-violet-800 bg-violet-900/20 text-violet-300" />
+                    <StatCard label="Total" value={total} accent="border-[#21262d] bg-[#161b22] text-slate-200" />
+                    <StatCard label="Passed" value={passed} accent="border-green-800 bg-green-900/20 text-green-300" />
+                    <StatCard label="Failed" value={failed} accent="border-red-800 bg-red-900/20 text-red-300" />
+                    <StatCard label="Auto Rate" value={`${automationRate}%`} accent="border-violet-800 bg-violet-900/20 text-violet-300" />
                 </div>
 
                 {/* ── Items list ─────────────────────────────────────────── */}
                 <section>
-                    <h2 className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 mb-3">
+                    <h2 className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 mb-3 print:text-slate-700">
                         Cycle Items ({cycle.items.length})
                     </h2>
                     {cycle.items.length === 0 ? (
@@ -357,7 +324,7 @@ export function CycleReportPage() {
             </main>
 
             {/* ── Footer ──────────────────────────────────────────────── */}
-            <footer className="border-t border-[#21262d] py-4 px-4 sm:px-6 flex items-center justify-center gap-2 text-[11px] text-slate-500">
+            <footer className="border-t border-[#21262d] py-4 px-4 sm:px-6 flex items-center justify-center gap-2 text-[11px] text-slate-500 print:border-slate-200 print:text-slate-600">
                 <span>Generated by Agnostic Automation Center</span>
                 <span className="text-[#21262d]">|</span>
                 <VersionDisplay />

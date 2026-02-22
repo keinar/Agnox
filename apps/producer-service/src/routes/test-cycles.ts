@@ -5,7 +5,7 @@
  *  - POST  /api/test-cycles                       — Create a new hybrid test cycle
  *  - GET   /api/test-cycles                       — List test cycles scoped to org + optional project
  *  - PUT   /api/test-cycles/:cycleId/items/:itemId — Update a single cycle item
- *  - GET   /api/test-cycles/:id/report            — Download cycle as a PDF report
+ *  - GET   /api/test-cycles/:id                   — Fetch a single cycle as JSON
  *
  * All endpoints:
  *  - Are JWT-protected via the global auth middleware.
@@ -16,11 +16,11 @@
  * When a cycle contains AUTOMATED items, the POST handler pushes execution
  * payloads to RabbitMQ so the worker can pick them up. Each payload includes
  * cycleId + cycleItemId for the worker to report results back.
+ *
+ * PDF report generation uses the browser's native print dialog (window.print())
+ * on the client side — no server-side rendering required.
  */
 
-import path from 'path';
-import ejs from 'ejs';
-import { chromium } from 'playwright';
 import { FastifyInstance } from 'fastify';
 import { MongoClient, ObjectId } from 'mongodb';
 import { randomUUID } from 'crypto';
@@ -35,9 +35,6 @@ import type {
     TestStatus,
     CycleStatus,
 } from '../../../../packages/shared-types/index.js';
-
-/** Absolute path to the EJS report template. */
-const REPORT_TEMPLATE_PATH = path.join(__dirname, '..', 'views', 'report-template.ejs');
 
 const VALID_TEST_TYPES = new Set<TestType>(['MANUAL', 'AUTOMATED']);
 const VALID_TEST_STATUSES = new Set<TestStatus>(['PASSED', 'FAILED', 'SKIPPED', 'PENDING', 'RUNNING', 'ERROR']);
@@ -465,119 +462,9 @@ export async function testCycleRoutes(
         }
     });
 
-    // ── GET /api/test-cycles/:id/report ──────────────────────────────────────
-    // Renders the cycle data into an HTML template and converts it to a
-    // downloadable A4 PDF using a headless Playwright Chromium browser.
-
-    app.get('/api/test-cycles/:id/report', { preHandler: [apiRateLimit] }, async (request, reply) => {
-        const organizationId = request.user!.organizationId;
-        const { id } = request.params as { id: string };
-
-        // Validate the cycle ID
-        let cycleObjectId: ObjectId;
-        try {
-            cycleObjectId = new ObjectId(id);
-        } catch {
-            return reply.status(400).send({ success: false, error: 'Invalid cycle ID' });
-        }
-
-        // Fetch the cycle — always scoped to the caller's organization
-        let cycle: (ITestCycle & { _id: ObjectId }) | null = null;
-        try {
-            const raw = await db
-                .collection(TEST_CYCLES_COLLECTION)
-                .findOne({ _id: cycleObjectId, organizationId });
-            cycle = raw as (ITestCycle & { _id: ObjectId }) | null;
-        } catch (err: unknown) {
-            app.log.error(err, '[test-cycles] Failed to fetch cycle for report');
-            return reply.status(500).send({ success: false, error: 'Failed to fetch test cycle' });
-        }
-
-        if (!cycle) {
-            return reply.status(404).send({ success: false, error: 'Test cycle not found' });
-        }
-
-        const items = Array.isArray(cycle.items) ? cycle.items : [];
-        const automatedCount = items.filter((i) => i.type === 'AUTOMATED').length;
-        const manualCount    = items.filter((i) => i.type === 'MANUAL').length;
-        const manualRate     = cycle.summary.total > 0
-            ? Math.round((manualCount / cycle.summary.total) * 100)
-            : 0;
-        const passRate       = cycle.summary.total > 0
-            ? Math.round((cycle.summary.passed / cycle.summary.total) * 100)
-            : 0;
-
-        // Render the EJS template with cycle data
-        let html: string;
-        try {
-            html = await ejs.renderFile(REPORT_TEMPLATE_PATH, {
-                cycle,
-                cycleId:        cycle._id.toString(),
-                projectId:      cycle.projectId ?? '',
-                summary:        cycle.summary,
-                items,
-                automatedCount,
-                manualCount,
-                manualRate,
-                passRate,
-                generatedAt:    new Date().toLocaleString('en-US', {
-                    year: 'numeric', month: 'short', day: 'numeric',
-                    hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
-                }),
-            });
-        } catch (err: unknown) {
-            app.log.error(err, '[test-cycles] Failed to render report template');
-            return reply.status(500).send({ success: false, error: 'Failed to render report template' });
-        }
-
-        // Launch headless Chromium, set HTML content, and generate PDF buffer
-        let pdfBuffer: Buffer;
-        const browser = await chromium.launch({ args: ['--no-sandbox'] });
-        try {
-            const page = await browser.newPage();
-            await page.setContent(html, { waitUntil: 'networkidle' });
-            const raw = await page.pdf({
-                format: 'A4',
-                printBackground: true,
-                margin: { top: '20mm', right: '16mm', bottom: '28mm', left: '16mm' },
-                displayHeaderFooter: true,
-                footerTemplate: `
-                    <div style="width:100%;text-align:center;font-size:8px;color:#475569;font-family:sans-serif;padding-bottom:4mm;">
-                        Confidential — Generated by Agnostic Automation Center
-                        &nbsp;|&nbsp; Page <span class="pageNumber"></span> of <span class="totalPages"></span>
-                    </div>`,
-                headerTemplate: '<span></span>',
-            });
-            pdfBuffer = Buffer.from(raw);
-        } catch (err: unknown) {
-            app.log.error(err, '[test-cycles] Playwright PDF generation failed');
-            return reply.status(500).send({ success: false, error: 'PDF generation failed' });
-        } finally {
-            await browser.close();
-        }
-
-        // Sanitise cycle name for the filename (strip characters unsafe in file names)
-        const safeName = cycle.name
-            .replace(/[^\w\s-]/g, '')
-            .trim()
-            .replace(/\s+/g, '-')
-            .toLowerCase()
-            .slice(0, 80);
-
-        app.log.info(`[test-cycles] Report PDF generated for cycle ${id} (${pdfBuffer.length} bytes)`);
-
-        return reply
-            .status(200)
-            .header('Content-Type', 'application/pdf')
-            .header('Content-Disposition', `attachment; filename="cycle-report-${safeName}.pdf"`)
-            .header('Content-Length', pdfBuffer.length)
-            .send(pdfBuffer);
-    });
-
     app.log.info('✅ Test cycle routes registered');
     app.log.info('  - POST  /api/test-cycles');
     app.log.info('  - GET   /api/test-cycles');
     app.log.info('  - PUT   /api/test-cycles/:cycleId/items/:itemId');
     app.log.info('  - GET   /api/test-cycles/:id');
-    app.log.info('  - GET   /api/test-cycles/:id/report');
 }

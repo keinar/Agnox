@@ -19,5 +19,10 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    hmr: {
+      // Pin HMR WebSocket to the dev-server port — prevents Vite from
+      // probing fallback ports (e.g. 8081) which cause console errors.
+      port: 5173,
+    },
   },
 });
