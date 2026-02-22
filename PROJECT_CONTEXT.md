@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md — Agnostic Automation Center
 
-> Generated: 2026-02-22 | Current Phase: Sprint 10 — PDF Reporting & Automation Infrastructure | Version: 3.1.0
+> Generated: 2026-02-22 | Current Phase: Quality Hub & Reporting Evolution | Version: 3.1.0
 > Source: Full monorepo scan of code, docs, configs, and shared types.
 
 ---
@@ -125,7 +125,7 @@ Agnostic-Automation-Center/
 | 7 (**Complete**) | The Investigation Hub | Unified side-drawer (`ExecutionDrawer.tsx`) with URL-state deep-linking (`?drawerId=<taskId>`), 3-tab layout: Terminal / Artifacts / AI Analysis. `ArtifactsView.tsx` media gallery. `GET /api/executions/:taskId/artifacts` endpoint for filesystem artifact listing. |
 | 8 (**Complete**) | CRON Scheduling & Slack Notifications | Native CRON scheduling engine (`node-cron`) with `scheduler.ts` in-memory job registry, 3 REST endpoints (`POST/GET/DELETE /api/schedules`), `schedules` MongoDB collection. Dual-mode Execution Modal (Immediate / Schedule Run). `SchedulesList` settings tab. Slack Incoming Webhook notifications (`notifier.ts`) on final execution statuses — configured per-org via Integrations tab. |
 | 9 (**Complete**) | Quality Hub: Manual Testing & Hybrid Cycles | Test case repository (`test_cases` collection) with CRUD + AI bulk generation via Gemini. `TestCases.tsx` page with suite-grouped accordions and `TestCaseDrawer.tsx` side drawer. Hybrid cycle builder: `test_cycles` collection, `CycleBuilderDrawer.tsx`, `TestCycles.tsx` page. Manual execution player (`ManualExecutionDrawer.tsx`) with step-by-step Pass/Fail/Skip. Worker→Producer cycle sync via `cycleId`/`cycleItemId`. `PUT /api/test-cycles/:cycleId/items/:itemId` for manual results. |
-| 10 (**In Progress**) | PDF Reporting & Automation Infrastructure | Task 10.3 complete: `VersionDisplay.tsx` component reads `__APP_VERSION__` injected at build time by `vite.config.ts` from root `package.json`. `version.ts` no longer hardcodes the version string. Monorepo bumped to `3.1.0`. Tasks 10.1–10.2 (PDF cycle reports) pending. |
+| 10 (**Complete**) | Reporting & Automation Infrastructure | Live HTML cycle reports (`CycleReportPage.tsx`) with native print optimization. `VersionDisplay.tsx` component reads `__APP_VERSION__` injected at build time from root `package.json`. Automated version pipeline eliminates manual version strings. Print CSS forces manual-step expansion and high-contrast badges for PDF output. |
 
 ### Security Posture (Score: 92/100)
 
