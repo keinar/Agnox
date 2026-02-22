@@ -251,9 +251,12 @@ export function ManualExecutionDrawer({
                                             return (
                                                 <div
                                                     key={step.id}
+                                                    role="button"
+                                                    tabIndex={0}
                                                     className={`flex flex-col gap-3 px-6 py-4 border-b border-slate-100 dark:border-gh-border-dark transition-colors ${isActive ? 'bg-blue-50/50 dark:bg-blue-950/10' : ''
                                                         }`}
                                                     onClick={() => setActiveStepIndex(index)}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveStepIndex(index); }}
                                                 >
                                                     {/* Step header */}
                                                     <div className="flex items-start gap-3">

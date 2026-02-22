@@ -409,11 +409,14 @@ export function TestCycles() {
                                                                                 ? 'cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/40'
                                                                                 : ''
                                                                         }`}
-                                                                        onClick={() => {
-                                                                            if (item.type === 'MANUAL') {
-                                                                                openManualPlayer(cycle, item);
-                                                                            }
-                                                                        }}
+                                                                        {...(item.type === 'MANUAL' && {
+                                                                            role: 'button' as const,
+                                                                            tabIndex: 0,
+                                                                            onClick: () => openManualPlayer(cycle, item),
+                                                                            onKeyDown: (e: React.KeyboardEvent) => {
+                                                                                if (e.key === 'Enter' || e.key === ' ') openManualPlayer(cycle, item);
+                                                                            },
+                                                                        })}
                                                                     >
                                                                         {/* Type icon */}
                                                                         <div className="shrink-0">
