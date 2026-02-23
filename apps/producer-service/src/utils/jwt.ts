@@ -21,6 +21,7 @@ export interface IJWTPayload {
   email: string;
   organizationId: string;
   role: string;
+  isApiKey?: boolean; // Optional flag indicating this is a long-lived API key
   iat?: number; // Issued at (auto-added by jwt.sign)
   exp?: number; // Expiration (auto-added by jwt.sign)
 }
@@ -46,6 +47,30 @@ export function signToken(payload: Omit<IJWTPayload, 'iat' | 'exp'>): string {
   return jwt.sign(payload as object, JWT_SECRET, {
     algorithm: 'HS256',
     expiresIn: JWT_EXPIRY as string,
+    issuer: 'agnostic-automation-center',
+    audience: 'aac-api'
+  } as jwt.SignOptions);
+}
+
+/**
+ * Sign a long-lived JWT token to be used as an API Key
+ * 
+ * @param payload - User and organization data
+ * @returns Signed JWT token string valid for 10 years
+ */
+export function signApiKeyToken(payload: Omit<IJWTPayload, 'iat' | 'exp' | 'isApiKey'>): string {
+  if (!payload.userId || !payload.email || !payload.organizationId || !payload.role) {
+    throw new Error('JWT payload must include userId, email, organizationId, and role');
+  }
+
+  const apiKeyPayload = {
+    ...payload,
+    isApiKey: true
+  };
+
+  return jwt.sign(apiKeyPayload, JWT_SECRET, {
+    algorithm: 'HS256',
+    expiresIn: '10y',
     issuer: 'agnostic-automation-center',
     audience: 'aac-api'
   } as jwt.SignOptions);

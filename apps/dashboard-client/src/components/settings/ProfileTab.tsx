@@ -326,7 +326,7 @@ export function ProfileTab() {
                         </div>
 
                         <p className="mt-4 text-xs text-slate-400 dark:text-slate-500">
-                            Use this key in the <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">x-api-key</code> header for API requests.
+                            Use this key as a Bearer token in the <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">Authorization</code> header, or in the <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">x-api-key</code> header for API requests.
                         </p>
                     </div>
                 </div>

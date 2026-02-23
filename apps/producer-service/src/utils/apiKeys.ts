@@ -41,26 +41,7 @@ export interface IApiKeyValidation {
     keyId?: ObjectId;
 }
 
-const API_KEY_PREFIX = 'pk_live_';
-const API_KEY_RANDOM_BYTES = 24; // 24 bytes = 32 hex chars
-
-/**
- * Generate a new API key
- * 
- * @returns Object containing full key (show once), hash (store), and prefix (display)
- */
-export function generateApiKey(): IGeneratedKey {
-    const randomPart = crypto.randomBytes(API_KEY_RANDOM_BYTES).toString('hex');
-    const fullKey = `${API_KEY_PREFIX}${randomPart}`;
-    const hash = hashApiKey(fullKey);
-    const prefix = fullKey.substring(0, 12) + '...'; // pk_live_abc...
-
-    return {
-        fullKey,
-        hash,
-        prefix,
-    };
-}
+// Removed old hex-based generation logic
 
 /**
  * Hash an API key using SHA-256
@@ -84,8 +65,8 @@ export function hashApiKey(key: string): string {
  * @returns Validation result with user context if valid
  */
 export async function validateApiKey(key: string, db: Db): Promise<IApiKeyValidation> {
-    // Validate key format
-    if (!key || !key.startsWith(API_KEY_PREFIX)) {
+    // Validate key format roughly (JWT strings typically start with 'ey')
+    if (!key || !key.startsWith('ey')) {
         return { valid: false };
     }
 
@@ -145,23 +126,25 @@ export async function updateApiKeyLastUsed(keyId: ObjectId, db: Db): Promise<voi
 /**
  * Create a new API key for a user
  * 
- * @param userId - The user's ObjectId
- * @param organizationId - The organization's ObjectId
+ * @param user - The user context
  * @param name - User-defined name for the key
+ * @param fullKey - The generated long-lived JWT token
  * @param db - MongoDB database instance
  * @returns The full key (show once) and stored key data
  */
 export async function createApiKey(
-    userId: ObjectId,
-    organizationId: ObjectId,
+    user: IUserContext,
     name: string,
+    fullKey: string,
     db: Db
 ): Promise<{ fullKey: string; keyData: IApiKey }> {
-    const { fullKey, hash, prefix } = generateApiKey();
+    const hash = hashApiKey(fullKey);
+    // Use first 15 characters of JWT as a safe visible prefix
+    const prefix = fullKey.substring(0, 15) + '...';
 
     const keyData: IApiKey = {
-        userId,
-        organizationId,
+        userId: new ObjectId(user.userId),
+        organizationId: new ObjectId(user.organizationId),
         name: name.trim() || 'Unnamed Key',
         keyHash: hash,
         prefix,

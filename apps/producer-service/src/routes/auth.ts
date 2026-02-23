@@ -14,7 +14,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { MongoClient, ObjectId } from 'mongodb';
 import Redis from 'ioredis';
 import { hashPassword, comparePassword, validatePasswordStrength } from '../utils/password.js';
-import { signToken, _decodeTokenUnsafe } from '../utils/jwt.js';
+import { signToken, signApiKeyToken, _decodeTokenUnsafe } from '../utils/jwt.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { hashInvitationToken, isValidInvitationTokenFormat, isInvitationExpired } from '../utils/invitation.js';
 import { sendWelcomeEmail } from '../utils/email.js';
@@ -726,10 +726,17 @@ export async function authRoutes(
     const currentUser = request.user!;
 
     try {
+      const generatedToken = signApiKeyToken({
+        userId: currentUser.userId,
+        email: currentUser.email,
+        organizationId: currentUser.organizationId,
+        role: currentUser.role
+      });
+
       const { fullKey, keyData } = await createApiKey(
-        new ObjectId(currentUser.userId),
-        new ObjectId(currentUser.organizationId),
+        currentUser,
         name || 'Unnamed Key',
+        generatedToken,
         db
       );
 
