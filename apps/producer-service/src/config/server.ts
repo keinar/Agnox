@@ -18,7 +18,8 @@ declare module 'fastify' {
     }
 }
 
-const MONGO_URI = process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb://automation-mongodb:27017/automation_platform';
+// SECURITY_PLAN §1.3 — Read platform-namespaced secret; fall back to legacy names during transition
+const MONGO_URI = process.env.PLATFORM_MONGO_URI || process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb://automation-mongodb:27017/automation_platform';
 const DB_NAME = 'automation_platform';
 
 let dbClient: MongoClient;

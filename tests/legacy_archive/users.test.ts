@@ -15,7 +15,7 @@ import axios from 'axios';
 import { MongoClient, Db } from 'mongodb';
 
 const API_URL = process.env.API_URL || 'http://localhost:3000';
-const MONGODB_URL = process.env.MONGODB_URL || 'mongodb://localhost:27017/automation_platform';
+const MONGODB_URL = process.env.PLATFORM_MONGO_URI || process.env.MONGODB_URL || 'mongodb://localhost:27017/automation_platform';
 
 // Colors for console output
 const colors = {
@@ -306,9 +306,9 @@ async function testUserManagement() {
     } catch (error: any) {
       if (error.response?.status === 400 || error.response?.status === 403) {
         if (error.response?.data?.error?.includes('own role') ||
-            error.response?.data?.message?.includes('own role') ||
-            error.response?.data?.error?.includes('sole admin') ||
-            error.response?.data?.message?.includes('last admin')) {
+          error.response?.data?.message?.includes('own role') ||
+          error.response?.data?.error?.includes('sole admin') ||
+          error.response?.data?.message?.includes('last admin')) {
           log('✅ PASS: Admin prevented from changing own role (sole admin protection)', colors.green);
           log(`   Message: ${error.response?.data?.error || error.response?.data?.message}`, colors.blue);
         } else {
@@ -373,9 +373,9 @@ async function testUserManagement() {
       if (error.response?.status === 400 || error.response?.status === 403) {
         const errorMsg = error.response?.data?.error || error.response?.data?.message || '';
         if (errorMsg.includes('last admin') ||
-            errorMsg.includes('sole admin') ||
-            errorMsg.includes('cannot delete') ||
-            errorMsg.includes('yourself')) {
+          errorMsg.includes('sole admin') ||
+          errorMsg.includes('cannot delete') ||
+          errorMsg.includes('yourself')) {
           log('✅ PASS: Last admin correctly protected from deletion', colors.green);
           log(`   Status: ${error.response.status}`, colors.blue);
           log(`   Message: ${errorMsg}`, colors.blue);

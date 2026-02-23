@@ -233,9 +233,26 @@ export async function setupRoutes(
                             : updateData.status === 'FAILED' || updateData.status === 'UNSTABLE' ? 'FAILED'
                                 : 'ERROR';
 
+                    // SECURITY_PLAN §1.2 — IDOR fix: validate IDs and scope by organizationId
+                    if (
+                        !ObjectId.isValid(updateData.cycleId as string) ||
+                        !updateData.organizationId ||
+                        typeof updateData.organizationId !== 'string'
+                    ) {
+                        app.log.warn(
+                            { cycleId: updateData.cycleId, organizationId: updateData.organizationId },
+                            '[cycle-sync] Invalid or missing IDs — aborting cycle update'
+                        );
+                        return;
+                    }
+
                     // Step 1: Update the specific cycle item's status + executionId
+                    // organizationId filter prevents cross-tenant mutation
                     await cyclesCollection.updateOne(
-                        { _id: new ObjectId(updateData.cycleId as string) },
+                        {
+                            _id: new ObjectId(updateData.cycleId as string),
+                            organizationId: updateData.organizationId,
+                        },
                         {
                             $set: {
                                 'items.$[elem].status': itemStatus,
@@ -245,9 +262,10 @@ export async function setupRoutes(
                         { arrayFilters: [{ 'elem.id': updateData.cycleItemId }] },
                     );
 
-                    // Step 2: Re-fetch the cycle to recalculate the summary
+                    // Step 2: Re-fetch the cycle to recalculate the summary (org-scoped)
                     const cycle = await cyclesCollection.findOne({
                         _id: new ObjectId(updateData.cycleId as string),
+                        organizationId: updateData.organizationId,
                     });
 
                     if (cycle && Array.isArray(cycle.items)) {
@@ -264,7 +282,10 @@ export async function setupRoutes(
                         );
 
                         await cyclesCollection.updateOne(
-                            { _id: new ObjectId(updateData.cycleId as string) },
+                            {
+                                _id: new ObjectId(updateData.cycleId as string),
+                                organizationId: updateData.organizationId,
+                            },
                             {
                                 $set: {
                                     summary: { total, passed, failed, automationRate },
@@ -439,13 +460,31 @@ export async function setupRoutes(
         try {
             const startTime = new Date();
 
+            // SECURITY_PLAN §1.3 — Block platform secrets from being injected into containers
+            const PLATFORM_SECRET_BLOCKLIST = new Set([
+                'PLATFORM_MONGO_URI', 'PLATFORM_REDIS_URL', 'PLATFORM_RABBITMQ_URL',
+                'PLATFORM_GEMINI_API_KEY', 'PLATFORM_JWT_SECRET',
+                'PLATFORM_WORKER_CALLBACK_SECRET', 'PLATFORM_API_KEY_HMAC_SECRET',
+            ]);
+
+            // Reject if user-supplied envVars contain any blocked keys
+            const userEnvKeys = Object.keys(config?.envVars ?? {});
+            const blockedUserKeys = userEnvKeys.filter(k => PLATFORM_SECRET_BLOCKLIST.has(k));
+            if (blockedUserKeys.length > 0) {
+                return reply.status(400).send({
+                    error: 'Forbidden environment variable names',
+                    details: `These keys cannot be injected: ${blockedUserKeys.join(', ')}`,
+                });
+            }
+
             const envVarsToInject: Record<string, string> = {};
 
             const varsToInject = (process.env.INJECT_ENV_VARS || '').split(',');
 
             varsToInject.forEach(varName => {
                 const name = varName.trim();
-                if (name && process.env[name]) {
+                // Skip blocked keys even if accidentally configured in INJECT_ENV_VARS
+                if (name && process.env[name] && !PLATFORM_SECRET_BLOCKLIST.has(name)) {
                     envVarsToInject[name] = process.env[name]!;
                 }
             });

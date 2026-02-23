@@ -54,7 +54,7 @@ It uses a **HEREDOC** pattern to regenerate the `.env` file on the server during
             MONGODB_URL=${{ secrets.MONGODB_URL }}
             RABBITMQ_URL=amqp://automation-rabbitmq
             REDIS_URL=redis://automation-redis:6379
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            JWT_SECRET=${{ secrets.PLATFORM_JWT_SECRET }}
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             
             # --- BILLING ---

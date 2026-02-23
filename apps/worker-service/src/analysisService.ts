@@ -2,7 +2,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logger } from './utils/logger.js';
 
 export async function analyzeTestFailure(logs: string, image: string): Promise<string> {
-    const apiKey = process.env.GEMINI_API_KEY;
+    // SECURITY_PLAN §1.3 — Read platform-namespaced key; fall back to legacy during transition
+    const apiKey = process.env.PLATFORM_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
         logger.warn('Missing GEMINI_API_KEY. Skipping analysis.');

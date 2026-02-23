@@ -54,13 +54,19 @@ services:
       - ./apps/worker-service/tests:/app/tests-source:ro
     environment:
       - PORT=3000
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      # MongoDB: Use cloud URI from .env file
-      - MONGO_URI=${MONGO_URI}
-      - MONGODB_URL=${MONGO_URI}
+      # ── Platform-namespaced infrastructure secrets (SECURITY_PLAN §1.3) ────
+      - PLATFORM_MONGO_URI=${PLATFORM_MONGO_URI}
+      - PLATFORM_REDIS_URL=${PLATFORM_REDIS_URL:-redis://redis:6379}
+      - PLATFORM_RABBITMQ_URL=${PLATFORM_RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672}
+      - PLATFORM_JWT_SECRET=${PLATFORM_JWT_SECRET}
+      - PLATFORM_GEMINI_API_KEY=${PLATFORM_GEMINI_API_KEY}
+      # Worker callback auth (SECURITY_PLAN §1.2)
+      - PLATFORM_WORKER_CALLBACK_SECRET=${PLATFORM_WORKER_CALLBACK_SECRET}
+      # Set to 'true' during 24-hour transition window; remove after both services are redeployed
+      - WORKER_CALLBACK_TRANSITION=${WORKER_CALLBACK_TRANSITION:-true}
+      # ── App configuration ──────────────────────────────────────────────────
       - REPORTS_DIR=/app/reports
-      - REDIS_URL=redis://redis:6379
-      - INJECT_ENV_VARS=ADMIN_USER,ADMIN_PASS
+      - INJECT_ENV_VARS=${INJECT_ENV_VARS}
       - ADMIN_USER=${ADMIN_USER:-admin@test.com}
       - ADMIN_PASS=${ADMIN_PASS:-TestPass123!}
       - DEFAULT_TEST_IMAGE=${DEFAULT_TEST_IMAGE}
@@ -69,7 +75,6 @@ services:
       - PRODUCTION_URL=${PRODUCTION_URL}
       - DEFAULT_TEST_FOLDER=${DEFAULT_TEST_FOLDER}
       # Authentication & JWT Configuration
-      - JWT_SECRET=${JWT_SECRET:-dev-secret-CHANGE-IN-PRODUCTION-min-64-chars-required}
       - JWT_EXPIRY=${JWT_EXPIRY:-24h}
       - PASSWORD_SALT_ROUNDS=${PASSWORD_SALT_ROUNDS:-10}
       - DASHBOARD_URL=${DASHBOARD_URL:-http://localhost:8080}
@@ -89,8 +94,6 @@ services:
       - EMAIL_TRACKING_ENABLED=${EMAIL_TRACKING_ENABLED:-true}
       - EMAIL_OPEN_TRACKING=${EMAIL_OPEN_TRACKING:-true}
       - EMAIL_CLICK_TRACKING=${EMAIL_CLICK_TRACKING:-true}
-      # Gemini API (for strict checks)
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-mock_gemini}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
     healthcheck:
       # Simple TCP port check - works reliably in all Node images
@@ -117,12 +120,21 @@ services:
     ipc: host
     environment:
       - RUNNING_IN_DOCKER=true
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      # MongoDB: Use cloud URI from .env file
+      # ── Platform-namespaced infrastructure secrets (SECURITY_PLAN §1.3) ────
+      - PLATFORM_MONGO_URI=${PLATFORM_MONGO_URI}
+      - PLATFORM_REDIS_URL=${PLATFORM_REDIS_URL:-redis://redis:6379}
+      - PLATFORM_RABBITMQ_URL=${PLATFORM_RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672}
+      - PLATFORM_GEMINI_API_KEY=${PLATFORM_GEMINI_API_KEY}
+      # Worker callback auth (SECURITY_PLAN §1.2)
+      - PLATFORM_WORKER_CALLBACK_SECRET=${PLATFORM_WORKER_CALLBACK_SECRET}
+      # ── User-injectable variables (available for test container injection) ──
+      - INJECT_ENV_VARS=${INJECT_ENV_VARS}
       - MONGO_URI=${MONGO_URI}
-      - MONGODB_URL=${MONGO_URI}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ADMIN_USER=${ADMIN_USER:-admin@test.com}
+      - ADMIN_PASS=${ADMIN_PASS:-TestPass123!}
+      # ── App configuration ──────────────────────────────────────────────────
       - PRODUCER_URL=http://producer:3000
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-mock_gemini}
       - BASE_URL=${BASE_URL}
       - CI=true
       - REPORTS_DIR=/app/reports

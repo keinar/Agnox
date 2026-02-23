@@ -13,7 +13,7 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-const MONGO_URI = process.env.MONGODB_URL || 'mongodb://localhost:27017';
+const MONGO_URI = process.env.PLATFORM_MONGO_URI || process.env.MONGODB_URL || 'mongodb://localhost:27017';
 const DB_NAME = 'automation_platform';
 
 async function migrate() {

@@ -327,7 +327,7 @@ if (result.deletedCount === 0) {
 **Current Code:**
 ```typescript
 // apps/producer-service/src/utils/jwt.ts:11
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-CHANGE-IN-PRODUCTION';
+const JWT_SECRET = process.env.PLATFORM_JWT_SECRET || 'dev-secret-CHANGE-IN-PRODUCTION';
 ```
 
 **Recommendation:**
@@ -337,7 +337,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-CHANGE-IN-PRODUCTION';
 
 **Suggested Fix:**
 ```typescript
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-CHANGE-IN-PRODUCTION';
+const JWT_SECRET = process.env.PLATFORM_JWT_SECRET || 'dev-secret-CHANGE-IN-PRODUCTION';
 
 // Fail in production if using default secret
 if (process.env.NODE_ENV === 'production' && JWT_SECRET === 'dev-secret-CHANGE-IN-PRODUCTION') {

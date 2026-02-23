@@ -6,6 +6,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as tar from 'tar-fs';
 import Redis from 'ioredis';
+import { z } from 'zod';
 import { analyzeTestFailure } from './analysisService';
 import { logger } from './utils/logger.js';
 
@@ -13,11 +14,12 @@ dotenv.config();
 
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 
-const MONGO_URI = process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb://localhost:27017';
-const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
+// SECURITY_PLAN §1.3 — Read platform-namespaced secrets; fall back to legacy names during transition
+const MONGO_URI = process.env.PLATFORM_MONGO_URI || process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb://localhost:27017';
+const RABBITMQ_URL = process.env.PLATFORM_RABBITMQ_URL || process.env.RABBITMQ_URL || 'amqp://localhost';
 const DB_NAME = 'automation_platform';
 const COLLECTION_NAME = 'executions';
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+const redis = new Redis(process.env.PLATFORM_REDIS_URL || process.env.REDIS_URL || 'redis://localhost:6379');
 
 function resolveHostForDocker(url: string | undefined): string {
     if (!url) return '';
@@ -27,41 +29,68 @@ function resolveHostForDocker(url: string | undefined): string {
     return url;
 }
 
-function getMergedEnvVars(configEnv: any = {}) {
-    const localKeysToInject = [
-        'API_USER',
-        'API_PASSWORD',
-        'SECRET_KEY',
-        'DB_USER',
-        'DB_PASS',
-        'MONGO_URI',
-        'MONGODB_URL',
-        'REDIS_URL',
-        'GEMINI_API_KEY'
-    ];
+// SECURITY_PLAN §1.3 — Blocklist prevents platform infrastructure secrets from leaking
+// into user containers. Only PLATFORM_* names are blocked; legacy names like MONGO_URI
+// are now safe because the platform no longer reads them.
+const PLATFORM_SECRET_BLOCKLIST = new Set([
+    'PLATFORM_MONGO_URI', 'PLATFORM_REDIS_URL', 'PLATFORM_RABBITMQ_URL',
+    'PLATFORM_GEMINI_API_KEY', 'PLATFORM_JWT_SECRET',
+    'PLATFORM_WORKER_CALLBACK_SECRET', 'PLATFORM_API_KEY_HMAC_SECRET',
+]);
 
-    const injectedEnv: string[] = [];
+// ── SECURITY_PLAN §1.4 — Zod schema for RabbitMQ message validation ──────────
+const TaskMessageSchema = z.object({
+    taskId: z.string().min(1).max(128),
+    organizationId: z.string().min(1).max(64),
+    image: z.string().min(1).max(256),
+    command: z.string().max(1024).optional(),
+    folder: z.string().max(256).optional().default('all'),
+    cycleId: z.string().max(64).optional(),
+    cycleItemId: z.string().max(128).optional(),
+    config: z.object({
+        baseUrl: z.string().max(2048).optional(),
+        envVars: z.record(z.string(), z.string().max(4096)).optional().default({}),
+        environment: z.enum(['development', 'staging', 'production']).optional(),
+    }).passthrough().optional().default(() => ({ envVars: {} })),
+    aiAnalysisEnabled: z.boolean().optional().default(false),
+    groupName: z.string().max(256).optional(),
+    batchId: z.string().max(128).optional(),
+    framework: z.string().max(64).optional(),
+});
+type ITaskMessage = z.infer<typeof TaskMessageSchema>;
 
-    Object.entries(configEnv).forEach(([k, v]) => {
-        let value = v as string;
-        if (['BASE_URL', 'MONGO_URI', 'MONGODB_URL'].includes(k)) {
-            value = resolveHostForDocker(value);
-        }
-        injectedEnv.push(`${k}=${value}`);
-    });
+// ── SECURITY_PLAN §1.5 — Fatal log pattern detection ─────────────────────────
+const FATAL_LOG_PATTERNS = [
+    /FATAL ERROR/i,
+    /JavaScript heap out of memory/i,
+    /Segmentation fault/i,
+    /MONGO_URI is not set/i,
+];
 
-    localKeysToInject.forEach(key => {
-        if (!configEnv[key] && process.env[key]) {
-            logger.debug({ key }, 'Injecting local env var');
-            let value = process.env[key]!;
-            if (['BASE_URL', 'MONGO_URI', 'MONGODB_URL'].includes(key)) {
-                value = resolveHostForDocker(value);
-            }
-            injectedEnv.push(`${key}=${value}`);
-        }
-    });
+function containsFatalPattern(logs: string): boolean {
+    return FATAL_LOG_PATTERNS.some(p => p.test(logs));
+}
 
-    return injectedEnv;
+function getMergedEnvVars(task: { envVars?: Record<string, string>; baseUrl?: string }, resolvedBaseUrl: string): Record<string, string> {
+    // 1. Safe platform-provided constants — no secrets
+    const merged: Record<string, string> = {
+        CI: 'true',
+        BASE_URL: resolvedBaseUrl,
+    };
+
+    // 2. INJECT_ENV_VARS from platform env — filtered through blocklist
+    const platformInjected = (process.env.INJECT_ENV_VARS ?? '')
+        .split(',').map(k => k.trim()).filter(k => k && !PLATFORM_SECRET_BLOCKLIST.has(k));
+    for (const key of platformInjected) {
+        if (process.env[key] !== undefined) merged[key] = process.env[key]!;
+    }
+
+    // 3. Per-execution user-supplied envVars (from task message, validated upstream)
+    for (const [k, v] of Object.entries(task.envVars ?? {})) {
+        if (!PLATFORM_SECRET_BLOCKLIST.has(k)) merged[k] = v;
+    }
+
+    return merged;
 }
 
 async function updatePerformanceMetrics(testName: string, durationMs: number, organizationId: string) {
@@ -110,20 +139,32 @@ async function startWorker() {
     channel.consume('test_queue', async (msg: ConsumeMessage | null) => {
         if (!msg) return;
 
-        const task = JSON.parse(msg.content.toString());
+        // SECURITY_PLAN §1.4 — Validate message with Zod schema before processing
+        let task: ITaskMessage;
+        try {
+            const raw = JSON.parse(msg.content.toString());
+            const parseResult = TaskMessageSchema.safeParse(raw);
+            if (!parseResult.success) {
+                logger.error(
+                    { errors: parseResult.error.format() },
+                    'RabbitMQ message failed schema validation. Rejecting (no requeue).'
+                );
+                channel!.nack(msg, false, false);
+                return;
+            }
+            task = parseResult.data;
+        } catch (jsonError) {
+            logger.error({ error: String(jsonError) }, 'RabbitMQ message is not valid JSON. Rejecting.');
+            channel!.nack(msg, false, false);
+            return;
+        }
+
         const { taskId, image: rawImage, command, config, organizationId, groupName, batchId, framework, cycleId, cycleItemId } = task;
         const image = rawImage?.trim();
 
         if (!image) {
             logger.error({ taskId }, 'Image name is empty or invalid. Rejecting task.');
             channel!.nack(msg, false, false);
-            return;
-        }
-
-        // Multi-tenant: Use organizationId as STRING (matches JWT and backend)
-        if (!organizationId) {
-            logger.error({ taskId }, 'Task missing organizationId. Rejecting message.');
-            channel!.nack(msg, false, false); // Don't requeue
             return;
         }
 
@@ -226,10 +267,10 @@ async function startWorker() {
             logger.info({
                 configBaseUrl: config.baseUrl,
                 envBaseUrl: process.env.BASE_URL,
-                resolvedDockerHost: resolveHostForDocker(config.baseUrl)
+                resolvedDockerHost: resolveHostForDocker(config.baseUrl as string | undefined)
             }, '[URL] Resolving target URL');
 
-            const targetBaseUrl = resolveHostForDocker(config.baseUrl || process.env.BASE_URL || 'http://host.docker.internal:3000');
+            const targetBaseUrl = resolveHostForDocker(config.baseUrl as string || process.env.BASE_URL || 'http://host.docker.internal:3000');
 
             // Multi-tenant: Include organizationId in container name for isolation
             const containerName = `org_${organizationId}_task_${taskId}`;
@@ -239,16 +280,26 @@ async function startWorker() {
                 Image: image,
                 Tty: true,
                 Cmd: agnosticCommand,
-                Env: [
-                    `BASE_URL=${targetBaseUrl}`,
-                    `TASK_ID=${taskId}`,
-                    `CI=true`,
-                    `FRAMEWORK_AGNOSTIC=true`,
-                    ...getMergedEnvVars(config.envVars)
-                ],
+                // SECURITY_PLAN §1.3 — getMergedEnvVars() filters all PLATFORM_* secrets
+                Env: Object.entries({
+                    ...getMergedEnvVars(
+                        { envVars: config.envVars, baseUrl: config.baseUrl },
+                        targetBaseUrl
+                    ),
+                    TASK_ID: taskId,
+                    FRAMEWORK_AGNOSTIC: 'true',
+                }).map(([k, v]) => `${k}=${v}`),
+                // SECURITY_PLAN §1.4 — Container security limits
                 HostConfig: {
                     AutoRemove: false, // CRITICAL: Must be false so we can copy files after exit
-                    ExtraHosts: process.platform === 'linux' ? ['host.docker.internal:host-gateway'] : undefined
+                    ExtraHosts: process.platform === 'linux' ? ['host.docker.internal:host-gateway'] : undefined,
+                    Memory: 2 * 1024 * 1024 * 1024,  // 2 GB
+                    MemorySwap: 2 * 1024 * 1024 * 1024,  // no swap
+                    NanoCpus: 2 * 1e9,                 // 2 CPUs
+                    PidsLimit: 512,                     // prevent fork bombs
+                    SecurityOpt: ['no-new-privileges:true'],
+                    CapDrop: ['ALL'],
+                    CapAdd: [],
                 },
                 WorkingDir: '/app'
             });
@@ -296,6 +347,12 @@ async function startWorker() {
                 } else {
                     finalStatus = 'FAILED';
                 }
+            }
+
+            // SECURITY_PLAN §1.5 — Force FAILED if fatal patterns detected in logs
+            if (finalStatus === 'PASSED' && containsFatalPattern(logsString)) {
+                logger.warn({ taskId }, 'Container exited 0 but FATAL ERROR detected in logs. Forcing FAILED.');
+                finalStatus = 'FAILED';
             }
 
             const duration = new Date().getTime() - startTime.getTime();
@@ -506,10 +563,15 @@ function stripAnsi(text: string) {
 
 async function sendLogToProducer(taskId: string, log: string, organizationId: string) {
     const PRODUCER_URL = process.env.PRODUCER_URL || 'http://producer:3000';
+    // SECURITY_PLAN §1.2 — Include shared secret so the producer can authenticate this callback
+    const CALLBACK_HEADERS = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.PLATFORM_WORKER_CALLBACK_SECRET ?? ''}`,
+    };
     try {
         await fetch(`${PRODUCER_URL}/executions/log`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: CALLBACK_HEADERS,
             // Multi-tenant: Include organizationId for room-based broadcasting
             body: JSON.stringify({ taskId, log, organizationId })
         });
@@ -527,10 +589,15 @@ async function pullImage(image: string) {
 
 async function notifyProducer(data: any) {
     const PRODUCER_URL = process.env.PRODUCER_URL || 'http://producer:3000';
+    // SECURITY_PLAN §1.2 — Include shared secret so the producer can authenticate this callback
+    const CALLBACK_HEADERS = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.PLATFORM_WORKER_CALLBACK_SECRET ?? ''}`,
+    };
     try {
         await fetch(`${PRODUCER_URL}/executions/update`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: CALLBACK_HEADERS,
             body: JSON.stringify(data)
         });
     } catch (e) {

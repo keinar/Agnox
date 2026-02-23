@@ -12,7 +12,7 @@ import { initScheduler, stopAllJobs } from './utils/scheduler.js';
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 // Initialize Redis client
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+const redis = new Redis(process.env.PLATFORM_REDIS_URL || process.env.REDIS_URL || 'redis://localhost:6379');
 
 /**
  * Main startup function

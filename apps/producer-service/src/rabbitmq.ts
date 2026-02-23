@@ -5,7 +5,7 @@ export class RabbitMqService {
     private connection: Awaited<ReturnType<typeof amqp.connect>> | null = null;
 
     async connect() {
-        const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost';
+        const RABBITMQ_URL = process.env.PLATFORM_RABBITMQ_URL || process.env.RABBITMQ_URL || 'amqp://localhost';
         const maxRetries = 15;
         let retries = maxRetries;
         let delay = 2000; // Start with 2 seconds

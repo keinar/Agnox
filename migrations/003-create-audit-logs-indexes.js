@@ -20,7 +20,7 @@ const path = require('path');
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-const MONGO_URI = process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb://localhost:27017/automation_platform';
+const MONGO_URI = process.env.PLATFORM_MONGO_URI || process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb://localhost:27017/automation_platform';
 const DB_NAME = 'automation_platform';
 
 async function createAuditLogIndexes() {

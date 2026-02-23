@@ -21,7 +21,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
 const API_URL = process.env.API_URL || 'http://localhost:3000';
-const MONGODB_URL = process.env.MONGODB_URL || 'mongodb://localhost:27017/automation_platform';
+const MONGODB_URL = process.env.PLATFORM_MONGO_URI || process.env.MONGODB_URL || 'mongodb://localhost:27017/automation_platform';
 
 // Colors for console output
 const colors = {
@@ -84,7 +84,7 @@ async function createTestUserInDB(email: string, password: string, name: string,
 
 // Helper: Generate JWT for test user (bypasses login for testing)
 async function generateTestJWT(userId: string, organizationId: string, role: string): Promise<string> {
-  const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-change-in-production';
+  const JWT_SECRET = process.env.PLATFORM_JWT_SECRET || 'test-secret-key-change-in-production';
 
   const token = jwt.sign(
     {
@@ -309,7 +309,7 @@ async function testInvitationSystem() {
       });
 
       const userLimit = orgInfo.data.data?.organization?.limits?.maxUsers ||
-                       orgInfo.data.data?.organization?.userLimit || 3;
+        orgInfo.data.data?.organization?.userLimit || 3;
       const currentUsers = orgInfo.data.data?.organization?.userCount || 1;
 
       log(`   Organization limit: ${userLimit} users`, colors.blue);
@@ -339,8 +339,8 @@ async function testInvitationSystem() {
       }
     } catch (error: any) {
       if (error.response?.status === 403 &&
-          (error.response?.data?.error?.includes('limit') ||
-           error.response?.data?.message?.includes('limit'))) {
+        (error.response?.data?.error?.includes('limit') ||
+          error.response?.data?.message?.includes('limit'))) {
         log('✅ PASS: User limit correctly enforced', colors.green);
         log(`   Message: ${error.response?.data?.error || error.response?.data?.message}`, colors.blue);
       } else if (error.message.includes('not enforced')) {
@@ -456,7 +456,7 @@ async function testInvitationSystem() {
       log('\n✅ PASS: Token security verified - tokens are hashed correctly', colors.bold + colors.green);
     } catch (error: any) {
       if (error.message.includes('security validation failed') ||
-          error.message.includes('SECURITY ISSUES')) {
+        error.message.includes('SECURITY ISSUES')) {
         throw error;
       }
       log(`❌ FAIL: ${error.message}`, colors.red);

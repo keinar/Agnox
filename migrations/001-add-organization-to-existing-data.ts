@@ -19,7 +19,7 @@ import { MongoClient, ObjectId } from 'mongodb';
 import * as bcrypt from 'bcrypt';
 
 // Configuration
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017';
+const MONGO_URI = process.env.PLATFORM_MONGO_URI || process.env.MONGO_URI || 'mongodb://localhost:27017';
 const DB_NAME = 'automation_platform';
 const DEFAULT_ORG_ID = new ObjectId();
 const DEFAULT_ADMIN_PASSWORD = 'admin123'; // Change after first login!

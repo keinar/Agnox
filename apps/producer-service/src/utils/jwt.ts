@@ -8,7 +8,7 @@
 import jwt from 'jsonwebtoken';
 
 // JWT Configuration from environment
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-CHANGE-IN-PRODUCTION';
+const JWT_SECRET = process.env.PLATFORM_JWT_SECRET || 'dev-secret-CHANGE-IN-PRODUCTION';
 const JWT_EXPIRY = process.env.JWT_EXPIRY || '24h';
 
 /**

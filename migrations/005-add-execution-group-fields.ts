@@ -16,6 +16,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 const MONGO_URI =
+    process.env.PLATFORM_MONGO_URI ||
     process.env.MONGODB_URL ||
     process.env.MONGO_URI ||
     'mongodb://localhost:27017';

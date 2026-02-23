@@ -81,21 +81,21 @@ user-supplied and does not match any platform-internal name.
 
 *This is out-of-band work — no code change, but it must happen first.*
 
-- [ ] Rotate MongoDB Atlas password for `automation_user`
-- [ ] Revoke and re-issue `GEMINI_API_KEY` in Google Cloud Console
-- [ ] Change `keinarelkayam@gmail.com` admin password and enable MFA
-- [ ] Purge `.env.server` from full git history:
+- [x] Rotate MongoDB Atlas password for `automation_user`
+- [x] Revoke and re-issue `GEMINI_API_KEY` in Google Cloud Console
+- [x] Change `keinarelkayam@gmail.com` admin password and enable MFA
+- [x] Purge `.env.server` from full git history:
   ```bash
   git filter-repo --path .env.server --invert-paths --force
   ```
-- [ ] Add to root `.gitignore`:
+- [x] Add to root `.gitignore`:
   ```
   .env.server
   .env.*.local
   .env.local
   ```
-- [ ] Verify `.env.example` contains only placeholder values — no real credentials
-- [ ] Notify all repository collaborators to re-clone (cached clones may still contain secrets)
+- [x] Verify `.env.example` contains only placeholder values — no real credentials
+- [x] Notify all repository collaborators to re-clone (cached clones may still contain secrets)
 
 ---
 
@@ -191,15 +191,15 @@ await cyclesCollection.updateOne(
 );
 ```
 
-- [ ] Add `PLATFORM_WORKER_CALLBACK_SECRET` (64-char random hex) to `.env.server`
-- [ ] Add `PLATFORM_WORKER_CALLBACK_SECRET` to `docker-compose.yml` and `docker-compose.prod.yml`
-- [ ] Register worker-secret `onRequest` hook in `middleware.ts` (before JWT hook)
-- [ ] Add `FastifyRequest.isWorkerCallback` type declaration
-- [ ] Update Worker `fetch` calls to include `Authorization` header
-- [ ] Add `organizationId` filter to `cyclesCollection.updateOne` in routes.ts
-- [ ] Add `ObjectId.isValid()` guards before the cycle sync query
-- [ ] Set `WORKER_CALLBACK_TRANSITION=true` on initial deploy
-- [ ] Remove `WORKER_CALLBACK_TRANSITION` after 24-hour window
+- [x] Add `PLATFORM_WORKER_CALLBACK_SECRET` (64-char random hex) to `.env.server`
+- [x] Add `PLATFORM_WORKER_CALLBACK_SECRET` to `docker-compose.yml` and `docker-compose.prod.yml`
+- [x] Register worker-secret `onRequest` hook in `middleware.ts` (before JWT hook)
+- [x] Add `FastifyRequest.isWorkerCallback` type declaration
+- [x] Update Worker `fetch` calls to include `Authorization` header
+- [x] Add `organizationId` filter to `cyclesCollection.updateOne` in routes.ts
+- [x] Add `ObjectId.isValid()` guards before the cycle sync query
+- [x] Set `WORKER_CALLBACK_TRANSITION=true` on initial deploy
+- [x] Remove `WORKER_CALLBACK_TRANSITION` after 24-hour window
 
 ---
 
@@ -251,15 +251,15 @@ function getMergedEnvVars(task: ITaskMessage, resolvedBaseUrl: string): Record<s
 }
 ```
 
-- [ ] Rename all platform secrets to `PLATFORM_*` in `.env.server`
-- [ ] Update `docker-compose.yml` environment blocks to use `PLATFORM_*` names
-- [ ] Update `docker-compose.prod.yml` environment blocks
-- [ ] Update all `process.env.MONGO_URI` / `process.env.MONGODB_URL` reads in producer-service to `PLATFORM_MONGO_URI`
-- [ ] Update all `process.env.GEMINI_API_KEY` reads in worker-service to `PLATFORM_GEMINI_API_KEY`
-- [ ] Rewrite `getMergedEnvVars()` in `worker.ts` per spec above
-- [ ] Remove `localKeysToInject` array entirely from `worker.ts`
-- [ ] Update `.env.example` to document `PLATFORM_*` naming convention
-- [ ] Validate `INJECT_ENV_VARS` in `/api/execution-request` handler — reject any value in blocklist
+- [x] Rename all platform secrets to `PLATFORM_*` in `.env.server`
+- [x] Update `docker-compose.yml` environment blocks to use `PLATFORM_*` names
+- [x] Update `docker-compose.prod.yml` environment blocks
+- [x] Update all `process.env.MONGO_URI` / `process.env.MONGODB_URL` reads in producer-service to `PLATFORM_MONGO_URI`
+- [x] Update all `process.env.GEMINI_API_KEY` reads in worker-service to `PLATFORM_GEMINI_API_KEY`
+- [x] Rewrite `getMergedEnvVars()` in `worker.ts` per spec above
+- [x] Remove `localKeysToInject` array entirely from `worker.ts`
+- [x] Update `.env.example` to document `PLATFORM_*` naming convention
+- [x] Validate `INJECT_ENV_VARS` in `/api/execution-request` handler — reject any value in blocklist
 
 ---
 
@@ -313,13 +313,13 @@ HostConfig: {
 }
 ```
 
-- [ ] Define `TaskMessageSchema` (Zod) at the top of `worker.ts`
-- [ ] Replace raw `JSON.parse` + destructure with `TaskMessageSchema.safeParse()`
-- [ ] Log and `nack(msg, false, false)` on parse failure
-- [ ] Define `ALLOWED_IMAGE_REGISTRIES` env var (optional allowlist, comma-separated)
-- [ ] Add registry allowlist check after schema parse
-- [ ] Add `HostConfig` resource and security limits to `createContainer` call
-- [ ] Verify test containers do NOT receive `/var/run/docker.sock` bind mount
+- [x] Define `TaskMessageSchema` (Zod) at the top of `worker.ts`
+- [x] Replace raw `JSON.parse` + destructure with `TaskMessageSchema.safeParse()`
+- [x] Log and `nack(msg, false, false)` on parse failure
+- [x] Define `ALLOWED_IMAGE_REGISTRIES` env var (optional allowlist, comma-separated)
+- [x] Add registry allowlist check after schema parse
+- [x] Add `HostConfig` resource and security limits to `createContainer` call
+- [x] Verify test containers do NOT receive `/var/run/docker.sock` bind mount
 
 ---
 
@@ -356,10 +356,10 @@ if (exitCode !== 0) {
 }
 ```
 
-- [ ] Add `FATAL_LOG_PATTERNS` constant array to `worker.ts`
-- [ ] Add `containsFatalPattern()` helper function
-- [ ] Replace current `exitCode !== 0 ? 'FAILED' : 'PASSED'` logic with three-way check
-- [ ] Add `logger.warn` for the exit-0-but-fatal case (structured, not `console.log`)
+- [x] Add `FATAL_LOG_PATTERNS` constant array to `worker.ts`
+- [x] Add `containsFatalPattern()` helper function
+- [x] Replace current `exitCode !== 0 ? 'FAILED' : 'PASSED'` logic with three-way check
+- [x] Add `logger.warn` for the exit-0-but-fatal case (structured, not `console.log`)
 
 ---
 
@@ -517,9 +517,9 @@ execFileSync('allure', ['generate', allureResultsDir, '--clean', '-o', allureRep
 });
 ```
 
-- [ ] Replace `execSync` import with `execFileSync`
-- [ ] Convert shell string template to `execFileSync` argv array
-- [ ] Verify no other `execSync` calls remain in `worker.ts`
+- [x] Replace `execSync` import with `execFileSync`
+- [x] Convert shell string template to `execFileSync` argv array
+- [x] Verify no other `execSync` calls remain in `worker.ts`
 
 ---
 
@@ -667,16 +667,16 @@ Step 5: Set WORKER_CALLBACK_TRANSITION=false (or remove var) after 24 hours
 
 | Sprint | Finding | Status |
 |---|---|---|
-| Pre-work | CRIT-1 — Rotate credentials & purge git history | ⬜ Not Started |
-| Sprint 1 | CRIT-3 — Worker callback secret handshake | ⬜ Not Started |
-| Sprint 1 | CRIT-2 — Platform prefix rename & container env hardening | ⬜ Not Started |
-| Sprint 1 | CRIT-4 — RabbitMQ Zod schema + Docker HostConfig | ⬜ Not Started |
-| Sprint 1 | Logic — FATAL ERROR → FAILED status resolution | ⬜ Not Started |
+| Pre-work | CRIT-1 — Rotate credentials & purge git history | ✅ Done |
+| Sprint 1 | CRIT-3 — Worker callback secret handshake | ✅ Done |
+| Sprint 1 | CRIT-2 — Platform prefix rename & container env hardening | ✅ Done |
+| Sprint 1 | CRIT-4 — RabbitMQ Zod schema + Docker HostConfig | ✅ Done |
+| Sprint 1 | Logic — FATAL ERROR → FAILED status resolution | ✅ Done |
 | Sprint 2 | HIGH-6 — Signed tokens for report access | ⬜ Not Started |
 | Sprint 2 | HIGH-3 — Jira SSRF domain validation | ⬜ Not Started |
 | Sprint 2 | HIGH-7 — Slack SSRF + encryption (new records) | ⬜ Not Started |
 | Sprint 2 | HIGH-4 — Jira custom fields injection | ⬜ Not Started |
-| Sprint 2 | HIGH-5 — `execSync` → `execFileSync` | ⬜ Not Started |
+| Sprint 2 | HIGH-5 — `execSync` → `execFileSync` | ✅ Done |
 | Sprint 3 | HIGH-8 — JWT blacklist on logout | ⬜ Not Started |
 | Sprint 3 | HIGH-1 — JWT algorithm pinning (HS256) | ⬜ Not Started |
 | Sprint 3 | HIGH-2 — JWT secret redaction in logs | ⬜ Not Started |

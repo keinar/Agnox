@@ -31,28 +31,25 @@ jobs:
       - name: System Sanity Tests
         run: npm run test:system
         env:
-          # --- Database Configuration ---
-          # Must match docker-compose.yml service name and database name
-          MONGODB_URL: "mongodb://mongodb:27017/automation_platform"
-          MONGO_URI: "mongodb://mongodb:27017/automation_platform"
-          
-          # --- Infrastructure Services ---
-          # Must match docker-compose.yml service names and credentials
-          RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
-          REDIS_URL: "redis://redis:6379"
-          API_URL: "http://producer:3000"
+          # --- Platform Infrastructure Secrets (PLATFORM_* prefix) ---
+          PLATFORM_MONGO_URI: "mongodb://mongodb:27017/automation_platform"
+          PLATFORM_REDIS_URL: "redis://redis:6379"
+          PLATFORM_RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
+          PLATFORM_JWT_SECRET: "ci-test-jwt-secret-for-pipeline-testing-64chars-minimum-required"
+          PLATFORM_GEMINI_API_KEY: "mock_gemini"
+          PLATFORM_WORKER_CALLBACK_SECRET: "ci-test-worker-callback-secret-64chars-minimum"
           
           # --- App Config ---
+          API_URL: "http://producer:3000"
           NODE_ENV: production
+          INJECT_ENV_VARS: "ADMIN_USER,ADMIN_PASS"
           ADMIN_USER: "admin@test.com"
           ADMIN_PASS: "TestPass123!"
           
           # --- Mock Secrets (Bypass strict production checks) ---
-          JWT_SECRET: "ci-test-jwt-secret-for-pipeline-testing-64chars-minimum-required"
           STRIPE_SECRET_KEY: "sk_test_mock_key"
           STRIPE_PUBLISHABLE_KEY: "pk_test_mock_key"
           STRIPE_WEBHOOK_SECRET: "whsec_mock"
-          GEMINI_API_KEY: "mock_gemini"
           SENDGRID_API_KEY: "SG.mock_sendgrid"
 
   # Job 2: Deployment
@@ -74,19 +71,26 @@ jobs:
             git clean -fd
             
             cat <<EOF > .env
-            MONGODB_URL=${{ secrets.MONGO_URI }}
+            # Platform Infrastructure Secrets (SECURITY_PLAN §1.3)
+            PLATFORM_MONGO_URI=${{ secrets.MONGO_URI }}
+            PLATFORM_REDIS_URL=${{ secrets.REDIS_URL }}
+            PLATFORM_RABBITMQ_URL=${{ secrets.RABBITMQ_URL }}
+            PLATFORM_JWT_SECRET=${{ secrets.PLATFORM_JWT_SECRET }}
+            PLATFORM_GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            PLATFORM_WORKER_CALLBACK_SECRET=${{ secrets.PLATFORM_WORKER_CALLBACK_SECRET }}
+            WORKER_CALLBACK_TRANSITION=false
+            # User-injectable test variables
             MONGO_URI=${{ secrets.MONGO_URI }}
-            RABBITMQ_URL=${{ secrets.RABBITMQ_URL }}
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             ADMIN_USER=${{ secrets.ADMIN_USER }}
             ADMIN_PASS=${{ secrets.ADMIN_PASS }}
+            INJECT_ENV_VARS=${{ secrets.INJECT_ENV_VARS }}
+            # App Configuration
             DEFAULT_TEST_IMAGE=${{ secrets.DEFAULT_TEST_IMAGE }}
             DEFAULT_BASE_URL=${{ secrets.DEFAULT_BASE_URL }}
             DEFAULT_TEST_FOLDER=${{ secrets.DEFAULT_TEST_FOLDER }}
             VITE_API_URL=${{ secrets.VITE_API_URL }}
             PUBLIC_API_URL=${{ secrets.PUBLIC_API_URL }}
-            INJECT_ENV_VARS=${{ secrets.INJECT_ENV_VARS }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
             JWT_EXPIRY=24h
             PASSWORD_SALT_ROUNDS=10
             NODE_ENV=production
