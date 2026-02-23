@@ -82,23 +82,31 @@ export async function authMiddleware(
   }
 
   // Verify token
-  const payload = verifyToken(token);
+  try {
+    const payload = await verifyToken(token);
 
-  if (!payload) {
+    if (!payload) {
+      return reply.code(401).send({
+        success: false,
+        error: 'Invalid token',
+        message: 'Token is invalid or expired. Please login again.'
+      });
+    }
+
+    // Inject user context into request
+    request.user = {
+      userId: payload.userId,
+      email: payload.email,
+      organizationId: payload.organizationId,
+      role: payload.role as 'admin' | 'developer' | 'viewer'
+    };
+  } catch (err: any) {
     return reply.code(401).send({
       success: false,
       error: 'Invalid token',
-      message: 'Token is invalid or expired. Please login again.'
+      message: err.message || 'Token is invalid or expired. Please login again.'
     });
   }
-
-  // Inject user context into request
-  request.user = {
-    userId: payload.userId,
-    email: payload.email,
-    organizationId: payload.organizationId,
-    role: payload.role as 'admin' | 'developer' | 'viewer'
-  };
 
   // Log authentication (optional, useful for debugging)
   if (process.env.LOG_AUTH === 'true') {
@@ -163,22 +171,30 @@ export function createApiKeyAuthMiddleware(db: any) {
       });
     }
 
-    const payload = verifyToken(token);
+    try {
+      const payload = await verifyToken(token);
 
-    if (!payload) {
+      if (!payload) {
+        return reply.code(401).send({
+          success: false,
+          error: 'Invalid token',
+          message: 'Token is invalid or expired. Please login again.'
+        });
+      }
+
+      request.user = {
+        userId: payload.userId,
+        email: payload.email,
+        organizationId: payload.organizationId,
+        role: payload.role as 'admin' | 'developer' | 'viewer'
+      };
+    } catch (err: any) {
       return reply.code(401).send({
         success: false,
         error: 'Invalid token',
-        message: 'Token is invalid or expired. Please login again.'
+        message: err.message || 'Token is invalid or expired. Please login again.'
       });
     }
-
-    request.user = {
-      userId: payload.userId,
-      email: payload.email,
-      organizationId: payload.organizationId,
-      role: payload.role as 'admin' | 'developer' | 'viewer'
-    };
 
     if (process.env.LOG_AUTH === 'true') {
       console.log(`[AUTH/JWT] User ${request.user.userId} (${request.user.role}) from org ${request.user.organizationId}`);
@@ -290,16 +306,21 @@ export async function optionalAuth(
     return;
   }
 
-  const payload = verifyToken(token);
+  try {
+    const payload = await verifyToken(token);
 
-  if (payload) {
-    // Valid token - inject user context
-    request.user = {
-      userId: payload.userId,
-      email: payload.email,
-      organizationId: payload.organizationId,
-      role: payload.role as 'admin' | 'developer' | 'viewer'
-    };
+    if (payload) {
+      // Valid token - inject user context
+      request.user = {
+        userId: payload.userId,
+        email: payload.email,
+        organizationId: payload.organizationId,
+        role: payload.role as 'admin' | 'developer' | 'viewer'
+      };
+    }
+  } catch (err) {
+    // If token is invalid/revoked, we just treat them as anonymous
+    return;
   }
   // Invalid token - ignore and continue without user context
 }
@@ -358,73 +379,6 @@ export function verifyOrganizationOwnership(
   };
 }
 
-/**
- * Rate limiting middleware (basic implementation)
- *
- * Limits requests per organization to prevent abuse.
- * Uses in-memory storage (replace with Redis in production).
- *
- * @param maxRequests - Maximum requests allowed
- * @param windowMs - Time window in milliseconds
- * @returns Middleware function
- *
- * @example
- * app.post('/api/auth/login', {
- *   preHandler: rateLimit(5, 60000) // 5 requests per minute
- * }, async (request, reply) => {
- *   // Login logic
- * });
- */
-const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
-
-export function rateLimit(maxRequests: number, windowMs: number) {
-  return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-    // Use IP address for unauthenticated requests, organizationId for authenticated
-    const key = request.user?.organizationId || request.ip;
-    const now = Date.now();
-
-    // Get or create rate limit entry
-    let entry = rateLimitStore.get(key);
-
-    if (!entry || now > entry.resetAt) {
-      // Create new entry or reset expired entry
-      entry = { count: 0, resetAt: now + windowMs };
-      rateLimitStore.set(key, entry);
-    }
-
-    // Increment request count
-    entry.count++;
-
-    // Check if limit exceeded
-    if (entry.count > maxRequests) {
-      const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
-
-      return reply.code(429).send({
-        success: false,
-        error: 'Too many requests',
-        message: `Rate limit exceeded. Please try again in ${retryAfter} seconds.`,
-        retryAfter
-      });
-    }
-
-    // Add rate limit headers
-    reply.header('X-RateLimit-Limit', maxRequests.toString());
-    reply.header('X-RateLimit-Remaining', (maxRequests - entry.count).toString());
-    reply.header('X-RateLimit-Reset', new Date(entry.resetAt).toISOString());
-  };
-}
-
-/**
- * Cleanup old rate limit entries (run periodically)
- */
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitStore.entries()) {
-    if (now > entry.resetAt) {
-      rateLimitStore.delete(key);
-    }
-  }
-}, 60000); // Cleanup every minute
 
 console.log('🛡️  Authentication Middleware Loaded');
 console.log('  - JWT verification enabled');

@@ -6,6 +6,7 @@
  */
 
 import jwt from 'jsonwebtoken';
+import { redis } from '../config/redis.js';
 
 // JWT Configuration from environment
 const JWT_SECRET = process.env.PLATFORM_JWT_SECRET || 'dev-secret-CHANGE-IN-PRODUCTION';
@@ -43,6 +44,7 @@ export function signToken(payload: Omit<IJWTPayload, 'iat' | 'exp'>): string {
   }
 
   return jwt.sign(payload as object, JWT_SECRET, {
+    algorithm: 'HS256',
     expiresIn: JWT_EXPIRY as string,
     issuer: 'agnostic-automation-center',
     audience: 'aac-api'
@@ -63,9 +65,10 @@ export function signToken(payload: Omit<IJWTPayload, 'iat' | 'exp'>): string {
  *   console.log('Invalid token');
  * }
  */
-export function verifyToken(token: string): IJWTPayload | null {
+export async function verifyToken(token: string): Promise<IJWTPayload | null> {
   try {
     const decoded = jwt.verify(token, JWT_SECRET, {
+      algorithms: ['HS256'],
       issuer: 'agnostic-automation-center',
       audience: 'aac-api'
     }) as IJWTPayload;
@@ -76,14 +79,27 @@ export function verifyToken(token: string): IJWTPayload | null {
       return null;
     }
 
+    // Redis Revocation Check (HIGH-8)
+    if (decoded.iat) {
+      const jti = `${decoded.userId}:${decoded.iat}`;
+      const isRevoked = await redis.get(`revoked:${jti}`);
+      if (isRevoked) {
+        console.error('JWT token has been revoked / blacklisted');
+        throw new Error('Token has been revoked');
+      }
+    }
+
     return decoded;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
       console.log('JWT token expired:', error.message);
+      throw error;
     } else if (error instanceof jwt.JsonWebTokenError) {
       console.log('JWT verification failed:', error.message);
+      throw error;
     } else {
       console.error('Unexpected JWT error:', error);
+      throw error;
     }
     return null;
   }
@@ -130,8 +146,9 @@ export function extractTokenFromHeader(authHeader: string | undefined): string |
  * @returns Decoded payload (unverified) or null if malformed
  *
  * @warning Do NOT use this for authentication - always use verifyToken()
+ * @internal
  */
-export function decodeTokenUnsafe(token: string): IJWTPayload | null {
+export function _decodeTokenUnsafe(token: string): IJWTPayload | null {
   try {
     const decoded = jwt.decode(token) as IJWTPayload;
     return decoded;
@@ -148,7 +165,7 @@ export function decodeTokenUnsafe(token: string): IJWTPayload | null {
  * @returns Seconds until expiration, or null if invalid/expired
  */
 export function getTokenExpirationTime(token: string): number | null {
-  const payload = decodeTokenUnsafe(token);
+  const payload = _decodeTokenUnsafe(token);
 
   if (!payload || !payload.exp) {
     return null;
@@ -185,8 +202,8 @@ if (JWT_SECRET === 'dev-secret-CHANGE-IN-PRODUCTION') {
 }
 
 // Log JWT configuration on module load
-console.log('🔐 JWT Configuration:');
-console.log(`  - Secret: ${JWT_SECRET.substring(0, 10)}... (${JWT_SECRET.length} chars)`);
-console.log(`  - Expiry: ${JWT_EXPIRY}`);
-console.log(`  - Issuer: agnostic-automation-center`);
-console.log(`  - Audience: aac-api`);
+console.info('🔐 JWT Configuration:');
+console.info(`  - Secret: [REDACTED] (${JWT_SECRET.length} chars)`);
+console.info(`  - Expiry: ${JWT_EXPIRY}`);
+console.info(`  - Issuer: agnostic-automation-center`);
+console.info(`  - Audience: aac-api`);

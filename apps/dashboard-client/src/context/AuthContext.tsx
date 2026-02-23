@@ -17,7 +17,7 @@ interface AuthContextType {
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string, orgName: string, invitationToken?: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isLoading: boolean;
   isAuthenticated: boolean;
 }
@@ -105,10 +105,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  function logout() {
-    localStorage.removeItem('authToken');
-    setToken(null);
-    setUser(null);
+  async function logout() {
+    try {
+      if (token) {
+        await axios.post(`${API_URL}/api/auth/logout`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+    } finally {
+      localStorage.removeItem('authToken');
+      setToken(null);
+      setUser(null);
+      window.location.href = '/login';
+    }
   }
 
   return (

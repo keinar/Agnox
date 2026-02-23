@@ -69,7 +69,11 @@ export function generateApiKey(): IGeneratedKey {
  * @returns SHA-256 hash of the key
  */
 export function hashApiKey(key: string): string {
-    return crypto.createHash('sha256').update(key).digest('hex');
+    const hmacSecret = process.env.PLATFORM_API_KEY_HMAC_SECRET;
+    if (!hmacSecret) {
+        throw new Error('PLATFORM_API_KEY_HMAC_SECRET is required to hash API keys');
+    }
+    return crypto.createHmac('sha256', hmacSecret).update(key).digest('hex');
 }
 
 /**

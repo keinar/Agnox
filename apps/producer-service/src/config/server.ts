@@ -124,7 +124,7 @@ export function createServer(): FastifyInstance {
  * Configure Socket.IO connection handler with JWT authentication
  */
 export function setupSocketIO(app: FastifyInstance): void {
-    app.io.on('connection', (socket) => {
+    app.io.on('connection', async (socket) => {
         // Extract JWT token from handshake
         const token = socket.handshake.auth?.token;
 
@@ -136,32 +136,39 @@ export function setupSocketIO(app: FastifyInstance): void {
         }
 
         // Verify JWT token
-        const payload = verifyToken(token);
+        try {
+            const payload = await verifyToken(token);
 
-        if (!payload) {
-            app.log.warn(`Socket connection rejected: Invalid token (socket: ${socket.id})`);
-            socket.emit('auth-error', { error: 'Invalid or expired token' });
+            if (!payload) {
+                app.log.warn(`Socket connection rejected: Invalid token (socket: ${socket.id})`);
+                socket.emit('auth-error', { error: 'Invalid or expired token' });
+                socket.disconnect();
+                return;
+            }
+
+            // Multi-tenant: Join organization-specific room
+            const orgRoom = `org:${payload.organizationId}`;
+            socket.join(orgRoom);
+
+            app.log.info(`✅ Socket ${socket.id} connected for user ${payload.userId} (${payload.role}) in organization ${payload.organizationId}`);
+            app.log.info(`   Joined room: ${orgRoom}`);
+
+            // Send confirmation to client
+            socket.emit('auth-success', {
+                message: 'Connected to organization channel',
+                organizationId: payload.organizationId,
+                userId: payload.userId,
+                role: payload.role
+            });
+
+            socket.on('disconnect', () => {
+                app.log.info(`Socket ${socket.id} disconnected from room ${orgRoom}`);
+            });
+        } catch (err: any) {
+            app.log.warn(`Socket connection rejected: ${err.message} (socket: ${socket.id})`);
+            socket.emit('auth-error', { error: err.message || 'Invalid or expired token' });
             socket.disconnect();
             return;
         }
-
-        // Multi-tenant: Join organization-specific room
-        const orgRoom = `org:${payload.organizationId}`;
-        socket.join(orgRoom);
-
-        app.log.info(`✅ Socket ${socket.id} connected for user ${payload.userId} (${payload.role}) in organization ${payload.organizationId}`);
-        app.log.info(`   Joined room: ${orgRoom}`);
-
-        // Send confirmation to client
-        socket.emit('auth-success', {
-            message: 'Connected to organization channel',
-            organizationId: payload.organizationId,
-            userId: payload.userId,
-            role: payload.role
-        });
-
-        socket.on('disconnect', () => {
-            app.log.info(`Socket ${socket.id} disconnected from room ${orgRoom}`);
-        });
     });
 }

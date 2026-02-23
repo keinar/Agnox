@@ -170,6 +170,23 @@ export async function testCycleRoutes(
             }
         }
 
+        // Verify project ownership (MED-8)
+        let projectObjectId: ObjectId;
+        try {
+            projectObjectId = new ObjectId(body.projectId.trim());
+        } catch {
+            return reply.status(400).send({ success: false, error: 'Invalid projectId format' });
+        }
+
+        const project = await db.collection('projects').findOne({
+            _id: projectObjectId,
+            organizationId
+        });
+
+        if (!project) {
+            return reply.status(403).send({ success: false, error: 'Project not found or access denied' });
+        }
+
         // Check if there are automated items — if so, an image must be resolved
         const automatedItems = items.filter((i) => i.type === 'AUTOMATED');
         const hasAutomated = automatedItems.length > 0;

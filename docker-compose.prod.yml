@@ -77,6 +77,7 @@ services:
       - FRONTEND_URL=${FRONTEND_URL}
       - EMAIL_TRACKING_ENABLED=${EMAIL_TRACKING_ENABLED:-true}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - PLATFORM_API_KEY_HMAC_SECRET=${PLATFORM_API_KEY_HMAC_SECRET}
     depends_on:
       - rabbitmq
       - redis

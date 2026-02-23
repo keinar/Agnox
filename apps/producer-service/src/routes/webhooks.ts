@@ -422,21 +422,6 @@ export async function webhookRoutes(
     }
   });
 
-  /**
-   * GET /api/webhooks/test
-   * Test endpoint to verify webhook route is accessible
-   * Remove in production or add authentication
-   */
-  app.get('/api/webhooks/test', async (request, reply) => {
-    return {
-      status: 'ok',
-      message: 'Webhook endpoint is accessible',
-      stripeConfigured: STRIPE_CONFIG.enabled,
-      webhookSecretConfigured: !!STRIPE_CONFIG.webhookSecret
-    };
-  });
-
   app.log.info('✅ Webhook routes registered');
   app.log.info('  - POST /api/webhooks/stripe (Stripe events)');
-  app.log.info('  - GET /api/webhooks/test (Health check)');
 }

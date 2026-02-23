@@ -95,6 +95,7 @@ services:
       - EMAIL_OPEN_TRACKING=${EMAIL_OPEN_TRACKING:-true}
       - EMAIL_CLICK_TRACKING=${EMAIL_CLICK_TRACKING:-true}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - PLATFORM_API_KEY_HMAC_SECRET=${PLATFORM_API_KEY_HMAC_SECRET}
     healthcheck:
       # Simple TCP port check - works reliably in all Node images
       test: [ "CMD-SHELL", "node -e \"const net=require('net');const c=net.connect(3000,'localhost',()=>{c.end();process.exit(0)});c.on('error',()=>process.exit(1))\"" ]

@@ -14,7 +14,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { MongoClient, ObjectId } from 'mongodb';
 import Redis from 'ioredis';
 import { hashPassword, comparePassword, validatePasswordStrength } from '../utils/password.js';
-import { signToken } from '../utils/jwt.js';
+import { signToken, _decodeTokenUnsafe } from '../utils/jwt.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { hashInvitationToken, isValidInvitationTokenFormat, isInvitationExpired } from '../utils/invitation.js';
 import { sendWelcomeEmail } from '../utils/email.js';
@@ -386,8 +386,7 @@ export async function authRoutes(
         return reply.code(401).send({
           success: false,
           error: 'Invalid credentials',
-          message: 'Email or password is incorrect',
-          attemptsRemaining: Math.max(0, 5 - failedAttempts)
+          message: 'Email or password is incorrect'
         });
       }
 
@@ -414,8 +413,7 @@ export async function authRoutes(
         return reply.code(401).send({
           success: false,
           error: 'Invalid credentials',
-          message: 'Email or password is incorrect',
-          attemptsRemaining: Math.max(0, 5 - failedAttempts)
+          message: 'Email or password is incorrect'
         });
       }
 
@@ -653,7 +651,7 @@ export async function authRoutes(
 
   /**
    * POST /api/auth/logout
-   * Logout user (client-side token removal, placeholder for future token blacklist)
+   * Logout user (adds token to Redis blacklist)
    *
    * Headers:
    * - Authorization: Bearer <token>
@@ -662,18 +660,44 @@ export async function authRoutes(
    * - success: true
    * - message: "Logged out successfully"
    *
-   * Note: In a stateless JWT system, logout is handled client-side.
-   * Future enhancement: Implement token blacklist in Redis.
+   * Note: In a stateless JWT system, logout is handled client-side along with standard server-side token blacklisting.
    */
   app.post('/api/auth/logout', { preHandler: authMiddleware }, async (request, reply) => {
-    // In a stateless JWT system, logout is handled client-side
-    // Future: Implement token blacklist in Redis
-    app.log.info(`User logged out: ${request.user!.userId}`);
+    try {
+      const authHeader = request.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7).trim();
+        // Decode token minimally to get full payload (including exp and iat) without re-verification
+        // since authMiddleware already verified the signature.
+        const payload = _decodeTokenUnsafe(token);
 
-    return reply.send({
-      success: true,
-      message: 'Logged out successfully'
-    });
+        if (payload?.userId && payload?.iat && payload?.exp) {
+          // Derive JTI for redis blacklisting
+          const jti = `${payload.userId}:${payload.iat}`;
+          const ttlSeconds = Math.max(0, payload.exp - Math.floor(Date.now() / 1000));
+
+          if (ttlSeconds > 0) {
+            // Add token to Redis blacklist
+            await redis.setex(`revoked:${jti}`, ttlSeconds, '1');
+            app.log.info(`Token blacklisted in Redis. JTI: ${jti}, TTL: ${ttlSeconds}s`);
+          }
+        }
+      }
+
+      app.log.info(`User logged out: ${request.user!.userId}`);
+
+      return reply.send({
+        success: true,
+        message: 'Logged out successfully'
+      });
+    } catch (error: any) {
+      app.log.error(`Logout error: ${error?.message || error}`);
+      return reply.code(500).send({
+        success: false,
+        error: 'Logout failed',
+        message: 'Failed to process logout'
+      });
+    }
   });
 
   // ===================================================================

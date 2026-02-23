@@ -13,19 +13,18 @@ export function setupSecurityHeaders(app: FastifyInstance): void {
         // Prevent clickjacking attacks
         reply.header('X-Frame-Options', 'DENY');
 
-        // Enable XSS protection in legacy browsers
-        reply.header('X-XSS-Protection', '1; mode=block');
+        // Legacy X-XSS-Protection removed in favor of CSP
 
         // Control referrer information
         reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
 
         // Enforce HTTPS in production (HSTS)
         if (process.env.NODE_ENV === 'production') {
-            reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+            reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
         }
 
-        // Content-Security-Policy can be added later based on needs
-        // reply.header('Content-Security-Policy', "default-src 'self'");
+        // Content-Security-Policy (MED-1)
+        reply.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'");
     });
 }
 
@@ -87,7 +86,6 @@ export function setupGlobalAuth(
             '/api/auth/register',
             '/api/auth/refresh',
             '/__webpack_hmr',
-            '/config/defaults',
             '/health'
         ];
 
