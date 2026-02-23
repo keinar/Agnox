@@ -665,6 +665,18 @@ See the [Deployment Guide](docs/setup/deployment.md) for full deployment instruc
 
 ---
 
+### Sprint 4: Native CI/CD Integrations ✅
+
+**Status:** Production Ready
+
+- **Provider Strategy Pattern:** Native `CiProvider` implementations for GitHub, GitLab, and Azure DevOps.
+- **Two-Way Synchronization:** The AI Engine automatically posts root cause analysis directly as comments on the originating Pull Request / Merge Request.
+- **Unified API Gateway:** Single dynamic `PATCH /api/organization/integrations/:provider` endpoint for credential rotation.
+- **Encrypted Storage:** All PATs and API integration secrets are stored at rest using AES-256-GCM encryption.
+- **Integrations UI:** Dedicated frontend settings cards with visual connection status badges for seamlessly managing CI tokens.
+
+---
+
 ### Sprint 5: Dashboard Evolution ✅
 
 **Status:** Production Ready
