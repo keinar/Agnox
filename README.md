@@ -266,7 +266,7 @@ The platform works with **any containerized test framework**. Here's how to inte
 ```bash
 curl -X POST https://api.automation.keinar.com/api/execution-request \
   -H "Content-Type: application/json" \
-  -H "x-api-key: pk_live_YOUR_API_KEY" \
+  -H "x-api-key: <REDACTED_API_KEY>" \
   -d '{
     "taskId": "run-'$(date +%s)'",
     "image": "mcr.microsoft.com/playwright:v1.40.0",
@@ -574,16 +574,16 @@ REDIS_URL=redis://localhost:6379
 # JWT Authentication
 JWT_SECRET=your-super-secret-key-min-32-chars
 
-# Google AI (Root Cause Analysis)
-GEMINI_API_KEY=your-gemini-api-key
+# AI Analysis (Google Gemini)
+GEMINI_API_KEY=<REDACTED_GOOGLE_API_KEY>
 ```
 
 ### Optional: Billing & Email (Self-Hosting Only)
 
 ```env
-# Stripe (for subscription billing)
-STRIPE_SECRET_KEY=sk_live_...
-STRIPE_WEBHOOK_SECRET=whsec_...
+# Stripe Integrations
+STRIPE_SECRET_KEY=<REDACTED_STRIPE_SECRET_KEY>
+STRIPE_WEBHOOK_SECRET=<REDACTED_STRIPE_WEBHOOK_SECRET>
 
 # SendGrid (for email notifications)
 SENDGRID_API_KEY=SG....

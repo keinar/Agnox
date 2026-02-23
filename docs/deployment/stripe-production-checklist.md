@@ -31,8 +31,8 @@ Complete checklist for deploying Stripe billing integration to production at `au
 
 ### Stripe Dashboard Configuration
 - [ ] **Live API Keys Generated**
-  - [ ] Live Secret Key (`sk_live_...`) created
-  - [ ] Live Publishable Key (`pk_live_...`) created
+  - [ ] Live Secret Key (`<REDACTED_STRIPE_SECRET_KEY>`) created
+  - [ ] Live Publishable Key (`<REDACTED_STRIPE_PUBLISHABLE_KEY>`) created
   - [ ] Keys stored securely (NOT in git)
 
 - [ ] **Products Created in Live Mode**
@@ -41,7 +41,7 @@ Complete checklist for deploying Stripe billing integration to production at `au
   stripe products create \
     --name="Team Plan" \
     --description="Up to 20 users, 1,000 test runs/month, email support" \
-    --api-key=sk_live_...
+    --api-key=<REDACTED_STRIPE_SECRET_KEY>
 
   # Note product ID: prod_xxxxx
 
@@ -51,7 +51,7 @@ Complete checklist for deploying Stripe billing integration to production at `au
     --unit-amount=9900 \
     --currency=usd \
     --recurring[interval]=month \
-    --api-key=sk_live_...
+    --api-key=<REDACTED_STRIPE_SECRET_KEY>
 
   # Note price ID: price_xxxxx
   ```
@@ -61,7 +61,7 @@ Complete checklist for deploying Stripe billing integration to production at `au
   stripe products create \
     --name="Enterprise Plan" \
     --description="Unlimited users and test runs, priority support, SSO" \
-    --api-key=sk_live_...
+    --api-key=<REDACTED_STRIPE_SECRET_KEY>
 
   # Note product ID: prod_yyyyy
 
@@ -71,7 +71,7 @@ Complete checklist for deploying Stripe billing integration to production at `au
     --unit-amount=49900 \
     --currency=usd \
     --recurring[interval]=month \
-    --api-key=sk_live_...
+    --api-key=<REDACTED_STRIPE_SECRET_KEY>
 
   # Note price ID: price_yyyyy
   ```
@@ -122,8 +122,9 @@ Create `.env` file on production server with:
 # ==========================================
 # STRIPE BILLING (LIVE MODE)
 # ==========================================
-STRIPE_SECRET_KEY=sk_live_xxxxx
-STRIPE_PUBLISHABLE_KEY=pk_live_xxxxx
+# Stripe Live Keys
+STRIPE_SECRET_KEY=<REDACTED_STRIPE_SECRET_KEY>
+STRIPE_PUBLISHABLE_KEY=<REDACTED_STRIPE_PUBLISHABLE_KEY>
 STRIPE_WEBHOOK_SECRET=whsec_xxxxx
 STRIPE_TEAM_PRICE_ID=price_xxxxx
 STRIPE_ENTERPRISE_PRICE_ID=price_yyyyy
@@ -152,7 +153,7 @@ MONGO_URI=mongodb://<username>:<password>@<host>:27017/automation_platform?authS
 # ==========================================
 RABBITMQ_URL=amqp://rabbitmq
 REDIS_URL=redis://redis:6379
-GEMINI_API_KEY=<your-key>
+GEMINI_API_KEY=<REDACTED_GOOGLE_API_KEY>
 
 # ==========================================
 # APPLICATION
@@ -577,7 +578,7 @@ docker exec automation-dashboard cat /usr/share/nginx/html/assets/index-*.js | g
 # Check Stripe API key
 docker exec automation-producer env | grep STRIPE_SECRET_KEY | sed 's/=.*/=***/'
 
-# Should show sk_live_*** (not sk_test_***)
+# Should show <REDACTED_STRIPE_SECRET_KEY> (not sk_test_***)
 ```
 
 **Solutions:**

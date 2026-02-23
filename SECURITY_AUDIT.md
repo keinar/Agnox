@@ -27,15 +27,13 @@
 
 
 
-  MONGO_URI=mongodb+srv://automation_user:RKXHSl5wcnshsZSq@cluster0.birtomb.mongod
+  MONGO_URI=
 
-  b.net/
+  GEMINI_API_KEY=
 
-  GEMINI_API_KEY=AIzaSyBWHlww2QOgmtVs25ZvyLLJ43ntHhOu7Fg
+  ADMIN_USER=
 
-  ADMIN_USER=keinarelkayam@gmail.com
-
-  ADMIN_PASS=K305541153e!
+  ADMIN_PASS=
 
 
 

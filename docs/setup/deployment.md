@@ -115,7 +115,7 @@ RABBITMQ_URL=amqp://admin:<password>@rabbitmq-prod:5672
 REDIS_URL=redis://:&lt;password&gt;@redis-prod:6379
 
 # AI Analysis (Google Gemini)
-GEMINI_API_KEY=<your-gemini-api-key>
+GEMINI_API_KEY=<REDACTED_GOOGLE_API_KEY>
 
 # API Configuration
 PUBLIC_API_URL=https://api.yourdomain.com
@@ -186,13 +186,13 @@ Configure based on your environment:
 
 | Mode | MONGO_URI Value | Use Case |
 |------|----------------|----------|
-| **Cloud** | `mongodb+srv://user:pass@cluster.mongodb.net/automation_platform` | Production/Staging with MongoDB Atlas |
+| **Cloud** | `<REDACTED_MONGO_URI>` | Production/Staging with MongoDB Atlas |
 | **Local** | `mongodb://automation-mongodb:27017/automation_platform` | Local development with Docker container |
 
 **Setting Cloud Connection:**
 ```bash
 # In .env file
-MONGO_URI=mongodb+srv://your-user:your-password@cluster.mongodb.net/automation_platform?retryWrites=true&w=majority
+MONGO_URI=<REDACTED_MONGO_URI>
 ```
 
 **Setting Local Connection:**

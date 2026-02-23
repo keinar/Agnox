@@ -344,13 +344,13 @@ metadata:
   name: automation-secrets
 type: Opaque
 stringData:
-  mongo-uri: "mongodb+srv://user:pass@cluster.mongodb.net/automation"
+  mongo-uri: "<REDACTED_MONGO_URI>"
   rabbitmq-url: "amqp://user:pass@rabbitmq:5672"
   rabbitmq-user: "admin"
   rabbitmq-pass: "secure-password"
   jwt-secret: "your-64-char-jwt-secret"
   sendgrid-api-key: "SG.xxxx"
-  gemini-api-key: "AIza..."
+  gemini-api-key: "<REDACTED_GOOGLE_API_KEY>"
 ```
 
 > **Important:** Use a secrets management solution like HashiCorp Vault, AWS Secrets Manager, or Sealed Secrets for production.

@@ -223,7 +223,7 @@ Common issues and solutions for the Agnostic Automation Center.
 1. **Check your MONGO_URI in `.env`:**
    ```bash
    # Cloud (MongoDB Atlas)
-   MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/automation_platform
+   MONGO_URI=<REDACTED_MONGO_URI>
    
    # Local (Docker container)
    MONGO_URI=mongodb://automation-mongodb:27017/automation_platform

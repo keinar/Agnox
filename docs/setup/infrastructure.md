@@ -27,13 +27,13 @@ RABBITMQ_URL=amqp://automation-rabbitmq
 REDIS_URL=redis://automation-redis:6379
 
 # AI Configuration
-GEMINI_API_KEY=AIzaSy...your_key_here
+GEMINI_API_KEY=<REDACTED_GOOGLE_API_KEY>
 
 # --- AGNOSTIC SECRET INJECTION ---
 # These variables belong to the CLIENT tests.
 # The platform does not interpret them — it only injects them.
 ADMIN_USER=admin@example.com
-ADMIN_PASS=secure_password
+ADMIN_PASS=<REDACTED_PASSWORD>
 MONGO_URI=mongodb+srv://... (Client DB)
 
 # WHITE LIST
