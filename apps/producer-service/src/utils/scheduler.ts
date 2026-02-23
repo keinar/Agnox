@@ -40,6 +40,18 @@ async function fireSchedule(schedule: ISchedule): Promise<void> {
     const startTime = new Date();
     const DB_NAME = getDbName();
 
+    // Inject server-side environment variables — mirrors the logic in test-cycles.ts.
+    // These typically carry API keys / auth tokens that the test suite needs at runtime.
+    const envVars: Record<string, string> = {};
+    const varsToInject = (process.env.INJECT_ENV_VARS || '').split(',');
+    for (const varName of varsToInject) {
+        const name = varName.trim();
+        if (name && process.env[name]) {
+            envVars[name] = process.env[name]!;
+        }
+    }
+    console.info(`[scheduler] Injecting ${Object.keys(envVars).length} environment variables into CRON job`);
+
     const taskPayload = {
         taskId,
         organizationId: schedule.organizationId,
@@ -50,7 +62,7 @@ async function fireSchedule(schedule: ISchedule): Promise<void> {
             environment: schedule.environment,
             baseUrl: schedule.baseUrl,
             retryAttempts: 2,
-            envVars: {},
+            envVars,
         },
         tests: [],
         trigger: 'cron' as const,
