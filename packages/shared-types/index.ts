@@ -79,6 +79,29 @@ export interface IOrganization {
         testCasesEnabled: boolean;
         testCyclesEnabled: boolean;
     };
+    integrations?: {
+        github?: {
+            encryptedToken: string;
+            iv: string;
+            authTag: string;
+            enabled: boolean;
+            updatedAt?: Date;
+        };
+        gitlab?: {
+            encryptedToken: string;
+            iv: string;
+            authTag: string;
+            enabled: boolean;
+            updatedAt?: Date;
+        };
+        azure?: {
+            encryptedToken: string;
+            iv: string;
+            authTag: string;
+            enabled: boolean;
+            updatedAt?: Date;
+        };
+    };
     createdAt: Date;
     updatedAt: Date;
 }
@@ -455,4 +478,10 @@ export interface ITestCycle {
     };
     createdAt: Date;
     createdBy: string;
+    ciContext?: {
+        source: 'github' | 'gitlab' | 'azure' | 'jenkins' | 'webhook';
+        repository?: string;
+        prNumber?: number;
+        commitSha?: string;
+    };
 }

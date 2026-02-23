@@ -26,10 +26,13 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@gitbeaker/rest": "^43.8.0",
     "@github/copilot-sdk": "^0.1.16",
     "@google/generative-ai": "^0.24.1",
+    "@octokit/rest": "^22.0.1",
     "@types/uuid": "^10.0.0",
     "amqplib": "^0.10.9",
+    "azure-devops-node-api": "^15.1.2",
     "dockerode": "^4.0.9",
     "ioredis": "^5.8.2",
     "pino": "^10.3.0",

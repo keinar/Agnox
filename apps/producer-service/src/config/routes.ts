@@ -20,6 +20,8 @@ import { scheduleRoutes } from '../routes/schedules.js';
 import { testCaseRoutes } from '../routes/test-cases.js';
 import { testCycleRoutes } from '../routes/test-cycles.js';
 import { aiRoutes } from '../routes/ai.js';
+import { ciRoutes } from '../routes/ci.js';
+import { reportRoutes } from '../routes/reports.js';
 import { sendExecutionNotification, FINAL_EXECUTION_STATUSES } from '../utils/notifier.js';
 import { generateReportToken, REPORT_TOKEN_TTL } from '../utils/reportToken.js';
 import { createTestRunLimitMiddleware } from '../middleware/planLimits.js';
@@ -77,6 +79,12 @@ export async function setupRoutes(
 
     // AI generation routes (Gemini-powered — JWT protected)
     await aiRoutes(app, apiRateLimit);
+
+    // CI Trigger routes (Jenkins, GitHub Actions — JWT protected via standard global auth middleware)
+    await ciRoutes(app, dbClient, strictRateLimit);
+
+    // Report static serving routes (Custom JWT & Report Token Auth)
+    await reportRoutes(app);
 
     // Create plan enforcement middleware
     const db = dbClient.db(DB_NAME);

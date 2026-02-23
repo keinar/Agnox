@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react';
 import { X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -58,6 +58,11 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
     },
     enabled: !!token && !!executionId,
     staleTime: 30_000,
+    refetchInterval: () => {
+      // Poll every 3 seconds if the parent execution is still running or analyzing
+      if (execution?.status === 'RUNNING' || execution?.status === 'ANALYZING') return 3000;
+      return false;
+    },
   });
 
   // ── Dynamic tab list ──────────────────────────────────────────────────────
@@ -149,11 +154,10 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors duration-150 cursor-pointer ${
-                        effectiveTab === tab.id
-                          ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                          : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
-                      }`}
+                      className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors duration-150 cursor-pointer ${effectiveTab === tab.id
+                        ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                        : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                        }`}
                     >
                       {tab.label}
                     </button>

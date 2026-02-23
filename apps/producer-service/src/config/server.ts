@@ -106,10 +106,7 @@ export function createServer(): FastifyInstance {
 
     app.register(fastifyStatic, {
         root: REPORTS_DIR,
-        prefix: '/reports/',
-        index: ['index.html'],
-        list: false,
-        decorateReply: false
+        serve: false // We use custom routing in routes/reports.ts for auth & tenant isolation
     });
 
     // Silence webpack HMR requests from dashboard dev server
