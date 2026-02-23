@@ -12,7 +12,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
 const HMAC_SECRET = process.env.PLATFORM_JWT_SECRET || 'dev-secret-CHANGE-IN-PRODUCTION';
 const TOKEN_TTL_SECONDS = 300; // 5 minutes
 
-interface IReportTokenPayload {
+export interface IReportTokenPayload {
     orgId: string;
     taskId: string;
     exp: number; // Unix timestamp (seconds)
@@ -41,13 +41,54 @@ export function generateReportToken(orgId: string, taskId: string): string {
 }
 
 /**
- * Verify an HMAC-signed report token.
+ * Verify an HMAC-signed report token and return its payload.
  *
- * Validates:
- *   1. Structural integrity (payload.signature format)
- *   2. HMAC signature (timing-safe comparison)
- *   3. Expiry (token must not be expired)
- *   4. Path scope (orgId and taskId must match the requested path)
+ * @param token           - The token string
+ * @param requestedTaskId - The taskId extracted from the URL path
+ * @returns The payload if valid, null otherwise
+ */
+export function extractReportTokenPayload(
+    token: string,
+    requestedTaskId: string,
+): IReportTokenPayload | null {
+    if (!token || typeof token !== 'string') return null;
+
+    const parts = token.split('.');
+    if (parts.length !== 2) return null;
+
+    const [payloadB64, providedSig] = parts;
+
+    // Verify HMAC signature (timing-safe)
+    const expectedSig = createHmac('sha256', HMAC_SECRET).update(payloadB64).digest('base64url');
+
+    if (providedSig.length !== expectedSig.length) return null;
+
+    const sigValid = timingSafeEqual(
+        Buffer.from(providedSig, 'utf8'),
+        Buffer.from(expectedSig, 'utf8'),
+    );
+    if (!sigValid) return null;
+
+    // Decode and validate payload
+    let payload: IReportTokenPayload;
+    try {
+        payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
+    } catch {
+        return null;
+    }
+
+    // Check expiry
+    const now = Math.floor(Date.now() / 1000);
+    if (!payload.exp || payload.exp <= now) return null;
+
+    // Check path scope — token must match the requested taskId
+    if (payload.taskId !== requestedTaskId) return null;
+
+    return payload;
+}
+
+/**
+ * Verify an HMAC-signed report token.
  *
  * @param token           - The token string from the query parameter
  * @param requestedOrgId  - The organizationId extracted from the URL path
@@ -59,41 +100,9 @@ export function verifyReportToken(
     requestedOrgId: string,
     requestedTaskId: string,
 ): boolean {
-    if (!token || typeof token !== 'string') return false;
-
-    const parts = token.split('.');
-    if (parts.length !== 2) return false;
-
-    const [payloadB64, providedSig] = parts;
-
-    // Verify HMAC signature (timing-safe)
-    const expectedSig = createHmac('sha256', HMAC_SECRET).update(payloadB64).digest('base64url');
-
-    if (providedSig.length !== expectedSig.length) return false;
-
-    const sigValid = timingSafeEqual(
-        Buffer.from(providedSig, 'utf8'),
-        Buffer.from(expectedSig, 'utf8'),
-    );
-    if (!sigValid) return false;
-
-    // Decode and validate payload
-    let payload: IReportTokenPayload;
-    try {
-        payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
-    } catch {
-        return false;
-    }
-
-    // Check expiry
-    const now = Math.floor(Date.now() / 1000);
-    if (!payload.exp || payload.exp <= now) return false;
-
-    // Check path scope — token must match the requested orgId and taskId
-    if (payload.orgId !== requestedOrgId) return false;
-    if (payload.taskId !== requestedTaskId) return false;
-
-    return true;
+    const payload = extractReportTokenPayload(token, requestedTaskId);
+    if (!payload) return false;
+    return payload.orgId === requestedOrgId;
 }
 
 /** Token TTL exported for the API response */

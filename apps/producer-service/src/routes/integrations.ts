@@ -608,4 +608,56 @@ export async function integrationRoutes(
             });
         }
     });
+
+    // ── PATCH /api/organization/integrations/:provider ───────────────────────
+    // Encrypts and saves Personal Access Tokens for CI providers (github, gitlab, azure).
+    app.patch('/api/organization/integrations/:provider', async (request, reply) => {
+        const organizationId = request.user!.organizationId;
+        const { provider } = request.params as { provider: string };
+        const { token, enabled = true } = request.body as { token?: string; enabled?: boolean };
+
+        if (!['github', 'gitlab', 'azure'].includes(provider)) {
+            return reply.status(400).send({ success: false, error: 'Unsupported provider' });
+        }
+
+        if (!token || typeof token !== 'string' || token.trim().length === 0) {
+            return reply.status(400).send({ success: false, error: `${provider} token is required` });
+        }
+
+        try {
+            const { encrypted, iv, authTag } = encrypt(token.trim());
+
+            const integrationSettings = {
+                encryptedToken: encrypted,
+                iv,
+                authTag,
+                enabled: Boolean(enabled),
+                updatedAt: new Date(),
+            };
+
+            await orgsCollection.updateOne(
+                {
+                    $or: [
+                        { _id: new ObjectId(organizationId) },
+                        { _id: organizationId as any },
+                    ],
+                },
+                { $set: { [`integrations.${provider}`]: integrationSettings } },
+            );
+
+            app.log.info({ organizationId, provider }, `[integrations] ${provider} credentials saved`);
+
+            return reply.send({
+                success: true,
+                data: {
+                    token: '***', // Never expose the encrypted token
+                    enabled: integrationSettings.enabled,
+                    updatedAt: integrationSettings.updatedAt,
+                },
+            });
+        } catch (error) {
+            app.log.error(error, `[integrations] Failed to save ${provider} config`);
+            return reply.status(500).send({ success: false, error: `Failed to save ${provider} configuration` });
+        }
+    });
 }

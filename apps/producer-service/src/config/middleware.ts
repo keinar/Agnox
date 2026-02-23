@@ -80,69 +80,20 @@ export function setupGlobalAuth(
         }
 
         // Public route prefixes - no authentication required
+        // Note: '/reports/' handles its own authentication via routes/reports.ts
         const publicPrefixes = [
             '/api/auth/signup',
             '/api/auth/login',
             '/api/auth/register',
             '/api/auth/refresh',
             '/__webpack_hmr',
-            '/health'
+            '/health',
+            '/reports/'
         ];
 
         // Invitation validation endpoint (public)
         if (request.url.startsWith('/api/invitations/validate/')) {
             app.log.info('[GlobalAuth] Skipping - invitation validation');
-            return;
-        }
-
-        // Static files (reports) — SECURITY_PLAN §2.1: validate HMAC report token
-        // Uses path-scoped cookies so sub-resources (CSS/JS) authenticate automatically.
-        if (request.url.startsWith('/reports/')) {
-            // Extract orgId and taskId from path: /reports/{orgId}/{taskId}/...
-            const pathParts = request.url.split('?')[0].split('/').filter(Boolean);
-            // pathParts = ['reports', orgId, taskId, ...]
-            if (pathParts.length >= 3) {
-                const [, orgId, taskId] = pathParts;
-                const { verifyReportToken, REPORT_TOKEN_TTL } = await import('../utils/reportToken.js');
-
-                // 1. Try query string token (initial page load)
-                const urlObj = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
-                const queryToken = urlObj.searchParams.get('token');
-
-                // 2. Fall back to cookie (sub-resource requests like CSS/JS)
-                const cookieHeader = request.headers.cookie || '';
-                const cookieToken = cookieHeader
-                    .split(';')
-                    .map(c => c.trim())
-                    .find(c => c.startsWith('report_token='))
-                    ?.split('=')[1] || null;
-
-                const token = queryToken || cookieToken;
-
-                if (!token) {
-                    return reply
-                        .status(401)
-                        .header('Content-Type', 'application/json')
-                        .send({ success: false, error: 'Report access requires a valid token' });
-                }
-
-                if (!verifyReportToken(token, orgId, taskId)) {
-                    return reply
-                        .status(401)
-                        .header('Content-Type', 'application/json')
-                        .send({ success: false, error: 'Invalid or expired report token' });
-                }
-
-                // If token came from query string, set a path-scoped cookie for sub-resources
-                if (queryToken) {
-                    const cookiePath = `/reports/${orgId}/${taskId}/`;
-                    reply.header(
-                        'Set-Cookie',
-                        `report_token=${queryToken}; Path=${cookiePath}; Max-Age=${REPORT_TOKEN_TTL}; HttpOnly; SameSite=Lax`,
-                    );
-                }
-            }
-            // Token valid — allow static file serving
             return;
         }
 

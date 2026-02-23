@@ -9,6 +9,9 @@ import Redis from 'ioredis';
 import { z } from 'zod';
 import { analyzeTestFailure } from './analysisService';
 import { logger } from './utils/logger.js';
+import { decrypt } from './utils/encryption.js';
+import { ProviderFactory } from './integrations/ProviderFactory.js';
+import { ICiContext } from './integrations/CiProvider.js';
 
 dotenv.config();
 
@@ -512,6 +515,59 @@ async function startWorker() {
             );
             await notifyProducer(updateData);
             logger.info({ taskId, organizationId, finalStatus }, 'Task finished');
+
+            // --- CI Integrations Start ---
+            try {
+                if (cycleId) {
+                    const testCyclesCollection = db.collection('test_cycles');
+                    const cycle = await testCyclesCollection.findOne({ _id: new ObjectId(cycleId) });
+
+                    if (cycle && cycle.ciContext && cycle.ciContext.prNumber) {
+                        const organization = await organizationsCollection.findOne({
+                            _id: new ObjectId(organizationId)
+                        });
+
+                        const source = cycle.ciContext.source as 'github' | 'gitlab' | 'azure';
+                        const tokenData = organization?.integrations?.[source];
+
+                        if (tokenData && tokenData.enabled && tokenData.encryptedToken) {
+                            try {
+                                const token = decrypt({
+                                    encrypted: tokenData.encryptedToken,
+                                    iv: tokenData.iv,
+                                    authTag: tokenData.authTag,
+                                });
+
+                                const provider = ProviderFactory.getProvider(source, token);
+                                if (provider) {
+                                    const aiSummary = analysis ||
+                                        (finalStatus === 'PASSED' ? 'All tests passed successfully.' : 'Tests failed. No AI analysis available.');
+
+                                    const dashboardUrl = process.env.DASHBOARD_URL || 'http://localhost:5173';
+                                    const reportUrl = `${dashboardUrl}/dashboard?drawerId=${taskId}`;
+
+                                    await provider.postPrComment(
+                                        cycle.ciContext as ICiContext,
+                                        aiSummary,
+                                        reportUrl,
+                                        cycle.items || []
+                                    );
+                                }
+                            } catch (decryptionError: any) {
+                                logger.error(
+                                    { taskId, organizationId, source, error: decryptionError.message },
+                                    `Failed to decrypt ${source} integration token`
+                                );
+                            }
+                        } else {
+                            logger.warn({ taskId, organizationId, source }, `No enabled ${source} integration found for organization`);
+                        }
+                    }
+                }
+            } catch (ciError: any) {
+                logger.error({ taskId, organizationId, error: ciError.message }, 'Failed to post CI PR comment');
+            }
+            // --- CI Integrations End ---
 
         } catch (error: any) {
             logger.error({ taskId, organizationId, error: error.message }, 'Container orchestration failure');

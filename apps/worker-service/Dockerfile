@@ -26,4 +26,4 @@ RUN npm run build
 ENV NODE_ENV=production
 
 # The manager script runs as the entry point
-CMD ["node", "dist/worker.js"]
+CMD ["sh", "-c", "node $(find dist -name worker.js | head -n 1)"]

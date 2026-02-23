@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.2.0] — 2026-02-24 — Native CI/CD Integrations
+
+### Added
+- **Native CI Providers** — Added robust strategy-pattern `CiProvider` implementations for GitHub, GitLab, and Azure DevOps to natively post AI root-cause analysis as PR/MR comments.
+- **Dynamic API Routing** — Refactored integration API to use a unified `PATCH /api/organization/integrations/:provider` endpoint for secure PAT token storage.
+- **Provider Settings UI** — Added a native "Integrations" UI in the Dashboard to securely manage GitHub, GitLab, and Azure DevOps personal access tokens (PATs).
+- **Automated CI Triggers** — Added `POST /api/ci/trigger` webhook endpoint for CI environments to natively initiate test cycles and supply standard SCM push context.
+
+### Changed
+- **Encrypted Storage** — Migrated integration credentials to use strict AES-256-GCM encryption at rest within the `Organization` document.
+- **Worker Execution Flow** — Refactored the Worker Service pipeline to dynamically resolve the SCM provider and dispatch AI comments upstream asynchronously.
+
 ## [3.1.1] — 2026-02-23 — Security Hardening Documentation
 
 ### Added

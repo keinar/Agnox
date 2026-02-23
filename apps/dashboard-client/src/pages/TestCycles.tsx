@@ -483,6 +483,12 @@ export function TestCycles() {
         },
         enabled: !!token && !!state.reviewExecutionId,
         staleTime: 30_000,
+        refetchInterval: (query: any) => {
+            const exec = query?.state?.data?.execution || query?.data?.execution;
+            if (exec?.status === 'RUNNING' || exec?.status === 'ANALYZING') return 3000;
+            if (!exec && state.reviewExecutionId) return 3000;
+            return false;
+        },
     });
 
     const reviewExecution: Execution | null = reviewExecutionResponse?.execution ?? null;

@@ -170,8 +170,8 @@ function CycleItemRow({ item }: { item: ICycleItem }) {
 
                 {/* Type badge */}
                 <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-medium ${item.type === 'AUTOMATED'
-                        ? 'bg-violet-900/40 text-violet-400'
-                        : 'bg-sky-900/40 text-sky-400'
+                    ? 'bg-violet-900/40 text-violet-400'
+                    : 'bg-sky-900/40 text-sky-400'
                     } ${PRINT_BADGE}`}>
                     {item.type}
                 </span>
@@ -215,6 +215,11 @@ export function CycleReportPage() {
         },
         enabled: Boolean(id && token),
         retry: 1,
+        refetchInterval: (query: any) => {
+            const status = query?.state?.data?.status || query?.data?.status;
+            if (status === 'PENDING' || status === 'RUNNING') return 3000;
+            return false;
+        },
     });
 
     // ── Loading state ──────────────────────────────────────────────────────────
