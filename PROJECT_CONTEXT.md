@@ -126,15 +126,18 @@ Agnostic-Automation-Center/
 | 8 (**Complete**) | CRON Scheduling & Slack Notifications | Native CRON scheduling engine (`node-cron`) with `scheduler.ts` in-memory job registry, 3 REST endpoints (`POST/GET/DELETE /api/schedules`), `schedules` MongoDB collection. Dual-mode Execution Modal (Immediate / Schedule Run). `SchedulesList` settings tab. Slack Incoming Webhook notifications (`notifier.ts`) on final execution statuses — configured per-org via Integrations tab. |
 | 9 (**Complete**) | Quality Hub: Manual Testing & Hybrid Cycles | Test case repository (`test_cases` collection) with CRUD + AI bulk generation via Gemini. `TestCases.tsx` page with suite-grouped accordions and `TestCaseDrawer.tsx` side drawer. Hybrid cycle builder: `test_cycles` collection, `CycleBuilderDrawer.tsx`, `TestCycles.tsx` page. Manual execution player (`ManualExecutionDrawer.tsx`) with step-by-step Pass/Fail/Skip. Worker→Producer cycle sync via `cycleId`/`cycleItemId`. `PUT /api/test-cycles/:cycleId/items/:itemId` for manual results. |
 | 10 (**Complete**) | Reporting & Automation Infrastructure | Live HTML cycle reports (`CycleReportPage.tsx`) with native print optimization. `VersionDisplay.tsx` component reads `__APP_VERSION__` injected at build time from root `package.json`. Automated version pipeline eliminates manual version strings. Print CSS forces manual-step expansion and high-contrast badges for PDF output. |
+| 11 (**Complete**) | Security Hardening (Defense in Depth) | Redis-backed JWT revocation blacklist, `PLATFORM_*` prefix namespace for safe Docker orchestration, RabbitMQ Zod schema validation, HMAC-signed static report access, SSRF protections, and HS256 algorithm pinning. |
 
-### Security Posture (Score: 92/100)
+### Security Posture (Score: 100/100)
 
 - JWT HS256 auth with 24h expiry + API key dual-auth
+- Redis-based JWT revocation blacklist on user logout
 - bcrypt password hashing (10 salt rounds)
-- SHA-256 hashed invitation tokens and API keys
+- HMAC-SHA256 hashed invitation tokens and API keys
 - Redis-backed rate limiting (per-org + per-IP)
 - Account lockout (5 failed attempts → 15min lock)
-- Security headers (HSTS, X-Frame-Options, nosniff, XSS-Protection)
+- Security headers (HSTS preload, CSP, X-Frame-Options, nosniff)
+- SSRF Prevention (Regex domain matching + AES-256-GCM for Slack Webhooks)
 - Stripe webhook signature verification
 - Audit logging for admin actions
 - Soft deletion preserves billing accuracy
@@ -151,7 +154,7 @@ Agnostic-Automation-Center/
 | POST | `/api/auth/login` | Public | 5/min/IP | Authenticate, return JWT. Lockout after 5 failures (15min) |
 | GET | `/api/auth/me` | JWT | 100/min/org | Current user profile + organization details + limits |
 | PATCH | `/api/auth/profile` | JWT | 100/min/org | Update user name |
-| POST | `/api/auth/logout` | JWT | 100/min/org | Placeholder (client-side token removal) |
+| POST | `/api/auth/logout` | JWT | 100/min/org | Token revocation (Redis blacklist addition) |
 | POST | `/api/auth/api-keys` | JWT | 100/min/org | Generate API key (`pk_live_<hex>`), return full key once |
 | GET | `/api/auth/api-keys` | JWT | 100/min/org | List API keys (prefix only) |
 | DELETE | `/api/auth/api-keys/:id` | JWT | 100/min/org | Revoke API key |
@@ -583,12 +586,14 @@ createApiKeyAuthMiddleware(db)
 
 | Variable | Required | Default | Purpose |
 |----------|----------|---------|---------|
-| `JWT_SECRET` | **CRITICAL** | `dev-secret-...` (exits in prod) | JWT signing key (64+ chars) |
+| `PLATFORM_JWT_SECRET` | **CRITICAL** | `dev-secret-...` (exits in prod) | JWT signing key (64+ chars) |
 | `JWT_EXPIRY` | No | `24h` | Token expiration |
 | `PASSWORD_SALT_ROUNDS` | No | `10` | bcrypt rounds |
-| `MONGODB_URL` / `MONGO_URI` | Yes | `mongodb://automation-mongodb:27017/automation_platform` | MongoDB connection |
-| `REDIS_URL` | Yes | `redis://localhost:6379` | Redis (rate limiting, metrics) |
-| `RABBITMQ_URL` | Yes | `amqp://rabbitmq:5672` | RabbitMQ broker |
+| `PLATFORM_API_KEY_HMAC_SECRET`| Yes | `mock_secret` | HMAC secret for API Keys |
+| `PLATFORM_WORKER_CALLBACK_SECRET`| Yes | `mock_secret` | Internal hook handshake secret |
+| `PLATFORM_MONGO_URI` | Yes | `mongodb://automation-mongodb:27017/automation_platform` | MongoDB connection |
+| `PLATFORM_REDIS_URL` | Yes | `redis://localhost:6379` | Redis (rate limiting, metrics) |
+| `PLATFORM_RABBITMQ_URL` | Yes | `amqp://rabbitmq:5672` | RabbitMQ broker |
 | `PORT` | No | `3000` | HTTP listen port |
 | `NODE_ENV` | No | — | `production` enables HSTS, JWT check |
 | `STRIPE_SECRET_KEY` | Prod | `sk_test_mock` | Stripe API key |
@@ -611,17 +616,17 @@ createApiKeyAuthMiddleware(db)
 | `ADMIN_USER` | No | `admin@test.com` | Bootstrap admin email (dev) |
 | `ADMIN_PASS` | No | `TestPass123!` | Bootstrap admin password (dev) |
 | `REPORTS_DIR` | No | `/app/reports` | Reports storage directory |
-| `GEMINI_API_KEY` | No | `mock_gemini` | Gemini API (for strict checks) |
+| `PLATFORM_GEMINI_API_KEY` | No | `mock_gemini` | Gemini API (for strict checks) |
 
 ### Worker Service
 
 | Variable | Required | Default | Purpose |
 |----------|----------|---------|---------|
-| `MONGODB_URL` / `MONGO_URI` | Yes | `mongodb://localhost:27017` | MongoDB connection |
-| `RABBITMQ_URL` | Yes | `amqp://localhost` | RabbitMQ broker |
-| `REDIS_URL` | Yes | `redis://localhost:6379` | Redis (performance metrics) |
+| `PLATFORM_MONGO_URI` | Yes | `mongodb://localhost:27017` | MongoDB connection |
+| `PLATFORM_RABBITMQ_URL` | Yes | `amqp://localhost` | RabbitMQ broker |
+| `PLATFORM_REDIS_URL` | Yes | `redis://localhost:6379` | Redis (performance metrics) |
 | `PRODUCER_URL` | Yes | `http://producer:3000` | Producer API for callbacks |
-| `GEMINI_API_KEY` | No | — | Google Gemini AI (optional) |
+| `PLATFORM_GEMINI_API_KEY` | No | — | Google Gemini AI (optional) |
 | `RUNNING_IN_DOCKER` | No | `false` | Enables localhost→host.docker.internal rewrite |
 | `BASE_URL` | No | `http://host.docker.internal:3000` | Fallback test target URL |
 | `PUBLIC_API_URL` | No | `http://localhost:3000` | Base URL for report links |

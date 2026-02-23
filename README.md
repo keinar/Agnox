@@ -99,11 +99,14 @@ First-class bug-filing directly from the dashboard.
 
 Built with security best practices from the ground up.
 
-- **JWT Authentication:** Stateless authentication with bcrypt password hashing
+- **JWT Authentication:** HS256 algorithm pinning with Redis-backed revocation blacklist
 - **Role-Based Access Control (RBAC):** Admin, Developer, Viewer roles
+- **API Key Security:** Server-side HMAC-SHA256 hashing for secure revocation
+- **Attack Surface Minimization:** Strict SSRF domain allowlisting and HMAC-signed static artifact access 
+- **Data at Rest:** AES-256-GCM encryption for stored integration secrets
 - **Rate Limiting:** Per-organization and per-IP rate limiting (Redis-based)
 - **Account Protection:** Login attempt tracking with automatic lockout (15 min after 5 failures)
-- **Security Headers:** OWASP-recommended headers (HSTS, X-Frame-Options, CSP-ready)
+- **Security Headers:** OWASP-recommended headers (HSTS preload, CSP-ready, X-Frame-Options)
 - **CORS Protection:** Environment-based origin validation
 
 ### Smart Environment Mapping

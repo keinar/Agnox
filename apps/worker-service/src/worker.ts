@@ -465,9 +465,10 @@ async function startWorker() {
             if (fs.existsSync(allureResultsDir) && !fs.existsSync(allureReportDir)) {
                 logger.info({ taskId, organizationId }, '[Allure] Generating report from results...');
                 try {
-                    const { execSync } = require('child_process');
-                    execSync(
-                        `allure generate "${allureResultsDir}" --clean -o "${allureReportDir}"`,
+                    const { execFileSync } = require('child_process');
+                    execFileSync(
+                        'allure',
+                        ['generate', allureResultsDir, '--clean', '-o', allureReportDir],
                         { stdio: 'pipe' }
                     );
                     logger.info({ taskId, organizationId }, '[Allure] Report generated successfully');

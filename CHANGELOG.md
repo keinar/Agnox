@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.1.1] — 2026-02-23 — Security Hardening Documentation
+
+### Added
+- **Security Architecture Document** — Created `docs/SECURITY_ARCHITECTURE.md` detailing the enterprise-grade, defense-in-depth security measures implemented during Sprints 1-3.
+- **Documentation Sync** — Synchronized `PROJECT_CONTEXT.md`, `README.md`, and `architecture/overview.md` to reflect the new `PLATFORM_*` namespace, Redis JWT blacklisting, and SSRF mitigations.
+
 ## [3.1.0] — 2026-02-22 — Quality Hub & Reporting Evolution
 
 ### Added

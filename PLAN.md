@@ -68,6 +68,41 @@ Transform the AAC from a pure execution engine into a comprehensive Test Managem
 
 ## Archive / Completed Sprints
 
+# SPRINT 1-3 — Security Hardening Phase
+
+## 🎯 Phase Goal
+Remediate all CRITICAL and HIGH findings identified in the February 2026 security audit to achieve an enterprise-grade security posture without breaking runtime contracts.
+
+---
+
+## 📋 Task Breakdown
+
+### [x] Sprint 1: Critical Fixes ✅
+**Goal:** Stop active exploitation vectors.
+- **Action:** Rotated MongoDB Atlas password, Gemini API key, and admin credentials. Purged `.env.server` from git history.
+- **Action:** Implemented internal auth handshake (`PLATFORM_WORKER_CALLBACK_SECRET`) for worker callbacks, eliminating cross-tenant IDOR.
+- **Action:** Applied the "Platform Prefix" strategy (`PLATFORM_*`) to prevent infrastructure secrets from being injected into test containers.
+- **Action:** Added RabbitMQ Zod schema validation and Docker `HostConfig` security limits.
+- **Action:** Fixed `FATAL ERROR` resolution logic to correctly mark crashed containers as `FAILED`.
+
+### [x] Sprint 2: High Severity Hardening ✅
+**Goal:** Eliminate SSRF vectors, command injection, and unauthenticated data leakage.
+- **Action:** Implemented short-lived HMAC-signed URL tokens for serving static test reports securely.
+- **Action:** Added regex validation to Jira domain input to prevent SSRF.
+- **Action:** Added strict URL validation and AES-256-GCM encryption for storing Slack webhook URLs.
+- **Action:** Hardened Jira custom fields integration to prevent payload injection.
+- **Action:** Replaced `execSync` with `execFileSync` to eliminate shell interpolation vulnerabilities.
+
+### [x] Sprint 3: Defence in Depth ✅
+**Goal:** Harden the authentication layer and close remaining findings.
+- **Action:** Implemented a Redis-based JWT revocation blacklist on user logout.
+- **Action:** Pinned JWT algorithm strictly to `HS256`.
+- **Action:** Redacted JWT secret values from startup logs.
+- **Action:** Ran database migration to encrypt all legacy plaintext Slack webhook URLs.
+- **Action:** Upgraded API keys to use `HMAC-SHA256` hashing.
+- **Action:** Ensured strict `projectId` and `organizationId` boundaries.
+- **Action:** General HTTP hardening (CSP, HSTS preload).
+
 # SPRINT 7 — The Investigation Hub (V3 Architecture)
 
 ## 🎯 Sprint Goal

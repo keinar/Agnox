@@ -86,10 +86,10 @@ graph TB
 - Static file serving (HTML test reports)
 
 **Key Features:**
-- JWT authentication with bcrypt password hashing
+- HS256 JWT authentication with Redis-backed revocation blacklist
 - Role-Based Access Control (Admin, Developer, Viewer)
 - Redis-based rate limiting (per-organization + per-IP)
-- Security headers (OWASP recommendations)
+- Security headers (HSTS preload, CSP, X-Frame-Options)
 - Login attempt tracking with account lockout
 - CORS production configuration
 - Email service integration (invitations)
@@ -170,7 +170,7 @@ graph TB
 - Login attempt tracking (brute force prevention)
 - Account lockout state (15-minute duration)
 - Performance metrics (test duration history)
-- Future: Session storage, token blacklist
+- Active token revocation blacklist (JWT)
 
 **Port:** 6379
 
@@ -424,7 +424,7 @@ services:
 | **Container** | Docker SDK | Test execution isolation |
 | **AI** | Google Gemini API | Root cause analysis |
 | **Email** | SendGrid (`@sendgrid/mail`) | Invitation emails, transactional notifications |
-| **Auth** | JWT (jsonwebtoken) | Stateless authentication |
+| **Auth** | JWT (jsonwebtoken) | HS256 stateless authentication + Redis Blacklist |
 | **Password** | bcrypt | Secure password hashing |
 
 ---
