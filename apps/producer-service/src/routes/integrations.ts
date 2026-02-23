@@ -135,10 +135,13 @@ interface ICustomFieldSchema {
     allowedValues?: { id: string; value: string }[];
 }
 
-/** Standard Jira fields that are already handled by dedicated form inputs. */
+/** Standard Jira fields that must NOT be overridden via customFields (SECURITY_PLAN §2.4). */
 const STANDARD_JIRA_FIELDS = new Set([
     'summary', 'description', 'issuetype', 'project', 'reporter',
     'attachment', 'issuelinks', 'subtasks', 'comment', 'votes', 'watches',
+    'assignee', 'priority', 'labels', 'components', 'fixVersions',
+    'duedate', 'parent', 'security', 'environment', 'resolution',
+    'timetracking', 'worklog',
 ]);
 
 // ── Route registration ────────────────────────────────────────────────────────
@@ -200,10 +203,20 @@ export async function integrationRoutes(
         }
 
         try {
+            // SECURITY_PLAN §2.2 — SSRF protection: only allow *.atlassian.net
+            const sanitizedDomain = domain.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+            const atlassianPattern = /^[a-z0-9][a-z0-9-]{0,61}[a-z0-9]?\.atlassian\.net$/i;
+            if (!atlassianPattern.test(sanitizedDomain)) {
+                return reply.status(400).send({
+                    success: false,
+                    error: 'Domain must be a valid Atlassian Cloud domain (*.atlassian.net)',
+                });
+            }
+
             const { encrypted, iv, authTag } = encrypt(token.trim());
 
             const jiraSettings: IJiraSettings = {
-                domain: domain.trim().replace(/^https?:\/\//, ''), // strip protocol if included
+                domain: sanitizedDomain, // already stripped of protocol/slash
                 email: email.trim().toLowerCase(),
                 encryptedToken: encrypted,
                 iv,
@@ -526,8 +539,13 @@ export async function integrationRoutes(
                 ...(assigneeId && assigneeId.trim().length > 0 && {
                     assignee: { id: assigneeId.trim() },
                 }),
-                // Custom fields — spread directly into fields so Jira receives them as top-level keys
-                ...(customFields && typeof customFields === 'object' ? customFields : {}),
+                // SECURITY_PLAN §2.4 — Filter custom fields through allowlist
+                // Prevents attackers from overriding critical fields (project, reporter, assignee, etc.)
+                ...(customFields && typeof customFields === 'object'
+                    ? Object.fromEntries(
+                        Object.entries(customFields).filter(([k]) => !STANDARD_JIRA_FIELDS.has(k))
+                    )
+                    : {}),
             };
 
             const result = await jiraFetch(

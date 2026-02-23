@@ -7,6 +7,7 @@
  */
 
 import { IExecution, IOrganization } from '../../../../packages/shared-types/index.js';
+import { decrypt, IEncryptedPayload } from './encryption.js';
 
 const DASHBOARD_BASE_URL = process.env.DASHBOARD_BASE_URL || 'http://localhost:5173';
 
@@ -29,6 +30,35 @@ function getStatusEmoji(status: string): string {
 }
 
 /**
+ * Resolve the Slack webhook URL from the org record.
+ *
+ * Supports both:
+ *   - Encrypted payloads (IEncryptedPayload) — new records after Sprint 2
+ *   - Legacy plaintext strings — existing records until Sprint 3 migration
+ *
+ * Returns null if no webhook is configured.
+ */
+function resolveWebhookUrl(raw: unknown): string | null {
+    if (!raw) return null;
+
+    // New encrypted payload (object with encrypted/iv/authTag)
+    if (typeof raw === 'object' && raw !== null && 'encrypted' in raw && 'iv' in raw && 'authTag' in raw) {
+        try {
+            return decrypt(raw as IEncryptedPayload);
+        } catch {
+            return null; // Decryption failed — treat as unconfigured
+        }
+    }
+
+    // Legacy plaintext string
+    if (typeof raw === 'string' && raw.startsWith('https://')) {
+        return raw;
+    }
+
+    return null;
+}
+
+/**
  * Send a Slack Block Kit notification for a completed test execution.
  *
  * Returns early (no-op) if the organization has no Slack webhook configured.
@@ -43,7 +73,9 @@ export async function sendExecutionNotification(
     org: IOrganization,
     logger: ILogger
 ): Promise<void> {
-    if (!org.slackWebhookUrl) return;
+    // SECURITY_PLAN §2.3 — resolve encrypted or legacy webhook URL
+    const webhookUrl = resolveWebhookUrl(org.slackWebhookUrl);
+    if (!webhookUrl) return;
 
     const emoji = getStatusEmoji(execution.status);
     const deepLink = `${DASHBOARD_BASE_URL}/?drawerId=${execution.taskId}`;
@@ -99,7 +131,7 @@ export async function sendExecutionNotification(
     });
 
     try {
-        const response = await fetch(org.slackWebhookUrl, {
+        const response = await fetch(webhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ blocks }),

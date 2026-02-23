@@ -22,6 +22,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { authMiddleware, adminOnly } from '../middleware/auth.js';
 import { checkUsageAlerts } from '../utils/usageAlerts.js';
+import { encrypt, decrypt, IEncryptedPayload } from '../utils/encryption.js';
 
 const DB_NAME = 'automation_platform';
 const REPORTS_DIR = process.env.REPORTS_DIR || path.join(process.cwd(), 'reports');
@@ -194,7 +195,9 @@ export async function organizationRoutes(
           userCount,
           userLimit,
           aiAnalysisEnabled: org.aiAnalysisEnabled !== false, // default: true
-          slackWebhookUrl: org.slackWebhookUrl ?? null,
+          slackWebhookUrl: org.slackWebhookUrl
+            ? (typeof org.slackWebhookUrl === 'object' ? 'configured' : 'configured (legacy)')
+            : null,
           features: {
             testCasesEnabled: org.features?.testCasesEnabled !== false,
             testCyclesEnabled: org.features?.testCyclesEnabled !== false,
@@ -301,7 +304,7 @@ export async function organizationRoutes(
         updateFields.aiAnalysisEnabled = aiAnalysisEnabled;
       }
 
-      // Validate and set slackWebhookUrl if provided
+      // Validate and set slackWebhookUrl if provided (SECURITY_PLAN §2.3)
       if (slackWebhookUrl !== undefined) {
         if (slackWebhookUrl === null || slackWebhookUrl === '') {
           // Allow clearing the webhook URL
@@ -312,14 +315,19 @@ export async function organizationRoutes(
             error: 'Invalid slackWebhookUrl',
             message: 'slackWebhookUrl must be a string or null'
           });
-        } else if (!slackWebhookUrl.startsWith('https://')) {
-          return reply.code(400).send({
-            success: false,
-            error: 'Invalid slackWebhookUrl',
-            message: 'Slack webhook URL must start with https://'
-          });
         } else {
-          updateFields.slackWebhookUrl = slackWebhookUrl.trim();
+          // SSRF protection: strict Slack webhook URL validation
+          const slackPattern = /^https:\/\/hooks\.slack\.com\/services\/[A-Z0-9]{9,11}\/[A-Z0-9]{9,11}\/[a-zA-Z0-9]{24,}$/;
+          if (!slackPattern.test(slackWebhookUrl.trim())) {
+            return reply.code(400).send({
+              success: false,
+              error: 'Invalid slackWebhookUrl',
+              message: 'Must be a valid Slack Incoming Webhook URL (hooks.slack.com/services/...)'
+            });
+          }
+
+          // Encrypt before storing (defence-in-depth)
+          updateFields.slackWebhookUrl = encrypt(slackWebhookUrl.trim());
         }
       }
 
@@ -384,7 +392,9 @@ export async function organizationRoutes(
           id: updatedOrg?._id.toString(),
           name: updatedOrg?.name,
           aiAnalysisEnabled: updatedOrg?.aiAnalysisEnabled !== false,
-          slackWebhookUrl: updatedOrg?.slackWebhookUrl ?? null
+          slackWebhookUrl: updatedOrg?.slackWebhookUrl
+            ? (typeof updatedOrg.slackWebhookUrl === 'object' ? 'configured' : 'configured (legacy)')
+            : null
         }
       });
 

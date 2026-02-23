@@ -21,6 +21,7 @@ import { testCaseRoutes } from '../routes/test-cases.js';
 import { testCycleRoutes } from '../routes/test-cycles.js';
 import { aiRoutes } from '../routes/ai.js';
 import { sendExecutionNotification, FINAL_EXECUTION_STATUSES } from '../utils/notifier.js';
+import { generateReportToken, REPORT_TOKEN_TTL } from '../utils/reportToken.js';
 import { createTestRunLimitMiddleware } from '../middleware/planLimits.js';
 import { getDbName } from './server.js';
 
@@ -828,6 +829,38 @@ export async function setupRoutes(
         } catch (error) {
             app.log.error(error, '[executions] Failed to fetch execution by taskId');
             return reply.status(500).send({ success: false, error: 'Failed to fetch execution' });
+        }
+    });
+
+    // ── GET /api/executions/:taskId/report-token — SECURITY_PLAN §2.1 ────────
+    // Returns a short-lived HMAC-signed token for authenticated report access.
+    // The caller must own the execution (JWT org check).
+    app.get('/api/executions/:taskId/report-token', async (request, reply) => {
+        if (!dbClient) return reply.status(500).send({ success: false, error: 'Database not connected' });
+
+        const organizationId = request.user!.organizationId;
+        const { taskId } = request.params as { taskId: string };
+
+        try {
+            const collection = dbClient.db(DB_NAME).collection('executions');
+            const execution = await collection.findOne(
+                { taskId, organizationId, deletedAt: { $exists: false } },
+                { projection: { _id: 1 } },
+            );
+
+            if (!execution) {
+                return reply.status(404).send({ success: false, error: 'Execution not found' });
+            }
+
+            const token = generateReportToken(organizationId, taskId);
+
+            return reply.send({
+                success: true,
+                data: { token, expiresIn: REPORT_TOKEN_TTL },
+            });
+        } catch (error) {
+            app.log.error(error, '[report-token] Failed to generate report token');
+            return reply.status(500).send({ success: false, error: 'Failed to generate report token' });
         }
     });
 

@@ -394,12 +394,12 @@ members retain access to all historical reports indefinitely via the organizatio
 
 Token payload: `{ orgId, taskId, exp: now + 300s }` — signed with `PLATFORM_JWT_SECRET`.
 
-- [ ] Add `GET /api/executions/:taskId/report-token` endpoint (JWT-protected)
-- [ ] Implement `generateReportToken(orgId, taskId)` utility
-- [ ] Implement `verifyReportToken(token, requestPath)` utility
-- [ ] Replace blanket `/reports/` bypass in `middleware.ts` with token validation
-- [ ] Update dashboard report links to fetch a token before navigation
-- [ ] Set token expiry to 5 minutes (300 seconds)
+- [x] Add `GET /api/executions/:taskId/report-token` endpoint (JWT-protected)
+- [x] Implement `generateReportToken(orgId, taskId)` utility
+- [x] Implement `verifyReportToken(token, requestPath)` utility
+- [x] Replace blanket `/reports/` bypass in `middleware.ts` with token validation
+- [x] Update dashboard report links to fetch a token before navigation
+- [x] Set token expiry to 5 minutes (300 seconds)
 
 ---
 
@@ -423,8 +423,8 @@ if (!atlassianPattern.test(sanitized)) {
 }
 ```
 
-- [ ] Add `atlassianPattern` regex validation to Jira domain update handler
-- [ ] Sanitize stored domain (strip protocol prefix, trailing slash)
+- [x] Add `atlassianPattern` regex validation to Jira domain update handler
+- [x] Sanitize stored domain (strip protocol prefix, trailing slash)
 - [ ] Add unit test for domain validation edge cases (IP addresses, cloud metadata URLs)
 
 ---
@@ -460,9 +460,9 @@ await orgCollection.updateOne({ _id: orgId }, { $set: { slackWebhookUrl: encrypt
 const webhookUrl = decrypt(org.slackWebhookUrl);
 ```
 
-- [ ] Add `slackPattern` regex validation to organization webhook update handler
-- [ ] Encrypt webhook URL with `utils/encryption.ts` before storing in MongoDB
-- [ ] Update `notifier.ts` to decrypt before use
+- [x] Add `slackPattern` regex validation to organization webhook update handler
+- [x] Encrypt webhook URL with `utils/encryption.ts` before storing in MongoDB
+- [x] Update `notifier.ts` to decrypt before use
 - [ ] Note: existing plaintext URLs require migration (see Sprint 3 §3.3)
 
 ---
@@ -489,8 +489,8 @@ const safeCustomFields = customFields
   : {};
 ```
 
-- [ ] Define `STANDARD_JIRA_FIELDS` constant (module-level `Set`)
-- [ ] Replace raw `customFields` spread with filtered `safeCustomFields`
+- [x] Define `STANDARD_JIRA_FIELDS` constant (module-level `Set`)
+- [x] Replace raw `customFields` spread with filtered `safeCustomFields`
 
 ---
 
@@ -672,10 +672,10 @@ Step 5: Set WORKER_CALLBACK_TRANSITION=false (or remove var) after 24 hours
 | Sprint 1 | CRIT-2 — Platform prefix rename & container env hardening | ✅ Done |
 | Sprint 1 | CRIT-4 — RabbitMQ Zod schema + Docker HostConfig | ✅ Done |
 | Sprint 1 | Logic — FATAL ERROR → FAILED status resolution | ✅ Done |
-| Sprint 2 | HIGH-6 — Signed tokens for report access | ⬜ Not Started |
-| Sprint 2 | HIGH-3 — Jira SSRF domain validation | ⬜ Not Started |
-| Sprint 2 | HIGH-7 — Slack SSRF + encryption (new records) | ⬜ Not Started |
-| Sprint 2 | HIGH-4 — Jira custom fields injection | ⬜ Not Started |
+| Sprint 2 | HIGH-6 — Signed tokens for report access | ✅ Done |
+| Sprint 2 | HIGH-3 — Jira SSRF domain validation | ✅ Done |
+| Sprint 2 | HIGH-7 — Slack SSRF + encryption (new records) | ✅ Done |
+| Sprint 2 | HIGH-4 — Jira custom fields injection | ✅ Done |
 | Sprint 2 | HIGH-5 — `execSync` → `execFileSync` | ✅ Done |
 | Sprint 3 | HIGH-8 — JWT blacklist on logout | ⬜ Not Started |
 | Sprint 3 | HIGH-1 — JWT algorithm pinning (HS256) | ⬜ Not Started |

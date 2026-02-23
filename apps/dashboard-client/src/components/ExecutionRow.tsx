@@ -32,12 +32,12 @@ type TriggerType = 'Manual' | 'CRON' | 'GitHub' | 'GitLab' | 'Jenkins' | 'Webhoo
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const TRIGGER_CONFIG: Record<TriggerType, { icon: React.ElementType; className: string }> = {
-    Manual:  { icon: User2,     className: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
-    CRON:    { icon: Timer,     className: 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' },
-    GitHub:  { icon: Github,    className: 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
-    GitLab:  { icon: Gitlab,    className: 'bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800' },
+    Manual: { icon: User2, className: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700' },
+    CRON: { icon: Timer, className: 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' },
+    GitHub: { icon: Github, className: 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' },
+    GitLab: { icon: Gitlab, className: 'bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800' },
     Jenkins: { icon: Settings2, className: 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800' },
-    Webhook: { icon: Link2,     className: 'bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-800' },
+    Webhook: { icon: Link2, className: 'bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-800' },
 };
 
 /** Maps the raw `trigger` field from the API to a display-ready TriggerType. */
@@ -47,11 +47,11 @@ const resolveTrigger = (raw: string | undefined): TriggerType => {
         case 'cron':
         case 'scheduled': return 'CRON';
         case 'github':
-        case 'ci':        return 'GitHub';
-        case 'gitlab':    return 'GitLab';
-        case 'jenkins':   return 'Jenkins';
-        case 'webhook':   return 'Webhook';
-        default:          return 'Manual';
+        case 'ci': return 'GitHub';
+        case 'gitlab': return 'GitLab';
+        case 'jenkins': return 'Jenkins';
+        case 'webhook': return 'Webhook';
+        default: return 'Manual';
     }
 };
 
@@ -86,13 +86,13 @@ const calculateDuration = (exec: any) => {
 
 // Status badge variant classes — PASSED=emerald, FAILED/ERROR=rose, RUNNING/PENDING/UNSTABLE=amber, ANALYZING=blue
 const STATUS_BADGE: Record<string, string> = {
-    PASSED:    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800',
-    FAILED:    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800',
-    ERROR:     'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800',
-    RUNNING:   'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800',
-    PENDING:   'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800',
+    PASSED: 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800',
+    FAILED: 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800',
+    ERROR: 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800',
+    RUNNING: 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800',
+    PENDING: 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800',
     ANALYZING: 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800',
-    UNSTABLE:  'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800',
+    UNSTABLE: 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800',
 };
 
 const DEFAULT_BADGE = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
@@ -100,14 +100,14 @@ const DEFAULT_BADGE = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
 /** Returns the appropriate icon for a given execution status. Module-level for stable reference. */
 function getStatusIcon(status: string) {
     switch (status) {
-        case 'PASSED':    return <CheckCircle size={13} />;
-        case 'FAILED':    return <XCircle size={13} />;
-        case 'ERROR':     return <XCircle size={13} />;
-        case 'UNSTABLE':  return <AlertTriangle size={13} />;
+        case 'PASSED': return <CheckCircle size={13} />;
+        case 'FAILED': return <XCircle size={13} />;
+        case 'ERROR': return <XCircle size={13} />;
+        case 'UNSTABLE': return <AlertTriangle size={13} />;
         case 'ANALYZING': return <Sparkles size={13} className="animate-pulse" />;
-        case 'RUNNING':   return <PlayCircle size={13} className="animate-spin" style={{ animationDuration: '3s' }} />;
-        case 'PENDING':   return <Clock size={13} className="animate-pulse" />;
-        default:          return <Clock size={13} />;
+        case 'RUNNING': return <PlayCircle size={13} className="animate-spin" style={{ animationDuration: '3s' }} />;
+        case 'PENDING': return <Clock size={13} className="animate-pulse" />;
+        default: return <Clock size={13} />;
     }
 }
 
@@ -117,6 +117,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
     execution, onDelete, onSelect, isSelected, visibleColumns, animateIn = false,
 }) {
     const [showJiraModal, setShowJiraModal] = React.useState(false);
+    const [fetchingReport, setFetchingReport] = React.useState(false);
     const [, setSearchParams] = useSearchParams();
 
     const getBaseUrl = () => {
@@ -128,8 +129,45 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
     };
 
     const baseUrl = getBaseUrl();
-    const htmlReportUrl   = `${baseUrl}/${execution.taskId}/native-report/index.html`;
+    const htmlReportUrl = `${baseUrl}/${execution.taskId}/native-report/index.html`;
     const allureReportUrl = `${baseUrl}/${execution.taskId}/allure-report/index.html`;
+
+    /**
+     * Fetch a signed report token, then open the report URL.
+     * Opens a blank window synchronously to avoid popup blockers,
+     * then navigates it after the async token fetch completes.
+     */
+    const handleViewReport = async (reportUrl: string) => {
+        // Open window synchronously from click context (avoids popup blockers)
+        const win = window.open('about:blank', '_blank');
+        setFetchingReport(true);
+        try {
+            const apiBase = import.meta.env.VITE_API_URL || '';
+            const res = await fetch(`${apiBase}/api/executions/${execution.taskId}/report-token`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` },
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const json = await res.json();
+            const token = json?.data?.token;
+            if (!token) throw new Error('No token in response');
+            const url = `${reportUrl}?token=${encodeURIComponent(token)}`;
+            if (win) {
+                win.location.href = url;
+            } else {
+                window.open(url, '_blank');
+            }
+        } catch (err) {
+            console.error('[report-token] Failed to fetch report token:', err);
+            // Fallback: navigate to report without token (will get 401 on prod, works locally)
+            if (win) {
+                win.location.href = reportUrl;
+            } else {
+                window.open(reportUrl, '_blank');
+            }
+        } finally {
+            setFetchingReport(false);
+        }
+    };
 
     const isFinished = FINISHED_STATUSES.has(execution.status);
 
@@ -177,13 +215,11 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                 onClick={handleRowClick}
                 onKeyDown={handleRowKeyDown}
                 aria-label={`Open details for execution ${execution.taskId}`}
-                className={`h-14 border-b border-slate-100 dark:border-gh-border-dark transition-colors duration-150 cursor-pointer hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark ${
-                    animateIn ? 'animate-slide-down' : ''
-                } ${
-                    isSelected
+                className={`h-14 border-b border-slate-100 dark:border-gh-border-dark transition-colors duration-150 cursor-pointer hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark ${animateIn ? 'animate-slide-down' : ''
+                    } ${isSelected
                         ? 'bg-blue-50/60 dark:bg-blue-950/30'
                         : 'odd:bg-gh-bg dark:odd:bg-gh-bg-dark even:bg-gh-bg-subtle dark:even:bg-gh-bg-subtle-dark'
-                }`}
+                    }`}
             >
                 {/* Checkbox — bulk selection; stopPropagation prevents row expand */}
                 <td
@@ -258,7 +294,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setSearchParams((prev) => {
-                                            prev.set('drawerId',   execution.taskId);
+                                            prev.set('drawerId', execution.taskId);
                                             prev.set('drawerTab', 'ai-analysis');
                                             return prev;
                                         });
@@ -279,11 +315,10 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                                         onClick={(e) => { e.stopPropagation(); setShowJiraModal(true); }}
                                         title={hasTickets ? `${execution.jiraTickets.length} Jira ticket(s) linked — click to view or create another` : 'Create Jira Ticket'}
                                         aria-label={hasTickets ? 'View or create Jira ticket' : 'Create Jira Ticket'}
-                                        className={`${iconBtnBase} ${
-                                            hasTickets
-                                                ? 'text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-900/60'
-                                                : 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/50'
-                                        }`}
+                                        className={`${iconBtnBase} ${hasTickets
+                                            ? 'text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-900/60'
+                                            : 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/50'
+                                            }`}
                                     >
                                         <Bug size={16} />
                                     </button>
@@ -302,7 +337,7 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                                 </div>
                             )}
 
-                            {/* Report links */}
+                            {/* Report links — SECURITY_PLAN §2.1: fetch signed token before opening */}
                             {isFinished && (
                                 <>
                                     {areReportsInaccessible ? (
@@ -315,30 +350,28 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                                     ) : (
                                         <>
                                             {execution.hasNativeReport === true && (
-                                                <a
-                                                    href={htmlReportUrl}
-                                                    target="_blank"
-                                                    rel="noreferrer"
+                                                <button
+                                                    type="button"
+                                                    disabled={fetchingReport}
                                                     title="HTML Report"
                                                     aria-label="Open HTML Report"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className={`${iconBtnBase} text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/50`}
+                                                    onClick={(e) => { e.stopPropagation(); handleViewReport(htmlReportUrl); }}
+                                                    className={`${iconBtnBase} text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/50 disabled:opacity-50 disabled:cursor-wait`}
                                                 >
-                                                    <FileText size={16} />
-                                                </a>
+                                                    {fetchingReport ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
+                                                </button>
                                             )}
                                             {execution.hasAllureReport === true && (
-                                                <a
-                                                    href={allureReportUrl}
-                                                    target="_blank"
-                                                    rel="noreferrer"
+                                                <button
+                                                    type="button"
+                                                    disabled={fetchingReport}
                                                     title="Allure Report"
                                                     aria-label="Open Allure Report"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className={`${iconBtnBase} text-emerald-500 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-950/50`}
+                                                    onClick={(e) => { e.stopPropagation(); handleViewReport(allureReportUrl); }}
+                                                    className={`${iconBtnBase} text-emerald-500 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-950/50 disabled:opacity-50 disabled:cursor-wait`}
                                                 >
-                                                    <BarChart2 size={16} />
-                                                </a>
+                                                    {fetchingReport ? <Loader2 size={16} className="animate-spin" /> : <BarChart2 size={16} />}
+                                                </button>
                                             )}
                                         </>
                                     )}
