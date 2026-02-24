@@ -23,11 +23,11 @@ export const Pagination: React.FC<PaginationProps> = ({
     if (total === 0) return null;
 
     const currentPage = Math.floor(offset / limit) + 1;
-    const totalPages  = Math.ceil(total / limit);
-    const from        = offset + 1;
-    const to          = Math.min(offset + limit, total);
-    const hasPrev     = offset > 0;
-    const hasNext     = offset + limit < total;
+    const totalPages = Math.ceil(total / limit);
+    const from = offset + 1;
+    const to = Math.min(offset + limit, total);
+    const hasPrev = offset > 0;
+    const hasNext = offset + limit < total;
 
     const btnBase =
         'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg ' +
@@ -42,21 +42,21 @@ export const Pagination: React.FC<PaginationProps> = ({
     return (
         <div
             className={`
-                flex items-center justify-between px-1 pt-3 mt-1
+                flex flex-wrap items-center justify-between gap-4 px-1 pt-3 mt-1
                 transition-opacity duration-150 ${loading ? 'opacity-50 pointer-events-none' : ''}
             `}
         >
             {/* Results summary */}
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-slate-700 dark:text-slate-300">
                 Showing{' '}
-                <span className="font-semibold text-slate-700">{from}–{to}</span>
+                <span className="font-semibold text-slate-900 dark:text-white">{from}–{to}</span>
                 {' '}of{' '}
-                <span className="font-semibold text-slate-700">{total}</span>
+                <span className="font-semibold text-slate-900 dark:text-white">{total}</span>
                 {' '}result{total !== 1 ? 's' : ''}
             </span>
 
             {/* Navigation */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
                 <button
                     type="button"
                     disabled={!hasPrev}

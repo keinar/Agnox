@@ -30,8 +30,8 @@ const getApiUrl = () =>
         : 'http://localhost:3000';
 
 const ENV_BADGE: Record<string, string> = {
-    production:  'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800',
-    staging:     'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800',
+    production: 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800',
+    staging: 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800',
     development: 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
 };
 
@@ -120,70 +120,72 @@ export function SchedulesList() {
                 </div>
             ) : (
                 <div className="rounded-xl border border-slate-300 dark:border-gh-border-dark bg-white dark:bg-gh-bg-dark shadow-sm overflow-hidden">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b border-slate-200 dark:border-gh-border-dark bg-slate-50 dark:bg-gh-bg-subtle-dark">
-                                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                    Name
-                                </th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                    CRON Expression
-                                </th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                    Environment
-                                </th>
-                                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                    Folder
-                                </th>
-                                {!isViewer && (
-                                    <th className="px-5 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                                        Actions
+                    <div className="overflow-x-auto w-full">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b border-slate-200 dark:border-gh-border-dark bg-slate-50 dark:bg-gh-bg-subtle-dark">
+                                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                                        Name
                                     </th>
-                                )}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-gh-border-dark">
-                            {schedules.map((schedule) => (
-                                <tr
-                                    key={schedule._id}
-                                    className="hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark transition-colors"
-                                >
-                                    <td className="px-5 py-3.5 font-medium text-slate-900 dark:text-gh-text-dark">
-                                        {schedule.name}
-                                    </td>
-                                    <td className="px-5 py-3.5">
-                                        <code className="px-2 py-0.5 rounded bg-slate-100 dark:bg-gh-bg-subtle-dark text-slate-700 dark:text-slate-300 text-xs font-mono">
-                                            {schedule.cronExpression}
-                                        </code>
-                                    </td>
-                                    <td className="px-5 py-3.5">
-                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${ENV_BADGE[schedule.environment] ?? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'}`}>
-                                            {schedule.environment.toUpperCase()}
-                                        </span>
-                                    </td>
-                                    <td className="px-5 py-3.5 text-slate-500 dark:text-slate-400 text-xs font-mono">
-                                        {schedule.folder || 'all'}
-                                    </td>
+                                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                                        CRON Expression
+                                    </th>
+                                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                                        Environment
+                                    </th>
+                                    <th className="px-5 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                                        Folder
+                                    </th>
                                     {!isViewer && (
-                                        <td className="px-5 py-3.5 text-right">
-                                            <button
-                                                onClick={() => handleDelete(schedule._id, schedule.name)}
-                                                disabled={deletingId === schedule._id}
-                                                aria-label={`Delete schedule "${schedule.name}"`}
-                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-950/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                                            >
-                                                {deletingId === schedule._id
-                                                    ? <Loader2 size={13} className="animate-spin" />
-                                                    : <Trash2 size={13} />
-                                                }
-                                                Delete
-                                            </button>
-                                        </td>
+                                        <th className="px-5 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                                            Actions
+                                        </th>
                                     )}
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-slate-200 dark:divide-gh-border-dark">
+                                {schedules.map((schedule) => (
+                                    <tr
+                                        key={schedule._id}
+                                        className="hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark transition-colors"
+                                    >
+                                        <td className="px-5 py-3.5 font-medium text-slate-900 dark:text-gh-text-dark">
+                                            {schedule.name}
+                                        </td>
+                                        <td className="px-5 py-3.5">
+                                            <code className="px-2 py-0.5 rounded bg-slate-100 dark:bg-gh-bg-subtle-dark text-slate-800 dark:text-slate-300 text-xs font-mono">
+                                                {schedule.cronExpression}
+                                            </code>
+                                        </td>
+                                        <td className="px-5 py-3.5">
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${ENV_BADGE[schedule.environment] ?? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'}`}>
+                                                {schedule.environment.toUpperCase()}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 py-3.5 text-slate-700 dark:text-slate-400 text-xs font-mono">
+                                            {schedule.folder || 'all'}
+                                        </td>
+                                        {!isViewer && (
+                                            <td className="px-5 py-3.5 text-right">
+                                                <button
+                                                    onClick={() => handleDelete(schedule._id, schedule.name)}
+                                                    disabled={deletingId === schedule._id}
+                                                    aria-label={`Delete schedule "${schedule.name}"`}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-950/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                                >
+                                                    {deletingId === schedule._id
+                                                        ? <Loader2 size={13} className="animate-spin" />
+                                                        : <Trash2 size={13} />
+                                                    }
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        )}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
         </div>

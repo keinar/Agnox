@@ -242,12 +242,12 @@ export const Dashboard = () => {
   return (
     <div className="px-6 py-6 min-w-0 w-full">
       {/* Title + Run button */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col items-start md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
-          <h1 className="m-0 text-2xl font-bold text-gh-text dark:text-gh-text-dark">
+          <h1 className="m-0 text-xl md:text-2xl font-bold text-slate-900 dark:text-gh-text-dark tracking-tight">
             Automation Center
           </h1>
-          <p className="text-slate-500 mt-1 text-">Live monitoring of test infrastructure</p>
+          <p className="text-slate-700 dark:text-slate-400 mt-1 text-sm">Live monitoring of test infrastructure</p>
         </div>
 
         <button

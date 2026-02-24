@@ -53,8 +53,8 @@ export function TerminalView({ output, error }: TerminalViewProps) {
     <div className="flex flex-col">
 
       {/* ── Utility bar ───────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between gap-3 px-4 py-2 bg-gh-bg-subtle-dark border-b border-gh-border-dark shrink-0">
-        <span className="text-[10px] uppercase tracking-widest font-semibold text-slate-500 select-none">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2 bg-slate-100 dark:bg-gh-bg-subtle-dark border-b border-slate-300 dark:border-gh-border-dark shrink-0">
+        <span className="text-[10px] uppercase tracking-widest font-bold text-slate-700 dark:text-slate-400 select-none">
           console output
         </span>
 

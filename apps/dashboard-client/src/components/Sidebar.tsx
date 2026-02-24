@@ -24,8 +24,8 @@ const NAV_ITEMS = [
   { icon: BookOpen, label: 'Docs', to: null, href: 'http://docs.automation.keinar.com/', disabled: false },
 ] as const;
 
-const ACTIVE_CLASS = 'bg-blue-50 text-gh-accent border-r-2 border-gh-accent dark:bg-gh-bg-subtle-dark dark:text-gh-accent-dark dark:border-gh-accent-dark';
-const DEFAULT_CLASS = 'text-slate-600 hover:bg-gh-bg-subtle hover:text-gh-text dark:text-gh-text-dark dark:hover:bg-gh-bg-subtle-dark dark:hover:text-gh-text-dark';
+const ACTIVE_CLASS = 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600 dark:bg-gh-bg-subtle-dark dark:text-gh-accent-dark dark:border-gh-accent-dark';
+const DEFAULT_CLASS = 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-gh-text-dark dark:hover:bg-gh-bg-subtle-dark dark:hover:text-gh-text-dark';
 
 export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: SidebarProps) {
   const { theme } = useTheme();
@@ -44,7 +44,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
   // Logo header — always visible; shrinks to h-6 when collapsed instead of disappearing.
   // Collapse toggle sits on the right side (opposite the logo) when expanded.
   const logoBlock = (
-    <div className="flex items-center justify-between px-3 py-4 border-b border-gh-border dark:border-gh-border-dark">
+    <div className="flex items-center justify-between px-3 py-4 border-b border-slate-300 dark:border-gh-border-dark">
       <Link to="/dashboard" className="flex-shrink-0 min-w-0">
         <img
           src={logo}
@@ -127,7 +127,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
 
   // ── Version footer — clickable to open the changelog modal ──────────────
   const versionFooter = (
-    <div className="px-3 py-3 border-t border-gh-border dark:border-gh-border-dark flex items-center justify-center">
+    <div className="px-3 py-3 border-t border-slate-300 dark:border-gh-border-dark flex items-center justify-center">
       {isCollapsed ? (
         <button
           onClick={() => setShowChangelog(true)}
@@ -152,7 +152,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
   // ── Desktop sidebar ───────────────────────────────────────────────────────
   const desktopSidebar = (
     <aside
-      className={`hidden md:flex flex-col bg-gh-bg dark:bg-gh-bg-dark border-r border-gh-border dark:border-gh-border-dark transition-all duration-300 flex-shrink-0 ${isCollapsed ? 'w-16' : 'w-60'
+      className={`hidden md:flex flex-col bg-white dark:bg-gh-bg-dark border-r border-slate-300 dark:border-gh-border-dark transition-all duration-300 flex-shrink-0 ${isCollapsed ? 'w-16' : 'w-60'
         }`}
     >
       {logoBlock}
@@ -178,11 +178,11 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
 
       {/* Drawer */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-60 bg-gh-bg dark:bg-gh-bg-dark border-r border-gh-border dark:border-gh-border-dark flex flex-col md:hidden transition-transform duration-300 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed inset-y-0 left-0 z-50 w-60 bg-white dark:bg-gh-bg-dark border-r border-slate-300 dark:border-gh-border-dark flex flex-col md:hidden transition-transform duration-300 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
         {/* Mobile header with logo and close button */}
-        <div className="flex items-center justify-between px-4 py-4 border-b border-gh-border dark:border-gh-border-dark">
+        <div className="flex items-center justify-between px-4 py-4 border-b border-slate-300 dark:border-gh-border-dark">
           <Link to="/dashboard" onClick={onMobileClose} className="flex-shrink-0">
             <img
               src={logo}
@@ -246,7 +246,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
         </nav>
 
         {/* Mobile version footer */}
-        <div className="px-4 py-3 border-t border-gh-border dark:border-gh-border-dark">
+        <div className="px-4 py-3 border-t border-slate-300 dark:border-gh-border-dark">
           <button
             onClick={() => { onMobileClose(); setShowChangelog(true); }}
             aria-label="Open changelog"

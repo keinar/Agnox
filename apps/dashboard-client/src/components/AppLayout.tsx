@@ -12,7 +12,7 @@ export function AppLayout() {
     () => localStorage.getItem('aac:sidebar-collapsed') === 'true',
   );
 
-  const openMobile  = useCallback(() => setIsMobileOpen(true),  []);
+  const openMobile = useCallback(() => setIsMobileOpen(true), []);
   const closeMobile = useCallback(() => setIsMobileOpen(false), []);
 
   const toggleCollapsed = useCallback(() => {
@@ -24,7 +24,7 @@ export function AppLayout() {
   }, []);
 
   return (
-    <div className="flex h-screen bg-gh-bg-subtle dark:bg-gh-bg-subtle-dark overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-gh-bg-subtle-dark overflow-hidden">
       <Sidebar
         isMobileOpen={isMobileOpen}
         onMobileClose={closeMobile}

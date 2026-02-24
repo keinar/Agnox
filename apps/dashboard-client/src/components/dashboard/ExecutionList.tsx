@@ -122,8 +122,8 @@ function ColumnTogglePopover({ visibleColumns, onToggle }: ColumnTogglePopoverPr
               <label
                 key={col.key}
                 className={`flex items-center gap-2.5 px-3 py-2 text-sm select-none ${col.mandatory
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-gh-bg-dark'
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-gh-bg-dark'
                   }`}
               >
                 <input
@@ -150,7 +150,7 @@ function ColumnTogglePopover({ visibleColumns, onToggle }: ColumnTogglePopoverPr
 
 interface ExecutionTableHeaderProps {
   visibleDefs: ColumnDef[];
-  headerCheckboxRef: React.RefObject<HTMLInputElement>;
+  headerCheckboxRef: React.RefObject<HTMLInputElement | null>;
   isAllSelected: boolean;
   allTaskIds: string[];
   onSelectAll: () => void;
@@ -165,7 +165,7 @@ function ExecutionTableHeader({
 }: ExecutionTableHeaderProps) {
   return (
     <thead className="sticky top-0 z-10">
-      <tr className="border-b border-gh-border dark:border-gh-border-dark bg-gh-bg-subtle dark:bg-gh-bg-subtle-dark">
+      <tr className="border-b border-slate-300 dark:border-gh-border-dark bg-slate-50 dark:bg-gh-bg-subtle-dark">
         <th className="px-3 py-4 w-10">
           <input
             ref={headerCheckboxRef}
@@ -182,7 +182,7 @@ function ExecutionTableHeader({
           <th
             key={col.key}
             scope="col"
-            className={`px-4 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap ${col.key === 'actions' ? 'text-right' : ''
+            className={`px-4 py-4 text-xs font-semibold text-slate-700 dark:text-slate-400 uppercase tracking-wider whitespace-nowrap ${col.key === 'actions' ? 'text-right' : ''
               }`}
           >
             {col.label}
@@ -385,7 +385,7 @@ export function ExecutionList({
       </div>
 
       {/* Table */}
-      <div className="w-full overflow-x-auto rounded-xl border border-gh-border dark:border-gh-border-dark bg-gh-bg dark:bg-gh-bg-dark shadow-sm">
+      <div className="w-full overflow-x-auto rounded-xl border border-slate-300 dark:border-gh-border-dark bg-white dark:bg-gh-bg-dark shadow-sm">
         <table className="w-full text-sm text-left" role="grid" aria-label="Executions">
           <ExecutionTableHeader
             visibleDefs={visibleDefs}
