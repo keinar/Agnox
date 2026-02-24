@@ -4,17 +4,20 @@ Connect your test automation project to the platform and run your first test in 
 
 ---
 
-## Recommended: Use the CLI
+## Agnostic Deployment with Agnox CLI
 
-The fastest way to connect your project is the official CLI. It auto-detects your framework, generates a `Dockerfile` and `entrypoint.sh`, builds a multi-platform Docker image, and pushes it to Docker Hub - all in one command:
+The Agnox CLI provides a **Zero-Config** experience through **Deep Analysis** of your project. It starts by collecting your Docker Hub identity and deep-scans your local configuration (`package.json`, `requirements.txt`, or `pyproject.toml`) for smart version pinning. With its platform intelligence, it automatically detects browser channels, reporting tools, and system dependencies, eliminating "it works on my machine" issues by proactively warning and adjusting for platform constraints.
+
+**Key Features:**
+- **Automated Infrastructure Sync:** Deep framework analysis to pin base images to your exact local versions.
+- **Multi-Platform Buildx Execution:** Intelligent platform adjustment (e.g., forcing `linux/amd64` for proprietary browser channels) for seamless cross-platform deployments.
+- **AI-Powered Root Cause Integration:** Automatic configuration of reporting tools (like Allure) to ensure rich data for downstream AI debugging.
 
 ```bash
 npx @agnox/agnox-cli@latest init
 ```
 
-After the CLI completes, go to **Settings → Run Settings** in the dashboard to configure your project's environment URLs.
-
-> **Note:** The CLI currently supports Playwright (TypeScript/Node.js) and Pytest (Python). For other frameworks, follow the manual steps below.
+> **Next Steps:** If you choose manual deployment, the CLI generates personalized `docker buildx` commands and instructions that are specific to your Docker Hub identity and copy-paste ready.
 
 ---
 
