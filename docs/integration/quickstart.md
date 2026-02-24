@@ -137,7 +137,7 @@ Store the API key securely in your CI/CD secrets (e.g., `AAC_API_KEY`).
 ### Option A: Via Dashboard
 
 1. Login to [https://automation.keinar.com](https://automation.keinar.com)
-2. Click **"Run Test"**
+2. Click **"Run"**
 3. Enter your Docker image name
 4. Select environment and folder
 5. Click **Run**

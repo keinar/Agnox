@@ -259,7 +259,7 @@ export const Dashboard = () => {
             : 'bg-gh-accent dark:bg-gh-accent-dark text-white cursor-pointer hover:opacity-90 active:scale-95'
             }`}
         >
-          <Play size={16} className="md:w-[18px] md:h-[18px]" /> Run Test
+          <Play size={16} className="md:w-[18px] md:h-[18px]" /> Run
         </button>
       </div>
 
