@@ -8,12 +8,12 @@ The key principle: **The platform controls execution - your repo provides behavi
 
 ---
 
-## 1. Recommended: Use the AAC CLI
+## 1. Recommended: Use the Agnox CLI
 
-The fastest way to get started is with the official **AAC CLI**:
+The fastest way to get started is with the official **Agnox CLI**:
 
 ```bash
-npx @keinar/aac-cli@latest init
+npx @agnox/agnox-cli@latest init
 ```
 
 This interactive tool will:
@@ -24,7 +24,7 @@ This interactive tool will:
 
 **Supported frameworks:** Playwright (TypeScript/Node.js) and Pytest (Python).
 
-📦 **CLI Repository:** [github.com/keinar/aac-cli](https://github.com/keinar/aac-cli) ·· **npm:** [@keinar/aac-cli](https://www.npmjs.com/package/@keinar/aac-cli)
+📦 **CLI Repository:** [github.com/agnox/agnox-cli](https://github.com/agnox/agnox-cli) ·· **npm:** [@agnox/agnox-cli](https://www.npmjs.com/package/@agnox/agnox-cli)
 
 ---
 

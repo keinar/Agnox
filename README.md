@@ -148,12 +148,12 @@ Professional email communications via SendGrid.
 
 ## Connecting an Automation Project
 
-The **AAC CLI** ([`@keinar/aac-cli`](https://www.npmjs.com/package/@keinar/aac-cli)) is the official tool for preparing and connecting any test automation repository to the platform.
+The **Agnox CLI** ([`@agnox/agnox-cli`](https://www.npmjs.com/package/@agnox/agnox-cli)) is the official tool for preparing and connecting any test automation repository to the platform.
 
 ### Quick Start
 
 ```bash
-npx @keinar/aac-cli@latest init
+npx @agnox/agnox-cli@latest init
 ```
 
 ### What It Does
@@ -174,7 +174,7 @@ Once the image is pushed to Docker Hub:
 
 The platform will use this image and configuration for all future test runs launched from the Execution Modal.
 
-📦 **CLI Repository:** [github.com/keinar/aac-cli](https://github.com/keinar/aac-cli) ·· **npm:** [@keinar/aac-cli](https://www.npmjs.com/package/@keinar/aac-cli)
+📦 **CLI Repository:** [github.com/agnox/agnox-cli](https://github.com/agnox/agnox-cli) ·· **npm:** [@agnox/agnox-cli](https://www.npmjs.com/package/@agnox/agnox-cli)
 
 ---
 

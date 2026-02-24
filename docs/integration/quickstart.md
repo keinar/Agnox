@@ -9,7 +9,7 @@ Connect your test automation project to the platform and run your first test in 
 The fastest way to connect your project is the official CLI. It auto-detects your framework, generates a `Dockerfile` and `entrypoint.sh`, builds a multi-platform Docker image, and pushes it to Docker Hub - all in one command:
 
 ```bash
-npx @keinar/aac-cli@latest init
+npx @agnox/agnox-cli@latest init
 ```
 
 After the CLI completes, go to **Settings → Run Settings** in the dashboard to configure your project's environment URLs.

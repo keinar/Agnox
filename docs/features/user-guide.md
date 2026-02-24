@@ -67,7 +67,7 @@ These URLs are injected into your test container as `BASE_URL` at runtime.
 5. (Optional) Enter a **Group Name** - this is a smart Combobox: select an existing group from the dropdown to append the run to it, or type a new name to dynamically create a new group.
 6. Click **Start Execution**.
 
-> **Note:** The AAC CLI (`npx @keinar/aac-cli@latest init`) is used for **onboarding only** - generating your Dockerfile and pushing your image. Test execution is triggered via the Dashboard or API.
+> **Note:** The Agnox CLI (`npx @agnox/agnox-cli@latest init`) is used for **onboarding only** - generating your Dockerfile and pushing your image. Test execution is triggered via the Dashboard or API.
 
 ### Option B: Via API
 See [API Keys section](#9-api-keys-cicd-integration) below.
