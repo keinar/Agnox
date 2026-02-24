@@ -29,6 +29,10 @@ export async function analyzeTestFailure(logs: string, image: string): Promise<s
         Analyze the following logs and provide a structured response using Markdown.
         Focus on identifying if this is an Infrastructure Issue, Flaky Test, or Product Bug.
 
+        IMPORTANT: You are analyzing Playwright test logs. Playwright automatically retries failing tests. 
+        If a test fails initially but passes on a retry, it outputs "passed after retries (Flaky)". 
+        Do not treat this as a contradiction. Ignore the flaky successes and ONLY focus your Root Cause Analysis on tests that completely failed all retries.
+
         Logs (Last snippet):
         ${truncatedLogs}
         

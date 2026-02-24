@@ -1,6 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import { ICiProvider, ICiContext } from './CiProvider.js';
-import { ICycleItem } from '../../../../packages/shared-types/index.js';
+import { ICiProvider, ICiContext, ITestMetrics } from './CiProvider.js';
 
 export class GithubProvider implements ICiProvider {
     private octokit: Octokit;
@@ -13,7 +12,7 @@ export class GithubProvider implements ICiProvider {
         context: ICiContext,
         analysisSummary: string,
         reportUrl: string,
-        cycleItems: ICycleItem[]
+        metrics: ITestMetrics
     ): Promise<void> {
         if (!context.repository || !context.prNumber) {
             console.warn('[GithubProvider] Missing repository or PR number in CI Context. Cannot post comment.');
@@ -27,8 +26,8 @@ export class GithubProvider implements ICiProvider {
             return;
         }
 
-        const passCount = cycleItems.filter(i => i.status === 'PASSED').length;
-        const totalCount = cycleItems.length;
+        const passCount = metrics.passed;
+        const totalCount = metrics.total;
 
         const body = `## 🤖 AAC AI Analysis Report\n\n**Test Cycle Results**: ${passCount}/${totalCount} Passed\n\n### AI Summary\n${analysisSummary}\n\n[View Full Report in AAC](${reportUrl})`;
 

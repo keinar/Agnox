@@ -114,6 +114,7 @@ services:
       - CI=true
       - GITHUB_COPILOT_API_KEY=${GITHUB_COPILOT_API_KEY}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - DASHBOARD_URL=${DASHBOARD_URL}
     volumes:
       - test_results:/app/reports
       - /var/run/docker.sock:/var/run/docker.sock

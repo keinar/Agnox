@@ -543,14 +543,36 @@ async function startWorker() {
                                     const aiSummary = analysis ||
                                         (finalStatus === 'PASSED' ? 'All tests passed successfully.' : 'Tests failed. No AI analysis available.');
 
-                                    const dashboardUrl = process.env.DASHBOARD_URL || 'http://localhost:5173';
+                                    let metrics = { total: 1, passed: 0, failed: 0, skipped: 0, flaky: 0 };
+                                    const summaryPath = path.join(baseTaskDir, 'allure-report', 'widgets', 'summary.json');
+                                    if (fs.existsSync(summaryPath)) {
+                                        try {
+                                            const summaryData = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+                                            metrics = {
+                                                total: summaryData?.statistic?.total || cycle.items?.length || 1,
+                                                passed: summaryData?.statistic?.passed || 0,
+                                                failed: (summaryData?.statistic?.failed || 0) + (summaryData?.statistic?.broken || 0),
+                                                skipped: summaryData?.statistic?.skipped || 0,
+                                                flaky: 0 // We can calculate flaky if needed from other widgets, but this suffices for the PR comment
+                                            };
+                                        } catch (e) {
+                                            logger.warn({ taskId }, 'Could not parse allure summary.json. Falling back to execution counts.');
+                                            metrics.total = cycle.items?.length || 1;
+                                            metrics.passed = finalStatus === 'PASSED' ? metrics.total : 0;
+                                        }
+                                    } else {
+                                        metrics.total = cycle.items?.length || 1;
+                                        metrics.passed = finalStatus === 'PASSED' ? metrics.total : 0;
+                                    }
+
+                                    const dashboardUrl = process.env.DASHBOARD_URL as string;
                                     const reportUrl = `${dashboardUrl}/dashboard?drawerId=${taskId}`;
 
                                     await provider.postPrComment(
                                         cycle.ciContext as ICiContext,
                                         aiSummary,
                                         reportUrl,
-                                        cycle.items || []
+                                        metrics
                                     );
                                 }
                             } catch (decryptionError: any) {

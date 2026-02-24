@@ -1,7 +1,6 @@
 import * as azdev from 'azure-devops-node-api';
 import { GitPullRequestCommentThread } from 'azure-devops-node-api/interfaces/GitInterfaces.js';
-import { ICiProvider, ICiContext } from './CiProvider.js';
-import { ICycleItem } from '../../../../packages/shared-types/index.js';
+import { ICiProvider, ICiContext, ITestMetrics } from './CiProvider.js';
 
 export class AzureDevOpsProvider implements ICiProvider {
     private connection: azdev.WebApi;
@@ -23,7 +22,7 @@ export class AzureDevOpsProvider implements ICiProvider {
         context: ICiContext,
         analysisSummary: string,
         reportUrl: string,
-        cycleItems: ICycleItem[]
+        metrics: ITestMetrics
     ): Promise<void> {
         if (!context.repository || !context.prNumber) {
             console.warn('[AzureDevOpsProvider] Missing repository or PR number in CI Context. Cannot post comment.');
@@ -35,8 +34,8 @@ export class AzureDevOpsProvider implements ICiProvider {
         // Normally context.repository for Azure might contain the repository ID or name
         const repositoryId = context.repository;
 
-        const passCount = cycleItems.filter(i => i.status === 'PASSED').length;
-        const totalCount = cycleItems.length;
+        const passCount = metrics.passed;
+        const totalCount = metrics.total;
 
         const content = `## 🤖 AAC AI Analysis Report\n\n**Test Cycle Results**: ${passCount}/${totalCount} Passed\n\n### AI Summary\n${analysisSummary}\n\n[View Full Report in AAC](${reportUrl})`;
 

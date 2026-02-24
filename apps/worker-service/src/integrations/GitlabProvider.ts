@@ -1,6 +1,5 @@
 import { Gitlab } from '@gitbeaker/rest';
-import { ICiProvider, ICiContext } from './CiProvider.js';
-import { ICycleItem } from '../../../../packages/shared-types/index.js';
+import { ICiProvider, ICiContext, ITestMetrics } from './CiProvider.js';
 
 export class GitlabProvider implements ICiProvider {
     private client: any;
@@ -15,7 +14,7 @@ export class GitlabProvider implements ICiProvider {
         context: ICiContext,
         analysisSummary: string,
         reportUrl: string,
-        cycleItems: ICycleItem[]
+        metrics: ITestMetrics
     ): Promise<void> {
         if (!context.repository || !context.prNumber) {
             console.warn('[GitlabProvider] Missing repository (projectId) or PR number (Merge Request IID) in CI Context. Cannot post comment.');
@@ -25,8 +24,8 @@ export class GitlabProvider implements ICiProvider {
         const projectId = context.repository;
         const mergeRequestIid = context.prNumber;
 
-        const passCount = cycleItems.filter(i => i.status === 'PASSED').length;
-        const totalCount = cycleItems.length;
+        const passCount = metrics.passed;
+        const totalCount = metrics.total;
 
         const body = `## 🤖 AAC AI Analysis Report\n\n**Test Cycle Results**: ${passCount}/${totalCount} Passed\n\n### AI Summary\n${analysisSummary}\n\n[View Full Report in AAC](${reportUrl})`;
 

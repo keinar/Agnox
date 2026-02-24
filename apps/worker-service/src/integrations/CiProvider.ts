@@ -7,11 +7,19 @@ export interface ICiContext {
     commitSha?: string;
 }
 
+export interface ITestMetrics {
+    total: number;
+    passed: number;
+    failed: number;
+    skipped: number;
+    flaky?: number;
+}
+
 export interface ICiProvider {
     postPrComment(
         context: ICiContext,
         analysisSummary: string,
         reportUrl: string,
-        cycleItems: ICycleItem[]
+        metrics: ITestMetrics
     ): Promise<void>;
 }
