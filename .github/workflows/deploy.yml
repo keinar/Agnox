@@ -106,6 +106,7 @@ jobs:
             FROM_NAME=${{ secrets.FROM_NAME }}
             FRONTEND_URL=${{ secrets.FRONTEND_URL }}
             ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}
+            DASHBOARD_URL=${{ secrets.DASHBOARD_URL }}
             EOF
             
             # 1. Pull the latest test image
