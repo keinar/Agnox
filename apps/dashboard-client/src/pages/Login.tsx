@@ -39,7 +39,7 @@ export function Login() {
         <div className="flex justify-center mb-6 animate-fade-in-slow">
           <img
             src={logo}
-            alt="Agnostic Automation Center"
+            alt="Agnox"
             className="h-[10.5rem] w-auto object-contain"
           />
         </div>

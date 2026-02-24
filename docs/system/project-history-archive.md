@@ -1,6 +1,6 @@
 # Project History Archive
 
-Consolidated implementation history for the Agnostic Automation Center multi-tenant SaaS transformation.
+Consolidated implementation history for the Agnox multi-tenant SaaS transformation.
 
 ---
 
@@ -98,7 +98,7 @@ Consolidated implementation history for the Agnostic Automation Center multi-ten
 **Metrics:**
 - ~5,600 lines of code
 - 8 days implementation time
-- Production deployed to automation.keinar.com
+- Production deployed to agnox.dev
 
 ---
 
@@ -152,7 +152,7 @@ Consolidated implementation history for the Agnostic Automation Center multi-ten
 ### Lessons Learned
 
 **What Went Well:**
-- SendGrid integration was clean — single `@sendgrid/mail` package
+- SendGrid integration was clean - single `@sendgrid/mail` package
 - Graceful fallback to console logging for local development
 - HTML templates provide professional email appearance
 

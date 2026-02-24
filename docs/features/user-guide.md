@@ -1,6 +1,6 @@
 # User Guide
 
-Complete walkthrough of the Agnostic Automation Center platform features.
+Complete walkthrough of the Agnox platform features.
 
 ---
 
@@ -64,10 +64,10 @@ These URLs are injected into your test container as `BASE_URL` at runtime.
 2. Select your **Project** (settings are pre-filled from Run Settings).
 3. Select the **Environment** (Dev/Staging/Prod).
 4. (Optional) Override the folder path.
-5. (Optional) Enter a **Group Name** — this is a smart Combobox: select an existing group from the dropdown to append the run to it, or type a new name to dynamically create a new group.
+5. (Optional) Enter a **Group Name** - this is a smart Combobox: select an existing group from the dropdown to append the run to it, or type a new name to dynamically create a new group.
 6. Click **Start Execution**.
 
-> **Note:** The AAC CLI (`npx @keinar/aac-cli@latest init`) is used for **onboarding only** — generating your Dockerfile and pushing your image. Test execution is triggered via the Dashboard or API.
+> **Note:** The AAC CLI (`npx @keinar/aac-cli@latest init`) is used for **onboarding only** - generating your Dockerfile and pushing your image. Test execution is triggered via the Dashboard or API.
 
 ### Option B: Via API
 See [API Keys section](#9-api-keys-cicd-integration) below.
@@ -94,9 +94,9 @@ Both views support the full filter bar (status, environment, date range) and pag
 
 Select one or more execution rows using the checkboxes on the left. A floating **Bulk Actions** bar appears at the bottom of the screen with the following operations:
 
-- **Assign Group** — Opens a popover where you can type a group name and apply it to all selected executions simultaneously.
-- **Ungroup** — Removes the `groupName` assignment from all selected executions, returning them to the ungrouped pool.
-- **Delete** — Soft-deletes up to 100 selected executions in a single API call. Deleted records are retained in the database to preserve billing accuracy and are excluded from all dashboard views.
+- **Assign Group** - Opens a popover where you can type a group name and apply it to all selected executions simultaneously.
+- **Ungroup** - Removes the `groupName` assignment from all selected executions, returning them to the ungrouped pool.
+- **Delete** - Soft-deletes up to 100 selected executions in a single API call. Deleted records are retained in the database to preserve billing accuracy and are excluded from all dashboard views.
 
 ---
 
@@ -172,7 +172,7 @@ Click any execution row to open the slide-over **Investigation Hub** drawer:
 - **Artifacts tab:** Media gallery of screenshots, videos, and downloadable trace zips from the test run.
 - **AI Analysis tab:** Gemini-powered root cause analysis for failed executions.
 
-The drawer URL updates with `?drawerId=<taskId>` — links can be copied and shared directly.
+The drawer URL updates with `?drawerId=<taskId>` - links can be copied and shared directly.
 
 ---
 
@@ -188,7 +188,7 @@ Automate recurring test runs without CI/CD pipelines.
 5. Enter or select a **CRON Expression** (e.g., `0 2 * * *` = daily at 02:00 UTC). Use the preset buttons for common intervals.
 6. Click **Save Schedule**.
 
-The schedule is immediately registered in the live scheduler — no server restart needed.
+The schedule is immediately registered in the live scheduler - no server restart needed.
 
 ### Managing Schedules
 Go to **Settings** → **Schedules** to see a table of all active CRON schedules for your organization:
@@ -244,7 +244,7 @@ Hybrid test cycles combine manual and automated tests into a single, unified wor
 3. Click **Create Cycle** to open the Cycle Builder drawer.
 4. Enter a **Cycle Name**.
 5. Select **Manual Tests** from the suite-grouped checklist.
-6. (Optional) Enable **Include Automated Test Run** — requires run settings (Docker image, base URL) to be configured in Settings.
+6. (Optional) Enable **Include Automated Test Run** - requires run settings (Docker image, base URL) to be configured in Settings.
 7. Click **Launch Cycle**.
 
 > When launched, AUTOMATED items are immediately pushed to RabbitMQ for execution. MANUAL items remain PENDING until a QA engineer executes them.
@@ -267,5 +267,5 @@ Hybrid test cycles combine manual and automated tests into a single, unified wor
 
 ## 13. Support
 
-- **Documentation**: [docs.automation.keinar.com](https://docs.automation.keinar.com)
+- **Documentation**: [docs.agnox.dev](https://docs.agnox.dev)
 - **Email**: info@digital-solution.co.il

@@ -1,7 +1,7 @@
 # CI/CD Integrations Architecture Plan (Two-Way)
 
 ## 1. Objective
-Achieve a seamless two-way integration between the Agnostic Automation Center (AAC) and various Continuous Integration (CI) / Source Control Management (SCM) platforms. The primary goal is to empower developers by natively triggering automated test cycles from their CI pipelines and automatically posting AI-analyzed execution results (comments, summaries, or pass/fail statuses) directly back to the originating Pull Requests (PRs) or Merge Requests (MRs).
+Achieve a seamless two-way integration between the Agnox (AAC) and various Continuous Integration (CI) / Source Control Management (SCM) platforms. The primary goal is to empower developers by natively triggering automated test cycles from their CI pipelines and automatically posting AI-analyzed execution results (comments, summaries, or pass/fail statuses) directly back to the originating Pull Requests (PRs) or Merge Requests (MRs).
 
 ## 2. Architecture (The Provider Pattern)
 Because the platform is fundamentally **agnostic**, hardcoding platform-specific logic directly in the core services is an anti-pattern. Instead, the architecture relies heavily on the **Strategy/Provider Pattern** to maintain modularity and scalability.

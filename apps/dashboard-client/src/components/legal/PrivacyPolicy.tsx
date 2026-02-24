@@ -16,7 +16,7 @@ export function PrivacyPolicy() {
                         title: '1. Information We Collect',
                         content: (
                             <>
-                                <p>When you use Agnostic Automation Center, we collect information to provide and improve our services:</p>
+                                <p>When you use Agnox, we collect information to provide and improve our services:</p>
                                 <ul>
                                     <li><strong>Account Information:</strong> Email address, name, and organization details when you register.</li>
                                     <li><strong>Usage Data:</strong> Test execution logs, performance metrics, and platform usage statistics.</li>
@@ -112,10 +112,10 @@ export function PrivacyPolicy() {
                             <p>
                                 If you have questions about this Privacy Policy or our data practices, please contact us at{' '}
                                 <a
-                                    href="mailto:privacy@automation.keinar.com"
+                                    href="mailto:privacy@agnox.dev"
                                     className="text-gh-accent dark:text-gh-accent-dark hover:underline"
                                 >
-                                    privacy@automation.keinar.com
+                                    privacy@agnox.dev
                                 </a>
                             </p>
                         ),

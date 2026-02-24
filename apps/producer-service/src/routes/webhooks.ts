@@ -258,7 +258,7 @@ export async function webhookRoutes(
               canceledAt: new Date(((subscription as any).canceled_at || Date.now() / 1000) * 1000),
               effectiveDate: new Date(((subscription as any).current_period_end || Date.now() / 1000) * 1000),
               cancelAtPeriodEnd: (subscription as any).cancel_at_period_end || false,
-              feedbackUrl: `${process.env.FRONTEND_URL || 'https://automation.keinar.com'}/feedback`
+              feedbackUrl: `${process.env.FRONTEND_URL || 'https://agnox.dev'}/feedback`
             }).catch((error: any) => {
               app.log.error(`Failed to send cancellation email to ${admin.email}: ${error?.message || error}`);
             });
@@ -314,7 +314,7 @@ export async function webhookRoutes(
                   currency: invoice.currency,
                   periodStart: new Date(((subscription as any).current_period_start || Date.now() / 1000) * 1000),
                   periodEnd: new Date(((subscription as any).current_period_end || Date.now() / 1000) * 1000),
-                  invoiceUrl: invoice.hosted_invoice_url || `${process.env.FRONTEND_URL || 'https://automation.keinar.com'}/settings?tab=billing`
+                  invoiceUrl: invoice.hosted_invoice_url || `${process.env.FRONTEND_URL || 'https://agnox.dev'}/settings?tab=billing`
                 }).catch((error: any) => {
                   app.log.error(`Failed to send payment success email to ${admin.email}: ${error?.message || error}`);
                 });
@@ -388,7 +388,7 @@ export async function webhookRoutes(
               amount: invoice.amount_due / 100,
               failureReason: invoice.last_finalization_error?.message || 'Payment declined',
               retryDate,
-              updatePaymentUrl: `${process.env.FRONTEND_URL || 'https://automation.keinar.com'}/settings?tab=billing`
+              updatePaymentUrl: `${process.env.FRONTEND_URL || 'https://agnox.dev'}/settings?tab=billing`
             }).catch((error: any) => {
               app.log.error(`Failed to send payment failed email to ${admin.email}: ${error?.message || error}`);
             });

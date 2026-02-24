@@ -2,7 +2,7 @@
 
 **Phase 3 Sprint 5: Production Launch**
 
-Complete checklist for deploying Stripe billing integration to production at `automation.keinar.com`.
+Complete checklist for deploying Stripe billing integration to production at `agnox.dev`.
 
 ---
 
@@ -79,7 +79,7 @@ Complete checklist for deploying Stripe billing integration to production at `au
 - [ ] **Webhook Endpoint Configured**
   - [ ] Go to: https://dashboard.stripe.com/webhooks
   - [ ] Click "Add endpoint"
-  - [ ] URL: `https://automation.keinar.com/api/webhooks/stripe`
+  - [ ] URL: `https://agnox.dev/api/webhooks/stripe`
   - [ ] Select events:
     - [x] `customer.subscription.created`
     - [x] `customer.subscription.updated`
@@ -103,7 +103,7 @@ Complete checklist for deploying Stripe billing integration to production at `au
     - [x] View invoices
     - [x] Cancel subscription
     - [x] Update billing information
-  - [ ] Set return URL: `https://automation.keinar.com/settings?tab=billing`
+  - [ ] Set return URL: `https://agnox.dev/settings?tab=billing`
 
 - [ ] **Email Notifications Configured**
   - [ ] Successful payment: Enabled
@@ -132,9 +132,9 @@ STRIPE_ENTERPRISE_PRICE_ID=price_yyyyy
 # ==========================================
 # CORS & API CONFIGURATION
 # ==========================================
-VITE_API_URL=https://automation.keinar.com
-ALLOWED_ORIGINS=https://automation.keinar.com
-FRONTEND_URL=https://automation.keinar.com
+VITE_API_URL=https://agnox.dev
+ALLOWED_ORIGINS=https://agnox.dev
+FRONTEND_URL=https://agnox.dev
 
 # ==========================================
 # JWT & SECURITY
@@ -270,7 +270,7 @@ docker-compose -f docker-compose.prod.yml logs dashboard | tail -20
 
 ```bash
 # From external machine (not server)
-curl -X GET https://automation.keinar.com/api/webhooks/test
+curl -X GET https://agnox.dev/api/webhooks/test
 
 # Expected response:
 {
@@ -300,7 +300,7 @@ docker-compose -f docker-compose.prod.yml logs producer | grep -i webhook
 ### Step 8: Smoke Test Full Flow
 
 **Test Free Plan:**
-1. Open: https://automation.keinar.com
+1. Open: https://agnox.dev
 2. Sign up with new account
 3. Verify:
    - Redirected to dashboard
@@ -511,7 +511,7 @@ db.organizations.countDocuments({
 # See if events were sent
 
 # Check endpoint accessibility
-curl -X GET https://automation.keinar.com/api/webhooks/test
+curl -X GET https://agnox.dev/api/webhooks/test
 # Should return 200 OK
 ```
 
@@ -536,7 +536,7 @@ curl -X GET https://automation.keinar.com/api/webhooks/test
 docker exec automation-producer env | grep ALLOWED_ORIGINS
 
 # Expected:
-ALLOWED_ORIGINS=https://automation.keinar.com
+ALLOWED_ORIGINS=https://agnox.dev
 ```
 
 **Solutions:**
@@ -557,7 +557,7 @@ ALLOWED_ORIGINS=https://automation.keinar.com
 # Check what API URL is in dashboard bundle
 docker exec automation-dashboard cat /usr/share/nginx/html/assets/index-*.js | grep -o 'http[s]*://[^"]*' | head -1
 
-# Should output: https://automation.keinar.com
+# Should output: https://agnox.dev
 ```
 
 **Solutions:**
@@ -608,8 +608,8 @@ Billing integration deployed to production!
 - Usage alerts at 50%, 80%, 90%
 
 **URLs:**
-- Dashboard: https://automation.keinar.com
-- API: https://automation.keinar.com/api
+- Dashboard: https://agnox.dev
+- API: https://agnox.dev/api
 - Stripe Dashboard: https://dashboard.stripe.com
 
 **Monitoring:**

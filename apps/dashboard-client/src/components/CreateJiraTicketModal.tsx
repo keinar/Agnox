@@ -73,7 +73,7 @@ const resolveRunSource = (): 'LOCAL' | 'CLOUD' => {
 const buildDescription = (execution: any): string => {
     const source = resolveRunSource();
     const lines: string[] = [
-        '*Failed Execution Report — Agnostic Automation Center*',
+        '*Failed Execution Report — Agnox*',
         '',
         `*Run ID:* \`${execution.taskId}\``,
         `*Status:* ${execution.status}`,

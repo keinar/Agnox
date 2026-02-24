@@ -1,6 +1,6 @@
 # Enterprise Security Architecture
 
-This document details the defense-in-depth security architecture of the Agnostic Automation Center. It covers authentication, authorization, data protection, integration security, and tenant isolation constraints.
+This document details the defense-in-depth security architecture of the Agnox. It covers authentication, authorization, data protection, integration security, and tenant isolation constraints.
 
 ---
 

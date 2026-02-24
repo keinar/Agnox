@@ -161,7 +161,7 @@
 
   An unauthenticated attacker who can POST to
 
-  https://api.automation.keinar.com/executions/update with a guessed or known     
+  https://api.agnox.dev/executions/update with a guessed or known     
 
   cycleId can:
 

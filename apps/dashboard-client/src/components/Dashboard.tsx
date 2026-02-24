@@ -245,7 +245,7 @@ export const Dashboard = () => {
       <div className="flex flex-row items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="m-0 text-lg md:text-2xl font-bold text-slate-900 dark:text-gh-text-dark tracking-tight">
-            Automation Center
+            Agnox
           </h1>
           <p className="text-slate-700 dark:text-slate-400 mt-1 text-xs md:text-sm">Live monitoring of test infrastructure</p>
         </div>

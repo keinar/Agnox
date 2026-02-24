@@ -296,12 +296,12 @@ metadata:
 spec:
   tls:
   - hosts:
-    - automation.keinar.com
-    - api.automation.keinar.com
-    - docs.automation.keinar.com
+    - agnox.dev
+    - api.agnox.dev
+    - docs.agnox.dev
     secretName: automation-tls
   rules:
-  - host: automation.keinar.com
+  - host: agnox.dev
     http:
       paths:
       - path: /
@@ -311,7 +311,7 @@ spec:
             name: dashboard
             port:
               number: 80
-  - host: api.automation.keinar.com
+  - host: api.agnox.dev
     http:
       paths:
       - path: /
@@ -321,7 +321,7 @@ spec:
             name: producer
             port:
               number: 3000
-  - host: docs.automation.keinar.com
+  - host: docs.agnox.dev
     http:
       paths:
       - path: /

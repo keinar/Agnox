@@ -2,7 +2,7 @@
 
 ## System Architecture
 
-The Agnostic Automation Center is a microservices-based test automation platform designed for multi-tenant SaaS deployment.
+The Agnox is a microservices-based test automation platform designed for multi-tenant SaaS deployment.
 
 ```mermaid
 graph TB

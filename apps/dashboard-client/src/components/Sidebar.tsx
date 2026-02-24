@@ -21,7 +21,7 @@ const NAV_ITEMS = [
   { icon: ClipboardList, label: 'Test Cases', to: '/test-cases', href: null, disabled: false },
   { icon: Layers, label: 'Test Cycles', to: '/test-cycles', href: null, disabled: false },
   { icon: Settings, label: 'Settings', to: '/settings', href: null, disabled: false },
-  { icon: BookOpen, label: 'Docs', to: null, href: 'http://docs.automation.keinar.com/', disabled: false },
+  { icon: BookOpen, label: 'Docs', to: null, href: 'http://docs.agnox.dev/', disabled: false },
 ] as const;
 
 const ACTIVE_CLASS = 'bg-blue-50 text-blue-700 font-semibold border-r-2 border-blue-600 dark:bg-gh-bg-subtle-dark dark:text-gh-accent-dark dark:border-gh-accent-dark';
@@ -48,7 +48,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
       <Link to="/dashboard" className="flex-shrink-0 min-w-0">
         <img
           src={logo}
-          alt="Agnostic Automation Center"
+          alt="Agnox"
           className={`w-auto object-contain transition-all duration-300 ${isCollapsed ? 'h-6' : 'h-10'
             }`}
         />
@@ -186,7 +186,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
           <Link to="/dashboard" onClick={onMobileClose} className="flex-shrink-0">
             <img
               src={logo}
-              alt="Agnostic Automation Center"
+              alt="Agnox"
               className="h-10 w-auto object-contain"
             />
           </Link>

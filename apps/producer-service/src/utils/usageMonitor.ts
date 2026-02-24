@@ -96,7 +96,7 @@ export async function checkUsageAlerts(
         limit,
         percentage,
         severity: crossedThreshold.severity,
-        upgradeUrl: `${process.env.FRONTEND_URL || 'https://automation.keinar.com'}/settings?tab=billing`
+        upgradeUrl: `${process.env.FRONTEND_URL || 'https://agnox.dev'}/settings?tab=billing`
       }).catch(error => {
         console.error(`Failed to send usage alert to ${admin.email}:`, error);
       });

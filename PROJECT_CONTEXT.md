@@ -602,7 +602,7 @@ createApiKeyAuthMiddleware(db)
 | `STRIPE_TEAM_PRICE_ID` | Prod | — | Stripe price ID for Team plan |
 | `STRIPE_ENTERPRISE_PRICE_ID` | Prod | — | Stripe price ID for Enterprise |
 | `SENDGRID_API_KEY` | No | `SG.mock` | Email service (fails silently if missing) |
-| `FROM_EMAIL` | No | `noreply@automation.keinar.com` | Sender email address |
+| `FROM_EMAIL` | No | `noreply@agnox.dev` | Sender email address |
 | `FROM_NAME` | No | `Agnostic Automation Center` | Sender display name |
 | `FRONTEND_URL` | No | `http://localhost:8080` | Frontend URL for email links/redirects |
 | `ALLOWED_ORIGINS` | Prod | `localhost:8080,localhost:5173,localhost:3000` | CORS origins |

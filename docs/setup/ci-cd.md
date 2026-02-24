@@ -63,7 +63,7 @@ It uses a **HEREDOC** pattern to regenerate the `.env` file on the server during
             
             # --- EMAIL ---
             SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}
-            FROM_EMAIL=noreply@automation.keinar.com
+            FROM_EMAIL=noreply@agnox.dev
             
             # --- DASHBOARD DEFAULTS ---
             DEFAULT_TEST_IMAGE=${{ secrets.DEFAULT_TEST_IMAGE }}

@@ -1,4 +1,4 @@
-# Agnostic Automation Center - Integration Quickstart
+# Agnox - Integration Quickstart
 
 Connect your test automation project to the platform and run your first test in minutes.
 
@@ -6,7 +6,7 @@ Connect your test automation project to the platform and run your first test in 
 
 ## Recommended: Use the CLI
 
-The fastest way to connect your project is the official CLI. It auto-detects your framework, generates a `Dockerfile` and `entrypoint.sh`, builds a multi-platform Docker image, and pushes it to Docker Hub — all in one command:
+The fastest way to connect your project is the official CLI. It auto-detects your framework, generates a `Dockerfile` and `entrypoint.sh`, builds a multi-platform Docker image, and pushes it to Docker Hub - all in one command:
 
 ```bash
 npx @keinar/aac-cli@latest init
@@ -23,7 +23,7 @@ After the CLI completes, go to **Settings → Run Settings** in the dashboard to
 ### Prerequisites
 
 - **Docker Hub account** with a pushed automation image
-- **Platform account** at [automation.keinar.com](https://automation.keinar.com)
+- **Platform account** at [agnox.dev](https://agnox.dev)
 
 ---
 
@@ -76,7 +76,7 @@ RUN chmod +x /app/entrypoint.sh
 # and log streaming. Adding them here will conflict with the execution engine.
 ```
 
-> ⚠️ Do not add `ENTRYPOINT` or `CMD` to your Dockerfile. The Worker injects the entrypoint at runtime — adding them will conflict with the execution engine.
+> ⚠️ Do not add `ENTRYPOINT` or `CMD` to your Dockerfile. The Worker injects the entrypoint at runtime - adding them will conflict with the execution engine.
 
 ### 1.3 Configure Your Framework
 
@@ -111,7 +111,7 @@ docker push your-dockerhub-user/my-automation:latest
 
 ## Step 3: Register on the Platform
 
-1. Go to [https://automation.keinar.com](https://automation.keinar.com)
+1. Go to [https://agnox.dev](https://agnox.dev)
 2. Click **Sign Up** and create your account
 3. Your organization is created automatically (you're the admin)
 
@@ -121,7 +121,7 @@ docker push your-dockerhub-user/my-automation:latest
 
 For CI/CD integration, generate an API Key (no username/password required):
 
-1. Login to [https://automation.keinar.com](https://automation.keinar.com)
+1. Login to [https://agnox.dev](https://agnox.dev)
 2. Go to **Settings → Profile**
 3. Scroll to **API Access** section
 4. Click **Generate New Key**
@@ -136,7 +136,7 @@ Store the API key securely in your CI/CD secrets (e.g., `AAC_API_KEY`).
 
 ### Option A: Via Dashboard
 
-1. Login to [https://automation.keinar.com](https://automation.keinar.com)
+1. Login to [https://agnox.dev](https://agnox.dev)
 2. Click **"Run"**
 3. Enter your Docker image name
 4. Select environment and folder
@@ -145,14 +145,14 @@ Store the API key securely in your CI/CD secrets (e.g., `AAC_API_KEY`).
 ### Option B: Via API
 
 ```bash
-curl -X POST "https://api.automation.keinar.com/api/executions" \
+curl -X POST "https://api.agnox.dev/api/executions" \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "image": "your-dockerhub-user/my-automation:latest",
     "command": "npx playwright test",
     "environment": "staging",
-    "baseUrl": "https://staging.automation.keinar.com",
+    "baseUrl": "https://staging.agnox.dev",
     "folder": "tests/e2e"
   }'
 ```
@@ -169,7 +169,7 @@ jobs:
     steps:
       - name: Trigger Tests
         run: |
-          curl -X POST https://api.automation.keinar.com/api/executions \
+          curl -X POST https://api.agnox.dev/api/executions \
             -H "Content-Type: application/json" \
             -H "x-api-key: ${{ secrets.AAC_API_KEY }}" \
             -d '{
@@ -188,7 +188,7 @@ jobs:
 3. **AI Analysis** - When tests fail, AI analyzes root cause automatically
 4. **Reports** - Access HTML and Allure reports at:
    ```
-   https://api.automation.keinar.com/reports/{organizationId}/{taskId}/
+   https://api.agnox.dev/reports/{organizationId}/{taskId}/
    ```
 
 ---

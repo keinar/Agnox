@@ -87,7 +87,7 @@ services:
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:8080}
       # SendGrid Email Configuration (Phase 5)
       - SENDGRID_API_KEY=${SENDGRID_API_KEY:-SG.mock}
-      - FROM_EMAIL=${FROM_EMAIL:-noreply@automation.keinar.com}
+      - FROM_EMAIL=${FROM_EMAIL:-noreply@agnox.dev}
       - FROM_NAME=${FROM_NAME:-Agnostic Automation Center}
       - EMAIL_RETRY_MAX_ATTEMPTS=${EMAIL_RETRY_MAX_ATTEMPTS:-3}
       - EMAIL_RETRY_INITIAL_DELAY=${EMAIL_RETRY_INITIAL_DELAY:-1000}

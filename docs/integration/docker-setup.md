@@ -1,6 +1,6 @@
 # Docker Container Setup Guide
 
-This guide explains how to prepare your Docker image to work with the Agnostic Automation Center Worker.
+This guide explains how to prepare your Docker image to work with the Agnox Worker.
 
 ---
 

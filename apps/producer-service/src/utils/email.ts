@@ -13,7 +13,7 @@ import sgMail from '@sendgrid/mail';
 // ===================================================================
 
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@automation.keinar.com';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@agnox.dev';
 const FROM_NAME = process.env.FROM_NAME || 'Agnostic Automation Center';
 const EMAIL_TRACKING_ENABLED = process.env.EMAIL_TRACKING_ENABLED !== 'false';
 const EMAIL_OPEN_TRACKING = process.env.EMAIL_OPEN_TRACKING !== 'false';
@@ -375,9 +375,9 @@ export function generateWelcomeEmailHTML(params: IWelcomeEmailParams): string {
               </p>
               <p style="margin: 0 0 20px; font-size: 16px; line-height: 24px; color: #333333;">
                 ${isNewOrganization
-                  ? `Your organization <strong>${organizationName}</strong> has been created successfully! You're all set to start automating your tests.`
-                  : `You've successfully joined <strong>${organizationName}</strong> as a <strong>${roleDisplay}</strong>.`
-                }
+      ? `Your organization <strong>${organizationName}</strong> has been created successfully! You're all set to start automating your tests.`
+      : `You've successfully joined <strong>${organizationName}</strong> as a <strong>${roleDisplay}</strong>.`
+    }
               </p>
               ${isNewOrganization ? `
               <div style="background-color: #f8f9fa; border-left: 4px solid #667eea; padding: 20px; margin: 0 0 30px; border-radius: 4px;">
@@ -455,8 +455,8 @@ ${isNewOrganization ? 'Welcome to Agnostic Automation Center!' : `Welcome to ${o
 Hi ${recipientName},
 
 ${isNewOrganization
-    ? `Your organization "${organizationName}" has been created successfully! You're all set to start automating your tests.`
-    : `You've successfully joined ${organizationName} as a ${roleDisplay}.`}
+      ? `Your organization "${organizationName}" has been created successfully! You're all set to start automating your tests.`
+      : `You've successfully joined ${organizationName} as a ${roleDisplay}.`}
 
 ${isNewOrganization ? `
 GET STARTED IN 3 STEPS:
@@ -799,9 +799,9 @@ export async function sendUsageAlertEmail(params: IUsageAlertEmailParams): Promi
 Hi ${recipientName},
 
 ${severity === 'blocked'
-  ? `You've reached your ${resourceName} limit for ${organizationName}.`
-  : `You've used ${Math.round(percentage)}% of your ${resourceName} limit.`
-}
+      ? `You've reached your ${resourceName} limit for ${organizationName}.`
+      : `You've used ${Math.round(percentage)}% of your ${resourceName} limit.`
+    }
 
 USAGE DETAILS:
 - Resource: ${resourceName}
@@ -811,9 +811,9 @@ USAGE DETAILS:
 - Plan: ${plan.charAt(0).toUpperCase() + plan.slice(1)}
 
 ${severity === 'blocked' || severity === 'critical'
-  ? `To continue using ${resourceName}, please upgrade your plan:\n${upgradeUrl}`
-  : `Consider upgrading if you need more capacity:\n${upgradeUrl}`
-}
+      ? `To continue using ${resourceName}, please upgrade your plan:\n${upgradeUrl}`
+      : `Consider upgrading if you need more capacity:\n${upgradeUrl}`
+    }
 
 Need help? Contact our support team.
 
@@ -869,9 +869,9 @@ CANCELLATION DETAILS:
 - Canceled On: ${canceledAt.toLocaleDateString()}
 - Service Ends: ${effectiveDate.toLocaleDateString()}
 ${cancelAtPeriodEnd
-  ? `\nYour ${planDisplay} plan will remain active until ${effectiveDate.toLocaleDateString()}. After that, your organization will be downgraded to the Free plan.`
-  : '\nYour subscription has been canceled immediately and downgraded to the Free plan.'
-}
+      ? `\nYour ${planDisplay} plan will remain active until ${effectiveDate.toLocaleDateString()}. After that, your organization will be downgraded to the Free plan.`
+      : '\nYour subscription has been canceled immediately and downgraded to the Free plan.'
+    }
 
 WHAT HAPPENS NEXT:
 - Your test data will be retained
@@ -923,7 +923,7 @@ export async function sendPasswordResetEmail(
   resetToken: string,
   name?: string
 ): Promise<IEmailResult> {
-  const resetUrl = `${process.env.FRONTEND_URL || 'https://automation.keinar.com'}/reset-password?token=${resetToken}`;
+  const resetUrl = `${process.env.FRONTEND_URL || 'https://agnox.dev'}/reset-password?token=${resetToken}`;
   const greeting = name ? `Hi ${name},` : 'Hello,';
 
   const textContent = `

@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-Common issues and solutions for the Agnostic Automation Center.
+Common issues and solutions for the Agnox.
 
 ---
 
@@ -165,8 +165,8 @@ Common issues and solutions for the Agnostic Automation Center.
    ```env
    # In .env
    SENDGRID_API_KEY=SG.your-api-key
-   FROM_EMAIL=noreply@automation.keinar.com
-   FROM_NAME=Agnostic Automation Center
+   FROM_EMAIL=noreply@agnox.dev
+   FROM_NAME=Agnox
    ```
 
 2. **Check logs for email errors:**

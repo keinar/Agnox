@@ -8,7 +8,7 @@
 
 ## Overview
 
-The Agnostic Automation Center uses SendGrid for reliable email delivery in production. This guide covers:
+The Agnox uses SendGrid for reliable email delivery in production. This guide covers:
 
 - SendGrid setup and configuration
 - Email template customization
@@ -55,9 +55,9 @@ The platform sends 6 types of automated emails:
 1. Navigate to Settings → Sender Authentication
 2. Click "Verify a Single Sender"
 3. Fill in details:
-   - From Email: `noreply@automation.keinar.com`
-   - From Name: `Agnostic Automation Center`
-   - Reply To: `support@automation.keinar.com` (optional)
+   - From Email: `noreply@agnox.dev`
+   - From Name: `Agnox`
+   - Reply To: `support@agnox.dev` (optional)
 4. Verify via email link
 
 **Option B: Domain Authentication (Recommended for Production)**
@@ -70,15 +70,15 @@ The platform sends 6 types of automated emails:
    Example records:
    ```
    Type: CNAME
-   Name: em1234.automation.keinar.com
+   Name: em1234.agnox.dev
    Value: u1234567.wl.sendgrid.net
 
    Type: CNAME
-   Name: s1._domainkey.automation.keinar.com
+   Name: s1._domainkey.agnox.dev
    Value: s1.domainkey.u1234567.wl.sendgrid.net
 
    Type: CNAME
-   Name: s2._domainkey.automation.keinar.com
+   Name: s2._domainkey.agnox.dev
    Value: s2.domainkey.u1234567.wl.sendgrid.net
    ```
 
@@ -88,7 +88,7 @@ The platform sends 6 types of automated emails:
 **Benefits of Domain Authentication:**
 - ✅ Higher deliverability (inbox vs spam)
 - ✅ Professional sender reputation
-- ✅ Can send from any @automation.keinar.com address
+- ✅ Can send from any @agnox.dev address
 - ✅ Better analytics
 
 ---
@@ -120,8 +120,8 @@ The platform sends 6 types of automated emails:
 ```bash
 # SendGrid Configuration
 SENDGRID_API_KEY=SG.your_api_key_here
-FROM_EMAIL=noreply@automation.keinar.com
-FROM_NAME=Agnostic Automation Center
+FROM_EMAIL=noreply@agnox.dev
+FROM_NAME=Agnox
 FRONTEND_URL=http://localhost:8080
 
 # Optional: Email Tracking
@@ -139,9 +139,9 @@ EMAIL_RETRY_INITIAL_DELAY=1000
 ```bash
 # SendGrid Configuration
 SENDGRID_API_KEY=SG.production_key_here
-FROM_EMAIL=noreply@automation.keinar.com
-FROM_NAME=Agnostic Automation Center
-FRONTEND_URL=https://automation.keinar.com
+FROM_EMAIL=noreply@agnox.dev
+FROM_NAME=Agnox
+FRONTEND_URL=https://agnox.dev
 
 # Email Tracking (Enabled by default)
 EMAIL_TRACKING_ENABLED=true
@@ -182,7 +182,7 @@ docker logs automation-producer | grep SendGrid
 
 # Should see:
 # ✅ SendGrid initialized successfully
-#    From: Agnostic Automation Center <noreply@automation.keinar.com>
+#    From: Agnox <noreply@agnox.dev>
 #    Tracking: Open=true, Click=true
 ```
 
@@ -269,7 +269,7 @@ When `SENDGRID_API_KEY` is not set or invalid, emails are logged to console only
 📧 INVITATION EMAIL (Development Mode - Console Only)
 ================================================================================
 To: user@example.com
-From: Agnostic Automation Center <noreply@automation.keinar.com>
+From: Agnox <noreply@agnox.dev>
 Subject: You're invited to join Acme Corporation
 Action: Create Account
 Role: developer

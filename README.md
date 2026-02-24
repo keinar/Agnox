@@ -1,10 +1,10 @@
-# Agnostic Automation Center
+# Agnox
 
-> A high-performance, multi-tenant test automation platform designed to be **language and framework agnostic**.
+> Agnox - Universal Test Execution & AI Root Cause Analysis.
 
 Run any containerized automation suite (Playwright, Pytest, JUnit, Cypress, etc.) on a remote server with real-time monitoring, live logs, and AI-powered failure analysis. Built for teams with complete data isolation between organizations.
 
-[![Documentation](https://img.shields.io/badge/Documentation-Live-violet?style=for-the-badge&logo=docusaurus)](https://docs.automation.keinar.com)
+[![Documentation](https://img.shields.io/badge/Documentation-Live-violet?style=for-the-badge&logo=docusaurus)](https://docs.agnox.dev)
 
 ![Architecture](https://img.shields.io/badge/Architecture-Microservices-blue?style=flat-square)
 ![Multi-Tenant](https://img.shields.io/badge/Multi--Tenant-SaaS-orange?style=flat-square)
@@ -23,7 +23,7 @@ Run any containerized automation suite (Playwright, Pytest, JUnit, Cypress, etc.
 - Scaling test infrastructure for multiple teams
 - Maintaining secure, isolated test environments
 
-**The Solution:** Agnostic Automation Center provides:
+**The Solution:** Agnox provides:
 - **Framework-agnostic execution** - Bring your own Docker image, we handle the rest
 - **AI-powered debugging** - Instant root cause analysis for test failures
 - **Multi-tenant SaaS** - Complete isolation between teams/organizations
@@ -58,8 +58,8 @@ A professional React 19 + Tailwind CSS interface built for power users.
 
 - **Full-Screen Layout:** Edge-to-edge design with no artificial width constraints, maximizing visible data
 - **Collapsible Sidebar:** Persistent navigation sidebar with Dashboard, Settings, and Docs links. Collapsed state is persisted in `localStorage`
-- **AppLayout / Outlet Pattern:** React Router's nested layout pattern — the `AppLayout` component renders the `<Outlet />`, ensuring the Sidebar and global chrome are shared across all pages without re-mounting
-- **Manual Triggers:** Launch tests directly from the UI using the Execution Modal — Docker image, Target URL, and Test Folder are pre-filled from saved project settings
+- **AppLayout / Outlet Pattern:** React Router's nested layout pattern - the `AppLayout` component renders the `<Outlet />`, ensuring the Sidebar and global chrome are shared across all pages without re-mounting
+- **Manual Triggers:** Launch tests directly from the UI using the Execution Modal - Docker image, Target URL, and Test Folder are pre-filled from saved project settings
 - **Live Monitoring:** Watch console logs stream in real-time via Socket.io WebSockets
 - **Settings Management:** Manage team members, organization settings, usage quotas, and per-project run configuration
 
@@ -70,10 +70,10 @@ Powerful organization and control over test executions.
 - **Grouped vs. Flat View:** Toggle between a flat chronological list and a grouped view that aggregates runs by `groupName`. Both views support full filtering and pagination
 - **Group Collapsing:** In Grouped view, each group header shows a pass/fail summary badge and last run timestamp. Click to expand or collapse the child executions
 - **Bulk Actions Bar:** A floating action bar appears when one or more rows are selected. Supports:
-  - **Group Selected** — assign a group name to multiple executions at once (popover input)
-  - **Ungroup Selected** — remove the group assignment from selected executions
-  - **Delete Selected** — soft-delete up to 100 executions in a single operation
-- **Pagination:** Both flat and grouped views are fully paginated, with "Showing X–Y of Z results" context, Prev/Next controls, and loading state dimming
+  - **Group Selected** - assign a group name to multiple executions at once (popover input)
+  - **Ungroup Selected** - remove the group assignment from selected executions
+  - **Delete Selected** - soft-delete up to 100 executions in a single operation
+- **Pagination:** Both flat and grouped views are fully paginated, with "Showing X-Y of Z results" context, Prev/Next controls, and loading state dimming
 - **Persistent View Mode:** The active view mode (flat or grouped) is saved to `localStorage` across sessions
 
 ### Smart Real-Time Analytics
@@ -81,7 +81,7 @@ Powerful organization and control over test executions.
 Live KPI dashboard powered by MongoDB server-side aggregation.
 
 - **Total Runs:** Count of all test executions in the current calendar month, scoped to the organization
-- **Success Rate:** Computed as `PASSED / finishedRuns × 100`, rounded to one decimal place. Excludes in-progress runs (RUNNING, PENDING, ANALYZING) to avoid misleading percentages
+- **Success Rate:** Computed as `PASSED / finishedRuns X 100`, rounded to one decimal place. Excludes in-progress runs (RUNNING, PENDING, ANALYZING) to avoid misleading percentages
 - **Average Duration:** Mean execution time in milliseconds across all finished runs that have an `endTime`
 - **TanStack Query Integration:** KPIs are fetched with a 60-second stale window, 2 automatic retries, and a local skeleton-loading state while the request is in flight
 - **Zero-State Handling:** If no executions exist for the current month, all KPIs display as 0 without errors
@@ -90,7 +90,7 @@ Live KPI dashboard powered by MongoDB server-side aggregation.
 
 First-class bug-filing directly from the dashboard.
 
-- **Custom Field Schema:** The Jira project's `createmeta` endpoint is fetched at modal open time. Any custom fields (`customfield_*`) defined in the project are dynamically rendered — no hardcoded field lists
+- **Custom Field Schema:** The Jira project's `createmeta` endpoint is fetched at modal open time. Any custom fields (`customfield_*`) defined in the project are dynamically rendered - no hardcoded field lists
 - **ADF Formatting:** Issue descriptions are built using Atlassian Document Format (ADF) for rich, structured content including code blocks, bullet lists, and paragraph nodes
 - **Bidirectional Linkage:** Filed tickets are stored in MongoDB and linked back to their originating execution record
 - **Assignee Selection:** Supports dynamic assignee lookup and selection within the modal
@@ -158,7 +158,7 @@ npx @keinar/aac-cli@latest init
 
 ### What It Does
 
-- **Generates integration files** — `Dockerfile`, `entrypoint.sh`, `.dockerignore` tailored to your framework
+- **Generates integration files** - `Dockerfile`, `entrypoint.sh`, `.dockerignore` tailored to your framework
 - **Auto-detects Playwright version** from your `package.json` and pins the correct Docker base image
 - **Builds a multi-platform Docker image** (`linux/amd64` + `linux/arm64`) and pushes it to Docker Hub
 - **Supported frameworks:** Playwright (TypeScript/Node.js) and Pytest (Python)
@@ -174,7 +174,7 @@ Once the image is pushed to Docker Hub:
 
 The platform will use this image and configuration for all future test runs launched from the Execution Modal.
 
-📦 **CLI Repository:** [github.com/keinar/aac-cli](https://github.com/keinar/aac-cli) · **npm:** [@keinar/aac-cli](https://www.npmjs.com/package/@keinar/aac-cli)
+📦 **CLI Repository:** [github.com/keinar/aac-cli](https://github.com/keinar/aac-cli) ·· **npm:** [@keinar/aac-cli](https://www.npmjs.com/package/@keinar/aac-cli)
 
 ---
 
@@ -264,7 +264,7 @@ The platform works with **any containerized test framework**. Here's how to inte
 #### Option A: Use the API Directly
 
 ```bash
-curl -X POST https://api.automation.keinar.com/api/execution-request \
+curl -X POST https://api.agnox.dev/api/execution-request \
   -H "Content-Type: application/json" \
   -H "x-api-key: <REDACTED_API_KEY>" \
   -d '{
@@ -275,7 +275,7 @@ curl -X POST https://api.automation.keinar.com/api/execution-request \
     "groupName": "nightly-regression",
     "config": {
       "environment": "staging",
-      "baseUrl": "https://staging.automation.keinar.com"
+      "baseUrl": "https://staging.agnox.dev"
     }
   }'
 ```
@@ -340,7 +340,7 @@ const axios = require('axios');
 
 async function runTests() {
   const response = await axios.post(
-    'https://api.automation.keinar.com/api/execution-request',
+    'https://api.agnox.dev/api/execution-request',
     {
       taskId: `run-${Date.now()}`,
       image: 'mcr.microsoft.com/playwright:v1.40.0',
@@ -349,7 +349,7 @@ async function runTests() {
       groupName: 'smoke-suite',
       config: {
         environment: 'staging',
-        baseUrl: 'https://staging.automation.keinar.com',
+        baseUrl: 'https://staging.agnox.dev',
       },
     },
     {
@@ -418,7 +418,7 @@ Returns real-time KPI metrics for the caller's organization, scoped to the curre
 | Field | Description |
 |-------|-------------|
 | `totalRuns` | All executions in the current calendar month |
-| `successRate` | `passedRuns / finishedRuns × 100`, excluding in-progress runs |
+| `successRate` | `passedRuns / finishedRuns X 100`, excluding in-progress runs |
 | `avgDurationMs` | Mean duration across runs that have an `endTime` |
 | `period` | ISO calendar month of the aggregation window (`YYYY-MM`) |
 
@@ -436,11 +436,11 @@ Returns a paginated, filtered list of executions for the caller's organization.
 |-----------|------|---------|-------------|
 | `limit` | number | `25` | Records per page (max `100`) |
 | `offset` | number | `0` | Zero-based start index |
-| `status` | string | — | Comma-separated status values: `PASSED,FAILED,ERROR,UNSTABLE` |
-| `environment` | string | — | Case-insensitive match on `config.environment` |
-| `startAfter` | ISO date | — | Include only executions that started after this date |
-| `startBefore` | ISO date | — | Include only executions that started before this date (inclusive, extended to `23:59:59 UTC`) |
-| `groupName` | string | — | Exact match on `groupName` field |
+| `status` | string | - | Comma-separated status values: `PASSED,FAILED,ERROR,UNSTABLE` |
+| `environment` | string | - | Case-insensitive match on `config.environment` |
+| `startAfter` | ISO date | - | Include only executions that started after this date |
+| `startBefore` | ISO date | - | Include only executions that started before this date (inclusive, extended to `23:59:59 UTC`) |
+| `groupName` | string | - | Exact match on `groupName` field |
 
 **Response:**
 ```json
@@ -515,7 +515,7 @@ Updates a whitelisted field on up to 100 executions in a single operation. Curre
 
 #### DELETE `/api/executions/bulk`
 
-Soft-deletes up to 100 executions at once. Records are not removed from the database — a `deletedAt` timestamp is written to preserve billing accuracy.
+Soft-deletes up to 100 executions at once. Records are not removed from the database - a `deletedAt` timestamp is written to preserve billing accuracy.
 
 **Request Body:**
 ```json
@@ -587,13 +587,13 @@ STRIPE_WEBHOOK_SECRET=<REDACTED_STRIPE_WEBHOOK_SECRET>
 
 # SendGrid (for email notifications)
 SENDGRID_API_KEY=SG....
-FROM_EMAIL=noreply@automation.keinar.com
+FROM_EMAIL=noreply@agnox.dev
 ```
 
 ### Frontend
 
 ```env
-VITE_API_URL=https://api.automation.keinar.com
+VITE_API_URL=https://api.agnox.dev
 ```
 
 ---
@@ -712,19 +712,19 @@ See the [Deployment Guide](docs/setup/deployment.md) for full deployment instruc
 - **Dual-Mode Execution Modal:** Toggle between "Immediate" and "Schedule Run" modes. Schedule mode adds a name and CRON expression field with one-click preset buttons
 - **Schedules Settings Tab:** `Settings → Schedules` lists all CRON schedules with environment badge, CRON expression, folder, and delete action (hidden for Viewer role)
 - **Slack Webhook Notifications:** `notifier.ts` sends Block Kit messages to a configured Slack Incoming Webhook when an execution reaches a final status (PASSED / FAILED / ERROR / UNSTABLE). Includes AI analysis snippet for failures and a deep link to the Investigation Hub
-- **Slack Configuration:** `Settings → Integrations → Slack` card — admins enter and save the org-level Incoming Webhook URL. Persisted on `organizations.slackWebhookUrl`
+- **Slack Configuration:** `Settings → Integrations → Slack` card - admins enter and save the org-level Incoming Webhook URL. Persisted on `organizations.slackWebhookUrl`
 
 ---
 
-### Sprint 9: Quality Hub — Manual Testing & Hybrid Cycles ✅
+### Sprint 9: Quality Hub - Manual Testing & Hybrid Cycles ✅
 
 **Status:** Production Ready
 
 - **Test Case Repository:** `test_cases` MongoDB collection with full CRUD API. `TestCases.tsx` page with suite-grouped accordion view and `TestCaseDrawer.tsx` slide-over drawer for create/edit
-- **AI-Powered Step Generation:** "Generate with AI" button in the test case drawer — input a natural-language intent and Gemini generates structured test steps automatically
+- **AI-Powered Step Generation:** "Generate with AI" button in the test case drawer - input a natural-language intent and Gemini generates structured test steps automatically
 - **Hybrid Cycle Builder:** `test_cycles` collection, `CycleBuilderDrawer.tsx` for composing manual + automated tests into cycles. Suite-grouped checkbox selection with "Select All" per suite
 - **Test Cycles Page:** `TestCycles.tsx` with expandable rows showing cycle items, automation rate progress bars, pass/fail counters, and status badges
-- **Manual Execution Player:** `ManualExecutionDrawer.tsx` — interactive step-by-step checklist with Pass/Fail/Skip buttons, progress bar, auto-advance, and "Complete Test" submission
+- **Manual Execution Player:** `ManualExecutionDrawer.tsx` - interactive step-by-step checklist with Pass/Fail/Skip buttons, progress bar, auto-advance, and "Complete Test" submission
 - **Automated Cycle Sync:** Worker forwards `cycleId`/`cycleItemId` in execution callbacks; Producer syncs cycle item status on terminal results. Cycles auto-complete when all items reach terminal state
 - **Manual Item Update API:** `PUT /api/test-cycles/:cycleId/items/:itemId` using MongoDB `arrayFilters` with automatic cycle summary recalculation
 
@@ -733,64 +733,64 @@ See the [Deployment Guide](docs/setup/deployment.md) for full deployment instruc
 ## Technology Stack
 
 ### Frontend
-- **React 19** — Modern UI framework with concurrent rendering
-- **TypeScript** — End-to-end type safety
-- **Vite** — Lightning-fast build tooling
-- **Tailwind CSS** — Utility-first CSS framework (all styling; no inline styles or custom CSS)
-- **TanStack Query v5** — Server state management with caching, background refetch, and optimistic updates
-- **Socket.io Client** — Real-time WebSocket connections
-- **React Router v7** — Nested layout routing with AppLayout/Outlet pattern
+- **React 19** - Modern UI framework with concurrent rendering
+- **TypeScript** - End-to-end type safety
+- **Vite** - Lightning-fast build tooling
+- **Tailwind CSS** - Utility-first CSS framework (all styling; no inline styles or custom CSS)
+- **TanStack Query v5** - Server state management with caching, background refetch, and optimistic updates
+- **Socket.io Client** - Real-time WebSocket connections
+- **React Router v7** - Nested layout routing with AppLayout/Outlet pattern
 
 ### Backend
-- **Fastify** — High-performance web framework
-- **TypeScript** — Type-safe backend
-- **MongoDB** — NoSQL database for multi-tenant data and server-side aggregation
-- **Redis** — In-memory cache and rate limiting
-- **RabbitMQ** — Message queue for task distribution
-- **Docker SDK** — Container orchestration
-- **Socket.io** — WebSocket server with organization-scoped rooms
+- **Fastify** - High-performance web framework
+- **TypeScript** - Type-safe backend
+- **MongoDB** - NoSQL database for multi-tenant data and server-side aggregation
+- **Redis** - In-memory cache and rate limiting
+- **RabbitMQ** - Message queue for task distribution
+- **Docker SDK** - Container orchestration
+- **Socket.io** - WebSocket server with organization-scoped rooms
 
 ### Security & Auth
-- **JWT (jsonwebtoken)** — Stateless authentication
-- **bcrypt** — Password hashing (10 rounds)
-- **Redis Rate Limiting** — DDoS and brute force protection
-- **CORS** — Cross-origin resource sharing
-- **Security Headers** — OWASP best practices
-- **AES-256-GCM** — Encryption for integration secrets (Jira tokens, etc.)
+- **JWT (jsonwebtoken)** - Stateless authentication
+- **bcrypt** - Password hashing (10 rounds)
+- **Redis Rate Limiting** - DDoS and brute force protection
+- **CORS** - Cross-origin resource sharing
+- **Security Headers** - OWASP best practices
+- **AES-256-GCM** - Encryption for integration secrets (Jira tokens, etc.)
 
 ### AI & External Services
-- **Google Gemini 2.5 Flash** — AI-powered root cause analysis
-- **Stripe** — Subscription billing and payment processing
-- **SendGrid** — Transactional email delivery
-- **Jira Cloud API** — Dynamic issue creation with ADF formatting
+- **Google Gemini 2.5 Flash** - AI-powered root cause analysis
+- **Stripe** - Subscription billing and payment processing
+- **SendGrid** - Transactional email delivery
+- **Jira Cloud API** - Dynamic issue creation with ADF formatting
 
 ---
 
 ## Documentation
 
-Comprehensive documentation available in `/docs/` and at [docs.automation.keinar.com](https://docs.automation.keinar.com):
+Comprehensive documentation available in `/docs/` and at [docs.agnox.dev](https://docs.agnox.dev):
 
 ### Setup & Deployment
-- **[Integration Quickstart](docs/integration/quickstart.md)** — Get started in 5 minutes
-- **[Docker Setup](docs/integration/docker-setup.md)** — Container protocol for test images
-- **[Deployment Guide](docs/setup/deployment.md)** — Production deployment, SSL, scaling
-- **[Infrastructure Guide](docs/setup/infrastructure.md)** — Server requirements and setup
-- **[CI/CD Guide](docs/setup/ci-cd.md)** — GitHub Actions and secret management
-- **[Troubleshooting](docs/setup/troubleshooting.md)** — Common issues and solutions
+- **[Integration Quickstart](docs/integration/quickstart.md)** - Get started in 5 minutes
+- **[Docker Setup](docs/integration/docker-setup.md)** - Container protocol for test images
+- **[Deployment Guide](docs/setup/deployment.md)** - Production deployment, SSL, scaling
+- **[Infrastructure Guide](docs/setup/infrastructure.md)** - Server requirements and setup
+- **[CI/CD Guide](docs/setup/ci-cd.md)** - GitHub Actions and secret management
+- **[Troubleshooting](docs/setup/troubleshooting.md)** - Common issues and solutions
 
 ### Features
-- **[User Guide](docs/features/user-guide.md)** — Dashboard, test execution, and settings
-- **[Billing Guide](docs/features/billing-guide.md)** — Plans, subscriptions, and usage
+- **[User Guide](docs/features/user-guide.md)** - Dashboard, test execution, and settings
+- **[Billing Guide](docs/features/billing-guide.md)** - Plans, subscriptions, and usage
 
 ### Architecture & API
-- **[Architecture Overview](docs/architecture/overview.md)** — System design and data flow
-- **[API Overview](docs/api/README.md)** — Complete API reference
-- **[Authentication API](docs/api/authentication.md)** — Signup, login, JWT tokens & API Keys
+- **[Architecture Overview](docs/architecture/overview.md)** - System design and data flow
+- **[API Overview](docs/api/README.md)** - Complete API reference
+- **[Authentication API](docs/api/authentication.md)** - Signup, login, JWT tokens & API Keys
 
 ### Security & Operations
-- **[Security Audit](docs/setup/security-audit.md)** — Comprehensive security assessment
-- **[Email Configuration](docs/setup/email-configuration.md)** — SendGrid setup
-- **[Kubernetes Guide](docs/setup/kubernetes.md)** — K8s deployment architecture
+- **[Security Audit](docs/setup/security-audit.md)** - Comprehensive security assessment
+- **[Email Configuration](docs/setup/email-configuration.md)** - SendGrid setup
+- **[Kubernetes Guide](docs/setup/kubernetes.md)** - K8s deployment architecture
 
 ---
 
@@ -889,7 +889,7 @@ Please read our [Contributing Guide](CONTRIBUTING.md) _(coming soon)_ for detail
 - Phase 5: Email integration (SendGrid)
 - Sprint 5: Full-screen layout, real-time analytics, run groups, bulk actions, Jira ADF integration
 - Sprint 6: GitHub-inspired Theme Engine, Dark Mode, and UI Hardening
-- Sprint 7: Investigation Hub — ExecutionDrawer, ArtifactsView, AI Analysis tab
+- Sprint 7: Investigation Hub - ExecutionDrawer, ArtifactsView, AI Analysis tab
 - Sprint 8: CRON scheduling engine, Slack webhook notifications, Schedules settings tab
 
 ### Q2 2026
@@ -923,7 +923,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support & Contact
 
-- **Documentation:** [docs.automation.keinar.com](https://docs.automation.keinar.com)
+- **Documentation:** [docs.agnox.dev](https://docs.agnox.dev)
 - **Issues:** [GitHub Issues](https://github.com/keinar/Agnostic-Automation-Center/issues)
 - **Discussions:** [GitHub Discussions](https://github.com/keinar/Agnostic-Automation-Center/discussions)
 - **Email:** info@digital-solution.co.il

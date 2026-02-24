@@ -32,11 +32,11 @@ interface ExecutionModalProps {
 // ── CRON preset helpers ────────────────────────────────────────────────────────
 
 const CRON_PRESETS = [
-    { label: 'Every hour',        value: '0 * * * *'    },
-    { label: 'Daily at 2 AM',     value: '0 2 * * *'    },
-    { label: 'Daily at midnight', value: '0 0 * * *'    },
-    { label: 'Every Mon at 9 AM', value: '0 9 * * 1'    },
-    { label: 'Every 6 hours',     value: '0 */6 * * *'  },
+    { label: 'Every hour', value: '0 * * * *' },
+    { label: 'Daily at 2 AM', value: '0 2 * * *' },
+    { label: 'Daily at midnight', value: '0 0 * * *' },
+    { label: 'Every Mon at 9 AM', value: '0 9 * * 1' },
+    { label: 'Every 6 hours', value: '0 */6 * * *' },
 ] as const;
 
 // ── Reducer ───────────────────────────────────────────────────────────────────
@@ -164,7 +164,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({
             image: defaults.image ?? '',
             folder: defaults.folder ?? 'all',
         });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [defaults, isOpen]);
 
     // Derive the command preview from the selected folder (ignored when advanced mode is on)
@@ -176,7 +176,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({
                 : selectedFolder.replace(/^tests\//, '');
         dispatch({
             type: 'SET_COMMAND',
-            value: `Agnostic Execution Mode: Running [${cleanPath}] via entrypoint.sh`,
+            value: `Execution Mode: Running [${cleanPath}] via entrypoint.sh`,
         });
     }, [selectedFolder, showAdvanced]);
 
@@ -274,11 +274,14 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-gh-border-dark">
                     <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-gh-text-dark">
-                        {runMode === 'immediate'
-                            ? <Play size={20} className="text-gh-accent dark:text-gh-accent-dark" />
-                            : <Clock size={20} className="text-amber-500 dark:text-amber-400" />
-                        }
-                        {runMode === 'immediate' ? 'Launch Agnostic Execution' : 'Schedule Execution'}
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-100 rounded-lg text-blue-600">
+                                <Play size={20} />
+                            </div>
+                            <h2 className="text-xl font-bold text-gray-900">
+                                {runMode === 'immediate' ? 'Launch Execution' : 'Schedule Execution'}
+                            </h2>
+                        </div>
                     </h3>
                     <button
                         onClick={onClose}
@@ -295,11 +298,10 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({
                         <button
                             type="button"
                             onClick={() => { setRunMode('immediate'); setScheduleStatus(null); }}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2 transition-colors cursor-pointer ${
-                                runMode === 'immediate'
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 transition-colors cursor-pointer ${runMode === 'immediate'
                                     ? 'bg-gh-accent dark:bg-gh-accent-dark text-white'
                                     : 'bg-white dark:bg-gh-bg-dark text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark'
-                            }`}
+                                }`}
                         >
                             <Play size={14} />
                             Run Immediately
@@ -307,11 +309,10 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({
                         <button
                             type="button"
                             onClick={() => { setRunMode('schedule'); setScheduleStatus(null); }}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2 border-l border-slate-200 dark:border-gh-border-dark transition-colors cursor-pointer ${
-                                runMode === 'schedule'
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 border-l border-slate-200 dark:border-gh-border-dark transition-colors cursor-pointer ${runMode === 'schedule'
                                     ? 'bg-amber-500 dark:bg-amber-600 text-white'
                                     : 'bg-white dark:bg-gh-bg-dark text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark'
-                            }`}
+                                }`}
                         >
                             <Clock size={14} />
                             Schedule Run
@@ -326,293 +327,289 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({
                     {/* Scrollable form body */}
                     <div className="overflow-y-auto max-h-[60vh] px-6 py-5 flex flex-col gap-4">
 
-                    {/* Test Folder */}
-                    <div className="flex flex-col gap-1.5">
-                        <label
-                            htmlFor="modal-folder"
-                            className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
-                        >
-                            <Folder size={16} className="text-slate-400 dark:text-slate-500" /> Test Folder (Path)
-                        </label>
-                        {availableFolders.length > 0 ? (
+                        {/* Test Folder */}
+                        <div className="flex flex-col gap-1.5">
+                            <label
+                                htmlFor="modal-folder"
+                                className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
+                            >
+                                <Folder size={16} className="text-slate-400 dark:text-slate-500" /> Test Folder (Path)
+                            </label>
+                            {availableFolders.length > 0 ? (
+                                <select
+                                    id="modal-folder"
+                                    value={selectedFolder}
+                                    onChange={(e) => dispatch({ type: 'SET_FOLDER', value: e.target.value })}
+                                    className={inputClass}
+                                >
+                                    <option value="all">Run All Tests</option>
+                                    {availableFolders.map((f) => (
+                                        <option key={f} value={f}>{f}</option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <input
+                                    id="modal-folder"
+                                    type="text"
+                                    className={inputClass}
+                                    placeholder="e.g. tests/ui or all"
+                                    value={selectedFolder}
+                                    onChange={(e) => dispatch({ type: 'SET_FOLDER', value: e.target.value })}
+                                />
+                            )}
+                            <p className="text-xs text-slate-400">Path inside the Docker image</p>
+                        </div>
+
+                        {/* Environment */}
+                        <div className="flex flex-col gap-1.5">
+                            <label
+                                htmlFor="modal-env"
+                                className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
+                            >
+                                <Server size={16} className="text-slate-400 dark:text-slate-500" /> Environment
+                                <span title="Environments are mapped from system ENV variables (e.g. STAGING_URL)">
+                                    <Info size={14} className="cursor-help text-slate-400 dark:text-slate-500" />
+                                </span>
+                            </label>
                             <select
-                                id="modal-folder"
-                                value={selectedFolder}
-                                onChange={(e) => dispatch({ type: 'SET_FOLDER', value: e.target.value })}
+                                id="modal-env"
+                                value={environment}
+                                onChange={(e) => dispatch({ type: 'SET_ENVIRONMENT', value: e.target.value })}
                                 className={inputClass}
                             >
-                                <option value="all">Run All Tests</option>
-                                {availableFolders.map((f) => (
-                                    <option key={f} value={f}>{f}</option>
-                                ))}
-                            </select>
-                        ) : (
-                            <input
-                                id="modal-folder"
-                                type="text"
-                                className={inputClass}
-                                placeholder="e.g. tests/ui or all"
-                                value={selectedFolder}
-                                onChange={(e) => dispatch({ type: 'SET_FOLDER', value: e.target.value })}
-                            />
-                        )}
-                        <p className="text-xs text-slate-400">Path inside the Docker image</p>
-                    </div>
-
-                    {/* Environment */}
-                    <div className="flex flex-col gap-1.5">
-                        <label
-                            htmlFor="modal-env"
-                            className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
-                        >
-                            <Server size={16} className="text-slate-400 dark:text-slate-500" /> Environment
-                            <span title="Environments are mapped from system ENV variables (e.g. STAGING_URL)">
-                                <Info size={14} className="cursor-help text-slate-400 dark:text-slate-500" />
-                            </span>
-                        </label>
-                        <select
-                            id="modal-env"
-                            value={environment}
-                            onChange={(e) => dispatch({ type: 'SET_ENVIRONMENT', value: e.target.value })}
-                            className={inputClass}
-                        >
-                            {!defaults?.envMapping || Object.keys(defaults.envMapping).length === 0 ? (
-                                <>
-                                    <option value="development">Development (Default)</option>
-                                    <option value="custom">Custom URL</option>
-                                </>
-                            ) : (
-                                Object.keys(defaults.envMapping).map((envKey) => (
-                                    <option key={envKey} value={envKey}>
-                                        {envKey.toUpperCase()}
-                                    </option>
-                                ))
-                            )}
-                        </select>
-                    </div>
-
-                    {/* Target URL */}
-                    <div className="flex flex-col gap-1.5">
-                        <label
-                            htmlFor="modal-url"
-                            className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
-                        >
-                            <Globe size={16} className="text-slate-400 dark:text-slate-500" /> Target URL
-                        </label>
-                        <input
-                            id="modal-url"
-                            type="url"
-                            required
-                            value={baseUrl}
-                            onChange={(e) => dispatch({ type: 'SET_BASE_URL', value: e.target.value })}
-                            className={inputClass}
-                            placeholder={defaults?.baseUrl ? undefined : 'Not configured — go to Settings → Run Settings'}
-                        />
-                    </div>
-
-                    {/* Group Name (optional) — smart combobox: select existing or type to create */}
-                    <div className="flex flex-col gap-1.5">
-                        <label
-                            htmlFor="modal-group"
-                            className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
-                        >
-                            <Tag size={16} className="text-slate-400 dark:text-slate-500" /> Group Name
-                            <span className="text-xs text-slate-400 dark:text-slate-500 font-normal">(optional)</span>
-                        </label>
-                        <Combobox
-                            as="div"
-                            className="relative"
-                            value={groupName}
-                            onChange={(val: string | null) => {
-                                dispatch({ type: 'SET_GROUP_NAME', value: val ?? '' });
-                                setComboQuery('');
-                            }}
-                        >
-                            <div className="relative">
-                                <ComboboxInput
-                                    id="modal-group"
-                                    className={`${inputClass} ${existingGroupNames?.length ? 'pr-8' : ''}`}
-                                    placeholder="e.g. Nightly Sanity, Regression Suite"
-                                    maxLength={128}
-                                    displayValue={(val: string) => val}
-                                    onChange={(e) => {
-                                        setComboQuery(e.target.value);
-                                        dispatch({ type: 'SET_GROUP_NAME', value: e.target.value });
-                                    }}
-                                />
-                                {existingGroupNames && existingGroupNames.length > 0 && (
-                                    <ComboboxButton
-                                        aria-label="Show existing groups"
-                                        className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                                    >
-                                        <ChevronDown size={14} />
-                                    </ComboboxButton>
+                                {!defaults?.envMapping || Object.keys(defaults.envMapping).length === 0 ? (
+                                    <>
+                                        <option value="development">Development (Default)</option>
+                                        <option value="custom">Custom URL</option>
+                                    </>
+                                ) : (
+                                    Object.keys(defaults.envMapping).map((envKey) => (
+                                        <option key={envKey} value={envKey}>
+                                            {envKey.toUpperCase()}
+                                        </option>
+                                    ))
                                 )}
-                            </div>
+                            </select>
+                        </div>
 
-                            {hasDropdownOptions && (
-                                <ComboboxOptions className="absolute z-20 mt-1 w-full rounded-lg border border-slate-200 dark:border-gh-border-dark bg-white dark:bg-gh-bg-dark shadow-lg max-h-48 overflow-y-auto focus:outline-none py-1">
-                                    {filteredGroupNames.map((name) => (
-                                        <ComboboxOption
-                                            key={name}
-                                            value={name}
-                                            className={({ active }: { active: boolean }) =>
-                                                `cursor-pointer select-none px-3 py-2 text-sm transition-colors ${
-                                                    active
-                                                        ? 'bg-slate-100 dark:bg-gh-bg-subtle-dark text-slate-900 dark:text-gh-text-dark'
-                                                        : 'text-slate-700 dark:text-slate-300'
-                                                }`
-                                            }
+                        {/* Target URL */}
+                        <div className="flex flex-col gap-1.5">
+                            <label
+                                htmlFor="modal-url"
+                                className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
+                            >
+                                <Globe size={16} className="text-slate-400 dark:text-slate-500" /> Target URL
+                            </label>
+                            <input
+                                id="modal-url"
+                                type="url"
+                                required
+                                value={baseUrl}
+                                onChange={(e) => dispatch({ type: 'SET_BASE_URL', value: e.target.value })}
+                                className={inputClass}
+                                placeholder={defaults?.baseUrl ? undefined : 'Not configured — go to Settings → Run Settings'}
+                            />
+                        </div>
+
+                        {/* Group Name (optional) — smart combobox: select existing or type to create */}
+                        <div className="flex flex-col gap-1.5">
+                            <label
+                                htmlFor="modal-group"
+                                className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
+                            >
+                                <Tag size={16} className="text-slate-400 dark:text-slate-500" /> Group Name
+                                <span className="text-xs text-slate-400 dark:text-slate-500 font-normal">(optional)</span>
+                            </label>
+                            <Combobox
+                                as="div"
+                                className="relative"
+                                value={groupName}
+                                onChange={(val: string | null) => {
+                                    dispatch({ type: 'SET_GROUP_NAME', value: val ?? '' });
+                                    setComboQuery('');
+                                }}
+                            >
+                                <div className="relative">
+                                    <ComboboxInput
+                                        id="modal-group"
+                                        className={`${inputClass} ${existingGroupNames?.length ? 'pr-8' : ''}`}
+                                        placeholder="e.g. Nightly Sanity, Regression Suite"
+                                        maxLength={128}
+                                        displayValue={(val: string) => val}
+                                        onChange={(e) => {
+                                            setComboQuery(e.target.value);
+                                            dispatch({ type: 'SET_GROUP_NAME', value: e.target.value });
+                                        }}
+                                    />
+                                    {existingGroupNames && existingGroupNames.length > 0 && (
+                                        <ComboboxButton
+                                            aria-label="Show existing groups"
+                                            className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                                         >
-                                            {name}
-                                        </ComboboxOption>
-                                    ))}
-                                    {showCreateOption && (
-                                        <ComboboxOption
-                                            value={comboQuery.trim()}
-                                            className={({ active }: { active: boolean }) =>
-                                                `cursor-pointer select-none px-3 py-2 text-sm transition-colors ${
-                                                    active
-                                                        ? 'bg-slate-100 dark:bg-gh-bg-subtle-dark text-slate-900 dark:text-gh-text-dark'
-                                                        : 'text-slate-700 dark:text-slate-300'
-                                                }`
-                                            }
-                                        >
-                                            <span className="font-medium text-gh-accent dark:text-gh-accent-dark">Create</span>{' '}
-                                            &ldquo;{comboQuery.trim()}&rdquo;
-                                        </ComboboxOption>
+                                            <ChevronDown size={14} />
+                                        </ComboboxButton>
                                     )}
-                                </ComboboxOptions>
-                            )}
-                        </Combobox>
-                        <p className="text-xs text-slate-400">Select an existing group or type a new name to create one</p>
-                    </div>
-
-                    {/* Execution Strategy Preview */}
-                    <div className="flex flex-col gap-1.5">
-                        <span className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
-                            <Terminal size={16} className="text-slate-400 dark:text-slate-500" /> Execution Strategy
-                        </span>
-                        <div
-                            role="status"
-                            aria-label="Execution strategy preview"
-                            className="rounded-lg bg-slate-950 border border-slate-800 px-3 py-2.5 font-mono text-xs text-sky-400"
-                        >
-                            {command}
-                        </div>
-                    </div>
-
-                    {/* Advanced Configuration Toggle */}
-                    <button
-                        type="button"
-                        onClick={() => dispatch({ type: 'TOGGLE_ADVANCED' })}
-                        aria-expanded={showAdvanced}
-                        className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer py-1"
-                    >
-                        {showAdvanced ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                        Advanced Container Configuration
-                    </button>
-
-                    {showAdvanced && (
-                        <div className="rounded-xl bg-slate-50 dark:bg-gh-bg-dark border border-slate-200 dark:border-gh-border-dark p-4">
-                            <div className="flex flex-col gap-1.5">
-                                <label
-                                    htmlFor="modal-image"
-                                    className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
-                                >
-                                    <Box size={16} className="text-slate-400 dark:text-slate-500" /> Docker Image
-                                </label>
-                                <input
-                                    id="modal-image"
-                                    type="text"
-                                    value={image}
-                                    onChange={(e) => dispatch({ type: 'SET_IMAGE', value: e.target.value })}
-                                    className={`${inputClass} font-mono text-xs`}
-                                    placeholder={defaults?.image ? undefined : 'Not configured — go to Settings → Run Settings'}
-                                />
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Schedule-specific fields — only visible in schedule mode */}
-                    {runMode === 'schedule' && (
-                        <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 p-4 flex flex-col gap-3">
-                            {/* Schedule name */}
-                            <div className="flex flex-col gap-1.5">
-                                <label
-                                    htmlFor="schedule-name"
-                                    className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
-                                >
-                                    <Clock size={16} className="text-amber-500" /> Schedule Name
-                                </label>
-                                <input
-                                    id="schedule-name"
-                                    type="text"
-                                    required
-                                    maxLength={128}
-                                    placeholder="e.g. Nightly Regression"
-                                    value={scheduleName}
-                                    onChange={(e) => setScheduleName(e.target.value)}
-                                    className={inputClass}
-                                />
-                            </div>
-
-                            {/* CRON expression */}
-                            <div className="flex flex-col gap-1.5">
-                                <label
-                                    htmlFor="schedule-cron"
-                                    className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
-                                >
-                                    CRON Expression
-                                </label>
-                                <input
-                                    id="schedule-cron"
-                                    type="text"
-                                    required
-                                    placeholder="e.g. 0 2 * * *"
-                                    value={cronExpression}
-                                    onChange={(e) => setCronExpression(e.target.value)}
-                                    className={`${inputClass} font-mono`}
-                                />
-                                {/* Preset chips */}
-                                <div className="flex flex-wrap gap-1.5 mt-1">
-                                    {CRON_PRESETS.map((preset) => (
-                                        <button
-                                            key={preset.value}
-                                            type="button"
-                                            onClick={() => setCronExpression(preset.value)}
-                                            className={`px-2 py-0.5 rounded-full text-xs font-mono border transition-colors cursor-pointer ${
-                                                cronExpression === preset.value
-                                                    ? 'bg-amber-500 text-white border-amber-500'
-                                                    : 'bg-white dark:bg-gh-bg-dark border-slate-200 dark:border-gh-border-dark text-slate-600 dark:text-slate-400 hover:border-amber-400'
-                                            }`}
-                                        >
-                                            {preset.label}
-                                        </button>
-                                    ))}
                                 </div>
-                                <p className="text-xs text-slate-400">
-                                    Format: <span className="font-mono">minute hour day month weekday</span>
-                                    {' '}— e.g. <span className="font-mono">0 2 * * *</span> = daily at 2 AM UTC
-                                </p>
+
+                                {hasDropdownOptions && (
+                                    <ComboboxOptions className="absolute z-20 mt-1 w-full rounded-lg border border-slate-200 dark:border-gh-border-dark bg-white dark:bg-gh-bg-dark shadow-lg max-h-48 overflow-y-auto focus:outline-none py-1">
+                                        {filteredGroupNames.map((name) => (
+                                            <ComboboxOption
+                                                key={name}
+                                                value={name}
+                                                className={({ active }: { active: boolean }) =>
+                                                    `cursor-pointer select-none px-3 py-2 text-sm transition-colors ${active
+                                                        ? 'bg-slate-100 dark:bg-gh-bg-subtle-dark text-slate-900 dark:text-gh-text-dark'
+                                                        : 'text-slate-700 dark:text-slate-300'
+                                                    }`
+                                                }
+                                            >
+                                                {name}
+                                            </ComboboxOption>
+                                        ))}
+                                        {showCreateOption && (
+                                            <ComboboxOption
+                                                value={comboQuery.trim()}
+                                                className={({ active }: { active: boolean }) =>
+                                                    `cursor-pointer select-none px-3 py-2 text-sm transition-colors ${active
+                                                        ? 'bg-slate-100 dark:bg-gh-bg-subtle-dark text-slate-900 dark:text-gh-text-dark'
+                                                        : 'text-slate-700 dark:text-slate-300'
+                                                    }`
+                                                }
+                                            >
+                                                <span className="font-medium text-gh-accent dark:text-gh-accent-dark">Create</span>{' '}
+                                                &ldquo;{comboQuery.trim()}&rdquo;
+                                            </ComboboxOption>
+                                        )}
+                                    </ComboboxOptions>
+                                )}
+                            </Combobox>
+                            <p className="text-xs text-slate-400">Select an existing group or type a new name to create one</p>
+                        </div>
+
+                        {/* Execution Strategy Preview */}
+                        <div className="flex flex-col gap-1.5">
+                            <span className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                                <Terminal size={16} className="text-slate-400 dark:text-slate-500" /> Execution Strategy
+                            </span>
+                            <div
+                                role="status"
+                                aria-label="Execution strategy preview"
+                                className="rounded-lg bg-slate-950 border border-slate-800 px-3 py-2.5 font-mono text-xs text-sky-400"
+                            >
+                                {command}
                             </div>
                         </div>
-                    )}
 
-                    {/* Inline status message (schedule mode only) */}
-                    {scheduleStatus && (
-                        <div className={`flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm ${
-                            scheduleStatus.type === 'success'
-                                ? 'bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800/50 text-green-800 dark:text-green-300'
-                                : 'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 text-red-800 dark:text-red-300'
-                        }`}>
-                            {scheduleStatus.type === 'success'
-                                ? <CheckCircle size={16} className="mt-0.5 shrink-0 text-green-600 dark:text-green-400" />
-                                : <AlertCircle size={16} className="mt-0.5 shrink-0 text-red-600 dark:text-red-400" />
-                            }
-                            {scheduleStatus.message}
-                        </div>
-                    )}
+                        {/* Advanced Configuration Toggle */}
+                        <button
+                            type="button"
+                            onClick={() => dispatch({ type: 'TOGGLE_ADVANCED' })}
+                            aria-expanded={showAdvanced}
+                            className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer py-1"
+                        >
+                            {showAdvanced ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                            Advanced Container Configuration
+                        </button>
+
+                        {showAdvanced && (
+                            <div className="rounded-xl bg-slate-50 dark:bg-gh-bg-dark border border-slate-200 dark:border-gh-border-dark p-4">
+                                <div className="flex flex-col gap-1.5">
+                                    <label
+                                        htmlFor="modal-image"
+                                        className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
+                                    >
+                                        <Box size={16} className="text-slate-400 dark:text-slate-500" /> Docker Image
+                                    </label>
+                                    <input
+                                        id="modal-image"
+                                        type="text"
+                                        value={image}
+                                        onChange={(e) => dispatch({ type: 'SET_IMAGE', value: e.target.value })}
+                                        className={`${inputClass} font-mono text-xs`}
+                                        placeholder={defaults?.image ? undefined : 'Not configured — go to Settings → Run Settings'}
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Schedule-specific fields — only visible in schedule mode */}
+                        {runMode === 'schedule' && (
+                            <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 p-4 flex flex-col gap-3">
+                                {/* Schedule name */}
+                                <div className="flex flex-col gap-1.5">
+                                    <label
+                                        htmlFor="schedule-name"
+                                        className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
+                                    >
+                                        <Clock size={16} className="text-amber-500" /> Schedule Name
+                                    </label>
+                                    <input
+                                        id="schedule-name"
+                                        type="text"
+                                        required
+                                        maxLength={128}
+                                        placeholder="e.g. Nightly Regression"
+                                        value={scheduleName}
+                                        onChange={(e) => setScheduleName(e.target.value)}
+                                        className={inputClass}
+                                    />
+                                </div>
+
+                                {/* CRON expression */}
+                                <div className="flex flex-col gap-1.5">
+                                    <label
+                                        htmlFor="schedule-cron"
+                                        className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
+                                    >
+                                        CRON Expression
+                                    </label>
+                                    <input
+                                        id="schedule-cron"
+                                        type="text"
+                                        required
+                                        placeholder="e.g. 0 2 * * *"
+                                        value={cronExpression}
+                                        onChange={(e) => setCronExpression(e.target.value)}
+                                        className={`${inputClass} font-mono`}
+                                    />
+                                    {/* Preset chips */}
+                                    <div className="flex flex-wrap gap-1.5 mt-1">
+                                        {CRON_PRESETS.map((preset) => (
+                                            <button
+                                                key={preset.value}
+                                                type="button"
+                                                onClick={() => setCronExpression(preset.value)}
+                                                className={`px-2 py-0.5 rounded-full text-xs font-mono border transition-colors cursor-pointer ${cronExpression === preset.value
+                                                        ? 'bg-amber-500 text-white border-amber-500'
+                                                        : 'bg-white dark:bg-gh-bg-dark border-slate-200 dark:border-gh-border-dark text-slate-600 dark:text-slate-400 hover:border-amber-400'
+                                                    }`}
+                                            >
+                                                {preset.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <p className="text-xs text-slate-400">
+                                        Format: <span className="font-mono">minute hour day month weekday</span>
+                                        {' '}— e.g. <span className="font-mono">0 2 * * *</span> = daily at 2 AM UTC
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Inline status message (schedule mode only) */}
+                        {scheduleStatus && (
+                            <div className={`flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm ${scheduleStatus.type === 'success'
+                                    ? 'bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800/50 text-green-800 dark:text-green-300'
+                                    : 'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 text-red-800 dark:text-red-300'
+                                }`}>
+                                {scheduleStatus.type === 'success'
+                                    ? <CheckCircle size={16} className="mt-0.5 shrink-0 text-green-600 dark:text-green-400" />
+                                    : <AlertCircle size={16} className="mt-0.5 shrink-0 text-red-600 dark:text-red-400" />
+                                }
+                                {scheduleStatus.message}
+                            </div>
+                        )}
 
                     </div>{/* end scrollable body */}
 

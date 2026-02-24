@@ -1,6 +1,6 @@
 # API Documentation
 
-Complete API reference for the Agnostic Automation Center.
+Complete API reference for the Agnox.
 
 ## Authentication Required
 

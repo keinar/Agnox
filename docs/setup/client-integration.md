@@ -2,9 +2,9 @@
 
 ## Making Your Test Suite *Agnostic-Ready*
 
-This guide explains how to prepare **any containerized automation suite (Python, Java, Node.js, etc.)** so it can run safely and correctly inside the **Agnostic Automation Center**.
+This guide explains how to prepare **any containerized automation suite (Python, Java, Node.js, etc.)** so it can run safely and correctly inside the **Agnox**.
 
-The key principle: **The platform controls execution — your repo provides behavior.**
+The key principle: **The platform controls execution - your repo provides behavior.**
 
 ---
 
@@ -24,7 +24,7 @@ This interactive tool will:
 
 **Supported frameworks:** Playwright (TypeScript/Node.js) and Pytest (Python).
 
-📦 **CLI Repository:** [github.com/keinar/aac-cli](https://github.com/keinar/aac-cli) · **npm:** [@keinar/aac-cli](https://www.npmjs.com/package/@keinar/aac-cli)
+📦 **CLI Repository:** [github.com/keinar/aac-cli](https://github.com/keinar/aac-cli) ·· **npm:** [@keinar/aac-cli](https://www.npmjs.com/package/@keinar/aac-cli)
 
 ---
 
@@ -151,7 +151,7 @@ Once your image is integrated, you can utilize the Dashboard's advanced features
 You don't need to trigger tests via API. You can launch them visually:
 
 1. Click the **"Launch Execution"** button (Top Right).
-2. **Environment:** Select `Dev`, `Staging`, or `Prod` — the system pre-fills the URL from your project settings.
+2. **Environment:** Select `Dev`, `Staging`, or `Prod` - the system pre-fills the URL from your project settings.
 3. **Folder:** Type a folder path (e.g., `tests/login`) or select `all`.
 4. **Launch:** The test starts immediately, and you will see logs streaming in real-time.
 

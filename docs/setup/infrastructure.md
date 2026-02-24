@@ -1,6 +1,6 @@
-# 🛠️ Infrastructure Setup Guide
+# 🛠 Infrastructure Setup Guide
 
-This guide explains how to deploy the **Automation Center** on a Linux server (Oracle Cloud / VPS).
+This guide explains how to deploy the **Agnox** on a Linux server (Oracle Cloud / VPS).
 
 ---
 
@@ -31,7 +31,7 @@ GEMINI_API_KEY=<REDACTED_GOOGLE_API_KEY>
 
 # --- AGNOSTIC SECRET INJECTION ---
 # These variables belong to the CLIENT tests.
-# The platform does not interpret them — it only injects them.
+# The platform does not interpret them - it only injects them.
 ADMIN_USER=admin@example.com
 ADMIN_PASS=<REDACTED_PASSWORD>
 MONGO_URI=mongodb+srv://... (Client DB)

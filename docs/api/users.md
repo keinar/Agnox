@@ -247,21 +247,21 @@ User removals are logged to `audit_logs`:
 ### List Organization Members
 
 ```bash
-curl -X GET https://api.automation.keinar.com/api/users \
+curl -X GET https://api.agnox.dev/api/users \
   -H "Authorization: Bearer <jwt-token>"
 ```
 
 ### Get User Details
 
 ```bash
-curl -X GET https://api.automation.keinar.com/api/users/507f1f77bcf86cd799439011 \
+curl -X GET https://api.agnox.dev/api/users/507f1f77bcf86cd799439011 \
   -H "Authorization: Bearer <jwt-token>"
 ```
 
 ### Change User Role
 
 ```bash
-curl -X PATCH https://api.automation.keinar.com/api/users/507f1f77bcf86cd799439011/role \
+curl -X PATCH https://api.agnox.dev/api/users/507f1f77bcf86cd799439011/role \
   -H "Authorization: Bearer <jwt-token>" \
   -H "Content-Type: application/json" \
   -d '{"role": "admin"}'
@@ -270,7 +270,7 @@ curl -X PATCH https://api.automation.keinar.com/api/users/507f1f77bcf86cd7994390
 ### Remove User
 
 ```bash
-curl -X DELETE https://api.automation.keinar.com/api/users/507f1f77bcf86cd799439011 \
+curl -X DELETE https://api.agnox.dev/api/users/507f1f77bcf86cd799439011 \
   -H "Authorization: Bearer <jwt-token>"
 ```
 

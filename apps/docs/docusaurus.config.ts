@@ -16,7 +16,7 @@ const config: Config = {
     format: 'detect',
   },
 
-  url: 'https://docs.automation.keinar.com',
+  url: 'https://docs.agnox.dev',
   baseUrl: '/',
 
   organizationName: 'keinar',
@@ -123,7 +123,7 @@ const config: Config = {
           items: [
             {
               label: 'Dashboard',
-              href: 'https://automation.keinar.com',
+              href: 'https://agnox.dev',
             },
           ],
         },
