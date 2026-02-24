@@ -64,7 +64,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd ~/agnostic-automation-center
+            cd ~/agnox
             
             git fetch origin main
             git reset --hard origin/main
@@ -113,7 +113,7 @@ jobs:
             docker compose -f docker-compose.prod.yml down --remove-orphans
             
             # Clean up old dashboard image
-            docker rmi -f agnostic-automation-center-dashboard || true
+            docker rmi -f agnox-dashboard || true
             
             # 3. Rebuild and Start Infrastructure
             docker compose -f docker-compose.prod.yml build --no-cache
