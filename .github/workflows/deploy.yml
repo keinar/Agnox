@@ -73,11 +73,11 @@ jobs:
             
             cat <<EOF > .env
             # Platform Infrastructure Secrets (SECURITY_PLAN §1.3)
-            PLATFORM_MONGO_URI=${{ secrets.MONGO_URI }}
-            PLATFORM_REDIS_URL=${{ secrets.REDIS_URL }}
-            PLATFORM_RABBITMQ_URL=${{ secrets.RABBITMQ_URL }}
+            PLATFORM_MONGO_URI=${{ secrets.PLATFORM_MONGO_URI }}
+            PLATFORM_REDIS_URL=${{ secrets.PLATFORM_REDIS_URL }}
+            PLATFORM_RABBITMQ_URL=${{ secrets.PLATFORM_RABBITMQ_URL }}
             PLATFORM_JWT_SECRET=${{ secrets.PLATFORM_JWT_SECRET }}
-            PLATFORM_GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            PLATFORM_GEMINI_API_KEY=${{ secrets.PLATFORM_GEMINI_API_KEY }}
             PLATFORM_WORKER_CALLBACK_SECRET=${{ secrets.PLATFORM_WORKER_CALLBACK_SECRET }}
             WORKER_CALLBACK_TRANSITION=false
             PLATFORM_API_KEY_HMAC_SECRET=${{ secrets.PLATFORM_API_KEY_HMAC_SECRET }}
@@ -88,9 +88,6 @@ jobs:
             ADMIN_PASS=${{ secrets.ADMIN_PASS }}
             INJECT_ENV_VARS=${{ secrets.INJECT_ENV_VARS }}
             # App Configuration
-            DEFAULT_TEST_IMAGE=${{ secrets.DEFAULT_TEST_IMAGE }}
-            DEFAULT_BASE_URL=${{ secrets.DEFAULT_BASE_URL }}
-            DEFAULT_TEST_FOLDER=${{ secrets.DEFAULT_TEST_FOLDER }}
             VITE_API_URL=${{ secrets.VITE_API_URL }}
             PUBLIC_API_URL=${{ secrets.PUBLIC_API_URL }}
             JWT_EXPIRY=24h
