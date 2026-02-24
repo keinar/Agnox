@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react';
-import { X } from 'lucide-react';
+import { X, FileText, BarChart2, Loader2, Bug } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import type { Execution } from '../types';
@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { TerminalView } from './TerminalView';
 import { AIAnalysisView } from './AIAnalysisView';
 import { ArtifactsView, type IArtifact } from './ArtifactsView';
+import { CreateJiraTicketModal } from './CreateJiraTicketModal';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -32,6 +33,8 @@ export type DrawerTab = 'terminal' | 'artifacts' | 'ai-analysis';
 
 export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }: ExecutionDrawerProps) {
   const { token } = useAuth();
+  const [fetchingReport, setFetchingReport] = useState(false);
+  const [showJiraModal, setShowJiraModal] = useState(false);
 
   // Store the selected tab alongside the executionId it belongs to.
   // When executionId changes (new row clicked), the ownerId mismatch resets
@@ -97,6 +100,57 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
     ? desiredTab
     : 'terminal';
 
+  const isFinished = execution && new Set(['PASSED', 'FAILED', 'UNSTABLE']).has(execution.status);
+  const LOCAL_INDICATORS = ['localhost', '127.0.0.1', 'host.docker.internal'];
+  const isRunLocal = execution ? [
+    (execution as any).environment,
+    (execution as any).config?.baseUrl,
+    (execution as any).baseUrl,
+    (execution as any).meta?.baseUrl,
+  ].some((v: any) => v && LOCAL_INDICATORS.some((indicator) => v.includes(indicator))) : false;
+
+  const isDashboardCloud = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+  const areReportsInaccessible = isDashboardCloud && isRunLocal;
+
+  const getBaseUrl = () => {
+    if ((execution as any)?.reportsBaseUrl) return (execution as any).reportsBaseUrl.replace(/\/$/, '');
+    const envBaseUrl = import.meta.env.VITE_API_URL;
+    if (envBaseUrl) return envBaseUrl.replace(/\/$/, '');
+    return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://localhost:3000' : `https://api.${window.location.hostname}`;
+  };
+
+  const baseUrl = getBaseUrl();
+  const htmlReportUrl = execution ? `${baseUrl}/${execution.taskId}/native-report/index.html` : '';
+  const allureReportUrl = execution ? `${baseUrl}/${execution.taskId}/allure-report/index.html` : '';
+
+  const handleViewReport = async (reportUrl: string) => {
+    if (!executionId) return;
+    const win = window.open('about:blank', '_blank');
+    setFetchingReport(true);
+    try {
+      const apiBase = import.meta.env.VITE_API_URL || '';
+      const res = await fetch(`${apiBase}/api/executions/${executionId}/report-token`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const token = json?.data?.token;
+      if (!token) throw new Error('No token in response');
+      const url = `${reportUrl}?token=${encodeURIComponent(token)}`;
+      if (win) win.location.href = url;
+      else window.open(url, '_blank');
+    } catch (err) {
+      console.error('[report-token] Failed:', err);
+      if (win) win.location.href = reportUrl;
+      else window.open(reportUrl, '_blank');
+    } finally {
+      setFetchingReport(false);
+    }
+  };
+
+  const iconBtnBase = 'flex items-center justify-center w-8 h-8 rounded-lg border transition-colors cursor-pointer';
+
   return (
     <Transition show={isOpen}>
       <Dialog onClose={onClose} className="relative z-50">
@@ -127,7 +181,7 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
               leaveFrom="translate-x-0"
               leaveTo="translate-x-full"
             >
-              <DialogPanel className="relative flex h-full w-full flex-col bg-white dark:bg-gh-bg-dark border-l border-slate-200 dark:border-gh-border-dark shadow-2xl md:max-w-4xl">
+              <DialogPanel className="relative flex h-full flex-col bg-white dark:bg-gh-bg-dark border-l border-slate-200 dark:border-gh-border-dark shadow-2xl w-full max-w-full md:w-[600px] lg:w-[896px]">
 
                 {/* ── Header ────────────────────────────────────────────── */}
                 <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-200 dark:border-gh-border-dark shrink-0">
@@ -139,13 +193,86 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
                       {executionId}
                     </p>
                   </div>
-                  <button
-                    onClick={onClose}
-                    aria-label="Close drawer"
-                    className="flex shrink-0 items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors duration-150"
-                  >
-                    <X size={18} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {/* Analyzing spinner */}
+                    {execution?.status === 'ANALYZING' && (
+                      <div
+                        role="status"
+                        aria-label="AI Analysis in progress"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
+                      >
+                        <Loader2 size={12} className="animate-spin" />
+                        <span>Analyzing...</span>
+                      </div>
+                    )}
+
+                    {/* Create / View Jira Ticket button — FAILED/ERROR/UNSTABLE */}
+                    {execution && (execution.status === 'FAILED' || execution.status === 'ERROR' || execution.status === 'UNSTABLE') && (() => {
+                      const hasTickets = ((execution as any).jiraTickets?.length ?? 0) > 0;
+                      return (
+                        <button
+                          onClick={() => setShowJiraModal(true)}
+                          title={hasTickets ? `${(execution as any).jiraTickets.length} Jira ticket(s) linked — click to view or create another` : 'Create Jira Ticket'}
+                          aria-label={hasTickets ? 'View or create Jira ticket' : 'Create Jira Ticket'}
+                          className={`${iconBtnBase} ${hasTickets
+                            ? 'text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-900/60'
+                            : 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/50'
+                            }`}
+                        >
+                          <Bug size={16} />
+                        </button>
+                      );
+                    })()}
+
+                    {/* Report links */}
+                    {execution && isFinished && (
+                      <>
+                        {areReportsInaccessible ? (
+                          <span
+                            title="Reports available locally"
+                            className="text-[10px] text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded cursor-help"
+                          >
+                            Local Reports
+                          </span>
+                        ) : (
+                          <>
+                            {execution.hasNativeReport === true && (
+                              <button
+                                type="button"
+                                disabled={fetchingReport}
+                                title="HTML Report"
+                                aria-label="Open HTML Report"
+                                onClick={() => handleViewReport(htmlReportUrl)}
+                                className={`${iconBtnBase} text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950/50 disabled:opacity-50 disabled:cursor-wait`}
+                              >
+                                {fetchingReport ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
+                              </button>
+                            )}
+                            {execution.hasAllureReport === true && (
+                              <button
+                                type="button"
+                                disabled={fetchingReport}
+                                title="Allure Report"
+                                aria-label="Open Allure Report"
+                                onClick={() => handleViewReport(allureReportUrl)}
+                                className={`${iconBtnBase} text-emerald-500 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-950/50 disabled:opacity-50 disabled:cursor-wait`}
+                              >
+                                {fetchingReport ? <Loader2 size={16} className="animate-spin" /> : <BarChart2 size={16} />}
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
+
+                    <button
+                      onClick={onClose}
+                      aria-label="Close drawer"
+                      className="ml-2 flex shrink-0 items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors duration-150 cursor-pointer"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* ── Tab bar ───────────────────────────────────────────── */}
@@ -198,6 +325,13 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
         </div>
 
       </Dialog>
+
+      {showJiraModal && execution && (
+        <CreateJiraTicketModal
+          execution={execution}
+          onClose={() => setShowJiraModal(false)}
+        />
+      )}
     </Transition>
   );
 }

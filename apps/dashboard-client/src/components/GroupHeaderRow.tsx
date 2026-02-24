@@ -26,9 +26,9 @@ function formatTimeAgo(dateString: string): string {
 function getPassRateBadgeClass(passed: number, total: number): string {
     if (total === 0) return 'bg-slate-100 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700/50';
     const rate = passed / total;
-    if (rate === 1)    return 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50';
-    if (rate >= 0.75)  return 'bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/50';
-    return                    'bg-rose-100 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-900/50';
+    if (rate === 1) return 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50';
+    if (rate >= 0.75) return 'bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/50';
+    return 'bg-rose-100 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-900/50';
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -60,7 +60,7 @@ export const GroupHeaderRow: React.FC<GroupHeaderRowProps> = ({
             onKeyDown={handleKeyDown}
             aria-expanded={isExpanded}
             aria-label={`${displayName} group — ${passCount}/${totalCount} passed`}
-            className="h-14 border-b border-gh-border dark:border-gh-border-dark bg-gh-bg-subtle dark:bg-gh-bg-subtle-dark hover:bg-blue-50/40 dark:hover:bg-slate-700/30 cursor-pointer select-none transition-colors duration-150"
+            className="h-14 border-b border-gh-border dark:border-gh-border-dark bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer select-none transition-colors duration-150"
         >
             <td colSpan={colCount} className="px-4 py-4">
                 <div className="flex items-center gap-3">

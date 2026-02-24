@@ -32,33 +32,33 @@ const STATUS_CHIPS = [
         value: 'PASSED',
         label: 'Passed',
         inactive: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50',
-        active:   'bg-emerald-600 text-white border-emerald-600',
+        active: 'bg-emerald-600 text-white border-emerald-600',
     },
     {
         value: 'FAILED',
         label: 'Failed',
         inactive: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/50',
-        active:   'bg-rose-600 text-white border-rose-600',
+        active: 'bg-rose-600 text-white border-rose-600',
     },
     {
         value: 'ERROR',
         label: 'Error',
         inactive: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/50',
-        active:   'bg-rose-600 text-white border-rose-600',
+        active: 'bg-rose-600 text-white border-rose-600',
     },
     {
         value: 'UNSTABLE',
         label: 'Unstable',
         inactive: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50',
-        active:   'bg-amber-500 text-white border-amber-500',
+        active: 'bg-amber-500 text-white border-amber-500',
     },
 ] as const;
 
 const ENV_OPTIONS = [
-    { value: '',             label: 'All'     },
-    { value: 'development',  label: 'Dev'     },
-    { value: 'staging',      label: 'Staging' },
-    { value: 'production',   label: 'Prod'    },
+    { value: '', label: 'All' },
+    { value: 'development', label: 'Dev' },
+    { value: 'staging', label: 'Staging' },
+    { value: 'production', label: 'Prod' },
 ] as const;
 
 /** Stable empty default for the groupNames prop — avoids a new array reference on every render. */
@@ -145,19 +145,19 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     const [drawerOpen, setDrawerOpen] = useState(false);
 
     const {
-        status      = [],
+        status = [],
         environment = '',
-        startAfter  = '',
+        startAfter = '',
         startBefore = '',
-        groupName   = '',
+        groupName = '',
     } = filters;
 
     const isActive =
         status.length > 0 ||
         environment !== '' ||
-        startAfter  !== '' ||
+        startAfter !== '' ||
         startBefore !== '' ||
-        groupName   !== '';
+        groupName !== '';
 
     // Count how many filter categories are active (for the badge).
     const activeCount = [
@@ -202,7 +202,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     );
 
     const envButtons = (
-        <div className="flex rounded-lg overflow-hidden border border-slate-200 dark:border-gh-border-dark">
+        <div className="inline-flex w-auto max-w-[240px] sm:max-w-full overflow-x-auto whitespace-nowrap scrollbar-hide rounded-lg border border-slate-200 dark:border-gh-border-dark">
             {ENV_OPTIONS.map((opt, i) => {
                 const isSelected = environment === opt.value;
                 return (

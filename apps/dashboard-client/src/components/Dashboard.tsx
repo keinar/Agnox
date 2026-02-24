@@ -21,11 +21,11 @@ import type { ViewMode } from '../types';
 const LS_VIEW_MODE_KEY = 'aac:view-mode';
 
 function loadViewMode(): ViewMode {
-    try {
-        const stored = localStorage.getItem(LS_VIEW_MODE_KEY);
-        if (stored === 'flat' || stored === 'grouped') return stored;
-    } catch { /* ignore */ }
-    return 'flat';
+  try {
+    const stored = localStorage.getItem(LS_VIEW_MODE_KEY);
+    if (stored === 'flat' || stored === 'grouped') return stored;
+  } catch { /* ignore */ }
+  return 'flat';
 }
 
 const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
@@ -36,13 +36,13 @@ const API_URL = isProduction
 // ── Default filter state — exported so FilterBar can reference the shape ──────
 
 const DEFAULT_FILTERS: IExecutionFilters = {
-  status:      [],
+  status: [],
   environment: '',
-  startAfter:  '',
+  startAfter: '',
   startBefore: '',
-  groupName:   '',
-  limit:       25,
-  offset:      0,
+  groupName: '',
+  limit: 25,
+  offset: 0,
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -96,25 +96,25 @@ export const Dashboard = () => {
     loading: groupsLoading,
     error: groupsError,
   } = useGroupedExecutions({
-    status:      filters.status,
+    status: filters.status,
     environment: filters.environment,
-    startAfter:  filters.startAfter,
+    startAfter: filters.startAfter,
     startBefore: filters.startBefore,
-    groupName:   filters.groupName,
-    limit:       10,
-    offset:      filters.offset,
-    enabled:     viewMode === 'grouped',  // Only fetch when grouped view is active
+    groupName: filters.groupName,
+    limit: 10,
+    offset: filters.offset,
+    enabled: viewMode === 'grouped',  // Only fetch when grouped view is active
   });
 
   // Choose which loading / error state to surface
   const activeLoading = viewMode === 'grouped' ? groupsLoading : loading;
-  const activeError   = viewMode === 'grouped' ? groupsError   : error;
+  const activeError = viewMode === 'grouped' ? groupsError : error;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // ── Drawer — URL-based state ──────────────────────────────────────────────
   const [searchParams, setSearchParams] = useSearchParams();
-  const drawerId  = searchParams.get('drawerId');
+  const drawerId = searchParams.get('drawerId');
   const drawerTab = (searchParams.get('drawerTab') ?? undefined) as DrawerTab | undefined;
 
   // Resolve the full execution object from the current page cache so TerminalView
@@ -141,16 +141,16 @@ export const Dashboard = () => {
   }) => {
     try {
       const payload: Record<string, unknown> = {
-        taskId:  `run-${Date.now()}`,
+        taskId: `run-${Date.now()}`,
         trigger: 'manual',
-        image:   formData.image,
+        image: formData.image,
         command: formData.command,
-        folder:  formData.folder,
-        tests:   [formData.folder],
+        folder: formData.folder,
+        tests: [formData.folder],
         config: {
-          environment:    formData.environment,
-          baseUrl:        formData.baseUrl,
-          retryAttempts:  2,
+          environment: formData.environment,
+          baseUrl: formData.baseUrl,
+          retryAttempts: 2,
         },
       };
 
@@ -161,7 +161,7 @@ export const Dashboard = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization:  `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
       });
@@ -182,7 +182,7 @@ export const Dashboard = () => {
     if (!window.confirm('Delete this execution?')) return;
     try {
       await fetch(`${API_URL}/api/executions/${taskId}`, {
-        method:  'DELETE',
+        method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
       setExecutions((old) => old.filter((exec) => exec.taskId !== taskId));
@@ -197,9 +197,9 @@ export const Dashboard = () => {
   const handleBulkDelete = useCallback(async (taskIds: string[]) => {
     try {
       const res = await fetch(`${API_URL}/api/executions/bulk`, {
-        method:  'DELETE',
+        method: 'DELETE',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body:    JSON.stringify({ taskIds }),
+        body: JSON.stringify({ taskIds }),
       });
       if (!res.ok) throw new Error('Server error');
       // Optimistic update for the flat view cache
@@ -218,9 +218,9 @@ export const Dashboard = () => {
   const handleBulkGroup = useCallback(async (taskIds: string[], groupName: string) => {
     try {
       const res = await fetch(`${API_URL}/api/executions/bulk`, {
-        method:  'PATCH',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body:    JSON.stringify({ taskIds, data: { groupName } }),
+        body: JSON.stringify({ taskIds, data: { groupName } }),
       });
       if (!res.ok) throw new Error('Server error');
       // Optimistic update for the flat view cache
@@ -240,27 +240,26 @@ export const Dashboard = () => {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="px-6 py-6">
+    <div className="px-6 py-6 min-w-0 w-full">
       {/* Title + Run button */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="m-0 text-3xl font-bold text-gh-text dark:text-gh-text-dark">
+          <h1 className="m-0 text-2xl font-bold text-gh-text dark:text-gh-text-dark">
             Automation Center
           </h1>
-          <p className="text-slate-500 mt-1">Live monitoring of test infrastructure</p>
+          <p className="text-slate-500 mt-1 text-">Live monitoring of test infrastructure</p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
           disabled={isViewer}
           title={isViewer ? 'Viewers cannot run tests' : 'Run a new test'}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm text-white border-none transition-all duration-200 ${
-            isViewer
-              ? 'bg-gradient-to-r from-gray-400 to-gray-500 opacity-60 cursor-not-allowed'
-              : 'bg-gh-accent dark:bg-gh-accent-dark shadow-lg shadow-blue-500/30 cursor-pointer hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-500/40 hover:opacity-90'
-          }`}
+          className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200 ${isViewer
+            ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border border-gray-200 dark:border-gray-700 cursor-not-allowed'
+            : 'bg-gh-accent dark:bg-gh-accent-dark text-white cursor-pointer hover:opacity-90 active:scale-95'
+            }`}
         >
-          <Play size={18} /> Run New Test
+          <Play size={18} /> Run Test
         </button>
       </div>
 

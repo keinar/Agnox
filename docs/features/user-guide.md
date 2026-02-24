@@ -60,7 +60,7 @@ These URLs are injected into your test container as `BASE_URL` at runtime.
 
 ### Option A: Via Dashboard (Recommended)
 
-1. Click **Run New Test** (top right).
+1. Click **Run Test** (top right).
 2. Select your **Project** (settings are pre-filled from Run Settings).
 3. Select the **Environment** (Dev/Staging/Prod).
 4. (Optional) Override the folder path.
@@ -181,7 +181,7 @@ The drawer URL updates with `?drawerId=<taskId>` — links can be copied and sha
 Automate recurring test runs without CI/CD pipelines.
 
 ### Creating a Schedule
-1. Click **Run New Test** to open the Execution Modal.
+1. Click **Run Test** to open the Execution Modal.
 2. Switch to the **Schedule Run** tab (top of the modal).
 3. Fill in the standard run fields (project, environment, folder).
 4. Enter a **Schedule Name** (used as the `groupName` for all triggered executions).
