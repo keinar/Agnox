@@ -1,8 +1,14 @@
-# Architecture Overview
+# Agnox
+> Agnox enables universal test execution and instant AI debugging for modern engineering teams.
+
+## Overview
+Agnox is a unified platform designed to seamlessly integrate with your CI/CD pipelines, execute tests across any framework, and provide actionable, AI-powered root cause analysis directly in your pull requests.
+
+---
 
 ## System Architecture
 
-The Agnox is a microservices-based test automation platform designed for multi-tenant SaaS deployment.
+Agnox is a microservices-based test automation platform designed for multi-tenant SaaS deployment.
 
 ```mermaid
 graph TB
@@ -453,7 +459,7 @@ services:
 
 ### Google Chrome on ARM64 Servers
 
-The AAC platform currently runs on a Linux ARM64 server (Oracle Cloud).
+Agnox currently runs on a Linux ARM64 server (Oracle Cloud).
 Google Chrome and Microsoft Edge do **not** support Linux ARM64.
 
 **Impact:** Test projects that use `--browser-channel chrome` or

@@ -1,8 +1,8 @@
 # Agnox
+> Agnox enables universal test execution and instant AI debugging for modern engineering teams.
 
-> Agnox - Universal Test Execution & AI Root Cause Analysis.
-
-Run any containerized automation suite (Playwright, Pytest, JUnit, Cypress, etc.) on a remote server with real-time monitoring, live logs, and AI-powered failure analysis. Built for teams with complete data isolation between organizations.
+## Overview
+Agnox is a unified platform designed to seamlessly integrate with your CI/CD pipelines, execute tests across any framework, and provide actionable, AI-powered root cause analysis directly in your pull requests.
 
 [![Documentation](https://img.shields.io/badge/Documentation-Live-violet?style=for-the-badge&logo=docusaurus)](https://docs.agnox.dev)
 

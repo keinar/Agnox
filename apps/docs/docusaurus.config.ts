@@ -3,8 +3,8 @@ import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
-  title: 'Agnostic Automation Center',
-  tagline: 'Enterprise-grade test execution, real-time investigation, and AI-driven analysis.',
+  title: 'Agnox',
+  tagline: 'Universal test execution and instant AI debugging for modern engineering teams.',
   favicon: 'img/favicon.png',
 
   future: {
@@ -19,7 +19,7 @@ const config: Config = {
   url: 'https://docs.agnox.dev',
   baseUrl: '/',
 
-  organizationName: 'keinar',
+  organizationName: 'agnox',
   projectName: 'Agnostic-Automation-Center',
 
   onBrokenLinks: 'warn',
@@ -68,7 +68,7 @@ const config: Config = {
       respectPrefersColorScheme: false,
     },
     navbar: {
-      title: 'Agnostic Automation',
+      title: 'Agnox',
       style: 'dark',
       // logo: {
       //   alt: 'AAC Logo',
@@ -141,7 +141,7 @@ const config: Config = {
           ],
         },
       ],
-      copyright: `© ${new Date().getFullYear()} Agnostic Automation Center`,
+      copyright: `© ${new Date().getFullYear()} Agnox`,
     },
     prism: {
       theme: prismThemes.github,

@@ -61,8 +61,8 @@ export function createServer(): FastifyInstance {
         runFirst: true
     });
 
-    // CORS Configuration (Task 4.4: Production CORS)
-    const rawAllowedOrigins = process.env.ALLOWED_ORIGINS || '';
+    // CORS Configuration — origins read from env; CORS_ORIGIN takes precedence, fallback to ALLOWED_ORIGINS
+    const rawAllowedOrigins = process.env.CORS_ORIGIN || process.env.ALLOWED_ORIGINS || '';
     const defaultDevOrigins = ['http://localhost:8080', 'http://localhost:5173', 'http://localhost:3000'];
 
     const ALLOWED_ORIGINS = rawAllowedOrigins
@@ -85,7 +85,7 @@ export function createServer(): FastifyInstance {
             }
         },
         credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     });
 
     // Socket.IO plugin

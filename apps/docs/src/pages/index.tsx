@@ -105,7 +105,7 @@ export default function Home(): ReactNode {
   return (
     <Layout
       title={siteConfig.title}
-      description="Enterprise-grade test execution, real-time investigation, and AI-driven analysis for modern engineering teams.">
+      description="Universal test execution and instant AI debugging for modern engineering teams.">
       <HomepageHeader />
       <main>
         <HomepageFeatures />
