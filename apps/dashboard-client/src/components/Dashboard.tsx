@@ -242,24 +242,24 @@ export const Dashboard = () => {
   return (
     <div className="px-6 py-6 min-w-0 w-full">
       {/* Title + Run button */}
-      <div className="flex flex-col items-start md:flex-row md:items-center md:justify-between gap-4 mb-8">
+      <div className="flex flex-row items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="m-0 text-xl md:text-2xl font-bold text-slate-900 dark:text-gh-text-dark tracking-tight">
+          <h1 className="m-0 text-lg md:text-2xl font-bold text-slate-900 dark:text-gh-text-dark tracking-tight">
             Automation Center
           </h1>
-          <p className="text-slate-700 dark:text-slate-400 mt-1 text-sm">Live monitoring of test infrastructure</p>
+          <p className="text-slate-700 dark:text-slate-400 mt-1 text-xs md:text-sm">Live monitoring of test infrastructure</p>
         </div>
 
         <button
           onClick={() => setIsModalOpen(true)}
           disabled={isViewer}
           title={isViewer ? 'Viewers cannot run tests' : 'Run a new test'}
-          className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200 ${isViewer
+          className={`flex items-center gap-2 px-3 py-1.5 text-sm md:px-4 md:py-2 md:text-base rounded-lg font-semibold transition-all duration-200 ${isViewer
             ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border border-gray-200 dark:border-gray-700 cursor-not-allowed'
             : 'bg-gh-accent dark:bg-gh-accent-dark text-white cursor-pointer hover:opacity-90 active:scale-95'
             }`}
         >
-          <Play size={18} /> Run Test
+          <Play size={16} className="md:w-[18px] md:h-[18px]" /> Run Test
         </button>
       </div>
 

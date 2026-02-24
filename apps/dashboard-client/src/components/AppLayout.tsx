@@ -24,7 +24,7 @@ export function AppLayout() {
   }, []);
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-gh-bg-subtle-dark overflow-hidden">
+    <div className="flex h-screen bg-slate-100 dark:bg-gh-bg-subtle-dark overflow-hidden">
       <Sidebar
         isMobileOpen={isMobileOpen}
         onMobileClose={closeMobile}

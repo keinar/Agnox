@@ -42,12 +42,12 @@ export const Pagination: React.FC<PaginationProps> = ({
     return (
         <div
             className={`
-                flex flex-wrap items-center justify-between gap-4 px-1 pt-3 mt-1
+                flex flex-col items-center justify-center w-full gap-4 md:flex-row md:justify-between px-1 pt-3 mt-1
                 transition-opacity duration-150 ${loading ? 'opacity-50 pointer-events-none' : ''}
             `}
         >
             {/* Results summary */}
-            <span className="text-xs text-slate-700 dark:text-slate-300">
+            <span className="text-xs text-slate-700 dark:text-slate-300 text-center">
                 Showing{' '}
                 <span className="font-semibold text-slate-900 dark:text-white">{from}–{to}</span>
                 {' '}of{' '}
@@ -56,7 +56,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             </span>
 
             {/* Navigation */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap justify-center items-center gap-2">
                 <button
                     type="button"
                     disabled={!hasPrev}

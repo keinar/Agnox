@@ -33,9 +33,9 @@ export const StatsGrid = ({ executions, kpis, kpisLoading }: Props) => {
     const localPassed = executions.filter(e => e.status === 'PASSED').length;
     const localRate = localTotal > 0 ? Math.round((localPassed / localTotal) * 100) : 0;
 
-    const totalRuns  = kpis?.totalRuns  ?? localTotal;
-    const passRate   = kpis?.successRate ?? localRate;
-    const avgDurMs   = kpis?.avgDurationMs ?? 0;
+    const totalRuns = kpis?.totalRuns ?? localTotal;
+    const passRate = kpis?.successRate ?? localRate;
+    const avgDurMs = kpis?.avgDurationMs ?? 0;
 
     return (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -75,7 +75,7 @@ interface StatCardProps {
 }
 
 const StatCard = ({ icon, title, value, loading = false, subtitle }: StatCardProps) => (
-    <div className="bg-white dark:bg-gh-bg-subtle-dark rounded-xl shadow-sm border border-slate-200 dark:border-gh-border-dark p-5 flex items-center gap-4 transition-shadow duration-200 hover:shadow-md">
+    <div className="bg-white dark:bg-gh-bg-subtle-dark rounded-xl shadow-sm dark:shadow-none border border-slate-200 dark:border-gh-border-dark p-5 flex items-center gap-4 transition-shadow duration-200 hover:shadow-md">
         <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-slate-100 dark:bg-gh-bg-dark flex items-center justify-center">
             {icon}
         </div>

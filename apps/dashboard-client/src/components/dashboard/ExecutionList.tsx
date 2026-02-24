@@ -385,7 +385,7 @@ export function ExecutionList({
       </div>
 
       {/* Table */}
-      <div className="w-full overflow-x-auto rounded-xl border border-slate-300 dark:border-gh-border-dark bg-white dark:bg-gh-bg-dark shadow-sm">
+      <div className="w-full overflow-x-auto rounded-xl border border-slate-300 dark:border-gh-border-dark bg-white dark:bg-gh-bg-dark shadow-sm dark:shadow-none">
         <table className="w-full text-sm text-left" role="grid" aria-label="Executions">
           <ExecutionTableHeader
             visibleDefs={visibleDefs}

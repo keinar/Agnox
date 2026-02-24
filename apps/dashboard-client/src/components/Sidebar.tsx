@@ -152,7 +152,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
   // ── Desktop sidebar ───────────────────────────────────────────────────────
   const desktopSidebar = (
     <aside
-      className={`hidden md:flex flex-col bg-white dark:bg-gh-bg-dark border-r border-slate-300 dark:border-gh-border-dark transition-all duration-300 flex-shrink-0 ${isCollapsed ? 'w-16' : 'w-60'
+      className={`hidden md:flex flex-col bg-white shadow-sm dark:shadow-none dark:bg-gh-bg-dark border-r border-slate-300 dark:border-gh-border-dark transition-all duration-300 flex-shrink-0 ${isCollapsed ? 'w-16' : 'w-60'
         }`}
     >
       {logoBlock}
@@ -178,7 +178,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
 
       {/* Drawer */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-60 bg-white dark:bg-gh-bg-dark border-r border-slate-300 dark:border-gh-border-dark flex flex-col md:hidden transition-transform duration-300 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed inset-y-0 left-0 z-50 w-60 bg-white shadow-lg dark:shadow-none dark:bg-gh-bg-dark border-r border-slate-300 dark:border-gh-border-dark flex flex-col md:hidden transition-transform duration-300 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
         {/* Mobile header with logo and close button */}
