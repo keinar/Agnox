@@ -78,6 +78,7 @@ services:
       - EMAIL_TRACKING_ENABLED=${EMAIL_TRACKING_ENABLED:-true}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - PLATFORM_API_KEY_HMAC_SECRET=${PLATFORM_API_KEY_HMAC_SECRET}
+      - CORS_ORIGIN=${CORS_ORIGIN}
     depends_on:
       - rabbitmq
       - redis
