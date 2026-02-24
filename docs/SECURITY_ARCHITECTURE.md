@@ -41,7 +41,7 @@ To prevent Server-Side Request Forgery (SSRF) and localized data leakage, extern
 ## 4. Platform Secrets vs. Test Variables
 
 ### The `PLATFORM_*` Namespace
-One of AAC's core design tenets is allowing users to execute arbitrary tests using standard environment variables (like `MONGO_URI` or `API_KEY`).
+One of agnox's core design tenets is allowing users to execute arbitrary tests using standard environment variables (like `MONGO_URI` or `API_KEY`).
 To ensure absolute isolation between the host infrastructure and the user containers, the platform utilizes a prefixed namespace. Infrastructure connection strings are strictly scoped to:
 - `PLATFORM_MONGO_URI`
 - `PLATFORM_REDIS_URL`
@@ -85,4 +85,4 @@ To ensure absolute isolation between the host infrastructure and the user contai
 
 ---
 
-*This document outlines the foundation of AAC's Security Architecture as established in the Sprint 1-3 Hardening Phase (February 2026).*
+*This document outlines the foundation of agnox's Security Architecture as established in the Sprint 1-3 Hardening Phase (February 2026).*

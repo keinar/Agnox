@@ -24,7 +24,7 @@ To authorize API calls back to the SCM platforms on behalf of organizations, the
 
 ## 4. Execution Flow
 The end-to-end event lifecycle ensures decoupling between execution processing and external delivery mechanisms:
-1. **Inbound Webhook (Test Trigger):** A CI pipeline initiates a test run via an AAC webhook, passing along the CI Context payload (commit SHA, PR/MR number, repository identifier, and platform source).
+1. **Inbound Webhook (Test Trigger):** A CI pipeline initiates a test run via an agnox webhook, passing along the CI Context payload (commit SHA, PR/MR number, repository identifier, and platform source).
 2. **Context Persistence:** The CI Context is securely attached to the root level of the generated `TestCycle` record in the database for tracking.
 3. **Test Execution:** The configured testing nodes process the steps and successfully terminate the cycle.
 4. **AI Analysis Generation:** An asynchronous background Worker Service compiles the granular test logs and leverages the AI engine to generate a concise, human-readable report.

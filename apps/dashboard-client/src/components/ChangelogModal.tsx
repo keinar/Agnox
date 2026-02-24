@@ -56,7 +56,7 @@ export function ChangelogModal({ onClose }: ChangelogModalProps) {
               id="changelog-modal-title"
               className="text-lg font-semibold text-slate-900 dark:text-slate-100"
             >
-              What's New in AAC
+              What's New in agnox
             </h2>
           </div>
           <button

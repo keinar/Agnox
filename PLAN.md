@@ -31,7 +31,7 @@ Deliver exportable PDF test reports for cycles and executions, and harden the au
 # SPRINT 9 — Quality Hub: Manual Testing & Hybrid Cycles
 
 ## 🎯 Sprint Goal
-Transform the AAC from a pure execution engine into a comprehensive Test Management System (TMS). We will introduce manual test case repositories, AI-assisted test generation, and "Hybrid Cycles" that consolidate automated and manual test results into a single, unified report.
+Transform the agnox from a pure execution engine into a comprehensive Test Management System (TMS). We will introduce manual test case repositories, AI-assisted test generation, and "Hybrid Cycles" that consolidate automated and manual test results into a single, unified report.
 
 ---
 

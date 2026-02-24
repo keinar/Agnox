@@ -72,7 +72,7 @@ COPY . .
 RUN chmod +x /app/entrypoint.sh
 
 # ⚠️ IMPORTANT: Do NOT add ENTRYPOINT or CMD
-# The AAC Worker injects the entrypoint at runtime to handle environment variables 
+# The agnox Worker injects the entrypoint at runtime to handle environment variables 
 # and log streaming. Adding them here will conflict with the execution engine.
 ```
 

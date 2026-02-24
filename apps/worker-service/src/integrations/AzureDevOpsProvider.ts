@@ -37,7 +37,7 @@ export class AzureDevOpsProvider implements ICiProvider {
         const passCount = metrics.passed;
         const totalCount = metrics.total;
 
-        const content = `## 🤖 AAC AI Analysis Report\n\n**Test Cycle Results**: ${passCount}/${totalCount} Passed\n\n### AI Summary\n${analysisSummary}\n\n[View Full Report in AAC](${reportUrl})`;
+        const content = `## 🤖 agnox AI Analysis Report\n\n**Test Cycle Results**: ${passCount}/${totalCount} Passed\n\n### AI Summary\n${analysisSummary}\n\n[View Full Report in agnox](${reportUrl})`;
 
         try {
             const gitApi = await this.connection.getGitApi();

@@ -27,7 +27,7 @@ export class GitlabProvider implements ICiProvider {
         const passCount = metrics.passed;
         const totalCount = metrics.total;
 
-        const body = `## 🤖 AAC AI Analysis Report\n\n**Test Cycle Results**: ${passCount}/${totalCount} Passed\n\n### AI Summary\n${analysisSummary}\n\n[View Full Report in AAC](${reportUrl})`;
+        const body = `## 🤖 agnox AI Analysis Report\n\n**Test Cycle Results**: ${passCount}/${totalCount} Passed\n\n### AI Summary\n${analysisSummary}\n\n[View Full Report in agnox](${reportUrl})`;
 
         try {
             await this.client.MergeRequestNotes.create(

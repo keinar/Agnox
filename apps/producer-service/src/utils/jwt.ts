@@ -231,4 +231,4 @@ console.info('🔐 JWT Configuration:');
 console.info(`  - Secret: [REDACTED] (${JWT_SECRET.length} chars)`);
 console.info(`  - Expiry: ${JWT_EXPIRY}`);
 console.info(`  - Issuer: agnostic-automation-center`);
-console.info(`  - Audience: aac-api`);
+console.info(`  - Audience: agnox-api`);
