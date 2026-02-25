@@ -43,7 +43,9 @@ jobs:
           PLATFORM_GEMINI_API_KEY: "mock_gemini"
           PLATFORM_WORKER_CALLBACK_SECRET: "ci-test-worker-callback-secret-64chars-minimum"
           PLATFORM_API_KEY_HMAC_SECRET: "ci-test-hmac-secret-64chars-minimum"
-          API_URL: "http://producer-service:3000"
+          API_URL: "http://producer:3000"
+          VITE_API_URL: "http://localhost:3000/api"
+          PUBLIC_API_URL: "http://localhost:3000/api"
           NODE_ENV: production
           INJECT_ENV_VARS: "ADMIN_USER,ADMIN_PASS"
           ADMIN_USER: "admin@test.com"
@@ -74,8 +76,10 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report
-          path: tests/playwright-report/
+          name: playwright-artifacts
+          path: |
+            tests/playwright-report/
+            tests/test-results/
           retention-days: 7
 
   deploy:
