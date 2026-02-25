@@ -203,6 +203,12 @@ export async function organizationRoutes(
             testCasesEnabled: org.features?.testCasesEnabled !== false,
             testCyclesEnabled: org.features?.testCyclesEnabled !== false,
           },
+          integrations: {
+            jira: { enabled: org.integrations?.jira?.enabled || false },
+            github: { enabled: org.integrations?.github?.enabled || false },
+            gitlab: { enabled: org.integrations?.gitlab?.enabled || false },
+            azure: { enabled: org.integrations?.azure?.enabled || false }
+          },
           createdAt: org.createdAt,
           updatedAt: org.updatedAt
         }

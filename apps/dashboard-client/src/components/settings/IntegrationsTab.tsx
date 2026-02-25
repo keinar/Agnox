@@ -8,7 +8,7 @@ import { Github, Gitlab as GitlabIcon } from 'lucide-react'; // Using Gitlab fro
 interface IJiraConfig {
     domain: string;
     email: string;
-    isConfigured: boolean;
+    enabled: boolean;
 }
 
 interface IFormState {
@@ -77,7 +77,7 @@ export function IntegrationsTab() {
                 if (!cancelled && res.data.success && res.data.data) {
                     const cfg = res.data.data;
                     setForm({ domain: cfg.domain ?? '', email: cfg.email ?? '', apiToken: '' });
-                    setIsConfigured(cfg.isConfigured ?? false);
+                    setIsConfigured(cfg.enabled ?? false);
                 }
             } catch {
                 // Not yet configured — silently ignore 404
@@ -104,11 +104,12 @@ export function IntegrationsTab() {
                 if (!cancelled && res.data.success) {
                     const org = res.data.organization;
                     const url = org.slackWebhookUrl ?? '';
-                    setSlackUrl(url);
+                    setSlackUrl('');
                     setSlackOriginalUrl(url);
                     setSlackNotificationEvents(org.slackNotificationEvents ?? ['FAILED', 'ERROR', 'UNSTABLE']);
 
                     const integrations = org.integrations || {};
+                    setIsConfigured(integrations.jira?.enabled || false);
                     setCiState(prev => ({
                         ...prev,
                         github: { ...prev.github, enabled: integrations.github?.enabled || false },
@@ -134,17 +135,22 @@ export function IntegrationsTab() {
         const API_URL = getApiUrl();
 
         try {
-            const payload = {
-                slackWebhookUrl: slackUrl.trim() || null,
+            const payload: any = {
                 slackNotificationEvents
             };
+            if (slackUrl.trim()) {
+                payload.slackWebhookUrl = slackUrl.trim();
+            }
             const res = await axios.patch<{ success: boolean }>(
                 `${API_URL}/api/organization`,
                 payload,
                 { headers: authHeaders },
             );
             if (res.data.success) {
-                setSlackOriginalUrl(slackUrl.trim());
+                if (slackUrl.trim()) {
+                    setSlackOriginalUrl(slackUrl.trim());
+                }
+                setSlackUrl('');
                 setSlackFeedback({ type: 'success', message: 'Slack webhook saved successfully.' });
                 setTimeout(() => setSlackFeedback(null), 3000);
             }
@@ -475,7 +481,7 @@ export function IntegrationsTab() {
                                         value={slackUrl}
                                         onChange={(e) => setSlackUrl(e.target.value)}
                                         disabled={!isAdmin}
-                                        placeholder="https://hooks.slack.com/services/..."
+                                        placeholder={slackOriginalUrl ? "••••••••••••••••  (leave blank to keep existing)" : "https://hooks.slack.com/services/..."}
                                         className={isAdmin ? INPUT_CLASS : INPUT_CLASS + ' opacity-60 cursor-not-allowed'}
                                     />
                                 </div>
