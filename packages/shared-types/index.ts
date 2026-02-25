@@ -74,6 +74,8 @@ export interface IOrganization {
     };
     /** Optional Slack incoming webhook URL for execution notifications. */
     slackWebhookUrl?: string;
+    /** Optional array of execution statuses that trigger a Slack notification. */
+    slackNotificationEvents?: string[];
     /** Per-organization feature flags to selectively enable/disable modules. */
     features?: {
         testCasesEnabled: boolean;

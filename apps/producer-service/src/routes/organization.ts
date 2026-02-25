@@ -198,6 +198,7 @@ export async function organizationRoutes(
           slackWebhookUrl: org.slackWebhookUrl
             ? (typeof org.slackWebhookUrl === 'object' ? 'configured' : 'configured (legacy)')
             : null,
+          slackNotificationEvents: org.slackNotificationEvents ?? ['FAILED', 'ERROR', 'UNSTABLE'],
           features: {
             testCasesEnabled: org.features?.testCasesEnabled !== false,
             testCyclesEnabled: org.features?.testCyclesEnabled !== false,
@@ -240,16 +241,16 @@ export async function organizationRoutes(
   app.patch('/api/organization', {
     preHandler: [authMiddleware, adminOnly, apiRateLimit]
   }, async (request, reply) => {
-    const { name, aiAnalysisEnabled, slackWebhookUrl } = request.body as any;
+    const { name, aiAnalysisEnabled, slackWebhookUrl, slackNotificationEvents } = request.body as any;
     const currentUser = request.user!;
 
     try {
       // Validate at least one field is provided
-      if (name === undefined && aiAnalysisEnabled === undefined && slackWebhookUrl === undefined) {
+      if (name === undefined && aiAnalysisEnabled === undefined && slackWebhookUrl === undefined && slackNotificationEvents === undefined) {
         return reply.code(400).send({
           success: false,
           error: 'Missing fields',
-          message: 'At least one field (name, aiAnalysisEnabled, or slackWebhookUrl) is required'
+          message: 'At least one field (name, aiAnalysisEnabled, slackWebhookUrl, or slackNotificationEvents) is required'
         });
       }
 
@@ -331,6 +332,28 @@ export async function organizationRoutes(
         }
       }
 
+      // Validate slackNotificationEvents if provided
+      if (slackNotificationEvents !== undefined) {
+        if (!Array.isArray(slackNotificationEvents)) {
+          return reply.code(400).send({
+            success: false,
+            error: 'Invalid slackNotificationEvents',
+            message: 'slackNotificationEvents must be an array of strings'
+          });
+        }
+        const validStatuses = new Set(['PASSED', 'FAILED', 'ERROR', 'UNSTABLE']);
+        for (const status of slackNotificationEvents) {
+          if (typeof status !== 'string' || !validStatuses.has(status)) {
+            return reply.code(400).send({
+              success: false,
+              error: 'Invalid slackNotificationEvents',
+              message: 'Array contains invalid execution statuses (PASSED, FAILED, ERROR, UNSTABLE)'
+            });
+          }
+        }
+        updateFields.slackNotificationEvents = slackNotificationEvents;
+      }
+
       // Update organization
       const result = await orgsCollection.updateOne(
         { _id: orgId },
@@ -394,7 +417,8 @@ export async function organizationRoutes(
           aiAnalysisEnabled: updatedOrg?.aiAnalysisEnabled !== false,
           slackWebhookUrl: updatedOrg?.slackWebhookUrl
             ? (typeof updatedOrg.slackWebhookUrl === 'object' ? 'configured' : 'configured (legacy)')
-            : null
+            : null,
+          slackNotificationEvents: updatedOrg?.slackNotificationEvents ?? ['FAILED', 'ERROR', 'UNSTABLE']
         }
       });
 

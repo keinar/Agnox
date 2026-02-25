@@ -824,4 +824,4 @@ Admin clicks "Upgrade" → POST /api/billing/checkout
 | 12 | LOW | Worker | No graceful shutdown handler (`SIGTERM` not caught). |
 | 13 | LOW | Worker | ObjectId parsing without `ObjectId.isValid()` check (resolved in schedules.ts; not in all routes). |
 | 14 | LOW | Scheduler | `scheduler.ts` uses `console.error`/`console.info` instead of the Fastify `app.log` logger (violates logging convention). |
-| 15 | LOW | Config | `notifier.ts` references `DASHBOARD_BASE_URL` env var not listed in `env.example`. |
+| 15 | LOW | Config | `notifier.ts` references `DASHBOARD_URL` env var not listed in `env.example`. |

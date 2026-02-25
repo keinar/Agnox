@@ -47,6 +47,7 @@ export function IntegrationsTab() {
     const isAdmin = user?.role === 'admin';
     const [slackUrl, setSlackUrl] = React.useState('');
     const [slackOriginalUrl, setSlackOriginalUrl] = React.useState('');
+    const [slackNotificationEvents, setSlackNotificationEvents] = React.useState<string[]>(['FAILED', 'ERROR', 'UNSTABLE']);
     const [slackLoading, setSlackLoading] = React.useState(true);
     const [slackSaving, setSlackSaving] = React.useState(false);
     const [slackFeedback, setSlackFeedback] = React.useState<FeedbackState>(null);
@@ -105,6 +106,7 @@ export function IntegrationsTab() {
                     const url = org.slackWebhookUrl ?? '';
                     setSlackUrl(url);
                     setSlackOriginalUrl(url);
+                    setSlackNotificationEvents(org.slackNotificationEvents ?? ['FAILED', 'ERROR', 'UNSTABLE']);
 
                     const integrations = org.integrations || {};
                     setCiState(prev => ({
@@ -132,7 +134,10 @@ export function IntegrationsTab() {
         const API_URL = getApiUrl();
 
         try {
-            const payload = { slackWebhookUrl: slackUrl.trim() || null };
+            const payload = {
+                slackWebhookUrl: slackUrl.trim() || null,
+                slackNotificationEvents
+            };
             const res = await axios.patch<{ success: boolean }>(
                 `${API_URL}/api/organization`,
                 payload,
@@ -481,6 +486,32 @@ export function IntegrationsTab() {
                                 )}
                             </div>
 
+                            <div className="pt-2">
+                                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">
+                                    Notify on Events
+                                </label>
+                                <div className="space-y-2">
+                                    {['PASSED', 'FAILED', 'ERROR', 'UNSTABLE'].map(status => (
+                                        <label key={status} className={`flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 ${!isAdmin && 'opacity-60 cursor-not-allowed'}`}>
+                                            <input
+                                                type="checkbox"
+                                                checked={slackNotificationEvents.includes(status)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSlackNotificationEvents(prev => [...prev, status]);
+                                                    } else {
+                                                        setSlackNotificationEvents(prev => prev.filter(s => s !== status));
+                                                    }
+                                                }}
+                                                disabled={!isAdmin}
+                                                className="w-4 h-4 text-[#4A154B] border-slate-300 dark:border-gh-border-dark rounded focus:ring-[#4A154B] disabled:opacity-60 disabled:cursor-not-allowed"
+                                            />
+                                            {status}
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
                             {slackFeedback && (
                                 <div className={`flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm ${slackFeedback.type === 'success'
                                     ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
@@ -498,7 +529,7 @@ export function IntegrationsTab() {
                                 <div className="pt-1">
                                     <button
                                         type="submit"
-                                        disabled={slackSaving || slackUrl.trim() === slackOriginalUrl}
+                                        disabled={slackSaving}
                                         className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#4A154B] hover:bg-[#611f69] rounded-lg disabled:opacity-60 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-[#4A154B] focus:ring-offset-2 dark:focus:ring-offset-gh-bg-dark"
                                     >
                                         {slackSaving && <Loader2 size={14} className="animate-spin" />}

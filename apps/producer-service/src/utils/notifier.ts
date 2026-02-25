@@ -9,7 +9,7 @@
 import { IExecution, IOrganization } from '../../../../packages/shared-types/index.js';
 import { decrypt, IEncryptedPayload } from './encryption.js';
 
-const DASHBOARD_BASE_URL = process.env.DASHBOARD_BASE_URL || 'http://localhost:5173';
+const DASHBOARD_URL = process.env.DASHBOARD_URL || process.env.FRONTEND_URL || 'https://agnox.dev';
 
 /** Statuses that represent the end of an execution lifecycle. */
 export const FINAL_EXECUTION_STATUSES = new Set(['PASSED', 'FAILED', 'ERROR', 'UNSTABLE']);
@@ -77,8 +77,16 @@ export async function sendExecutionNotification(
     const webhookUrl = resolveWebhookUrl(org.slackWebhookUrl);
     if (!webhookUrl) return;
 
+    const allowedEvents = org.slackNotificationEvents ?? ['FAILED', 'ERROR', 'UNSTABLE'];
+    if (!allowedEvents.includes(execution.status)) {
+        logger.info(
+            `[notifier] Notification skipped for execution ${execution.taskId} due to organization preferences (${execution.status})`
+        );
+        return;
+    }
+
     const emoji = getStatusEmoji(execution.status);
-    const deepLink = `${DASHBOARD_BASE_URL}/?drawerId=${execution.taskId}`;
+    const deepLink = `${DASHBOARD_URL}/?drawerId=${execution.taskId}`;
     const trigger = (execution.trigger ?? 'manual').toUpperCase();
     const folder = execution.folder || 'all';
 

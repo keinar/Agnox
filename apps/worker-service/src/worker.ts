@@ -330,8 +330,14 @@ async function startWorker() {
             const hasFailures = logsString.includes('failed') || logsString.includes('✘');
             const hasRetries = logsString.includes('retry #');
             const hasPassed = /\d+ passed/.test(logsString) || logsString.includes('✓') || logsString.includes('passing (');
+            const hasNoTests = logsString.includes('No tests found') || logsString.includes('No tests matched');
 
-            if (finalStatus === 'PASSED') {
+            // Evaluate status in order of precedence
+            if (hasNoTests) {
+                // Top priority: If no tests ran, it's an execution error regardless of exit code
+                logger.warn({ taskId }, 'No tests found in execution. Marking as ERROR.');
+                finalStatus = 'ERROR';
+            } else if (finalStatus === 'PASSED') {
                 if (hasFailures && hasPassed) {
                     // Mix of passed and failed tests — genuinely unstable/flaky
                     logger.warn({ taskId }, 'Mixed results detected (passed + failed). Marking as UNSTABLE.');
@@ -343,6 +349,7 @@ async function startWorker() {
                 }
                 // else: no failures detected, stays PASSED
             } else {
+                // finalStatus is FAILED (Exit code != 0)
                 if (hasRetries && hasPassed && hasFailures) {
                     // Non-zero exit but some tests passed with retries, some failed — mixed
                     logger.warn({ taskId }, 'Mixed results with retries and non-zero exit. Marking as UNSTABLE.');
