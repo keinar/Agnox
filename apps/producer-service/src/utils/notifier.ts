@@ -86,7 +86,7 @@ export async function sendExecutionNotification(
     }
 
     const emoji = getStatusEmoji(execution.status);
-    const deepLink = `${DASHBOARD_URL}/?drawerId=${execution.taskId}`;
+    const deepLink = `${DASHBOARD_URL}/dashboard?drawerId=${execution.taskId}`;
     const trigger = (execution.trigger ?? 'manual').toUpperCase();
     const folder = execution.folder || 'all';
 

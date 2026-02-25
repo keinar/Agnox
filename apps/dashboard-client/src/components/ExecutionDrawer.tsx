@@ -82,7 +82,7 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
     }
 
     const hasAnalysis = !!execution?.analysis;
-    if (execution?.status !== 'PASSED' || hasAnalysis) {
+    if (execution?.status !== 'ERROR' && (execution?.status !== 'PASSED' || hasAnalysis)) {
       tabs.push({ id: 'ai-analysis', label: 'AI Analysis' });
     }
 

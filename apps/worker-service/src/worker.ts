@@ -262,7 +262,8 @@ async function startWorker() {
                 ];
             } else {
                 // Default: delegate to the agnostic entrypoint script inside the image
-                containerCmd = ['/bin/sh', '/app/entrypoint.sh', task.folder || 'all'];
+                const normalizedFolder = (task.folder || 'all').replace(/\\/g, '/');
+                containerCmd = ['/bin/sh', '/app/entrypoint.sh', normalizedFolder];
             }
             const agnosticCommand = containerCmd;
 
