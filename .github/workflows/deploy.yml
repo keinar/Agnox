@@ -15,7 +15,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
       - name: Install Dependencies
@@ -57,7 +57,7 @@ jobs:
         run: |
           cd apps/producer-service
           npm ci
-          npm run test:api
+          npx vitest run src/routes/__tests__
 
       - name: Run Layer 3 - E2E Tests
         run: npx playwright test -c tests/playwright.config.ts
