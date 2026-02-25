@@ -34,7 +34,30 @@ jobs:
           npx playwright install --with-deps chromium
 
       - name: Start Infrastructure
-        run: docker compose up -d
+        run: |
+          cat <<EOF > .env
+          PLATFORM_MONGO_URI=mongodb://mongodb:27017/automation_platform
+          PLATFORM_REDIS_URL=redis://redis:6379
+          PLATFORM_RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+          PLATFORM_JWT_SECRET=ci-test-jwt-secret-for-pipeline-testing-64chars-minimum-required
+          PLATFORM_GEMINI_API_KEY=mock_gemini
+          PLATFORM_WORKER_CALLBACK_SECRET=ci-test-worker-callback-secret-64chars-minimum
+          PLATFORM_API_KEY_HMAC_SECRET=ci-test-hmac-secret-64chars-minimum
+          API_URL=http://producer:3000
+          VITE_API_URL=http://localhost:3000/api
+          PUBLIC_API_URL=http://localhost:3000/api
+          NODE_ENV=production
+          INJECT_ENV_VARS=ADMIN_USER,ADMIN_PASS
+          ADMIN_USER=admin@test.com
+          ADMIN_PASS=TestPass123!
+          STRIPE_SECRET_KEY=sk_test_mock_key
+          STRIPE_PUBLISHABLE_KEY=pk_test_mock_key
+          STRIPE_WEBHOOK_SECRET=whsec_mock
+          SENDGRID_API_KEY=SG.mock_sendgrid
+          PASSWORD_SALT_ROUNDS=10
+          EOF
+          docker compose up -d
+          
         env:
           PLATFORM_MONGO_URI: "mongodb://mongodb:27017/automation_platform"
           PLATFORM_REDIS_URL: "redis://redis:6379"
