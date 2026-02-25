@@ -1,7 +1,14 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+import path from 'path';
+
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+
+const authFile = path.resolve(__dirname, '.auth/user.json');
 
 export default defineConfig({
-    testDir: './specs',
+    testDir: '.',
+    testIgnore: ['**/legacy_archive/**', '**/fixtures/**'],
     timeout: 60000,
     retries: process.env.CI ? 2 : 1,
     workers: 1,
@@ -16,10 +23,26 @@ export default defineConfig({
     ],
 
     use: {
-        baseURL: process.env.API_URL || 'http://localhost:3000',
+        baseURL: 'http://localhost:8080',
         extraHTTPHeaders: {
             'Content-Type': 'application/json',
         },
         trace: 'on-first-retry',
     },
+
+    projects: [
+        {
+            name: 'setup',
+            testMatch: /global\.setup\.ts/,
+        },
+        {
+            name: 'chromium',
+            testMatch: /specs\/.*\.spec\.ts/,
+            use: {
+                ...devices['Desktop Chrome'],
+                storageState: authFile,
+            },
+            dependencies: ['setup'],
+        }
+    ]
 });

@@ -285,6 +285,7 @@ export const Dashboard = () => {
         onBulkGroup={handleBulkGroup}
         viewMode={viewMode}
         groups={groups}
+        isViewer={isViewer}
       />
 
       {/* Pagination — adapts to flat vs grouped counts */}

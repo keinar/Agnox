@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAuth } from '../context/AuthContext';
 import {
     Trash2, CheckCircle, XCircle,
     Clock, PlayCircle, FileText, BarChart2,
@@ -25,6 +26,7 @@ interface ExecutionRowProps {
     visibleColumns: Set<string>;
     /** When true, plays the slide-down entry animation (used for grouped-view children). */
     animateIn?: boolean;
+    isViewer?: boolean;
 }
 
 type TriggerType = 'Manual' | 'CRON' | 'GitHub' | 'GitLab' | 'Jenkins' | 'Webhook';
@@ -114,8 +116,9 @@ function getStatusIcon(status: string) {
 // ── ExecutionRow component ─────────────────────────────────────────────────────
 
 export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function ExecutionRow({
-    execution, onDelete, onSelect, isSelected, visibleColumns, animateIn = false,
+    execution, onDelete, onSelect, isSelected, visibleColumns, animateIn = false, isViewer = false,
 }) {
+    const { user } = useAuth();
     const [showJiraModal, setShowJiraModal] = React.useState(false);
     const [fetchingReport, setFetchingReport] = React.useState(false);
     const [, setSearchParams] = useSearchParams();
@@ -379,14 +382,16 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
                             )}
 
                             {/* Delete */}
-                            <button
-                                title="Delete"
-                                aria-label={`Delete run ${execution.taskId}`}
-                                onClick={(e) => { e.stopPropagation(); onDelete(execution.taskId); }}
-                                className={`${iconBtnBase} text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-950/50`}
-                            >
-                                <Trash2 size={16} />
-                            </button>
+                            {user?.role !== 'viewer' && (
+                                <button
+                                    title="Delete"
+                                    aria-label={`Delete run ${execution.taskId}`}
+                                    onClick={(e) => { e.stopPropagation(); onDelete(execution.taskId); }}
+                                    className={`${iconBtnBase} text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-950/50`}
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            )}
                         </div>
                     </td>
                 )}

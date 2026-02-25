@@ -105,7 +105,7 @@ graph TB
 **Routes:**
 - `/api/auth/*` - Authentication (signup, login, logout)
 - `/api/users/*` - User management (admin only)
-- `/api/organization/*` - Organization settings (including `slackWebhookUrl`)
+- `/api/organization/*` - Organization settings (including `slackWebhookUrl` and `slackNotificationEvents`)
 - `/api/invitations/*` - Team member invitations (admin only)
 - `/api/executions/*` - Test execution history, bulk ops, artifact listing
 - `/api/execution-request` - Queue new test execution

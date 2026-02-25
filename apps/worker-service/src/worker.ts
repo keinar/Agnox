@@ -24,7 +24,7 @@ const DB_NAME = 'automation_platform';
 const COLLECTION_NAME = 'executions';
 const redis = new Redis(process.env.PLATFORM_REDIS_URL || process.env.REDIS_URL || 'redis://localhost:6379');
 
-function resolveHostForDocker(url: string | undefined): string {
+export function resolveHostForDocker(url: string | undefined): string {
     if (!url) return '';
     if (process.env.RUNNING_IN_DOCKER === 'true' && (url.includes('localhost') || url.includes('127.0.0.1'))) {
         return url.replace(/localhost|127\.0.0.1/, 'host.docker.internal');
@@ -70,11 +70,11 @@ const FATAL_LOG_PATTERNS = [
     /MONGO_URI is not set/i,
 ];
 
-function containsFatalPattern(logs: string): boolean {
+export function containsFatalPattern(logs: string): boolean {
     return FATAL_LOG_PATTERNS.some(p => p.test(logs));
 }
 
-function getMergedEnvVars(task: { envVars?: Record<string, string>; baseUrl?: string }, resolvedBaseUrl: string): Record<string, string> {
+export function getMergedEnvVars(task: { envVars?: Record<string, string>; baseUrl?: string }, resolvedBaseUrl: string): Record<string, string> {
     // 1. Safe platform-provided constants — no secrets
     const merged: Record<string, string> = {
         CI: 'true',
@@ -102,6 +102,53 @@ async function updatePerformanceMetrics(testName: string, durationMs: number, or
     await redis.lpush(key, durationMs);
     await redis.ltrim(key, 0, 9);
     logger.info({ testName, organizationId, durationMs }, 'Updated metrics');
+}
+
+export function normalizeFolder(folder?: string): string {
+    return (folder || 'all').replace(/\\/g, '/');
+}
+
+export function determineExecutionStatus(statusCode: number, logsString: string, taskId: string): string {
+    let finalStatus = statusCode === 0 ? 'PASSED' : 'FAILED';
+    const hasFailures = logsString.includes('failed') || logsString.includes('✘');
+    const hasRetries = logsString.includes('retry #');
+    const hasPassed = /[1-9]\d* passed/.test(logsString) || logsString.includes('✓') || logsString.includes('passing (');
+    const hasNoTests = logsString.includes('No tests found') || logsString.includes('No tests matched');
+
+    // Evaluate status in order of precedence
+    if (hasNoTests) {
+        // Top priority: If no tests ran, it's an execution error regardless of exit code
+        logger.warn({ taskId }, 'No tests found in execution. Marking as ERROR.');
+        finalStatus = 'ERROR';
+    } else if (finalStatus === 'PASSED') {
+        if (hasFailures && hasPassed) {
+            // Mix of passed and failed tests — genuinely unstable/flaky
+            logger.warn({ taskId }, 'Mixed results detected (passed + failed). Marking as UNSTABLE.');
+            finalStatus = 'UNSTABLE';
+        } else if (hasFailures) {
+            // Failures detected with no evidence of passing tests — fully failed
+            logger.warn({ taskId }, 'Exit code 0 but only failures detected. Marking as FAILED.');
+            finalStatus = 'FAILED';
+        }
+        // else: no failures detected, stays PASSED
+    } else {
+        // finalStatus is FAILED (Exit code != 0)
+        if (hasRetries && hasPassed && hasFailures) {
+            // Non-zero exit but some tests passed with retries, some failed — mixed
+            logger.warn({ taskId }, 'Mixed results with retries and non-zero exit. Marking as UNSTABLE.');
+            finalStatus = 'UNSTABLE';
+        } else {
+            finalStatus = 'FAILED';
+        }
+    }
+
+    // SECURITY_PLAN §1.5 — Force FAILED if fatal patterns detected in logs
+    if (finalStatus === 'PASSED' && containsFatalPattern(logsString)) {
+        logger.warn({ taskId }, 'Container exited 0 but FATAL ERROR detected in logs. Forcing FAILED.');
+        finalStatus = 'FAILED';
+    }
+
+    return finalStatus;
 }
 
 async function startWorker() {
@@ -262,7 +309,7 @@ async function startWorker() {
                 ];
             } else {
                 // Default: delegate to the agnostic entrypoint script inside the image
-                const normalizedFolder = (task.folder || 'all').replace(/\\/g, '/');
+                const normalizedFolder = normalizeFolder(task.folder);
                 containerCmd = ['/bin/sh', '/app/entrypoint.sh', normalizedFolder];
             }
             const agnosticCommand = containerCmd;
@@ -326,45 +373,8 @@ async function startWorker() {
 
             // 1. Wait for execution to finish
             const result = await container.wait();
-            let finalStatus = result.StatusCode === 0 ? 'PASSED' : 'FAILED';
             const logsString = logsBuffer;
-            const hasFailures = logsString.includes('failed') || logsString.includes('✘');
-            const hasRetries = logsString.includes('retry #');
-            const hasPassed = /\d+ passed/.test(logsString) || logsString.includes('✓') || logsString.includes('passing (');
-            const hasNoTests = logsString.includes('No tests found') || logsString.includes('No tests matched');
-
-            // Evaluate status in order of precedence
-            if (hasNoTests) {
-                // Top priority: If no tests ran, it's an execution error regardless of exit code
-                logger.warn({ taskId }, 'No tests found in execution. Marking as ERROR.');
-                finalStatus = 'ERROR';
-            } else if (finalStatus === 'PASSED') {
-                if (hasFailures && hasPassed) {
-                    // Mix of passed and failed tests — genuinely unstable/flaky
-                    logger.warn({ taskId }, 'Mixed results detected (passed + failed). Marking as UNSTABLE.');
-                    finalStatus = 'UNSTABLE';
-                } else if (hasFailures) {
-                    // Failures detected with no evidence of passing tests — fully failed
-                    logger.warn({ taskId }, 'Exit code 0 but only failures detected. Marking as FAILED.');
-                    finalStatus = 'FAILED';
-                }
-                // else: no failures detected, stays PASSED
-            } else {
-                // finalStatus is FAILED (Exit code != 0)
-                if (hasRetries && hasPassed && hasFailures) {
-                    // Non-zero exit but some tests passed with retries, some failed — mixed
-                    logger.warn({ taskId }, 'Mixed results with retries and non-zero exit. Marking as UNSTABLE.');
-                    finalStatus = 'UNSTABLE';
-                } else {
-                    finalStatus = 'FAILED';
-                }
-            }
-
-            // SECURITY_PLAN §1.5 — Force FAILED if fatal patterns detected in logs
-            if (finalStatus === 'PASSED' && containsFatalPattern(logsString)) {
-                logger.warn({ taskId }, 'Container exited 0 but FATAL ERROR detected in logs. Forcing FAILED.');
-                finalStatus = 'FAILED';
-            }
+            const finalStatus = determineExecutionStatus(result.StatusCode, logsString, taskId);
 
             const duration = new Date().getTime() - startTime.getTime();
 
@@ -648,7 +658,7 @@ function stripAnsi(text: string) {
     return text.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
 }
 
-async function sendLogToProducer(taskId: string, log: string, organizationId: string) {
+export async function sendLogToProducer(taskId: string, log: string, organizationId: string) {
     const PRODUCER_URL = process.env.PRODUCER_URL || 'http://producer:3000';
     // SECURITY_PLAN §1.2 — Include shared secret so the producer can authenticate this callback
     const CALLBACK_HEADERS = {
@@ -739,5 +749,7 @@ function printMobileReadinessReport(): void {
     logger.info('========================================================');
 }
 
-printMobileReadinessReport();
-startWorker();
+if (process.env.NODE_ENV !== 'test') {
+    printMobileReadinessReport();
+    startWorker();
+}

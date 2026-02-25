@@ -163,7 +163,7 @@ curl -H "x-api-key: pk_live_..." ...
 ### AI Root Cause Analysis (Investigation Hub)
 If a test fails:
 1. Click on any execution row in the dashboard to open the **Investigation Hub** (side drawer).
-2. Select the **AI Analysis** tab (third tab) to view the Gemini-generated diagnosis and suggested fix.
+2. Select the **AI Analysis** tab (third tab) to view the Gemini-generated diagnosis and suggested fix. Note: The AI Analysis tab is hidden if the execution status is `ERROR`, as AI cannot effectively analyze platform or container launch errors.
 3. AI analysis can be disabled per-organization in **Settings** → **Organization**.
 
 ### Investigation Hub
@@ -200,10 +200,14 @@ Go to **Settings** → **Schedules** to see a table of all active CRON schedules
 ### Slack Notifications
 To receive a Slack message whenever a test run completes:
 1. Go to **Settings** → **Integrations**.
-2. Under the **Slack** card, paste your Slack **Incoming Webhook URL**.
-3. Click **Save Webhook**.
+2. Under the **Slack** card, paste your Slack **Incoming Webhook URL**. (This is optional to modify if the integration is already connected).
+3. Select which test execution statuses (PASSED, FAILED, ERROR, UNSTABLE) should trigger notifications.
+4. Click **Save Webhook**.
 
-Notifications are sent for `PASSED`, `FAILED`, `ERROR`, and `UNSTABLE` statuses. Failed executions include a truncated AI analysis snippet and a direct link to the Investigation Hub.
+Notifications are generated according to your selected statuses. Failed executions include a truncated AI analysis snippet and a direct link to the Investigation Hub.
+
+### CI/CD Integrations
+The dashboard displays "Connected" status badges for Jira, GitHub, GitLab, and Azure DevOps integration cards when valid credentials have been securely stored.
 
 ---
 

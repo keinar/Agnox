@@ -1,6 +1,6 @@
-# PROJECT_CONTEXT.md — Agnostic Automation Center
+# PROJECT_CONTEXT.md — Agnox
 
-> Generated: 2026-02-22 | Current Phase: Quality Hub & Reporting Evolution | Version: 3.1.0
+> Generated: 2026-02-25 | Current Phase: Slack Notifications & Quality Updates | Version: 3.3.0
 > Source: Full monorepo scan of code, docs, configs, and shared types.
 
 ---
@@ -127,6 +127,7 @@ Agnostic-Automation-Center/
 | 9 (**Complete**) | Quality Hub: Manual Testing & Hybrid Cycles | Test case repository (`test_cases` collection) with CRUD + AI bulk generation via Gemini. `TestCases.tsx` page with suite-grouped accordions and `TestCaseDrawer.tsx` side drawer. Hybrid cycle builder: `test_cycles` collection, `CycleBuilderDrawer.tsx`, `TestCycles.tsx` page. Manual execution player (`ManualExecutionDrawer.tsx`) with step-by-step Pass/Fail/Skip. Worker→Producer cycle sync via `cycleId`/`cycleItemId`. `PUT /api/test-cycles/:cycleId/items/:itemId` for manual results. |
 | 10 (**Complete**) | Reporting & Automation Infrastructure | Live HTML cycle reports (`CycleReportPage.tsx`) with native print optimization. `VersionDisplay.tsx` component reads `__APP_VERSION__` injected at build time from root `package.json`. Automated version pipeline eliminates manual version strings. Print CSS forces manual-step expansion and high-contrast badges for PDF output. |
 | 11 (**Complete**) | Security Hardening (Defense in Depth) | Redis-backed JWT revocation blacklist, `PLATFORM_*` prefix namespace for safe Docker orchestration, RabbitMQ Zod schema validation, HMAC-signed static report access, SSRF protections, and HS256 algorithm pinning. |
+| 12 (**Complete**) | Layered Defense Testing Strategy | Implemented a comprehensive 3-Layer testing architecture encompassing Unit Testing (Vitest), API Integration Testing (Vitest, Supertest, MongoMemoryServer), and E2E Testing (Playwright). Suite A (Security & RBAC) achieved 100% verification for cross-tenant data isolation and role boundaries. |
 
 ### Security Posture (Score: 100/100)
 
@@ -276,6 +277,7 @@ billing.lastPaymentDate        Date | null
 billing.lastPaymentAmount      Number | null
 aiAnalysisEnabled  Boolean (default: true)
 slackWebhookUrl    String | null (optional — Incoming Webhook URL for Slack notifications)
+slackNotificationEvents Array<String> (e.g. ['PASSED', 'FAILED'])
 createdAt          Date
 updatedAt          Date
 ```

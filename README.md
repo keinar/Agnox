@@ -167,7 +167,7 @@ npx @agnox/agnox-cli@latest init
 
 Once the image is pushed to Docker Hub:
 
-1. Open the **AAC Dashboard**
+1. Open the **Agnox Dashboard**
 2. Go to **Settings → Run Settings**
 3. Create a new project and enter the Docker image name
 4. Configure your environment URLs (Dev/Staging/Prod)
@@ -791,6 +791,7 @@ Comprehensive documentation available in `/docs/` and at [docs.agnox.dev](https:
 - **[Security Audit](docs/setup/security-audit.md)** - Comprehensive security assessment
 - **[Email Configuration](docs/setup/email-configuration.md)** - SendGrid setup
 - **[Kubernetes Guide](docs/setup/kubernetes.md)** - K8s deployment architecture
+- **[Testing Strategy](docs/testing/strategy.md)** - Layered testing approach and coverage guidelines
 
 ---
 

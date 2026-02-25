@@ -1,3 +1,38 @@
+# SPRINT 11 — Layered Defense Testing Strategy (Suite A)
+
+## 🎯 Sprint Goal
+Establish a robust, multi-layered testing architecture to definitively verify security boundaries, Role-Based Access Control (RBAC), and multi-tenant data isolation across the platform.
+
+---
+
+## 📋 Task Breakdown
+
+### [x] Task 11.1: E2E UI Testing (Playwright) ✅
+**Goal:** Verify component visibility and route protection based on authenticated roles.
+- **Action:** Created `tests/pages/MembersPage.ts` Page Object Model.
+- **Action:** Implemented tests for execution deletion boundaries (Viewer role) and Admin demotion prevention.
+- **Action:** Migrated from mocked API authentication to real UI-driven `storageState` persistence.
+
+### [x] Task 11.2: API Integration Testing (Vitest + Supertest) ✅
+**Goal:** Mathematically prove multi-tenant isolation and HTTP-level role enforcement.
+- **Action:** Established the `MongoMemoryServer` integration pattern for rapid, perfectly isolated backend testing.
+- **Action:** Implemented Test A-005 (Cross-Tenant Execution Access Is Denied - 404).
+- **Action:** Implemented Test A-006 (Viewer Cannot Delete Executions - 403).
+- **Action:** Implemented Test A-007 (Non-Admin Cannot Change Roles - 403).
+- **Action:** Implemented Test A-008 (Admin Cannot Demote Last Admin - 403).
+
+### [x] Task 11.3: Security & Rate Limiting Verification ✅
+**Goal:** Prevent brute-force attacks and validate Redis-backed defensive mechanisms.
+- **Action:** Fully mocked `ioredis` state in memory to deterministically test time-based lockouts.
+- **Action:** Implemented Test A-004 to verify 429 Too Many Requests response after 5 failed login attempts.
+
+### [x] Task 11.4: Testing Strategy Documentation ✅
+**Goal:** Formalize the testing architecture.
+- **Action:** Created `docs/testing/strategy.md` outlining the 3 layers (Unit, API Integration, E2E).
+- **Action:** Linked strategy document from main `README.md`.
+
+---
+
 # SPRINT 10 — PDF Reporting & Automation Infrastructure
 
 ## 🎯 Sprint Goal

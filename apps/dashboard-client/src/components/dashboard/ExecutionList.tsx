@@ -232,6 +232,7 @@ interface ExecutionListProps {
   onBulkGroup: (taskIds: string[], groupName: string) => Promise<void>;
   viewMode?: ViewMode;
   groups?: IExecutionGroup[];
+  isViewer?: boolean;
 }
 
 export function ExecutionList({
@@ -243,6 +244,7 @@ export function ExecutionList({
   onBulkGroup,
   viewMode = 'flat',
   groups = EMPTY_GROUPS,
+  isViewer = false,
 }: ExecutionListProps) {
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(loadVisibility);
   const headerCheckboxRef = useRef<HTMLInputElement>(null);
@@ -418,6 +420,7 @@ export function ExecutionList({
                       isSelected={selectedIds.has(exec.taskId)}
                       visibleColumns={visibleColumns}
                       animateIn
+                      isViewer={isViewer}
                     />
                   ))}
                 </React.Fragment>
@@ -433,6 +436,7 @@ export function ExecutionList({
                 onSelect={handleSelect}
                 isSelected={selectedIds.has(exec.taskId)}
                 visibleColumns={visibleColumns}
+                isViewer={isViewer}
               />
             ))}
           </tbody>

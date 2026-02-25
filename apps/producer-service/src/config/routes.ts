@@ -711,6 +711,10 @@ export async function setupRoutes(
     // Body: { taskIds: string[] }
     // Uses updateMany for efficiency; enforces org isolation and 100-item cap.
     app.delete('/api/executions/bulk', async (request, reply) => {
+        if (request.user?.role === 'viewer') {
+            return reply.status(403).send({ success: false, error: 'Insufficient permissions' });
+        }
+
         if (!dbClient) return reply.status(500).send({ success: false, error: 'Database not connected' });
 
         const { taskIds } = request.body as { taskIds?: unknown };
@@ -878,6 +882,10 @@ export async function setupRoutes(
     app.delete('/api/executions/:id', async (request, reply) => {
         const { id } = request.params as { id: string };
         try {
+            if (request.user?.role === 'viewer') {
+                return reply.status(403).send({ success: false, error: 'Insufficient permissions' });
+            }
+
             if (!dbClient) return reply.status(500).send({ error: 'Database not connected' });
 
             // Multi-tenant data isolation: Verify ownership by filtering with organizationId (as STRING)

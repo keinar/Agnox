@@ -3,6 +3,30 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.3.1] — 2026-02-25 — Security & RBAC Testing Suite (Suite A)
+
+### Added
+- **Testing Strategy Documentation** — Documented the 3-Layer Testing Architecture (Unit, API Integration, E2E) at `docs/testing/strategy.md`.
+- **API Integration Tests** — Added comprehensive API integration tests for RBAC, Data Isolation (Multi-tenancy), and Account Lockout using Vitest, Supertest, and MongoMemoryServer.
+- **E2E Playwright Tests** — Completed Playwright Page Object Model (POM) and UI flow tests for Role-Based Access Control and Execution boundaries.
+
+## [3.3.0] — 2026-02-25 — Slack Notifications & Execution Polishes
+
+### Added
+- **Configurable Slack Notifications** — Users can configure which test execution statuses (PASSED, FAILED, ERROR, UNSTABLE) trigger Slack notifications.
+- **Connected Status Badges** — Added "Connected" status badges for Jira, GitHub, GitLab, and Azure DevOps integration cards based on their enabled states.
+
+### Changed
+- **Slack Notification Workflow** — Modifying the `slackWebhookUrl` is now optional upon saving if the Slack integration is already connected. The backend supports receiving and processing notifications.
+- **Global Brand Refresh** — Updated global branding from "Agnostic Automation Center" to "Agnox" across documentation and UI, safely avoiding backend/API path changes.
+- **AI Analysis Tab** — The "AI Analysis" tab is now hidden when an execution has an "ERROR" status since AI cannot analyze platform/container launch errors effectively.
+
+### Fixed
+- **Windows Worker Compatibility** — Normalized Windows file paths to forward slashes in the worker backend.
+- **Slack Deep Linking** — Corrected the Slack webhook deep link in the producer backend to properly target specific test execution drawers. 
+- **Allure Parse Metrics** — Fixed the test metrics reported in CI/CD PR comments by accurately parsing Allure summary data.
+- **Frontend Session Revocation** — Fixed frontend logout logic to synchronously call the backend `/api/auth/logout` endpoint before clearing local storage.
+
 ## [3.2.0] — 2026-02-24 — Native CI/CD Integrations
 
 ### Added

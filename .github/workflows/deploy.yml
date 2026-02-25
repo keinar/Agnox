@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Job 1: Quality Gate
   quality-check:
     runs-on: ubuntu-latest
     steps:
@@ -28,10 +27,12 @@ jobs:
       - name: Linting
         run: npm run lint --if-present
 
-      - name: System Sanity Tests
-        run: npm run test:system
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start Infrastructure
+        run: docker compose up -d producer-service worker-service dashboard-client mongodb redis rabbitmq
         env:
-          # --- Platform Infrastructure Secrets (PLATFORM_* prefix) ---
           PLATFORM_MONGO_URI: "mongodb://mongodb:27017/automation_platform"
           PLATFORM_REDIS_URL: "redis://redis:6379"
           PLATFORM_RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
@@ -39,20 +40,33 @@ jobs:
           PLATFORM_GEMINI_API_KEY: "mock_gemini"
           PLATFORM_WORKER_CALLBACK_SECRET: "ci-test-worker-callback-secret-64chars-minimum"
           PLATFORM_API_KEY_HMAC_SECRET: "ci-test-hmac-secret-64chars-minimum"
-          # --- App Config ---
-          API_URL: "http://producer:3000"
+          API_URL: "http://producer-service:3000"
           NODE_ENV: production
           INJECT_ENV_VARS: "ADMIN_USER,ADMIN_PASS"
           ADMIN_USER: "admin@test.com"
           ADMIN_PASS: "TestPass123!"
-          
-          # --- Mock Secrets (Bypass strict production checks) ---
           STRIPE_SECRET_KEY: "sk_test_mock_key"
           STRIPE_PUBLISHABLE_KEY: "pk_test_mock_key"
           STRIPE_WEBHOOK_SECRET: "whsec_mock"
           SENDGRID_API_KEY: "SG.mock_sendgrid"
 
-  # Job 2: Deployment
+      - name: Wait for Services
+        run: sleep 15
+
+      - name: Run E2E Tests
+        run: npx playwright test -c tests/playwright.config.ts
+        env:
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL || 'admin@test.com' }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD || 'TestPass123!' }}
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
   deploy:
     needs: quality-check
     runs-on: ubuntu-latest
@@ -71,7 +85,6 @@ jobs:
             git clean -fd
             
             cat <<EOF > .env
-            # Platform Infrastructure Secrets (SECURITY_PLAN §1.3)
             PLATFORM_MONGO_URI=${{ secrets.PLATFORM_MONGO_URI }}
             PLATFORM_REDIS_URL=${{ secrets.PLATFORM_REDIS_URL }}
             PLATFORM_RABBITMQ_URL=${{ secrets.PLATFORM_RABBITMQ_URL }}
@@ -80,13 +93,11 @@ jobs:
             PLATFORM_WORKER_CALLBACK_SECRET=${{ secrets.PLATFORM_WORKER_CALLBACK_SECRET }}
             WORKER_CALLBACK_TRANSITION=false
             PLATFORM_API_KEY_HMAC_SECRET=${{ secrets.PLATFORM_API_KEY_HMAC_SECRET }}
-            # User-injectable test variables
             MONGO_URI=${{ secrets.MONGO_URI }}
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             ADMIN_USER=${{ secrets.ADMIN_USER }}
             ADMIN_PASS=${{ secrets.ADMIN_PASS }}
             INJECT_ENV_VARS=${{ secrets.INJECT_ENV_VARS }}
-            # App Configuration
             VITE_API_URL=${{ secrets.VITE_API_URL }}
             PUBLIC_API_URL=${{ secrets.PUBLIC_API_URL }}
             JWT_EXPIRY=24h
@@ -104,20 +115,17 @@ jobs:
             ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}
             DASHBOARD_URL=${{ secrets.DASHBOARD_URL }}
             CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+            E2E_EMAIL=${{ secrets.E2E_EMAIL }}
+            E2E_PASSWORD=${{ secrets.E2E_PASSWORD }}
             EOF
             
-            # 1. Pull the latest test image
             docker pull ${{ secrets.DEFAULT_TEST_IMAGE }}
             
-            # 2. Rebuild Infra Services
             docker compose -f docker-compose.prod.yml down --remove-orphans
             
-            # Clean up old dashboard image
             docker rmi -f agnox-dashboard || true
             
-            # 3. Rebuild and Start Infrastructure
             docker compose -f docker-compose.prod.yml build --no-cache
             docker compose -f docker-compose.prod.yml up -d
             
-            # Cleanup unused images
             docker image prune -f
