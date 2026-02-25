@@ -37,7 +37,7 @@ const globalMockRedis = {
     }),
     publish: vi.fn(),
     lrange: vi.fn().mockResolvedValue([]),
-};
+} as any;
 
 vi.mock('../../config/redis.js', () => ({
     redis: globalMockRedis
