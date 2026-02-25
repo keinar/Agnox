@@ -86,11 +86,14 @@ jobs:
           cd apps/producer-service
           npm ci
           npx vitest run src/routes/__tests__
-      - name: Seed Database (Create E2E User)
+
+      - name: Seed Database (Create E2E Admin & Org)
         run: |
+          echo "Seeding initial admin user and organization..."
           curl -s -X POST http://localhost:3000/api/auth/signup \
           -H "Content-Type: application/json" \
-          -d '{"email":"admin@test.com","password":"TestPass123!","name":"CI Admin"}' || echo "User seed skipped or already exists"
+          -d '{"email":"admin@test.com","password":"TestPass123!","name":"CI Admin","organizationName":"Agnox CI Org"}'
+          echo -e "\nSeed complete!"
 
       - name: Run Layer 3 - E2E Tests
         run: |
