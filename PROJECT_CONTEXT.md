@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md — Agnox
 
-> Generated: 2026-02-25 | Current Phase: Slack Notifications & Quality Updates | Version: 3.3.0
+> Generated: 2026-02-26 | Current Phase: Env Variables & Secrets Management | Version: 3.4.0
 > Source: Full monorepo scan of code, docs, configs, and shared types.
 
 ---
@@ -23,7 +23,7 @@ Agnostic-Automation-Center/
 │   │
 │   ├── worker-service/            # Docker container orchestrator
 │   │   ├── src/
-│   │   │   ├── worker.ts          # RabbitMQ consumer, Docker orchestration (495 lines)
+│   │   │   ├── worker.ts          # RabbitMQ consumer, Docker orchestration
 │   │   │   ├── analysisService.ts # Google Gemini AI integration (55 lines)
 │   │   │   └── utils/logger.ts    # Pino structured logger (14 lines)
 │   │   ├── Dockerfile             # node:20-slim + Java + Allure CLI
@@ -59,12 +59,17 @@ Agnostic-Automation-Center/
 │   ├── deployment/                # stripe-production-checklist
 │   └── system/                    # project-history-archive
 │
-├── migrations/                    # 5 migration files (001-004 + indexes)
+├── migrations/                    # Migration files (001–007)
 │   ├── 001-add-organization-to-existing-data.ts
 │   ├── 002-create-invitations-indexes.js
 │   ├── 003-create-audit-logs-indexes.js
 │   ├── 003-add-billing-fields.ts
-│   └── 004-add-webhook-logs.ts
+│   ├── 004-add-webhook-logs.ts
+│   ├── 005-add-jira-integration.ts
+│   ├── 005-add-execution-group-fields.ts
+│   ├── 005-encrypt-slack-webhooks.ts
+│   ├── 006-add-feature-flags.ts
+│   └── 007-add-project-env-vars.ts
 │
 ├── tests/                         # System sanity tests (Playwright)
 │   └── legacy_archive/            # Archived test files
@@ -128,6 +133,7 @@ Agnostic-Automation-Center/
 | 10 (**Complete**) | Reporting & Automation Infrastructure | Live HTML cycle reports (`CycleReportPage.tsx`) with native print optimization. `VersionDisplay.tsx` component reads `__APP_VERSION__` injected at build time from root `package.json`. Automated version pipeline eliminates manual version strings. Print CSS forces manual-step expansion and high-contrast badges for PDF output. |
 | 11 (**Complete**) | Security Hardening (Defense in Depth) | Redis-backed JWT revocation blacklist, `PLATFORM_*` prefix namespace for safe Docker orchestration, RabbitMQ Zod schema validation, HMAC-signed static report access, SSRF protections, and HS256 algorithm pinning. |
 | 12 (**Complete**) | Layered Defense Testing Strategy | Implemented a comprehensive 3-Layer testing architecture encompassing Unit Testing (Vitest), API Integration Testing (Vitest, Supertest, MongoMemoryServer), and E2E Testing (Playwright). Suite A (Security & RBAC) achieved 100% verification for cross-tenant data isolation and role boundaries. |
+| 13 (**Complete**) | Env Variables & Secrets Management | Per-project environment variable storage with AES-256-GCM encryption at rest for secrets. New `projectEnvVars` MongoDB collection (migration 007). Full CRUD API under `/api/projects/:projectId/env`. Secrets masked in API responses. Variables decrypted server-side and injected into Docker containers via RabbitMQ task payload (`config.envVars`). Worker log sanitization via `sanitizeLogLine()` prevents secret values from appearing in logs. New `EnvironmentVariablesTab` in Settings UI. |
 
 ### Security Posture (Score: 100/100)
 
@@ -188,6 +194,10 @@ Agnostic-Automation-Center/
 | GET | `/api/projects/:projectId/settings` | JWT | 100/min/org | Get project run settings |
 | PUT | `/api/projects/:projectId/settings` | JWT | 100/min/org | Update docker image, target URLs, test folder |
 | GET | `/api/project-settings` | JWT | 100/min/org | Get first project's settings (dashboard fallback) |
+| GET | `/api/projects/:projectId/env` | JWT | 100/min/org | List env vars for a project (secrets masked as `••••••••`) |
+| POST | `/api/projects/:projectId/env` | JWT | 100/min/org | Create env var; AES-256-GCM encrypts value if `isSecret=true` |
+| PUT | `/api/projects/:projectId/env/:varId` | JWT | 100/min/org | Update env var key, value, or secret flag |
+| DELETE | `/api/projects/:projectId/env/:varId` | JWT | 100/min/org | Delete an env var |
 
 ### Invitations (`/api/invitations*`)
 
@@ -461,7 +471,24 @@ createdAt        Date
 Index: { organizationId: 1, projectId: 1 }
 ```
 
-**Total: 12 collections**
+### `projectEnvVars`
+
+```
+_id              ObjectId
+organizationId   String (FK → organizations — mandatory on all queries)
+projectId        String (FK → projects)
+key              String (POSIX env var name, e.g. "E2E_EMAIL")
+value            String | IEncryptedPayload
+                   — plaintext when isSecret=false
+                   — { encrypted, iv, authTag } (AES-256-GCM) when isSecret=true
+isSecret         Boolean
+createdAt        Date
+updatedAt        Date
+Indexes: { organizationId: 1, projectId: 1 },
+         { organizationId: 1, projectId: 1, key: 1 } (unique)
+```
+
+**Total: 13 collections**
 
 ---
 
@@ -492,6 +519,7 @@ Index: { organizationId: 1, projectId: 1 }
 | `security` | SecurityTab | All roles | AI analysis toggle, privacy disclosure |
 | `usage` | UsageTab | All roles | Test runs, users, storage usage stats |
 | `run-settings` | RunSettingsTab | All roles | Per-project docker image, URLs, test folder |
+| `env-vars` | EnvironmentVariablesTab | All roles | Per-project env vars; secrets encrypted at rest, masked in UI |
 | `integrations` | IntegrationsTab | All roles | Jira credentials (AES-encrypted) + Slack webhook URL |
 | `schedules` | SchedulesList | All roles | View and delete CRON schedules (delete hidden for Viewer role) |
 
@@ -520,7 +548,7 @@ App
 │       │   ├── CycleBuilderDrawer (Headless UI slide-over for composing hybrid cycles)
 │       │   └── ManualExecutionDrawer (Step-by-step manual execution player)
 │       └── /settings → ProtectedRoute → Settings
-│           └── [7 tab components listed above]
+│           └── [8 tab components listed above]
 ```
 
 ### State Management
@@ -698,7 +726,7 @@ CLAUDE.md mandates: **"Styling is STRICTLY Tailwind CSS (Pure CSS is deprecated.
 | | `pino-pretty` | 13.1.3 | Dev log formatting |
 | **Archiving** | `tar-fs` | 2.0.4 | Report extraction from containers |
 | **Unused** | `uuid` | 13.0.0 | Not referenced in code |
-| **Unused** | `zod` | 4.2.1 | Imported but not used for validation |
+| **Validation** | `zod` | 4.2.1 | RabbitMQ message schema validation (`TaskMessageSchema`) |
 | **Unused** | `@github/copilot-sdk` | 0.1.16 | Not referenced in code |
 
 ### Dashboard Client (`apps/dashboard-client/package.json`)
@@ -728,7 +756,7 @@ CLAUDE.md mandates: **"Styling is STRICTLY Tailwind CSS (Pure CSS is deprecated.
 
 | Category | Missing | Impact |
 |----------|---------|--------|
-| Encryption (secrets) | No AES library | CLAUDE.md says "AES-256-GCM for secrets" but no implementation exists yet |
+| Encryption (secrets) | ✅ Implemented | AES-256-GCM utility in `utils/encryption.ts` (producer + worker). Used for Jira tokens, Slack webhooks, CI PATs, and project env var secrets. |
 | Testing (frontend) | No vitest/jest | Zero frontend tests |
 
 ---
@@ -820,7 +848,7 @@ Admin clicks "Upgrade" → POST /api/billing/checkout
 | 6 | MEDIUM | Frontend | No centralized API client (axios calls duplicated across all hooks/components). |
 | 7 | MEDIUM | Frontend | Zero frontend tests (no vitest/jest config). |
 | 8 | MEDIUM | Frontend | Socket.io CORS may be `"*"` — should match `ALLOWED_ORIGINS`. |
-| 9 | MEDIUM | Security | AES-256-GCM encryption mentioned in CLAUDE.md but no implementation exists. |
+| 9 | ✅ RESOLVED | Security | AES-256-GCM encryption implemented in `utils/encryption.ts`. Used for Jira tokens, Slack webhooks, CI PATs, and project env vars. |
 | 10 | LOW | Frontend | `StatsGrid` "Active Services" hardcoded to `"3"`. |
 | 11 | LOW | Docs | `/api/projects`, `/api/projectRunSettings`, `/api/execution-request` POST body not documented in `docs/api/`. |
 | 12 | LOW | Worker | No graceful shutdown handler (`SIGTERM` not caught). |

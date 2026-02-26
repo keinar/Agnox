@@ -3,6 +3,29 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.4.0] — 2026-02-26 — Env Variables & Secrets Management
+
+### Added
+- **`projectEnvVars` MongoDB collection** — Stores per-project environment variables with AES-256-GCM encryption for secret values. Migration 007 creates the required indexes.
+- **Env Vars CRUD API** — Four new endpoints under `/api/projects/:projectId/env` (GET/POST/PUT/DELETE). Secret values are always masked as `••••••••` in API responses; plaintext is never returned to the client.
+- **`resolveProjectEnvVars()` helper** — Shared server-side function that fetches and decrypts all project env vars in memory for injection into test run payloads.
+- **Execution pipeline integration** — Both the `test-cycles` POST handler and the `execution-request` handler now fetch, decrypt, and merge project env vars into the RabbitMQ task payload before queuing.
+- **`secretKeys` field in worker TaskMessageSchema** — Communicates which env var keys hold secret values so the worker can redact them from logs.
+- **`sanitizeLogLine()` in worker** — Redacts secret values (by value, not key) from every streamed container log chunk before dashboard broadcast or buffer accumulation.
+- **`EnvironmentVariablesTab` React component** — New Settings tab (`env-vars`) with project selector, Add/Edit form with animated secret toggle, and masked table view with hover-reveal Edit/Delete actions.
+
+### Changed
+- `Settings.tsx` — Added `env-vars` tab to the tab registry and `TabId` union type.
+- `PROJECT_CONTEXT.md` — Updated migration count to 007, added `projectEnvVars` schema (collection total: 13), added env var endpoints to Projects API table, added `env-vars` to Settings tabs, fixed Notable Absences row for encryption (now resolved), corrected `zod` worker entry (IS used for `TaskMessageSchema`), resolved Known Gap #9.
+- `docs/architecture/overview.md` — Corrected RabbitMQ queue name from `automation_queue` to `test_queue`, updated message format to include `secretKeys`, added `projectEnvVars` to MongoDB collections, added env var route to Producer routes.
+- `README.md` — Added Sprint 9/10/11 and Env Vars entries to Project Status table and Roadmap, added Sprint 10/11/Env Vars "What's Included" sections, expanded Smart Environment Management section.
+
+### Purged (Ghosts)
+- `PROJECT_CONTEXT.md` Notable Absences: "No AES library / no implementation exists" — encryption has existed since Sprint 2 (Jira tokens).
+- `PROJECT_CONTEXT.md` Known Gaps #9: "AES-256-GCM mentioned in CLAUDE.md but no implementation" — same as above.
+- `PROJECT_CONTEXT.md` worker packages: `zod` incorrectly listed as unused; it powers `TaskMessageSchema` in `worker.ts`.
+- `docs/architecture/overview.md`: `automation_queue` replaced with correct queue name `test_queue`.
+
 ## [3.3.1] — 2026-02-25 — Security & RBAC Testing Suite (Suite A)
 
 ### Added

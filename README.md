@@ -109,14 +109,16 @@ Built with security best practices from the ground up.
 - **Security Headers:** OWASP-recommended headers (HSTS preload, CSP-ready, X-Frame-Options)
 - **CORS Protection:** Environment-based origin validation
 
-### Smart Environment Mapping
+### Smart Environment Mapping & Secrets Management
 
-Framework-agnostic environment configuration.
+Framework-agnostic environment configuration with first-class secret support.
 
 - **Per-Project Environments:** Define Dev, Staging, and Production URLs per project in **Settings → Run Settings** (stored in the database, not server ENV variables)
 - **Auto-Switching:** The Execution Modal automatically maps environment selection to the correct URL
-- **Dynamic Injection:** Environment variables injected into containers at runtime
-- **Secret Management:** Sensitive data never hardcoded, always injected
+- **Dynamic Injection:** Environment variables injected into containers at runtime via Docker `Env` configuration
+- **Per-Project Env Variables:** Define `KEY=VALUE` pairs under **Settings → Env Variables**. Variables are fetched and merged server-side before each run — no client-side plaintext exposure
+- **Secret Encryption:** Mark any variable as **Secret** to encrypt its value at rest with AES-256-GCM. The UI returns `••••••••` for secrets; plaintext is only ever in-memory during decryption at run time
+- **Log Sanitization:** The worker service automatically redacts secret values from all streamed container logs, preventing accidental leakage in the dashboard or persistent log storage
 
 ### Billing & Subscription Management
 
@@ -716,7 +718,7 @@ See the [Deployment Guide](docs/setup/deployment.md) for full deployment instruc
 
 ---
 
-### Sprint 9: Quality Hub - Manual Testing & Hybrid Cycles ✅
+### Sprint 9: Quality Hub — Manual Testing & Hybrid Cycles ✅
 
 **Status:** Production Ready
 
@@ -727,6 +729,39 @@ See the [Deployment Guide](docs/setup/deployment.md) for full deployment instruc
 - **Manual Execution Player:** `ManualExecutionDrawer.tsx` - interactive step-by-step checklist with Pass/Fail/Skip buttons, progress bar, auto-advance, and "Complete Test" submission
 - **Automated Cycle Sync:** Worker forwards `cycleId`/`cycleItemId` in execution callbacks; Producer syncs cycle item status on terminal results. Cycles auto-complete when all items reach terminal state
 - **Manual Item Update API:** `PUT /api/test-cycles/:cycleId/items/:itemId` using MongoDB `arrayFilters` with automatic cycle summary recalculation
+
+---
+
+### Sprint 10: Reporting & Automation Infrastructure ✅
+
+**Status:** Production Ready
+
+- **Live HTML Cycle Reports:** `CycleReportPage.tsx` with stat cards, expandable item list, and native browser-print optimization (`@media print` forces manual steps visible, high-contrast badges)
+- **Automated Version Pipeline:** `vite.config.ts` reads root `package.json` at build time and injects `__APP_VERSION__`; `VersionDisplay.tsx` renders it in the Sidebar footer
+- **Changelog Modal:** Sidebar version footer is clickable; opens `ChangelogModal.tsx` with release notes for recent sprints
+
+---
+
+### Sprint 11: Security & RBAC Testing Strategy ✅
+
+**Status:** Production Ready
+
+- **3-Layer Testing Architecture:** Documented at `docs/testing/strategy.md` — Unit (Vitest), API Integration (Vitest + Supertest + MongoMemoryServer), E2E (Playwright)
+- **Suite A — RBAC & Isolation:** Tests A-004 through A-008 verify cross-tenant data isolation (404), Viewer delete enforcement (403), role change restriction (403), and last-admin protection (403)
+- **Redis Rate Limiting Tests:** Fully mocked `ioredis` state for deterministic lockout verification (Test A-004 — 429 after 5 failed logins)
+
+---
+
+### Env Variables & Secrets Management ✅
+
+**Status:** Production Ready
+
+- **Per-Project Env Variables:** Define `KEY=VALUE` pairs under **Settings → Env Variables**, scoped per project with full multi-tenant isolation
+- **AES-256-GCM Encryption at Rest:** Secret variables (`isSecret=true`) are encrypted before MongoDB storage. GET API always returns `••••••••` for secret values
+- **Server-Side Decryption & Injection:** Producer fetches and decrypts project env vars in memory at run time, merges them into the RabbitMQ task payload
+- **Docker Container Injection:** Worker passes all env vars to containers via the Docker `Env` configuration array
+- **Log Sanitization:** `sanitizeLogLine()` in the worker redacts secret values from every streamed log line before dashboard delivery or persistent storage
+- **Settings UI:** `EnvironmentVariablesTab` with Add/Edit form, secret toggle switch, masked table view, and inline Edit/Delete actions
 
 ---
 
@@ -877,6 +912,10 @@ Please read our [Contributing Guide](CONTRIBUTING.md) _(coming soon)_ for detail
 | **Sprint 6:** Enterprise UI Overhaul | ✅ Complete | 100% |
 | **Sprint 7:** The Investigation Hub | ✅ Complete | 100% |
 | **Sprint 8:** CRON Scheduling & Slack Notifications | ✅ Complete | 100% |
+| **Sprint 9:** Quality Hub — Manual Testing & Hybrid Cycles | ✅ Complete | 100% |
+| **Sprint 10:** Reporting & Automation Infrastructure | ✅ Complete | 100% |
+| **Sprint 11:** Security & RBAC Testing (Suite A) | ✅ Complete | 100% |
+| **Env Variables & Secrets Management** | ✅ Complete | 100% |
 
 ---
 
@@ -892,6 +931,10 @@ Please read our [Contributing Guide](CONTRIBUTING.md) _(coming soon)_ for detail
 - Sprint 6: GitHub-inspired Theme Engine, Dark Mode, and UI Hardening
 - Sprint 7: Investigation Hub - ExecutionDrawer, ArtifactsView, AI Analysis tab
 - Sprint 8: CRON scheduling engine, Slack webhook notifications, Schedules settings tab
+- Sprint 9: Quality Hub — manual test case repository, AI-powered step generation, hybrid cycle builder, manual execution player
+- Sprint 10: Live HTML cycle reports, automated version pipeline (`VersionDisplay`, Vite build injection)
+- Sprint 11: 3-layer testing architecture — Unit (Vitest), API Integration (Supertest + MongoMemoryServer), E2E (Playwright), Suite A RBAC coverage
+- Env Variables & Secrets Management: per-project env vars with AES-256-GCM encryption, secret masking, Docker injection, log sanitization
 
 ### Q2 2026
 - Advanced analytics dashboards and trend charts

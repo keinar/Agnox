@@ -54,7 +54,9 @@ export const TaskMessageSchema = z.object({
         baseUrl: z.string().max(2048).optional(),
         envVars: z.record(z.string(), z.string().max(4096)).optional().default({}),
         environment: z.enum(['development', 'staging', 'production']).optional(),
-    }).passthrough().optional().default(() => ({ envVars: {} })),
+        // Keys in envVars whose values must be redacted from container logs
+        secretKeys: z.array(z.string()).optional().default([]),
+    }).passthrough().optional().default(() => ({ envVars: {}, secretKeys: [] })),
     aiAnalysisEnabled: z.boolean().optional().default(false),
     groupName: z.string().max(256).optional(),
     batchId: z.string().max(128).optional(),
@@ -72,6 +74,23 @@ const FATAL_LOG_PATTERNS = [
 
 export function containsFatalPattern(logs: string): boolean {
     return FATAL_LOG_PATTERNS.some(p => p.test(logs));
+}
+
+/**
+ * Replaces occurrences of secret values in a log line with "****".
+ * Called on every streamed log chunk so plaintext secrets never reach
+ * persistent storage or the producer's Socket.IO broadcast.
+ */
+export function sanitizeLogLine(line: string, secretValues: Set<string>): string {
+    if (secretValues.size === 0) return line;
+    let sanitized = line;
+    for (const secret of secretValues) {
+        if (secret.length === 0) continue;
+        // Escape special regex characters in the secret before substituting
+        const escaped = secret.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        sanitized = sanitized.replace(new RegExp(escaped, 'g'), '****');
+    }
+    return sanitized;
 }
 
 export function getMergedEnvVars(task: { envVars?: Record<string, string>; baseUrl?: string }, resolvedBaseUrl: string): Record<string, string> {
@@ -217,6 +236,14 @@ export async function startWorker() {
             channel!.nack(msg, false, false);
             return;
         }
+
+        // Build a set of secret plaintext values for log sanitization.
+        // We redact by value (not key) so secrets can't appear in any log line.
+        const secretValues = new Set<string>(
+            (config?.secretKeys ?? [])
+                .map(k => config?.envVars?.[k] ?? '')
+                .filter(v => v.length > 0),
+        );
 
         // Multi-tenant: Scope report storage by organization
         const reportsDir = process.env.REPORTS_DIR || path.join(process.cwd(), 'test-results');
@@ -366,9 +393,11 @@ export async function startWorker() {
             logStream.on('data', (chunk: Buffer) => {
                 let logLine = chunk.toString();
                 const cleanLine = stripAnsi(logLine);
-                logsBuffer += cleanLine;
+                // Redact secret values before buffering or broadcasting
+                const safeLine = sanitizeLogLine(cleanLine, secretValues);
+                logsBuffer += safeLine;
                 // Multi-tenant: Include organizationId in log broadcasts
-                sendLogToProducer(taskId, cleanLine, organizationId).catch(() => { });
+                sendLogToProducer(taskId, safeLine, organizationId).catch(() => { });
             });
 
             // 1. Wait for execution to finish

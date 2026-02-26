@@ -12,6 +12,7 @@ import { userRoutes } from '../routes/users.js';
 import { organizationRoutes } from '../routes/organization.js';
 import { projectRoutes } from '../routes/projects.js';
 import { projectSettingsRoutes } from '../routes/projectSettings.js';
+import { projectEnvVarsRoutes, resolveProjectEnvVars } from '../routes/project-env-vars.js';
 import { billingRoutes } from '../routes/billing.js';
 import { webhookRoutes } from '../routes/webhooks.js';
 import { integrationRoutes } from '../routes/integrations.js';
@@ -57,6 +58,9 @@ export async function setupRoutes(
 
     // Project run settings routes (per-project configuration)
     await projectSettingsRoutes(app, dbClient, apiRateLimit);
+
+    // Project environment variables routes (encrypted secrets management)
+    await projectEnvVarsRoutes(app, dbClient, apiRateLimit);
 
     // Billing routes (Stripe integration)
     await billingRoutes(app, dbClient, apiRateLimit);
@@ -487,6 +491,7 @@ export async function setupRoutes(
             }
 
             const envVarsToInject: Record<string, string> = {};
+            const secretKeysFromDb: string[] = [];
 
             const varsToInject = (process.env.INJECT_ENV_VARS || '').split(',');
 
@@ -498,12 +503,26 @@ export async function setupRoutes(
                 }
             });
 
+            // Fetch per-project env vars (decrypt secrets in-memory) when projectId is known
+            const projectIdForEnv = (request.body as any)?.projectId;
+            if (dbClient && typeof projectIdForEnv === 'string' && projectIdForEnv.trim()) {
+                const { envVars: projectEnvVars, secretKeys } = await resolveProjectEnvVars(
+                    dbClient.db(DB_NAME),
+                    request.user!.organizationId,
+                    projectIdForEnv.trim(),
+                    app.log,
+                );
+                Object.assign(envVarsToInject, projectEnvVars);
+                secretKeysFromDb.push(...secretKeys);
+            }
+
             const enrichedConfig = {
                 ...config,
                 envVars: {
                     ...(config?.envVars || {}),
                     ...envVarsToInject
-                }
+                },
+                secretKeys: secretKeysFromDb,
             };
 
             // Resolve trigger source: explicit body value → header-detected CI → manual (UI)

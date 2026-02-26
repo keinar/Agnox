@@ -112,6 +112,7 @@ graph TB
 - `/api/schedules/*` - CRON schedule management (create, list, delete)
 - `/api/test-cases/*` - Manual test case CRUD with AI step generation (Sprint 9)
 - `/api/test-cycles/*` - Hybrid test cycle management + item updates (Sprint 9)
+- `/api/projects/:projectId/env` - Per-project environment variable CRUD (secrets encrypted at rest)
 - `/api/metrics/:image` - Performance insights
 - `/reports/*` - Static HTML test reports
 
@@ -156,6 +157,7 @@ graph TB
 - `schedules` - CRON schedule definitions (Sprint 8): expression, environment, image, folder, baseUrl
 - `test_cases` - Manual and automated test case definitions (Sprint 9): steps array, suite grouping, AI-generated content
 - `test_cycles` - Hybrid test cycles (Sprint 9): items array with status tracking, summary stats, cycle-level status
+- `projectEnvVars` - Per-project environment variables; `isSecret=true` values stored as AES-256-GCM encrypted payloads
 
 **Indexes:**
 - `organizationId` - All collections (multi-tenant filtering)
@@ -185,7 +187,7 @@ graph TB
 ### RabbitMQ
 **Purpose:** Task queue for test execution distribution
 
-**Queue:** `automation_queue`
+**Queue:** `test_queue`
 **Message Format:**
 ```json
 {
@@ -194,11 +196,17 @@ graph TB
   "image": "docker-image:tag",
   "command": "npm test",
   "tests": ["test1", "test2"],
-  "config": { "baseUrl": "...", "envVars": {} },
+  "config": {
+    "baseUrl": "...",
+    "envVars": { "BASE_URL": "...", "E2E_EMAIL": "..." },
+    "secretKeys": ["E2E_EMAIL", "E2E_PASSWORD"]
+  },
   "cycleId": "optional-cycle-id",
   "cycleItemId": "optional-cycle-item-id"
 }
 ```
+
+> `secretKeys` lists the keys in `envVars` whose values are secrets. The worker uses this to redact values from streamed logs via `sanitizeLogLine()`. Secrets are decrypted server-side before entering the queue and never stored in plaintext in MongoDB.
 
 **Port:** 5672 (AMQP), 15672 (Management UI)
 

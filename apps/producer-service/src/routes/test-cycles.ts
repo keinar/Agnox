@@ -27,6 +27,7 @@ import { randomUUID } from 'crypto';
 import { getDbName } from '../config/server.js';
 import { initTestCycleCollection, TEST_CYCLES_COLLECTION } from '../models/TestCycle.js';
 import type { RabbitMqService } from '../rabbitmq.js';
+import { resolveProjectEnvVars } from './project-env-vars.js';
 import type {
     ITestCycle,
     ICycleItem,
@@ -195,6 +196,7 @@ export async function testCycleRoutes(
         let resolvedImage = '';
         let resolvedBaseUrl = '';
         let envVarsToInject: Record<string, string> = {};
+        let secretKeysToInject: string[] = [];
 
         if (hasAutomated) {
             // Fetch project run settings so we can fall back to stored image / baseUrl
@@ -238,6 +240,13 @@ export async function testCycleRoutes(
                     envVarsToInject[name] = process.env[name]!;
                 }
             }
+
+            // Fetch per-project env vars stored in DB (decrypt secrets in-memory).
+            // These override INJECT_ENV_VARS so user-defined project vars take precedence.
+            const { envVars: projectEnvVars, secretKeys: projectSecretKeys } =
+                await resolveProjectEnvVars(db, organizationId, body.projectId.trim(), app.log);
+            Object.assign(envVarsToInject, projectEnvVars);
+            secretKeysToInject = projectSecretKeys;
         }
 
         try {
@@ -285,6 +294,8 @@ export async function testCycleRoutes(
                             // Inject server-side env vars so the worker has the same auth
                             // credentials it receives during a direct /api/execution-request run.
                             envVars: envVarsToInject,
+                            // Keys whose values must be redacted from worker logs
+                            secretKeys: secretKeysToInject,
                         },
                         // Cycle linkage — allows the worker to update the correct cycle item
                         cycleId,

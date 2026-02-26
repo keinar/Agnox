@@ -16,7 +16,7 @@ setup('authenticate via UI', async ({ page }) => {
         throw new Error('Missing E2E_EMAIL or E2E_PASSWORD in .env');
     }
 
-    await page.goto('http://localhost:8080/login');
+    await page.goto('/login');
     // Fill credentials using exact codegen selectors
     const emailInput = page.getByRole('textbox', { name: 'Email Address' });
     await emailInput.waitFor({ state: 'visible', timeout: 10000 });

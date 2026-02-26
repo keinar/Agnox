@@ -7,6 +7,7 @@ import { MembersTab } from '../components/settings/MembersTab';
 import { SecurityTab } from '../components/settings/SecurityTab';
 import { UsageTab } from '../components/settings/UsageTab';
 import { RunSettingsTab } from '../components/settings/RunSettingsTab';
+import { EnvironmentVariablesTab } from '../components/settings/EnvironmentVariablesTab';
 import { IntegrationsTab } from '../components/settings/IntegrationsTab';
 import { SchedulesList } from '../components/settings/SchedulesList';
 import { FeaturesTab } from '../components/settings/FeaturesTab';
@@ -14,7 +15,7 @@ import { FeaturesTab } from '../components/settings/FeaturesTab';
 // Lazy load BillingTab (largest component - 615 lines) to reduce initial bundle
 const BillingTab = lazy(() => import('../components/settings/BillingTab').then(m => ({ default: m.BillingTab })));
 
-type TabId = 'profile' | 'organization' | 'members' | 'billing' | 'security' | 'usage' | 'run-settings' | 'integrations' | 'schedules' | 'features';
+type TabId = 'profile' | 'organization' | 'members' | 'billing' | 'security' | 'usage' | 'run-settings' | 'env-vars' | 'integrations' | 'schedules' | 'features';
 
 export function Settings() {
   const { user } = useAuth();
@@ -28,6 +29,7 @@ export function Settings() {
     { id: 'security' as const, label: 'Security', component: SecurityTab },
     { id: 'usage' as const, label: 'Usage', component: UsageTab },
     { id: 'run-settings' as const, label: 'Run Settings', component: RunSettingsTab },
+    { id: 'env-vars' as const, label: 'Env Variables', component: EnvironmentVariablesTab },
     { id: 'integrations' as const, label: 'Integrations', component: IntegrationsTab },
     { id: 'schedules' as const, label: 'Schedules', component: SchedulesList },
     { id: 'features' as const, label: 'Features', component: FeaturesTab },
