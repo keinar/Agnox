@@ -52,8 +52,6 @@ services:
     restart: always
     volumes:
       - test_results:/app/reports
-    env_file:
-      - .env
     environment:
       - PORT=3000
       # ── Platform-namespaced infrastructure secrets (SECURITY_PLAN §1.3) ────

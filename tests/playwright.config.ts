@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 import path from 'path';
+import os from 'os';
 
 try {
     dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
@@ -15,7 +16,9 @@ export default defineConfig({
     testIgnore: ['**/legacy_archive/**', '**/fixtures/**'],
     timeout: 60000,
     retries: process.env.CI ? 2 : 1,
-    workers: 1,
+    workers: process.env.CI
+        ? 2
+        : Math.max(os.cpus().length - 1, 1),
 
     expect: {
         timeout: 10000,
