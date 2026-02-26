@@ -237,6 +237,14 @@ export async function startWorker() {
             return;
         }
 
+        // Diagnostic: log received env vars (keys only, never values)
+        logger.info({
+            taskId,
+            envVarCount: Object.keys(config?.envVars ?? {}).length,
+            envVarKeys: Object.keys(config?.envVars ?? {}),
+            secretKeyCount: (config?.secretKeys ?? []).length,
+        }, '[worker] Task received — env var summary');
+
         // Build a set of secret plaintext values for log sanitization.
         // We redact by value (not key) so secrets can't appear in any log line.
         const secretValues = new Set<string>(

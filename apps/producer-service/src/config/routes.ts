@@ -503,17 +503,41 @@ export async function setupRoutes(
                 }
             });
 
-            // Fetch per-project env vars (decrypt secrets in-memory) when projectId is known
-            const projectIdForEnv = (request.body as any)?.projectId;
-            if (dbClient && typeof projectIdForEnv === 'string' && projectIdForEnv.trim()) {
-                const { envVars: projectEnvVars, secretKeys } = await resolveProjectEnvVars(
-                    dbClient.db(DB_NAME),
-                    request.user!.organizationId,
-                    projectIdForEnv.trim(),
-                    app.log,
-                );
-                Object.assign(envVarsToInject, projectEnvVars);
-                secretKeysFromDb.push(...secretKeys);
+            // Fetch per-project env vars (decrypt secrets in-memory).
+            // Strategy 1: explicit projectId in body (e.g. CI trigger, future modal update).
+            // Strategy 2: infer project from dockerImage via projectRunSettings (Dashboard Run button).
+            if (dbClient) {
+                let resolvedProjectId: string | null = null;
+
+                const bodyProjectId = (request.body as any)?.projectId;
+                if (typeof bodyProjectId === 'string' && bodyProjectId.trim()) {
+                    resolvedProjectId = bodyProjectId.trim();
+                } else if (image) {
+                    // Infer project from the image the user chose in the execution modal
+                    const orgId = request.user!.organizationId;
+                    const projectSetting = await dbClient.db(DB_NAME)
+                        .collection('projectRunSettings')
+                        .findOne({ organizationId: orgId, dockerImage: image });
+                    if (projectSetting?.projectId) {
+                        resolvedProjectId = String(projectSetting.projectId);
+                    }
+                }
+
+                if (resolvedProjectId) {
+                    const { envVars: projectEnvVars, secretKeys } = await resolveProjectEnvVars(
+                        dbClient.db(DB_NAME),
+                        request.user!.organizationId,
+                        resolvedProjectId,
+                        app.log,
+                    );
+                    Object.assign(envVarsToInject, projectEnvVars);
+                    secretKeysFromDb.push(...secretKeys);
+                    app.log.info({
+                        resolvedProjectId,
+                        envVarCount: Object.keys(projectEnvVars).length,
+                        envVarKeys: Object.keys(projectEnvVars),
+                    }, '[execution-request] Resolved project env vars');
+                }
             }
 
             const enrichedConfig = {

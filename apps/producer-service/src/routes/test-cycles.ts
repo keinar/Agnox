@@ -304,9 +304,13 @@ export async function testCycleRoutes(
 
                     await rabbitMqService.sendToQueue(taskPayload);
 
-                    app.log.info(
-                        `[test-cycles] Pushed AUTOMATED item "${item.title}" (taskId: ${taskId}) for cycle ${cycleId}`,
-                    );
+                    app.log.info({
+                        taskId,
+                        cycleId,
+                        envVarCount: Object.keys(envVarsToInject).length,
+                        envVarKeys: Object.keys(envVarsToInject),
+                        secretKeyCount: secretKeysToInject.length,
+                    }, `[test-cycles] Pushed AUTOMATED item "${item.title}" to queue`);
                 }
 
                 // Update the items in the DB to include the executionId links
