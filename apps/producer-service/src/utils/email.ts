@@ -14,7 +14,7 @@ import sgMail from '@sendgrid/mail';
 
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@agnox.dev';
-const FROM_NAME = process.env.FROM_NAME || 'Agnostic Automation Center';
+const FROM_NAME = process.env.FROM_NAME || 'Agnox';
 const EMAIL_TRACKING_ENABLED = process.env.EMAIL_TRACKING_ENABLED !== 'false';
 const EMAIL_OPEN_TRACKING = process.env.EMAIL_OPEN_TRACKING !== 'false';
 const EMAIL_CLICK_TRACKING = process.env.EMAIL_CLICK_TRACKING !== 'false';
@@ -246,7 +246,7 @@ export function generateInvitationEmailHTML(params: IInvitationEmailParams): str
           <tr>
             <td style="padding: 30px 40px; text-align: center; background-color: #f8f9fa; border-radius: 0 0 8px 8px; border-top: 1px solid #e9ecef;">
               <p style="margin: 0 0 10px; font-size: 12px; line-height: 18px; color: #999999;">
-                Sent by <strong>Agnostic Automation Center</strong>
+                Sent by <strong>Agnox</strong>
               </p>
               <p style="margin: 0; font-size: 12px; line-height: 18px; color: #999999;">
                 You received this email because ${inviterName} invited you to join their team.
@@ -312,7 +312,7 @@ IMPORTANT: This invitation will expire in ${daysUntilExpiry} days (${expiresAt.t
 Need help? Contact ${inviterName} at ${organizationName}.
 
 ---
-Sent by Agnostic Automation Center
+Sent by Agnox
 You received this email because ${inviterName} invited you to join their team.
   `.trim();
 }
@@ -364,7 +364,7 @@ export function generateWelcomeEmailHTML(params: IWelcomeEmailParams): string {
           <tr>
             <td style="padding: 40px 40px 20px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px 8px 0 0;">
               <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">
-                ${isNewOrganization ? '🎉 Welcome to Agnostic Automation Center!' : `👋 Welcome to ${organizationName}!`}
+                ${isNewOrganization ? '🎉 Welcome to Agnox!' : `👋 Welcome to ${organizationName}!`}
               </h1>
             </td>
           </tr>
@@ -425,7 +425,7 @@ export function generateWelcomeEmailHTML(params: IWelcomeEmailParams): string {
           <tr>
             <td style="padding: 30px 40px; text-align: center; background-color: #f8f9fa; border-radius: 0 0 8px 8px; border-top: 1px solid #e9ecef;">
               <p style="margin: 0 0 10px; font-size: 12px; line-height: 18px; color: #999999;">
-                Sent by <strong>Agnostic Automation Center</strong>
+                Sent by <strong>Agnox</strong>
               </p>
               <p style="margin: 0; font-size: 12px; line-height: 18px; color: #999999;">
                 Your language-agnostic test automation platform
@@ -450,7 +450,7 @@ export function generateWelcomeEmailPlainText(params: IWelcomeEmailParams): stri
   const roleDisplay = role.charAt(0).toUpperCase() + role.slice(1);
 
   return `
-${isNewOrganization ? 'Welcome to Agnostic Automation Center!' : `Welcome to ${organizationName}!`}
+${isNewOrganization ? 'Welcome to Agnox!' : `Welcome to ${organizationName}!`}
 
 Hi ${recipientName},
 
@@ -479,7 +479,7 @@ Go to Dashboard: ${frontendUrl}
 Questions? Check our documentation or reach out to support.
 
 ---
-Sent by Agnostic Automation Center
+Sent by Agnox
 Your language-agnostic test automation platform
   `.trim();
 }
@@ -605,7 +605,7 @@ export async function sendWelcomeEmail(
   const textContent = generateWelcomeEmailPlainText(params);
 
   const subject = isNewOrganization
-    ? 'Welcome to Agnostic Automation Center!'
+    ? 'Welcome to Agnox!'
     : `Welcome to ${organizationName}!`;
 
   // Development mode or no API key: Console logging only
@@ -676,7 +676,7 @@ View Invoice: ${invoiceUrl}
 Thank you for your continued support!
 
 Best regards,
-The Agnostic Automation Center Team
+The Agnox Team
   `.trim();
 
   if (!SENDGRID_API_KEY || !SENDGRID_API_KEY.startsWith('SG.')) {
@@ -738,7 +738,7 @@ Your service will remain active until ${retryDate ? retryDate.toLocaleDateString
 If you need assistance, please contact our support team.
 
 Best regards,
-The Agnostic Automation Center Team
+The Agnox Team
   `.trim();
 
   if (!SENDGRID_API_KEY || !SENDGRID_API_KEY.startsWith('SG.')) {
@@ -818,7 +818,7 @@ ${severity === 'blocked' || severity === 'critical'
 Need help? Contact our support team.
 
 Best regards,
-The Agnostic Automation Center Team
+The Agnox Team
   `.trim();
 
   if (!SENDGRID_API_KEY || !SENDGRID_API_KEY.startsWith('SG.')) {
@@ -881,7 +881,7 @@ WHAT HAPPENS NEXT:
 ${feedbackUrl ? `We'd love to hear your feedback: ${feedbackUrl}\n\n` : ''}Want to reactivate? Contact our support team anytime.
 
 Best regards,
-The Agnostic Automation Center Team
+The Agnox Team
   `.trim();
 
   if (!SENDGRID_API_KEY || !SENDGRID_API_KEY.startsWith('SG.')) {
@@ -929,7 +929,7 @@ export async function sendPasswordResetEmail(
   const textContent = `
 ${greeting}
 
-We received a request to reset your password for your Agnostic Automation Center account.
+We received a request to reset your password for your Agnox account.
 
 To reset your password, click the link below (or copy and paste it into your browser):
 
@@ -942,7 +942,7 @@ If you didn't request a password reset, you can safely ignore this email. Your p
 Need help? Contact our support team.
 
 Best regards,
-The Agnostic Automation Center Team
+The Agnox Team
   `.trim();
 
   // Development mode or no API key: Console logging only

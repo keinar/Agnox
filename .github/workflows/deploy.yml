@@ -27,7 +27,6 @@ jobs:
       - name: Linting
         run: npm run lint --if-present
 
-      # === הזזנו את Layer 1 לפה! פידבק מהיר ===
       - name: Run Layer 1 - Worker Unit Tests (Suite B)
         run: |
           cd apps/worker-service
