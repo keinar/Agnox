@@ -1,6 +1,6 @@
 # Kubernetes Architecture Guide
 
-This guide explains how to deploy the Agnostic Automation Center on Kubernetes, mapping the Docker Compose services to Kubernetes resources.
+This guide explains how to deploy the Agnox on Kubernetes, mapping the Docker Compose services to Kubernetes resources.
 
 ---
 

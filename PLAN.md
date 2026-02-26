@@ -252,7 +252,7 @@ The goal is to move from a "functional tool with neon/purple gradients" to a **p
 **Target state:**
 - Import `logoFull` from `'../assets/logo-full.png'`
 - Wrap it in a `<Link to="/dashboard">` from `react-router-dom`
-- **Expanded state:** Show `<img src={logoFull} alt="Agnostic Automation Center" className="h-8 w-auto object-contain" />`
+- **Expanded state:** Show `<img src={logoFull} alt="Agnox" className="h-8 w-auto object-contain" />`
 - **Collapsed state:** Show a 32×32 favicon-style version (crop or use first 32px of the logo image). Use `<img src={logoFull} className="h-7 w-7 object-cover object-left" />` as a fallback until a separate icon asset is provided.
 - Remove the `user.organizationName` sub-label from the logo block entirely (it will be shown in the header).
 

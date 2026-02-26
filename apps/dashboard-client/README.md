@@ -1,6 +1,6 @@
 # Dashboard Client
 
-> Modern React-based UI for the Agnostic Automation Center
+> Modern React-based UI for the Agnox
 
 Built with React 19, TypeScript, Vite, and Tailwind CSS. Provides real-time test monitoring, team management, and organization settings — with a full GitHub-style light/dark mode.
 

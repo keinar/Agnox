@@ -1,6 +1,6 @@
 # Database Migrations
 
-This directory contains database migration scripts for the Agnostic Automation Center.
+This directory contains database migration scripts for the Agnox.
 
 ## Prerequisites
 

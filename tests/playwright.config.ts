@@ -14,10 +14,9 @@ const authFile = path.resolve(__dirname, '.auth/user.json');
 export default defineConfig({
     testDir: '.',
     testIgnore: ['**/legacy_archive/**', '**/fixtures/**'],
-    timeout: 60000,
-    retries: process.env.CI ? 2 : 1,
+    timeout: 15000,
     workers: process.env.CI
-        ? 2
+        ? 10
         : Math.max(os.cpus().length - 1, 1),
 
     expect: {
@@ -30,6 +29,8 @@ export default defineConfig({
     ],
 
     use: {
+        actionTimeout: 5000,
+        navigationTimeout: 10000,
         baseURL: process.env.BASE_URL || 'http://localhost:8080',
         extraHTTPHeaders: {
             'Content-Type': 'application/json',

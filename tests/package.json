@@ -1,7 +1,7 @@
 {
   "name": "agnox-tests",
   "version": "2.0.0",
-  "description": "Playwright-based system tests for Agnostic Automation Center",
+  "description": "Playwright-based system tests for Agnox",
   "scripts": {
     "test": "playwright test",
     "test:headed": "playwright test --headed",

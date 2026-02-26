@@ -1,4 +1,4 @@
-# Contributing to Agnostic Automation Center
+# Contributing to Agnox
 
 Thank you for your interest in contributing! This document provides guidelines for contributions.
 

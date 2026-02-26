@@ -1,4 +1,4 @@
-# Agnostic Automation Center - Claude Code Context
+# Agnox - Claude Code Context
 
 ## Project Architecture & Tech Stack
 - **Frontend (`apps/dashboard-client`)**: React 19 + Vite + TypeScript. **Styling is STRICTLY Tailwind CSS** (Pure CSS is deprecated. No inline styles).

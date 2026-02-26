@@ -1,4 +1,4 @@
-# Security Remediation Plan — Agnostic Automation Center v3.1.0
+# Security Remediation Plan — Agnox v3.1.0
 
 > **References:** [`SECURITY_AUDIT.md`](./SECURITY_AUDIT.md) · [`PROJECT_CONTEXT.md`](./PROJECT_CONTEXT.md)
 > **Date:** 2026-02-23 | **Status:** ✅ COMPLETED (Target Score 100/100 Reached)

@@ -1,6 +1,6 @@
 # Producer Service
 
-> Backend API service for Agnostic Automation Center
+> Backend API service for Agnox
 
 High-performance Fastify-based API providing authentication, multi-tenant data management, real-time WebSocket updates, and test execution orchestration.
 

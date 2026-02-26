@@ -1,6 +1,6 @@
 # Producer Service Routes
 
-API routes for the Agnostic Automation Center producer service.
+API routes for the Agnox producer service.
 
 ## Authentication Routes (`auth.ts`)
 
