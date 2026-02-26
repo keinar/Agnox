@@ -85,6 +85,8 @@ services:
       - redis
     networks:
       - app-network
+    env_file:
+      - .env
 
   worker:
     build:
@@ -128,6 +130,8 @@ services:
       - app-network
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    env_file:
+      - .env
 
   dashboard:
     build:
