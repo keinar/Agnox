@@ -42,7 +42,7 @@ const PLATFORM_SECRET_BLOCKLIST = new Set([
 ]);
 
 // ── SECURITY_PLAN §1.4 — Zod schema for RabbitMQ message validation ──────────
-const TaskMessageSchema = z.object({
+export const TaskMessageSchema = z.object({
     taskId: z.string().min(1).max(128),
     organizationId: z.string().min(1).max(64),
     image: z.string().min(1).max(256),
@@ -151,7 +151,7 @@ export function determineExecutionStatus(statusCode: number, logsString: string,
     return finalStatus;
 }
 
-async function startWorker() {
+export async function startWorker() {
     let connection: any = null;
     let channel: Channel | null = null;
     let mongoClient: MongoClient | null = null;
