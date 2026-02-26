@@ -12,22 +12,48 @@ interface IChangelogEntry {
 
 const CHANGELOG: IChangelogEntry[] = [
   {
+    version: 'v3.5.0',
+    title: 'DocSync & Multi-Tenant Architecture Alignment',
+    items: [
+      'Synchronized all project documentation to reflect the new Multi-Tenant architecture.',
+      'Removed legacy environment variables and decoupled platform from client test workloads.',
+      'Documented background Docker image pre-fetching mechanism for execution wait times.',
+    ],
+  },
+  {
+    version: 'v3.4.0',
+    title: 'Env Variables & Secrets Management',
+    items: [
+      'Added per-project environment variables with AES-256-GCM encryption.',
+      'Execution pipeline integration securely injects env vars into test runs.',
+      'New Environment Variables Settings tab with masked table view and secret toggles.',
+    ],
+  },
+  {
+    version: 'v3.3.0',
+    title: 'Slack Notifications & Execution Polishes',
+    items: [
+      'Configurable Slack Notifications based on test execution statuses.',
+      'Added "Connected" status badges for CI integrations.',
+      'Global Brand Refresh to "Agnox" and various UI/UX bug fixes.',
+    ],
+  },
+  {
+    version: 'v3.2.0',
+    title: 'Native CI/CD Integrations',
+    items: [
+      'Native CI Provider implementations to post AI root-cause analysis as PR/MR comments.',
+      'Dynamic API Routing and encrypted storage for integration credentials (PATs).',
+      'New Provider Settings UI in the Dashboard to securely manage tokens.',
+    ],
+  },
+  {
     version: 'v3.1.0',
     title: 'Quality Hub & Reporting Evolution',
     items: [
       'Live HTML Reports: Dedicated preview screen for Test Cycles with native browser-print optimization.',
       'Feature Management: Organization-level toggles for Manual Test Repository and Hybrid Cycles.',
       'Automated Versioning: Single-source-of-truth versioning injected from package.json to the entire UI.',
-    ],
-  },
-  {
-    version: 'v3.0.0',
-    title: 'The Enterprise Update',
-    items: [
-      'GitHub-inspired High Contrast Dark Mode.',
-      'Grouped Execution Views & Bulk Actions.',
-      'Real-time KPI Dashboard.',
-      'Jira Integration Enhancements.',
     ],
   },
 ];

@@ -14,6 +14,7 @@ const authFile = path.resolve(__dirname, '.auth/user.json');
 export default defineConfig({
     testDir: '.',
     testIgnore: ['**/legacy_archive/**', '**/fixtures/**'],
+    retries: 0,
     timeout: 15000,
     workers: process.env.CI
         ? 10
