@@ -189,9 +189,13 @@ export async function startWorker() {
 
         connection = await amqp.connect(RABBITMQ_URL);
         channel = await connection.createChannel();
-        await channel.assertQueue('test_queue', { durable: true });
+        // x-max-priority must match the producer declaration — see rabbitmq.ts MIGRATION NOTE.
+        await channel.assertQueue('test_queue', {
+            durable: true,
+            arguments: { 'x-max-priority': 10 },
+        });
         await channel.prefetch(1);
-        logger.info('Connected to RabbitMQ, waiting for jobs');
+        logger.info('Connected to RabbitMQ (priority queue, x-max-priority=10), waiting for jobs');
     } catch (error) {
         logger.error({ error: String(error) }, 'Critical Failure');
         process.exit(1);

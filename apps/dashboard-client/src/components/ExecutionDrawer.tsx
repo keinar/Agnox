@@ -39,51 +39,79 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
   const [showJiraModal, setShowJiraModal] = useState(false);
 
   // ── Log-history hydration ────────────────────────────────────────────────
-  // When the drawer opens (or executionId/status changes) for a live execution,
-  // fetch the full accumulated log from the backend and seed the React Query
-  // cache. This ensures that after a tab-switch (component unmount → remount →
-  // socket reconnect) the user sees all prior logs, not just the ones received
-  // since the new socket connection was established.
+  // Fetches the full accumulated log buffer from the server and seeds the
+  // React Query cache. Runs on three occasions:
+  //   1. Drawer opens for a new executionId (executionId dependency changes).
+  //   2. Browser tab regains focus (visibilitychange → 'visible').
+  //   3. token changes (e.g. after a silent re-auth).
+  //
+  // Intentionally not gated on execution.status so that completed executions
+  // also re-hydrate correctly when the drawer is reopened. The /logs endpoint
+  // returns the Redis live-buffer for RUNNING executions and the MongoDB
+  // output field for completed ones — the same call covers both cases.
+  //
+  // The cache is only updated when the server payload is longer than what is
+  // already stored, so an in-flight socket stream is never regressed.
   useEffect(() => {
     if (!executionId || !token) return;
-    if (execution?.status !== 'RUNNING' && execution?.status !== 'ANALYZING') return;
 
-    const controller = new AbortController();
+    // Extract the fetch into a named function so both the initial call and
+    // the visibilitychange handler can reuse it without duplication.
+    const fetchLogs = (): AbortController => {
+      const controller = new AbortController();
+      axios
+        .get(`${API_URL}/api/executions/${executionId}/logs`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        })
+        .then(({ data }) => {
+          const historical: string = data?.data?.output ?? '';
+          if (!historical) return;
 
-    axios
-      .get(`${API_URL}/api/executions/${executionId}/logs`, {
-        headers: { Authorization: `Bearer ${token}` },
-        signal: controller.signal,
-      })
-      .then(({ data }) => {
-        const historical: string = data?.data?.output ?? '';
-        if (!historical) return;
+          // Seed every matching executions query in the cache. The existing
+          // socket handler in useExecutions will continue appending incremental
+          // chunks to this pre-hydrated output string — no duplicate connection.
+          queryClient.setQueriesData(
+            { queryKey: ['executions'], exact: false },
+            (old: any) => {
+              if (!old?.executions) return old;
+              return {
+                ...old,
+                executions: old.executions.map((ex: Execution) =>
+                  ex.taskId === executionId &&
+                  ((ex as any).output?.length ?? 0) < historical.length
+                    ? { ...ex, output: historical }
+                    : ex,
+                ),
+              };
+            },
+          );
+        })
+        .catch(() => {
+          // Non-critical: the socket will still stream future log chunks.
+        });
+      return controller;
+    };
 
-        // Seed every matching executions query in the cache. The existing
-        // socket handler in useExecutions will continue appending incremental
-        // chunks to this pre-hydrated output string — no duplicate connection.
-        queryClient.setQueriesData(
-          { queryKey: ['executions'], exact: false },
-          (old: any) => {
-            if (!old?.executions) return old;
-            return {
-              ...old,
-              executions: old.executions.map((ex: Execution) =>
-                ex.taskId === executionId &&
-                ((ex as any).output?.length ?? 0) < historical.length
-                  ? { ...ex, output: historical }
-                  : ex,
-              ),
-            };
-          },
-        );
-      })
-      .catch(() => {
-        // Non-critical: the socket will still stream future log chunks.
-      });
+    // Initial hydration when the drawer opens.
+    let controller = fetchLogs();
 
-    return () => controller.abort();
-  }, [executionId, token, execution?.status, queryClient]);
+    // Re-hydrate whenever the browser tab regains focus. This recovers log
+    // chunks that the Socket.io stream may have missed while the tab was hidden.
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        controller.abort();
+        controller = fetchLogs();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      controller.abort();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [executionId, token, queryClient]);
 
   // Store the selected tab alongside the executionId it belongs to.
   // When executionId changes (new row clicked), the ownerId mismatch resets

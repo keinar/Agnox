@@ -26,6 +26,7 @@ import { reportRoutes } from '../routes/reports.js';
 import { sendExecutionNotification, FINAL_EXECUTION_STATUSES } from '../utils/notifier.js';
 import { generateReportToken, REPORT_TOKEN_TTL } from '../utils/reportToken.js';
 import { createTestRunLimitMiddleware } from '../middleware/planLimits.js';
+import { computeOrgPriority } from '../utils/scheduling.js';
 import { getDbName } from './server.js';
 
 const DB_NAME = getDbName();
@@ -610,9 +611,10 @@ export async function setupRoutes(
                 app.log.info(`📡 Broadcast execution-updated to room ${orgRoom} (taskId: ${taskId}, status: PENDING)`);
             }
 
-            await rabbitMqService.sendToQueue(taskData);
+            const enqueuePriority = await computeOrgPriority(dbClient, organizationId);
+            await rabbitMqService.sendToQueue(taskData, enqueuePriority);
 
-            app.log.info(`Job ${taskId} queued using image: ${image}`);
+            app.log.info({ taskId, organizationId, enqueuePriority }, `Job ${taskId} queued using image: ${image}`);
             return reply.status(200).send({ status: 'Message queued successfully', taskId });
 
         } catch (error) {

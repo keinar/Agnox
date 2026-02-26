@@ -28,6 +28,7 @@ import { getDbName } from '../config/server.js';
 import { initTestCycleCollection, TEST_CYCLES_COLLECTION } from '../models/TestCycle.js';
 import type { RabbitMqService } from '../rabbitmq.js';
 import { resolveProjectEnvVars } from './project-env-vars.js';
+import { computeOrgPriority } from '../utils/scheduling.js';
 import type {
     ITestCycle,
     ICycleItem,
@@ -268,6 +269,10 @@ export async function testCycleRoutes(
                 const baseUrl = resolvedBaseUrl;
                 const folder = typeof body.folder === 'string' && body.folder.trim() ? body.folder.trim() : 'all';
 
+                // Compute fair-scheduling priority once per cycle. All items in this
+                // batch belong to the same org so they share the same base priority.
+                const enqueuePriority = await computeOrgPriority(dbClient, organizationId);
+
                 for (const item of automatedItems) {
                     const taskId = generateRunId();
 
@@ -294,11 +299,12 @@ export async function testCycleRoutes(
                         cycleItemId: item.id,
                     };
 
-                    await rabbitMqService.sendToQueue(taskPayload);
+                    await rabbitMqService.sendToQueue(taskPayload, enqueuePriority);
 
                     app.log.info({
                         taskId,
                         cycleId,
+                        enqueuePriority,
                         envVarCount: Object.keys(envVarsToInject).length,
                         envVarKeys: Object.keys(envVarsToInject),
                         secretKeyCount: secretKeysToInject.length,

@@ -1,4 +1,4 @@
-name: agnostic-automation-center
+name: agnox
 
 services:
   # -------------------------
@@ -70,7 +70,7 @@ services:
       # SendGrid Email Configuration (Phase 5)
       - SENDGRID_API_KEY=${SENDGRID_API_KEY}
       - FROM_EMAIL=${FROM_EMAIL}
-      - FROM_NAME=${FROM_NAME:-Agnostic Automation Center}
+      - FROM_NAME=${FROM_NAME:-Agnox}
       - FRONTEND_URL=${FRONTEND_URL}
       - DASHBOARD_URL=${DASHBOARD_URL}
       - EMAIL_TRACKING_ENABLED=${EMAIL_TRACKING_ENABLED:-true}
@@ -92,6 +92,12 @@ services:
     # container_name intentionally omitted — Docker requires unique names per
     # container, so setting one here would prevent `--scale worker=N` from working.
     restart: always
+    deploy:
+      replicas: 10
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
     environment:
       - RUNNING_IN_DOCKER=true
       # ── Platform-namespaced infrastructure secrets (SECURITY_PLAN §1.3) ────
