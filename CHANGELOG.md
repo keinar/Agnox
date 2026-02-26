@@ -3,6 +3,15 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.5.0] — 2026-02-26 — DocSync & Multi-Tenant Architecture Alignment
+
+### Changed
+- **Documentation Sync** — Synchronized `README.md`, `PROJECT_CONTEXT.md`, and all setup guides (`infrastructure.md`, `client-integration.md`, `deployment.md`, `ci-cd.md`) to reflect the new Multi-Tenant architecture.
+- **Legacy Env Vars Removed** — Removed references to deprecated variables including `INJECT_ENV_VARS`, `ADMIN_USER`, `ADMIN_PASS`, `DEFAULT_TEST_IMAGE`, `DEFAULT_BASE_URL`, `STAGING_URL`, and `PRODUCTION_URL`.
+- **Infrastructure Standardization** — Updated documentation to emphasize the `PLATFORM_*` prefix for infrastructure secrets, completely removing self-hosted assumptions and decoupling platform from client test workloads.
+- **Feature Documentation** — Documented the background Docker image pre-fetching mechanism built to minimize execution wait times in `PROJECT_CONTEXT.md` and `docs/architecture/overview.md`.
+- **Security Artifact Updates** — Struck through obsolete mitigations in `SECURITY_PLAN.md` related to `INJECT_ENV_VARS` as it has been replaced by the more secure `projectEnvVars` DB collection and AES-256-GCM encryption. Marked corresponding `SECURITY_AUDIT.md` issues as resolved.
+
 ## [3.4.0] — 2026-02-26 — Env Variables & Secrets Management
 
 ### Added

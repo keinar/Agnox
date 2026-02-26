@@ -36,6 +36,18 @@ export class RabbitMqService {
         this.channel.sendToQueue('test_queue', Buffer.from(JSON.stringify(data)), { persistent: true });
         console.log('Message sent to queue:', data);
     }
+
+    /**
+     * Enqueue a background image pre-fetch task.
+     * The worker will run `docker pull <image>` without creating an execution record.
+     */
+    async sendPrefetchTask(image: string, organizationId: string): Promise<void> {
+        await this.sendToQueue({
+            type: 'PREFETCH_IMAGE',
+            image,
+            organizationId,
+        });
+    }
 }
 
 export const rabbitMqService = new RabbitMqService();

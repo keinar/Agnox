@@ -206,6 +206,8 @@ await cyclesCollection.updateOne(
 
 ### 1.3 — Platform Prefix Rename & Container Env Hardening (CRIT-2)
 
+> **V3 Architecture Note:** The `INJECT_ENV_VARS` mechanism discussed below has been completely removed in favor of the `projectEnvVars` MongoDB collection. All tenant environment variables are now managed via the dashboard UI and encrypted at rest using AES-256-GCM. The blocklist logic remains relevant for evaluating user-provided keys.
+
 **Threat:** Platform infrastructure secrets are automatically injected into every user test container.
 A user-controlled Docker image can exfiltrate the entire multi-tenant MongoDB database.
 

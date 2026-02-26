@@ -98,14 +98,10 @@ export async function setupRoutes(
     app.get('/config/defaults', async (request, reply) => {
         const envMapping: Record<string, string> = {};
 
-        if (process.env.DEFAULT_BASE_URL) envMapping.development = process.env.DEFAULT_BASE_URL;
-        if (process.env.STAGING_URL) envMapping.staging = process.env.STAGING_URL;
-        if (process.env.PRODUCTION_URL) envMapping.production = process.env.PRODUCTION_URL;
-
         return reply.send({
-            image: process.env.DEFAULT_TEST_IMAGE || '',
-            baseUrl: process.env.DEFAULT_BASE_URL || '',
-            folder: process.env.DEFAULT_TEST_FOLDER || 'all',
+            image: '',
+            baseUrl: '',
+            folder: 'all',
             envMapping
         });
     });
@@ -318,6 +314,12 @@ export async function setupRoutes(
             })();
         }
 
+        // Clean up the Redis live-log buffer when the execution reaches a terminal
+        // status so the key doesn't linger. Fire-and-forget — never blocks the response.
+        if (updateData.taskId && FINAL_EXECUTION_STATUSES.has(updateData.status)) {
+            redis.del(`live:logs:${updateData.taskId}`).catch(() => { });
+        }
+
         return { status: 'broadcasted' };
     });
 
@@ -329,12 +331,23 @@ export async function setupRoutes(
         if (organizationId) {
             const orgRoom = `org:${organizationId}`;
             app.io.to(orgRoom).emit('execution-log', { taskId, log });
-            // Don't log every line (too verbose), only log if needed for debugging
-            // app.log.debug(`📡 Broadcast log to room ${orgRoom} (taskId: ${taskId})`);
         } else {
             // Fallback: Global broadcast (for backwards compatibility during transition)
             app.io.emit('execution-log', { taskId, log });
             app.log.warn(`⚠️  Log broadcast missing organizationId (taskId: ${taskId}), broadcasting globally`);
+        }
+
+        // Buffer every log chunk in Redis so clients that reconnect (e.g. after a
+        // tab-switch) can re-hydrate via GET /api/executions/:taskId/logs.
+        // Logs are already sanitized (secrets redacted) before reaching this point.
+        if (taskId) {
+            const logKey = `live:logs:${taskId}`;
+            try {
+                await redis.append(logKey, log);
+                await redis.expire(logKey, 4 * 3600); // 4-hour TTL, overwritten on each chunk
+            } catch (redisErr) {
+                app.log.warn({ taskId, err: String(redisErr) }, '[log-buffer] Redis append failed — socket-only fallback active');
+            }
         }
 
         return { status: 'ok' };
@@ -460,7 +473,7 @@ export async function setupRoutes(
         const image = rawImage?.trim();
 
         if (!image) {
-            return reply.status(400).send({ error: 'Image name cannot be empty' });
+            return reply.status(400).send({ error: 'No test image configured for this organization. Please update your settings.' });
         }
 
         // DEBUG: Trace incoming payload config
@@ -492,16 +505,6 @@ export async function setupRoutes(
 
             const envVarsToInject: Record<string, string> = {};
             const secretKeysFromDb: string[] = [];
-
-            const varsToInject = (process.env.INJECT_ENV_VARS || '').split(',');
-
-            varsToInject.forEach(varName => {
-                const name = varName.trim();
-                // Skip blocked keys even if accidentally configured in INJECT_ENV_VARS
-                if (name && process.env[name] && !PLATFORM_SECRET_BLOCKLIST.has(name)) {
-                    envVarsToInject[name] = process.env[name]!;
-                }
-            });
 
             // Fetch per-project env vars (decrypt secrets in-memory).
             // Strategy 1: explicit projectId in body (e.g. CI trigger, future modal update).
@@ -884,6 +887,46 @@ export async function setupRoutes(
         } catch (error) {
             app.log.error(error, '[executions] Failed to fetch execution by taskId');
             return reply.status(500).send({ success: false, error: 'Failed to fetch execution' });
+        }
+    });
+
+    // ── GET /api/executions/:taskId/logs — Live-log reconnect recovery ─────────
+    // Returns the accumulated log output for an execution so that reconnecting
+    // clients (e.g. after a browser tab-switch) can re-hydrate without losing
+    // history.  For RUNNING/ANALYZING executions the Redis buffer is the source
+    // of truth; for terminal executions the persisted MongoDB output is returned.
+    app.get('/api/executions/:taskId/logs', async (request, reply) => {
+        if (!dbClient) return reply.status(500).send({ success: false, error: 'Database not connected' });
+
+        const organizationId = request.user!.organizationId;
+        const { taskId } = request.params as { taskId: string };
+
+        try {
+            const collection = dbClient.db(DB_NAME).collection('executions');
+
+            // Verify ownership before returning any log data
+            const execution = await collection.findOne(
+                { taskId, organizationId, deletedAt: { $exists: false } },
+                { projection: { _id: 1, status: 1, output: 1 } },
+            );
+
+            if (!execution) {
+                return reply.status(404).send({ success: false, error: 'Execution not found' });
+            }
+
+            let output = '';
+            if (execution.status === 'RUNNING' || execution.status === 'ANALYZING') {
+                // Prefer the live Redis buffer; fall back to whatever MongoDB has
+                const buffered = await redis.get(`live:logs:${taskId}`);
+                output = buffered ?? ((execution.output as string) ?? '');
+            } else {
+                output = (execution.output as string) ?? '';
+            }
+
+            return reply.send({ success: true, data: { output } });
+        } catch (error) {
+            app.log.error(error, '[execution-logs] Failed to fetch log history');
+            return reply.status(500).send({ success: false, error: 'Failed to fetch logs' });
         }
     });
 

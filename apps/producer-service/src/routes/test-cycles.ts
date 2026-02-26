@@ -231,15 +231,7 @@ export async function testCycleRoutes(
                 projectSettings?.targetUrls?.dev ||
                 '';
 
-            // Inject server-side env vars — same mechanism used by /api/execution-request.
-            // These typically carry API keys / auth tokens that the test suite needs.
-            const varsToInject = (process.env.INJECT_ENV_VARS || '').split(',');
-            for (const varName of varsToInject) {
-                const name = varName.trim();
-                if (name && process.env[name]) {
-                    envVarsToInject[name] = process.env[name]!;
-                }
-            }
+            // (Deprecated) PLATFORM INJECTION of INJECT_ENV_VARS has been removed.
 
             // Fetch per-project env vars stored in DB (decrypt secrets in-memory).
             // These override INJECT_ENV_VARS so user-defined project vars take precedence.

@@ -24,7 +24,8 @@ const PUBLIC_PATHS = [
 /**
  * Check if a request path is public (doesn't require auth)
  */
-function isPublicPath(url: string): boolean {
+function isPublicPath(url?: string): boolean {
+  if (!url) return false;
   return PUBLIC_PATHS.some(publicPath => url.startsWith(publicPath));
 }
 

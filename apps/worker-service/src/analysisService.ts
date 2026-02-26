@@ -2,11 +2,11 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { logger } from './utils/logger.js';
 
 export async function analyzeTestFailure(logs: string, image: string): Promise<string> {
-    // SECURITY_PLAN §1.3 — Read platform-namespaced key; fall back to legacy during transition
-    const apiKey = process.env.PLATFORM_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+    // SECURITY_PLAN §1.3 — Read platform-namespaced key;
+    const apiKey = process.env.PLATFORM_GEMINI_API_KEY;
 
     if (!apiKey) {
-        logger.warn('Missing GEMINI_API_KEY. Skipping analysis.');
+        logger.warn('Missing PLATFORM_GEMINI_API_KEY. Skipping analysis.');
         return 'AI Analysis disabled: Missing API Key.';
     }
 
@@ -20,28 +20,41 @@ export async function analyzeTestFailure(logs: string, image: string): Promise<s
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-        const truncatedLogs = logs.slice(-8000);
+        // Gemini 2.5 Flash has a massive context window. 
+        // We increase the slice to 60,000 chars to catch earlier suite failures and setup contexts.
+        const truncatedLogs = logs.slice(-60000);
 
         const promptText = `
-        You are an expert Automation Infrastructure Engineer.
+        You are an elite QA Automation Architect analyzing Playwright E2E test logs.
         A test execution failed inside a Docker container running the image: "${image}".
         
-        Analyze the following logs and provide a structured response using Markdown.
-        Focus on identifying if this is an Infrastructure Issue, Flaky Test, or Product Bug.
+        CRITICAL: Follow this exact step-by-step thinking process before writing your final report.
 
-        IMPORTANT: You are analyzing Playwright test logs. Playwright automatically retries failing tests. 
-        If a test fails initially but passes on a retry, it outputs "passed after retries (Flaky)". 
-        Do not treat this as a contradiction. Ignore the flaky successes and ONLY focus your Root Cause Analysis on tests that completely failed all retries.
+        STEP 1 (Identify): Count how many tests failed and what the exact error was (e.g., Timeout, locator not found).
+        STEP 2 (Pattern Match): Did multiple tests fail because they couldn't find expected data on the screen (e.g., empty tables, missing "Integrations" buttons, "0 elements received")?
+        STEP 3 (Classify based on strict rules):
+           - IF the app loaded but data/buttons were missing across multiple tests -> Classify as "🌐 Environment / Test Data Missing" (The database is likely empty).
+           - IF the app threw a 500 error or crashed -> Classify as "🐛 Product Bug".
+           - IF it failed on a DNS, CORS, or connection refused -> Classify as "🏗️ Infrastructure / Network".
+           - IF it passed on retry but failed initially -> Classify as "❄️ Flaky Test".
 
         Logs (Last snippet):
         ${truncatedLogs}
         
-        Output Format:
-        ## 🚨 Root Cause
-        [Short explanation of what went wrong]
+        Now, output your analysis in the exact format below. Do not deviate.
+
+        ## 📊 Failure Classification
+        [Insert exactly ONE category from Step 3]
+
+        ## 🧠 AI Thinking Process
+        [Briefly explain how you applied Steps 1 and 2 to reach this conclusion. Keep it to 2-3 sentences.]
+
+        ## 🚨 Root Cause Analysis
+        [Explain what is actually wrong. E.g., "The tests expect 3 items in the table, but the table is empty because the test environment database has no mock data."]
         
         ## 🛠️ Suggested Fix
-        [Actionable advice for the developer]
+        1. [Actionable step 1]
+        2. [Actionable step 2]
         `;
 
         logger.info('Sending prompt to Gemini');

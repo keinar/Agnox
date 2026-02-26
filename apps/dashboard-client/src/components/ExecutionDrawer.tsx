@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react';
 import { X, FileText, BarChart2, Loader2, Bug } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import type { Execution } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -14,7 +14,8 @@ import { CreateJiraTicketModal } from './CreateJiraTicketModal';
 
 const isProduction =
   window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-const API_URL = isProduction ? import.meta.env.VITE_API_URL : 'http://localhost:3000';
+const _viteApiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '');
+const API_URL: string = isProduction ? (_viteApiUrl ?? window.location.origin) : 'http://localhost:3000';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -33,8 +34,56 @@ export type DrawerTab = 'terminal' | 'artifacts' | 'ai-analysis';
 
 export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }: ExecutionDrawerProps) {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
   const [fetchingReport, setFetchingReport] = useState(false);
   const [showJiraModal, setShowJiraModal] = useState(false);
+
+  // ── Log-history hydration ────────────────────────────────────────────────
+  // When the drawer opens (or executionId/status changes) for a live execution,
+  // fetch the full accumulated log from the backend and seed the React Query
+  // cache. This ensures that after a tab-switch (component unmount → remount →
+  // socket reconnect) the user sees all prior logs, not just the ones received
+  // since the new socket connection was established.
+  useEffect(() => {
+    if (!executionId || !token) return;
+    if (execution?.status !== 'RUNNING' && execution?.status !== 'ANALYZING') return;
+
+    const controller = new AbortController();
+
+    axios
+      .get(`${API_URL}/api/executions/${executionId}/logs`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal: controller.signal,
+      })
+      .then(({ data }) => {
+        const historical: string = data?.data?.output ?? '';
+        if (!historical) return;
+
+        // Seed every matching executions query in the cache. The existing
+        // socket handler in useExecutions will continue appending incremental
+        // chunks to this pre-hydrated output string — no duplicate connection.
+        queryClient.setQueriesData(
+          { queryKey: ['executions'], exact: false },
+          (old: any) => {
+            if (!old?.executions) return old;
+            return {
+              ...old,
+              executions: old.executions.map((ex: Execution) =>
+                ex.taskId === executionId &&
+                ((ex as any).output?.length ?? 0) < historical.length
+                  ? { ...ex, output: historical }
+                  : ex,
+              ),
+            };
+          },
+        );
+      })
+      .catch(() => {
+        // Non-critical: the socket will still stream future log chunks.
+      });
+
+    return () => controller.abort();
+  }, [executionId, token, execution?.status, queryClient]);
 
   // Store the selected tab alongside the executionId it belongs to.
   // When executionId changes (new row clicked), the ownerId mismatch resets

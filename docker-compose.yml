@@ -67,14 +67,6 @@ services:
       - WORKER_CALLBACK_TRANSITION=${WORKER_CALLBACK_TRANSITION:-true}
       # ── App configuration ──────────────────────────────────────────────────
       - REPORTS_DIR=/app/reports
-      - INJECT_ENV_VARS=${INJECT_ENV_VARS}
-      - ADMIN_USER=${ADMIN_USER:-admin@test.com}
-      - ADMIN_PASS=${ADMIN_PASS:-TestPass123!}
-      - DEFAULT_TEST_IMAGE=${DEFAULT_TEST_IMAGE}
-      - DEFAULT_BASE_URL=${DEFAULT_BASE_URL}
-      - STAGING_URL=${STAGING_URL}
-      - PRODUCTION_URL=${PRODUCTION_URL}
-      - DEFAULT_TEST_FOLDER=${DEFAULT_TEST_FOLDER}
       # Authentication & JWT Configuration
       - JWT_EXPIRY=${JWT_EXPIRY:-24h}
       - PASSWORD_SALT_ROUNDS=${PASSWORD_SALT_ROUNDS:-10}
@@ -131,20 +123,12 @@ services:
       - PLATFORM_GEMINI_API_KEY=${PLATFORM_GEMINI_API_KEY}
       # Worker callback auth (SECURITY_PLAN §1.2)
       - PLATFORM_WORKER_CALLBACK_SECRET=${PLATFORM_WORKER_CALLBACK_SECRET}
-      # ── User-injectable variables (available for test container injection) ──
-      - INJECT_ENV_VARS=${INJECT_ENV_VARS}
-      - MONGO_URI=${MONGO_URI}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - ADMIN_USER=${ADMIN_USER:-admin@test.com}
-      - ADMIN_PASS=${ADMIN_PASS:-TestPass123!}
       # ── App configuration ──────────────────────────────────────────────────
       - PRODUCER_URL=http://producer:3000
-      - BASE_URL=${BASE_URL}
       - CI=true
       - REPORTS_DIR=/app/reports
       - PUBLIC_API_URL=http://localhost:3000
       - REDIS_URL=redis://redis:6379
-      - GITHUB_COPILOT_API_KEY=${GITHUB_COPILOT_API_KEY}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - DASHBOARD_URL=${DASHBOARD_URL}
     volumes:

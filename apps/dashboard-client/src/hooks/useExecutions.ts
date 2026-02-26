@@ -7,7 +7,21 @@ import type { Execution } from '../types';
 
 const isProduction =
     window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-const API_URL = isProduction ? import.meta.env.VITE_API_URL : 'http://localhost:3000';
+
+// Strip trailing slash so URL concatenation is predictable.
+// In production the value comes from the Vite build-time env var VITE_API_URL.
+// If it is missing (misconfigured Docker build), fall back to the current origin
+// so Socket.IO at least attempts the right host, and log a warning.
+const _viteApiUrl = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '');
+if (isProduction && !_viteApiUrl) {
+    console.error(
+        '[Config] VITE_API_URL is not set. ' +
+        'Socket.IO and API calls will fall back to the current origin, ' +
+        'which will fail if the API is on a different host. ' +
+        'Set VITE_API_URL as a Docker build-arg and redeploy.',
+    );
+}
+const API_URL: string = isProduction ? (_viteApiUrl ?? window.location.origin) : 'http://localhost:3000';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -97,6 +111,14 @@ export const useExecutions = (filters: IExecutionFilters = {}) => {
         const socket = io(API_URL, {
             auth: { token },
             transports: ['websocket'],
+            // path defaults to '/socket.io' — explicit for clarity with nginx configs
+            path: '/socket.io',
+        });
+
+        socket.on('connect_error', (err) => {
+            // Intentional console.error: this surfaces misconfigured cloud URLs immediately
+            // in the browser DevTools without requiring server-side log access.
+            console.error('[Socket.IO] Connection error →', err.message, '| url:', API_URL);
         });
 
         socket.on('execution-updated', (updatedTask: Partial<Execution>) => {

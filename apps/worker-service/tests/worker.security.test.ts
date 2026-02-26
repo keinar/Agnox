@@ -41,20 +41,7 @@ describe('worker.security.test - Security & Path Normalizations', () => {
             process.env = originalEnv;
         });
 
-        it('B-009: PLATFORM_* Secrets Are Blocked from Container Environment Variables', () => {
-            process.env.INJECT_ENV_VARS = 'PLATFORM_JWT_SECRET,PLATFORM_MONGO_URI,APP_FEATURE_FLAG';
-            process.env.PLATFORM_JWT_SECRET = 'super-secret';
-            process.env.PLATFORM_MONGO_URI = 'mongodb://hack:me';
-            process.env.APP_FEATURE_FLAG = 'v2-enabled';
 
-            const merged = getMergedEnvVars({ envVars: {}, baseUrl: "http://localhost" }, "http://target");
-
-            expect(merged.PLATFORM_JWT_SECRET).toBeUndefined();
-            expect(merged.PLATFORM_MONGO_URI).toBeUndefined();
-            expect(merged.APP_FEATURE_FLAG).toBe('v2-enabled');
-            expect(merged.CI).toBe('true');
-            expect(merged.BASE_URL).toBe('http://target');
-        });
 
         it('B-010: User-Supplied envVars Containing PLATFORM_* Key Are Silently Dropped', () => {
             const taskEnv = { PLATFORM_JWT_SECRET: "injected", MY_KEY: "ok" };

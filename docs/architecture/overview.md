@@ -123,6 +123,7 @@ graph TB
 
 **Responsibilities:**
 - Consume tasks from RabbitMQ queue
+- Background Docker image pre-fetching to minimize execution wait times
 - Orchestrate Docker containers for test execution
 - Stream live test logs to Producer Service
 - Collect test results and reports
@@ -226,6 +227,7 @@ sequenceDiagram
     participant AI as Gemini AI
 
     UI->>API: POST /api/execution-request
+    API->>MongoDB: Verify test image & DB configurations
     API->>MongoDB: Save execution (status: PENDING)
     API->>MQ: Enqueue task
     API->>UI: WebSocket: status PENDING

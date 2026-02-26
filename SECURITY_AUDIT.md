@@ -1003,7 +1003,7 @@
 
   File: worker.ts:30-65
 
-  Status: ❌ Unmitigated
+  Status: ✅ Mitigated in v3.1.0/v3.4.0 (replaced by projectEnvVars)
 
   ────────────────────────────────────────
 
@@ -1183,7 +1183,7 @@
 
   File: routes.ts:85
 
-  Status: ❌ Unmitigated
+  Status: ✅ Mitigated in v3.4.0 (endpoint removed)
 
   ────────────────────────────────────────
 

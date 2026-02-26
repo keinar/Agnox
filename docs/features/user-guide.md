@@ -46,13 +46,15 @@ Before running tests, you must configure your project settings.
    - **Docker Image**: The image you pushed to Docker Hub (e.g., `myuser/my-tests:latest`)
    - **Test Folder**: Path to tests inside container (default: `.` or `tests/`)
 
-### Configuring Environments
+### Configuring Environments & Variables
 For each project, define base URLs for your environments:
 - **Development**
 - **Staging**
 - **Production**
 
 These URLs are injected into your test container as `BASE_URL` at runtime.
+
+Additionally, under **Settings** → **Env Variables**, you can define custom variables per-project. These are securely encrypted in the database and injected directly into your test container at runtime, eliminating the need for local `.env` files for test credentials.
 
 ---
 

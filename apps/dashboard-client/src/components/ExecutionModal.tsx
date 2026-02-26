@@ -299,8 +299,8 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({
                             type="button"
                             onClick={() => { setRunMode('immediate'); setScheduleStatus(null); }}
                             className={`flex-1 flex items-center justify-center gap-2 py-2 transition-colors cursor-pointer ${runMode === 'immediate'
-                                    ? 'bg-gh-accent dark:bg-gh-accent-dark text-white'
-                                    : 'bg-white dark:bg-gh-bg-dark text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark'
+                                ? 'bg-gh-accent dark:bg-gh-accent-dark text-white'
+                                : 'bg-white dark:bg-gh-bg-dark text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark'
                                 }`}
                         >
                             <Play size={14} />
@@ -310,8 +310,8 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({
                             type="button"
                             onClick={() => { setRunMode('schedule'); setScheduleStatus(null); }}
                             className={`flex-1 flex items-center justify-center gap-2 py-2 border-l border-slate-200 dark:border-gh-border-dark transition-colors cursor-pointer ${runMode === 'schedule'
-                                    ? 'bg-amber-500 dark:bg-amber-600 text-white'
-                                    : 'bg-white dark:bg-gh-bg-dark text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark'
+                                ? 'bg-amber-500 dark:bg-amber-600 text-white'
+                                : 'bg-white dark:bg-gh-bg-dark text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark'
                                 }`}
                         >
                             <Clock size={14} />
@@ -367,7 +367,7 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({
                                 className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300"
                             >
                                 <Server size={16} className="text-slate-400 dark:text-slate-500" /> Environment
-                                <span title="Environments are mapped from system ENV variables (e.g. STAGING_URL)">
+                                <span title="Environments are mapped from Project Configuration settings">
                                     <Info size={14} className="cursor-help text-slate-400 dark:text-slate-500" />
                                 </span>
                             </label>
@@ -581,8 +581,8 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({
                                                 type="button"
                                                 onClick={() => setCronExpression(preset.value)}
                                                 className={`px-2 py-0.5 rounded-full text-xs font-mono border transition-colors cursor-pointer ${cronExpression === preset.value
-                                                        ? 'bg-amber-500 text-white border-amber-500'
-                                                        : 'bg-white dark:bg-gh-bg-dark border-slate-200 dark:border-gh-border-dark text-slate-600 dark:text-slate-400 hover:border-amber-400'
+                                                    ? 'bg-amber-500 text-white border-amber-500'
+                                                    : 'bg-white dark:bg-gh-bg-dark border-slate-200 dark:border-gh-border-dark text-slate-600 dark:text-slate-400 hover:border-amber-400'
                                                     }`}
                                             >
                                                 {preset.label}
@@ -600,8 +600,8 @@ export const ExecutionModal: React.FC<ExecutionModalProps> = ({
                         {/* Inline status message (schedule mode only) */}
                         {scheduleStatus && (
                             <div className={`flex items-start gap-2 rounded-lg px-3 py-2.5 text-sm ${scheduleStatus.type === 'success'
-                                    ? 'bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800/50 text-green-800 dark:text-green-300'
-                                    : 'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 text-red-800 dark:text-red-300'
+                                ? 'bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800/50 text-green-800 dark:text-green-300'
+                                : 'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 text-red-800 dark:text-red-300'
                                 }`}>
                                 {scheduleStatus.type === 'success'
                                     ? <CheckCircle size={16} className="mt-0.5 shrink-0 text-green-600 dark:text-green-400" />

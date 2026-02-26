@@ -14,7 +14,7 @@ import { encrypt } from '../apps/producer-service/src/utils/encryption.js';
 
 dotenv.config();
 
-const MONGO_URI = process.env.PLATFORM_MONGO_URI || process.env.MONGODB_URL || 'mongodb://localhost:27017';
+const MONGO_URI = process.env.PLATFORM_MONGO_URI || 'mongodb://localhost:27017';
 const DB_NAME = 'automation_platform';
 
 async function migrate() {

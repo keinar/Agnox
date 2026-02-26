@@ -39,7 +39,7 @@ jobs:
           npm ci
           npx playwright install --with-deps chromium
       
-      - name: Start Infrastructure
+      - name: Start Infrastructure (CI Environment)
         run: |
           cat <<EOF > .env
           PLATFORM_MONGO_URI=mongodb://mongodb:27017/automation_platform
@@ -49,13 +49,9 @@ jobs:
           PLATFORM_GEMINI_API_KEY=mock_gemini
           PLATFORM_WORKER_CALLBACK_SECRET=ci-test-worker-callback-secret-64chars-minimum
           PLATFORM_API_KEY_HMAC_SECRET=ci-test-hmac-secret-64chars-minimum
-          API_URL=http://producer:3000
           VITE_API_URL=http://localhost:3000/api
           PUBLIC_API_URL=http://localhost:3000/api
           NODE_ENV=production
-          INJECT_ENV_VARS=ADMIN_USER,ADMIN_PASS
-          ADMIN_USER=admin@test.com
-          ADMIN_PASS=TestPass123!
           STRIPE_SECRET_KEY=sk_test_mock_key
           STRIPE_PUBLISHABLE_KEY=pk_test_mock_key
           STRIPE_WEBHOOK_SECRET=whsec_mock
@@ -123,13 +119,8 @@ jobs:
             PLATFORM_JWT_SECRET=${{ secrets.PLATFORM_JWT_SECRET }}
             PLATFORM_GEMINI_API_KEY=${{ secrets.PLATFORM_GEMINI_API_KEY }}
             PLATFORM_WORKER_CALLBACK_SECRET=${{ secrets.PLATFORM_WORKER_CALLBACK_SECRET }}
-            WORKER_CALLBACK_TRANSITION=false
+            PLATFORM_WORKER_CALLBACK_TRANSITION=${{ secrets.PLATFORM_WORKER_CALLBACK_TRANSITION }}
             PLATFORM_API_KEY_HMAC_SECRET=${{ secrets.PLATFORM_API_KEY_HMAC_SECRET }}
-            MONGO_URI=${{ secrets.MONGO_URI }}
-            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-            ADMIN_USER=${{ secrets.ADMIN_USER }}
-            ADMIN_PASS=${{ secrets.ADMIN_PASS }}
-            INJECT_ENV_VARS=${{ secrets.INJECT_ENV_VARS }}
             VITE_API_URL=${{ secrets.VITE_API_URL }}
             PUBLIC_API_URL=${{ secrets.PUBLIC_API_URL }}
             JWT_EXPIRY=24h
@@ -147,11 +138,8 @@ jobs:
             ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}
             DASHBOARD_URL=${{ secrets.DASHBOARD_URL }}
             CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
-            E2E_EMAIL=${{ secrets.E2E_EMAIL }}
-            E2E_PASSWORD=${{ secrets.E2E_PASSWORD }}
+            REPORTS_DIR=${{ secrets.REPORTS_DIR }}
             EOF
-            
-            docker pull ${{ secrets.DEFAULT_TEST_IMAGE }}
             
             docker compose -f docker-compose.prod.yml down --remove-orphans
             

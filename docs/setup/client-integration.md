@@ -104,11 +104,11 @@ RUN chmod +x /app/entrypoint.sh
 
 ### 2.3 Environment Variables & Validation
 
-The platform injects environment variables **only if they are whitelisted** in the infrastructure.
+The platform injects environment variables defined per-project in the Dashboard.
 
 #### Best Practice
 
-If you use validation libraries like **Zod**, ensure your schema allows for optional defaults or that you have added the variable to the infrastructure's `INJECT_ENV_VARS` list.
+If you use validation libraries like **Zod**, ensure your schema allows for optional defaults or that you have defined the variable in the project's **Settings → Env Variables**.
 
 ---
 

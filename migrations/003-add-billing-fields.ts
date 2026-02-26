@@ -7,7 +7,7 @@
 
 import { MongoClient, ObjectId } from 'mongodb';
 
-const MONGODB_URL = process.env.PLATFORM_MONGO_URI || process.env.MONGODB_URL || 'mongodb://localhost:27017/automation_platform';
+const MONGODB_URL = process.env.PLATFORM_MONGO_URI || 'mongodb://localhost:27017/automation_platform';
 
 const colors = {
   green: '\x1b[32m',

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useExecutions, type IExecutionFilters } from '../hooks/useExecutions';
 import { useGroupedExecutions } from '../hooks/useGroupedExecutions';
@@ -13,7 +13,7 @@ import { Pagination } from './Pagination';
 import { ExecutionModal } from './ExecutionModal';
 import { ExecutionList } from './dashboard/ExecutionList';
 import { ExecutionDrawer, type DrawerTab } from './ExecutionDrawer';
-import { Play } from 'lucide-react';
+import { Play, AlertTriangle } from 'lucide-react';
 import type { ViewMode } from '../types';
 
 // ── localStorage key for view mode persistence ────────────────────────────────
@@ -236,13 +236,14 @@ export const Dashboard = () => {
   }, [token, setExecutions, queryClient]);
 
   const isViewer = user?.role === 'viewer';
+  const hasTestImage = !!defaults?.image;
+  const canRunTest = !isViewer && hasTestImage;
 
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="px-6 py-6 min-w-0 w-full">
-      {/* Title + Run button */}
-      <div className="flex flex-row items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="m-0 text-lg md:text-2xl font-bold text-slate-900 dark:text-gh-text-dark tracking-tight">
             Agnox
@@ -250,17 +251,32 @@ export const Dashboard = () => {
           <p className="text-slate-700 dark:text-slate-400 mt-1 text-xs md:text-sm">Live monitoring of test infrastructure</p>
         </div>
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          disabled={isViewer}
-          title={isViewer ? 'Viewers cannot run tests' : 'Run a new test'}
-          className={`flex items-center gap-2 px-3 py-1.5 text-sm md:px-4 md:py-2 md:text-base rounded-lg font-semibold transition-all duration-200 ${isViewer
-            ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border border-gray-200 dark:border-gray-700 cursor-not-allowed'
-            : 'bg-gh-accent dark:bg-gh-accent-dark text-white cursor-pointer hover:opacity-90 active:scale-95'
-            }`}
-        >
-          <Play size={16} className="md:w-[18px] md:h-[18px]" /> Run
-        </button>
+        <div className="flex flex-col items-end gap-2">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            disabled={!canRunTest}
+            title={isViewer ? 'Viewers cannot run tests' : (!hasTestImage ? 'Please configure your Docker test image in the Settings page before running tests.' : 'Run a new test')}
+            className={`flex items-center gap-2 px-3 py-1.5 text-sm md:px-4 md:py-2 md:text-base rounded-lg font-semibold transition-all duration-200 ${!canRunTest
+              ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 border border-gray-200 dark:border-gray-700 cursor-not-allowed'
+              : 'bg-gh-accent dark:bg-gh-accent-dark text-white cursor-pointer hover:opacity-90 active:scale-95'
+              }`}
+          >
+            <Play size={16} className="md:w-[18px] md:h-[18px]" /> Run
+          </button>
+
+          {!hasTestImage && !isViewer && (
+            <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 rounded-md border border-amber-200 dark:border-amber-500/20 text-xs md:text-sm w-full md:w-auto max-w-sm">
+              <AlertTriangle size={16} className="shrink-0" />
+              <span>
+                Please configure your Docker test image in the{' '}
+                <Link to="/settings?tab=run-settings" className="font-semibold underline hover:text-amber-700 dark:hover:text-amber-400">
+                  Settings
+                </Link>{' '}
+                before running tests.
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* KPI stats */}

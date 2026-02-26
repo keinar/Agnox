@@ -35,7 +35,7 @@ export type AutomationFramework = z.infer<typeof AutomationFrameworkSchema>;
 
 export const TestExecutionRequestSchema = z.object({
     taskId: z.string().min(1),
-    image: z.string().min(1).default('mcr.microsoft.com/playwright:v1.57.0-jammy'),
+    image: z.string().optional(),
     folder: z.string().optional().default('all'),
     command: z.string().min(1),
     tests: z.array(z.string().min(1)).optional(),

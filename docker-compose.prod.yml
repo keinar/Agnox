@@ -66,7 +66,6 @@ services:
       - WORKER_CALLBACK_TRANSITION=${WORKER_CALLBACK_TRANSITION:-false}
       # ── App configuration ──────────────────────────────────────────────────
       - REPORTS_DIR=/app/reports
-      - INJECT_ENV_VARS=${INJECT_ENV_VARS}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       # SendGrid Email Configuration (Phase 5)
       - SENDGRID_API_KEY=${SENDGRID_API_KEY}
@@ -90,7 +89,8 @@ services:
     build:
       context: .
       dockerfile: apps/worker-service/Dockerfile
-    container_name: automation-worker
+    # container_name intentionally omitted — Docker requires unique names per
+    # container, so setting one here would prevent `--scale worker=N` from working.
     restart: always
     environment:
       - RUNNING_IN_DOCKER=true
@@ -101,20 +101,12 @@ services:
       - PLATFORM_GEMINI_API_KEY=${PLATFORM_GEMINI_API_KEY}
       # Worker callback auth (SECURITY_PLAN §1.2)
       - PLATFORM_WORKER_CALLBACK_SECRET=${PLATFORM_WORKER_CALLBACK_SECRET}
-      # ── User-injectable variables (available for test container injection) ──
-      - INJECT_ENV_VARS=${INJECT_ENV_VARS}
-      - MONGO_URI=${MONGO_URI}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - ADMIN_USER=${ADMIN_USER}
-      - ADMIN_PASS=${ADMIN_PASS}
       # ── App configuration ──────────────────────────────────────────────────
-      - BASE_URL=${BASE_URL}
       - PRODUCER_URL=http://producer:3000
       - REPORTS_DIR=/app/reports
       - PUBLIC_API_URL=${PUBLIC_API_URL}
       - REDIS_URL=redis://redis:6379
       - CI=true
-      - GITHUB_COPILOT_API_KEY=${GITHUB_COPILOT_API_KEY}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - DASHBOARD_URL=${DASHBOARD_URL}
     volumes:

@@ -2,6 +2,47 @@ import { useEffect, useRef, useState } from 'react';
 import Ansi from 'ansi-to-react';
 import { Check, ChevronsDown, Copy, Download } from 'lucide-react';
 
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+// ── LogOutput component ────────────────────────────────────────────────────────
+
+interface ILogOutputProps {
+  output: string;
+}
+
+/**
+ * Renders terminal output, giving `[SYSTEM]` lines a distinct amber badge so
+ * users immediately understand the platform is working during a cold start.
+ * All other content is passed verbatim to <Ansi> for standard terminal rendering.
+ */
+function LogOutput({ output }: ILogOutputProps) {
+  // Split keeps captured groups (SYSTEM lines) in the result array.
+  const segments = output.split(/(\[SYSTEM\][^\n]*(?:\n|$))/);
+  return (
+    <>
+      {segments.map((segment, i) => {
+        if (segment.startsWith('[SYSTEM]')) {
+          const message = segment.replace(/^\[SYSTEM\]\s*/, '').trimEnd();
+          return (
+            <div
+              // Index key is safe: terminal output is strictly append-only,
+              // segments are never reordered or filtered after initial render.
+              key={`sys-${i}`}
+              className="flex items-start gap-2 my-2 px-3 py-2 rounded-md bg-amber-500/10 border border-amber-500/25"
+            >
+              <span className="shrink-0 mt-px text-[9px] font-bold uppercase tracking-widest text-amber-400 border border-amber-500/30 rounded px-1 leading-[14px]">
+                sys
+              </span>
+              <span className="text-amber-300/90 italic">{message || 'System message'}</span>
+            </div>
+          );
+        }
+        return segment ? <Ansi key={`log-${i}`}>{segment}</Ansi> : null;
+      })}
+    </>
+  );
+}
+
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 interface TerminalViewProps {
@@ -101,7 +142,7 @@ export function TerminalView({ output, error }: TerminalViewProps) {
       <div className="h-[calc(100vh-200px)] overflow-y-auto bg-gh-bg-dark px-6 py-5 font-mono text-[13px] leading-relaxed text-slate-300 whitespace-pre-wrap break-words">
 
         {output ? (
-          <span><Ansi>{output}</Ansi></span>
+          <LogOutput output={output} />
         ) : (
           <span className="text-slate-600 italic">Waiting for logs…</span>
         )}

@@ -22,23 +22,16 @@ The system now supports dynamic environment mapping and AI integration.
 
 ```env
 # Database & Queue (PaaS Infrastructure)
-MONGODB_URL=mongodb+srv://<user>:<pass>@cluster.mongodb.net/automation_platform
-RABBITMQ_URL=amqp://automation-rabbitmq
-REDIS_URL=redis://automation-redis:6379
+PLATFORM_MONGO_URI=mongodb+srv://<user>:<pass>@cluster.mongodb.net/automation_platform
+PLATFORM_RABBITMQ_URL=amqp://automation-rabbitmq
+PLATFORM_REDIS_URL=redis://automation-redis:6379
 
 # AI Configuration
-GEMINI_API_KEY=<REDACTED_GOOGLE_API_KEY>
+PLATFORM_GEMINI_API_KEY=<REDACTED_GOOGLE_API_KEY>
 
-# --- AGNOSTIC SECRET INJECTION ---
-# These variables belong to the CLIENT tests.
-# The platform does not interpret them - it only injects them.
-ADMIN_USER=admin@example.com
-ADMIN_PASS=<REDACTED_PASSWORD>
-MONGO_URI=mongodb+srv://... (Client DB)
-
-# WHITE LIST
-# Only variables declared here are injected into the test container
-INJECT_ENV_VARS=ADMIN_USER,ADMIN_PASS,GEMINI_API_KEY,MONGO_URI
+# Auth Secrets
+PLATFORM_JWT_SECRET=<REDACTED_JWT_SECRET>
+PLATFORM_WORKER_CALLBACK_SECRET=<REDACTED_WORKER_SECRET>
 ```
 
 ---
@@ -83,7 +76,7 @@ Once deployed:
 
 | Issue | Resolution |
 | --- | --- |
-| **Tests fail instantly** | Verify `INJECT_ENV_VARS` in `.env`. |
-| **No AI Analysis** | Check if `GEMINI_API_KEY` is set and valid. |
+| **Tests fail instantly** | Verify execution config in **Settings → Run Settings**. |
+| **No AI Analysis** | Check if `PLATFORM_GEMINI_API_KEY` is set and valid. |
 | **Container exits immediately** | Check `entrypoint.sh` permissions. |
 | **Status stuck on ANALYZING** | Check Worker logs for timeouts connecting to Google AI. |

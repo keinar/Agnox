@@ -33,9 +33,9 @@ export async function aiRoutes(
             return reply.status(400).send({ success: false, error: 'prompt is required' });
         }
 
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.PLATFORM_GEMINI_API_KEY;
         if (!apiKey) {
-            app.log.warn('[ai] GEMINI_API_KEY is not configured — AI generation is disabled');
+            app.log.warn('[ai] PLATFORM_GEMINI_API_KEY is not configured — AI generation is disabled');
             return reply.status(503).send({
                 success: false,
                 error: 'AI generation is not configured on this server',
@@ -151,9 +151,9 @@ ${body.prompt.trim()}`;
             return reply.status(400).send({ success: false, error: 'feature is required' });
         }
 
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.PLATFORM_GEMINI_API_KEY;
         if (!apiKey) {
-            app.log.warn('[ai] GEMINI_API_KEY is not configured — AI generation is disabled');
+            app.log.warn('[ai] PLATFORM_GEMINI_API_KEY is not configured — AI generation is disabled');
             return reply.status(503).send({
                 success: false,
                 error: 'AI generation is not configured on this server',

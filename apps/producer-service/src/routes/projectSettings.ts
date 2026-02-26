@@ -13,6 +13,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { MongoClient, ObjectId } from 'mongodb';
 import { getDbName } from '../config/server.js';
+import { rabbitMqService } from '../rabbitmq.js';
 
 const DB_NAME = getDbName();
 
@@ -138,6 +139,14 @@ export async function projectSettingsRoutes(
                 { $set: update },
                 { upsert: true }
             );
+
+            // Background pre-fetch: if a Docker image was saved, warm the worker cache.
+            // Fire-and-forget — never block the HTTP response on this.
+            if (update.dockerImage) {
+                rabbitMqService.sendPrefetchTask(update.dockerImage, organizationId).catch((err: Error) => {
+                    app.log.warn({ image: update.dockerImage, organizationId, error: err.message }, '[prefetch] Failed to enqueue PREFETCH_IMAGE task');
+                });
+            }
 
             // Read back the full document to return
             const saved = await settingsCollection.findOne({ organizationId, projectId });

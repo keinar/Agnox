@@ -16,13 +16,13 @@ Go to your GitHub Repo -> **Settings** -> **Secrets and variables** -> **Actions
 | `VPS_HOST` | **Infra** | The IP address of your Linux server. |
 | `VPS_SSH_KEY` | **Infra** | The Private Key (PEM) to access the server. |
 | `VPS_USER` | **Infra** | Usually `ubuntu` or `opc`. |
-| `MONGODB_URL` | **Infra** | Connection string for MongoDB Atlas. |
-| `JWT_SECRET` | **Infra** | 64-char hex secret for JWT authentication (`openssl rand -hex 32`). |
-| `GEMINI_API_KEY` | **Infra** | **Critical:** Required by the Worker Service for AI Root Cause Analysis. |
+| `PLATFORM_MONGO_URI` | **Infra** | Connection string for MongoDB Atlas. |
+| `PLATFORM_JWT_SECRET` | **Infra** | 64-char hex secret for JWT authentication (`openssl rand -hex 32`). |
+| `PLATFORM_GEMINI_API_KEY` | **Infra** | **Critical:** Required by the Worker Service for AI Root Cause Analysis. |
 | `STRIPE_SECRET_KEY` | **Infra** | Stripe API secret key for billing integration. |
 | `STRIPE_WEBHOOK_SECRET` | **Infra** | Stripe webhook endpoint secret for signature verification. |
 | `SENDGRID_API_KEY` | **Infra** | SendGrid API key for transactional email delivery. |
-| `DEFAULT_TEST_IMAGE` | *Config* | The default Docker image to show in the Dashboard. |
+
 
 ---
 
@@ -51,11 +51,12 @@ It uses a **HEREDOC** pattern to regenerate the `.env` file on the server during
             cat <<EOF > .env
             
             # --- INFRASTRUCTURE ---
-            MONGODB_URL=${{ secrets.MONGODB_URL }}
-            RABBITMQ_URL=amqp://automation-rabbitmq
-            REDIS_URL=redis://automation-redis:6379
-            JWT_SECRET=${{ secrets.PLATFORM_JWT_SECRET }}
-            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            PLATFORM_MONGO_URI=${{ secrets.PLATFORM_MONGO_URI }}
+            PLATFORM_RABBITMQ_URL=amqp://automation-rabbitmq
+            PLATFORM_REDIS_URL=redis://automation-redis:6379
+            PLATFORM_JWT_SECRET=${{ secrets.PLATFORM_JWT_SECRET }}
+            PLATFORM_GEMINI_API_KEY=${{ secrets.PLATFORM_GEMINI_API_KEY }}
+            PLATFORM_WORKER_CALLBACK_SECRET=${{ secrets.PLATFORM_WORKER_CALLBACK_SECRET }}
             
             # --- BILLING ---
             STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
@@ -64,14 +65,6 @@ It uses a **HEREDOC** pattern to regenerate the `.env` file on the server during
             # --- EMAIL ---
             SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}
             FROM_EMAIL=noreply@agnox.dev
-            
-            # --- DASHBOARD DEFAULTS ---
-            DEFAULT_TEST_IMAGE=${{ secrets.DEFAULT_TEST_IMAGE }}
-            DEFAULT_BASE_URL=https://photographer.keinar.com
-            
-            # --- THE GATEKEEPER: Whitelist ---
-            # Define which env vars from the dashboard are allowed into the test container
-            INJECT_ENV_VARS=BASE_URL
             EOF
             
             # 3. Pull latest infrastructure images
@@ -83,13 +76,11 @@ It uses a **HEREDOC** pattern to regenerate the `.env` file on the server during
 
 ---
 
-## 3. The "Gatekeeper" Pattern
+## 3. Worker Configuration
 
-Notice the `INJECT_ENV_VARS` variable above.
-The Worker Service uses this list to decide which environment variables to pass into the `docker run` command of the test container.
+The Worker Service uses the platform environment variables to connect to infrastructure and external services.
 
-- **`GEMINI_API_KEY`**: Used by the **Worker** (Node.js) to analyze failures. It does *not* necessarily need to be in the whitelist unless the test code itself uses AI.
-- **`ADMIN_USER`**: Used by the **Test Container** (Playwright). Must be in the whitelist.
+- **`PLATFORM_GEMINI_API_KEY`**: Used by the **Worker** (Node.js) to analyze failures.
 
 ---
 
@@ -97,7 +88,7 @@ The Worker Service uses this list to decide which environment variables to pass 
 
 | Issue | Resolution |
 | --- | --- |
-| **AI Analysis Fails** | Check if `GEMINI_API_KEY` is in GitHub Secrets and if the `.env` on the server contains it after deploy. |
+| **AI Analysis Fails** | Check if `PLATFORM_GEMINI_API_KEY` is in GitHub Secrets and if the `.env` on the server contains it after deploy. |
 | **Billing not working** | Verify `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are in GitHub Secrets and that the webhook URL is registered in Stripe dashboard. |
 | **Emails not sending** | Verify `SENDGRID_API_KEY` is valid. Check SendGrid Activity for delivery status. |
 | **"Permission denied"** | Ensure the SSH Key in GitHub Secrets matches the one on the VPS (`~/.ssh/authorized_keys`). |

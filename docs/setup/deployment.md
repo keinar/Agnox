@@ -106,16 +106,16 @@ JWT_EXPIRY=8h
 PASSWORD_SALT_ROUNDS=12
 
 # Database (MongoDB)
-MONGODB_URL=mongodb://admin:<password>@mongodb-prod:27017/automation_platform?authSource=admin
+PLATFORM_MONGO_URI=mongodb://admin:<password>@mongodb-prod:27017/automation_platform?authSource=admin
 
 # Message Queue (RabbitMQ)
-RABBITMQ_URL=amqp://admin:<password>@rabbitmq-prod:5672
+PLATFORM_RABBITMQ_URL=amqp://admin:<password>@rabbitmq-prod:5672
 
 # Cache (Redis)
-REDIS_URL=redis://:&lt;password&gt;@redis-prod:6379
+PLATFORM_REDIS_URL=redis://:&lt;password&gt;@redis-prod:6379
 
 # AI Analysis (Google Gemini)
-GEMINI_API_KEY=<REDACTED_GOOGLE_API_KEY>
+PLATFORM_GEMINI_API_KEY=<REDACTED_GOOGLE_API_KEY>
 
 # API Configuration
 PUBLIC_API_URL=https://api.yourdomain.com
@@ -134,9 +134,6 @@ REPORTS_DIR=/app/reports
 # Docker & Runtime
 NODE_ENV=production
 RUNNING_IN_DOCKER=true
-
-# Optional: Inject Environment Variables to Test Containers
-INJECT_ENV_VARS=API_USER,API_PASSWORD,SECRET_KEY
 
 # Logging (Optional)
 LOG_LEVEL=info

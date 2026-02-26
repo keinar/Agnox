@@ -133,7 +133,7 @@ Agnostic-Automation-Center/
 | 10 (**Complete**) | Reporting & Automation Infrastructure | Live HTML cycle reports (`CycleReportPage.tsx`) with native print optimization. `VersionDisplay.tsx` component reads `__APP_VERSION__` injected at build time from root `package.json`. Automated version pipeline eliminates manual version strings. Print CSS forces manual-step expansion and high-contrast badges for PDF output. |
 | 11 (**Complete**) | Security Hardening (Defense in Depth) | Redis-backed JWT revocation blacklist, `PLATFORM_*` prefix namespace for safe Docker orchestration, RabbitMQ Zod schema validation, HMAC-signed static report access, SSRF protections, and HS256 algorithm pinning. |
 | 12 (**Complete**) | Layered Defense Testing Strategy | Implemented a comprehensive 3-Layer testing architecture encompassing Unit Testing (Vitest), API Integration Testing (Vitest, Supertest, MongoMemoryServer), and E2E Testing (Playwright). Suite A (Security & RBAC) achieved 100% verification for cross-tenant data isolation and role boundaries. |
-| 13 (**Complete**) | Env Variables & Secrets Management | Per-project environment variable storage with AES-256-GCM encryption at rest for secrets. New `projectEnvVars` MongoDB collection (migration 007). Full CRUD API under `/api/projects/:projectId/env`. Secrets masked in API responses. Variables decrypted server-side and injected into Docker containers via RabbitMQ task payload (`config.envVars`). Worker log sanitization via `sanitizeLogLine()` prevents secret values from appearing in logs. New `EnvironmentVariablesTab` in Settings UI. |
+| 13 (**Complete**) | Env Variables & Secrets Management | Per-project environment variable storage with AES-256-GCM encryption at rest for secrets. New `projectEnvVars` MongoDB collection (migration 007). Full CRUD API under `/api/projects/:projectId/env`. Secrets masked in API responses. Variables decrypted server-side and injected into Docker containers via RabbitMQ task payload (`config.envVars`). Worker log sanitization via `sanitizeLogLine()` prevents secret values from appearing in logs. New `EnvironmentVariablesTab` in Settings UI. Includes background Docker image Pre-fetching mechanism for faster run starts. |
 
 ### Security Posture (Score: 100/100)
 
@@ -637,14 +637,7 @@ createApiKeyAuthMiddleware(db)
 | `FRONTEND_URL` | No | `http://localhost:8080` | Frontend URL for email links/redirects |
 | `ALLOWED_ORIGINS` | Prod | `localhost:8080,localhost:5173,localhost:3000` | CORS origins |
 | `DASHBOARD_URL` | No | `http://localhost:8080` | Dashboard URL |
-| `DEFAULT_TEST_IMAGE` | No | — | Default Docker image for tests |
-| `DEFAULT_BASE_URL` | No | — | Default test target URL |
-| `DEFAULT_TEST_FOLDER` | No | `all` | Default test folder |
-| `STAGING_URL` | No | — | Staging environment URL |
-| `PRODUCTION_URL` | No | — | Production environment URL |
-| `INJECT_ENV_VARS` | No | — | Comma-separated env var names to inject into test containers |
-| `ADMIN_USER` | No | `admin@test.com` | Bootstrap admin email (dev) |
-| `ADMIN_PASS` | No | `TestPass123!` | Bootstrap admin password (dev) |
+
 | `REPORTS_DIR` | No | `/app/reports` | Reports storage directory |
 | `PLATFORM_GEMINI_API_KEY` | No | `mock_gemini` | Gemini API (for strict checks) |
 

@@ -68,7 +68,6 @@ describe('Auth Security Routes - Hardening', () => {
         console.log(`[TEST] MongoMemoryServer created at ${mongoUri}`);
 
         // CRITICAL: Force the app to use the in-memory URI BEFORE importing server config
-        process.env.MONGO_URI = mongoUri;
         process.env.PLATFORM_MONGO_URI = mongoUri;
         process.env.MONGODB_URL = mongoUri;
 

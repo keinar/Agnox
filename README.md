@@ -111,7 +111,7 @@ Built with security best practices from the ground up.
 
 ### Smart Environment Mapping & Secrets Management
 
-Framework-agnostic environment configuration with first-class secret support.
+Framework-agnostic environment configuration with first-class secret support. Test images and environment variables are **managed per-organization in the Database**, not in a `.env` file.
 
 - **Per-Project Environments:** Define Dev, Staging, and Production URLs per project in **Settings → Run Settings** (stored in the database, not server ENV variables)
 - **Auto-Switching:** The Execution Modal automatically maps environment selection to the correct URL
@@ -567,17 +567,13 @@ Queues a new test execution. Accepts an optional `groupName` and `batchId` for g
 PORT=3000
 NODE_ENV=production
 
-# Database
-MONGO_URI=mongodb://localhost:27017/automation_platform
-
-# Redis (Rate Limiting, Sessions)
-REDIS_URL=redis://localhost:6379
-
-# JWT Authentication
-JWT_SECRET=your-super-secret-key-min-32-chars
-
-# AI Analysis (Google Gemini)
-GEMINI_API_KEY=<REDACTED_GOOGLE_API_KEY>
+# Infrastructure & Secrets
+PLATFORM_MONGO_URI=mongodb://localhost:27017/automation_platform
+PLATFORM_REDIS_URL=redis://localhost:6379
+PLATFORM_RABBITMQ_URL=amqp://localhost:5672
+PLATFORM_GEMINI_API_KEY=<REDACTED_GOOGLE_API_KEY>
+PLATFORM_JWT_SECRET=your-super-secret-key-min-32-chars
+PLATFORM_WORKER_CALLBACK_SECRET=worker-secret-key
 ```
 
 ### Optional: Billing & Email (Self-Hosting Only)

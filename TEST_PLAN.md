@@ -388,8 +388,8 @@ All API test assertions must verify:
 |---|---|
 | **Test ID** | B-009 |
 | **Title** | Platform infrastructure secrets are never injected into user test containers |
-| **Pre-conditions** | `INJECT_ENV_VARS=PLATFORM_JWT_SECRET,PLATFORM_MONGO_URI,APP_FEATURE_FLAG` set in worker env; `process.env.PLATFORM_JWT_SECRET = "super-secret"` |
-| **Steps** | Unit test: call `getMergedEnvVars({ envVars: {}, baseUrl: "http://localhost" }, "http://target")` |
+| **Pre-conditions** | Task message `envVars` contains `{ PLATFORM_JWT_SECRET: "hack", PLATFORM_MONGO_URI: "hack", APP_FEATURE_FLAG: "true" }` |
+| **Steps** | Unit test: call `getMergedEnvVars({ envVars: { PLATFORM_JWT_SECRET: "hack", PLATFORM_MONGO_URI: "hack", APP_FEATURE_FLAG: "true" }, baseUrl: "http://localhost" }, "http://target")` |
 | **Expected Result** | Returned env map does NOT contain `PLATFORM_JWT_SECRET` or `PLATFORM_MONGO_URI`; DOES contain `APP_FEATURE_FLAG` (not blocklisted); `CI: 'true'` and `BASE_URL` are always present |
 | **Layer** | Unit |
 

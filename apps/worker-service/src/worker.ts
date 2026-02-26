@@ -18,7 +18,7 @@ dotenv.config();
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 
 // SECURITY_PLAN §1.3 — Read platform-namespaced secrets; fall back to legacy names during transition
-const MONGO_URI = process.env.PLATFORM_MONGO_URI || process.env.MONGODB_URL || process.env.MONGO_URI || 'mongodb://localhost:27017';
+const MONGO_URI = process.env.PLATFORM_MONGO_URI || 'mongodb://localhost:27017';
 const RABBITMQ_URL = process.env.PLATFORM_RABBITMQ_URL || process.env.RABBITMQ_URL || 'amqp://localhost';
 const DB_NAME = 'automation_platform';
 const COLLECTION_NAME = 'executions';
@@ -33,8 +33,7 @@ export function resolveHostForDocker(url: string | undefined): string {
 }
 
 // SECURITY_PLAN §1.3 — Blocklist prevents platform infrastructure secrets from leaking
-// into user containers. Only PLATFORM_* names are blocked; legacy names like MONGO_URI
-// are now safe because the platform no longer reads them.
+// into user containers.
 const PLATFORM_SECRET_BLOCKLIST = new Set([
     'PLATFORM_MONGO_URI', 'PLATFORM_REDIS_URL', 'PLATFORM_RABBITMQ_URL',
     'PLATFORM_GEMINI_API_KEY', 'PLATFORM_JWT_SECRET',
@@ -63,6 +62,19 @@ export const TaskMessageSchema = z.object({
     framework: z.string().max(64).optional(),
 });
 type ITaskMessage = z.infer<typeof TaskMessageSchema>;
+
+// ── Background image pre-fetch schema ────────────────────────────────────────
+// Validated independently — no taskId, no execution record created.
+const PrefetchMessageSchema = z.object({
+    type: z.literal('PREFETCH_IMAGE'),
+    image: z.string().min(1).max(256),
+    organizationId: z.string().min(1).max(64),
+});
+
+// Maximum wall-clock time allowed for a single test task (pull + run).
+// Covers cold-start pulls of large images. Override via env if needed.
+const WORKER_TASK_TIMEOUT_MS =
+    parseInt(process.env.WORKER_TASK_TIMEOUT_MS ?? '', 10) || 30 * 60 * 1000; // 30 min default
 
 // ── SECURITY_PLAN §1.5 — Fatal log pattern detection ─────────────────────────
 const FATAL_LOG_PATTERNS = [
@@ -100,12 +112,7 @@ export function getMergedEnvVars(task: { envVars?: Record<string, string>; baseU
         BASE_URL: resolvedBaseUrl,
     };
 
-    // 2. INJECT_ENV_VARS from platform env — filtered through blocklist
-    const platformInjected = (process.env.INJECT_ENV_VARS ?? '')
-        .split(',').map(k => k.trim()).filter(k => k && !PLATFORM_SECRET_BLOCKLIST.has(k));
-    for (const key of platformInjected) {
-        if (process.env[key] !== undefined) merged[key] = process.env[key]!;
-    }
+    // 2. (Deprecated) INJECT_ENV_VARS from platform env has been removed.
 
     // 3. Per-execution user-supplied envVars (from task message, validated upstream)
     for (const [k, v] of Object.entries(task.envVars ?? {})) {
@@ -209,9 +216,45 @@ export async function startWorker() {
         if (!msg) return;
 
         // SECURITY_PLAN §1.4 — Validate message with Zod schema before processing
-        let task: ITaskMessage;
+        let raw: unknown;
         try {
-            const raw = JSON.parse(msg.content.toString());
+            raw = JSON.parse(msg.content.toString());
+        } catch (jsonError) {
+            logger.error({ error: String(jsonError) }, 'RabbitMQ message is not valid JSON. Rejecting.');
+            channel!.nack(msg, false, false);
+            return;
+        }
+
+        // ── PREFETCH_IMAGE fast-path ──────────────────────────────────────────
+        // Route before TaskMessageSchema so the prefetch message never fails
+        // schema validation. Ack immediately so the queue stays unblocked while
+        // the pull runs in the background.
+        if ((raw as any)?.type === 'PREFETCH_IMAGE') {
+            const prefetchResult = PrefetchMessageSchema.safeParse(raw);
+            if (!prefetchResult.success) {
+                logger.error(
+                    { errors: prefetchResult.error.format() },
+                    '[PREFETCH] Message failed schema validation. Rejecting (no requeue).'
+                );
+                channel!.nack(msg, false, false);
+                return;
+            }
+            // Ack before pulling so the worker can accept new jobs immediately.
+            channel!.ack(msg);
+            const { image: prefetchImage, organizationId: prefetchOrgId } = prefetchResult.data;
+            logger.info({ image: prefetchImage, organizationId: prefetchOrgId }, '[PREFETCH] Starting background image pull');
+            pullImage(prefetchImage)
+                .then(() => logger.info({ image: prefetchImage, organizationId: prefetchOrgId }, '[PREFETCH] Image pulled and cached successfully'))
+                .catch((err: Error) => logger.warn(
+                    { image: prefetchImage, organizationId: prefetchOrgId, error: err.message },
+                    '[PREFETCH] Pull failed — image may not exist or registry may be unreachable'
+                ));
+            return;
+        }
+
+        // ── Normal test execution path ────────────────────────────────────────
+        let task: ITaskMessage;
+        {
             const parseResult = TaskMessageSchema.safeParse(raw);
             if (!parseResult.success) {
                 logger.error(
@@ -222,10 +265,6 @@ export async function startWorker() {
                 return;
             }
             task = parseResult.data;
-        } catch (jsonError) {
-            logger.error({ error: String(jsonError) }, 'RabbitMQ message is not valid JSON. Rejecting.');
-            channel!.nack(msg, false, false);
-            return;
         }
 
         const { taskId, image: rawImage, command, config, organizationId, groupName, batchId, framework, cycleId, cycleItemId } = task;
@@ -319,6 +358,12 @@ export async function startWorker() {
         try {
             logger.info({ taskId, image }, 'Orchestrating container for task');
 
+            // Emit a system-level log before the pull so the user immediately sees
+            // activity in the terminal even during a cold start (no container yet).
+            const COLD_START_LOG = '[SYSTEM] Preparing test environment. Downloading image layers, this may take a few minutes for the first run...\r\n';
+            logsBuffer += COLD_START_LOG;
+            sendLogToProducer(taskId, COLD_START_LOG, organizationId).catch(() => { });
+
             try {
                 logger.info({ image }, 'Attempting to pull image');
                 await pullImage(image);
@@ -352,11 +397,10 @@ export async function startWorker() {
             // DEBUG: Trace URL resolution
             logger.info({
                 configBaseUrl: config.baseUrl,
-                envBaseUrl: process.env.BASE_URL,
                 resolvedDockerHost: resolveHostForDocker(config.baseUrl as string | undefined)
             }, '[URL] Resolving target URL');
 
-            const targetBaseUrl = resolveHostForDocker(config.baseUrl as string || process.env.BASE_URL || 'http://host.docker.internal:3000');
+            const targetBaseUrl = resolveHostForDocker(config.baseUrl as string || 'http://host.docker.internal:3000');
 
             // Multi-tenant: Include organizationId in container name for isolation
             const containerName = `org_${organizationId}_task_${taskId}`;
@@ -408,8 +452,17 @@ export async function startWorker() {
                 sendLogToProducer(taskId, safeLine, organizationId).catch(() => { });
             });
 
-            // 1. Wait for execution to finish
-            const result = await container.wait();
+            // 1. Wait for execution to finish — bounded by WORKER_TASK_TIMEOUT_MS so a
+            //    stuck container (e.g. infinite pull or hung test) never blocks the worker.
+            const result = await Promise.race<{ StatusCode: number }>([
+                container.wait(),
+                new Promise<never>((_, reject) =>
+                    setTimeout(
+                        () => reject(new Error(`Container timed out after ${WORKER_TASK_TIMEOUT_MS / 60_000} minutes. The image pull may still be in progress for the first run.`)),
+                        WORKER_TASK_TIMEOUT_MS,
+                    )
+                ),
+            ]);
             const logsString = logsBuffer;
             const finalStatus = determineExecutionStatus(result.StatusCode, logsString, taskId);
 
