@@ -91,6 +91,8 @@ services:
     volumes:
       - ./status-dashboard.html:/usr/share/nginx/html/index.html:ro
     restart: unless-stopped
+    networks:
+      - default
 
   worker:
     build:
