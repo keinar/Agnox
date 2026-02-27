@@ -1004,7 +1004,7 @@ Please read our [Contributing Guide](CONTRIBUTING.md) _(coming soon)_ for detail
 - Sprint 10: Live HTML cycle reports, automated version pipeline (`VersionDisplay`, Vite build injection)
 - Sprint 11: 3-layer testing architecture — Unit (Vitest), API Integration (Supertest + MongoMemoryServer), E2E (Playwright), Suite A RBAC coverage
 - Env Variables & Secrets Management: per-project env vars with AES-256-GCM encryption, secret masking, Docker injection, log sanitization
-- v3.5.0: Automated multi-platform Docker image sync via GitHub Actions Buildx, RabbitMQ priority queue for fair scheduling, Playwright fail-fast timeouts (0 retries / 15s global), `GET /api/system/health-check` monitoring endpoint powering status.agnox.dev
+- v3.5.0: Automated multi-platform Docker image sync via GitHub Actions Buildx, RabbitMQ priority queue for fair scheduling, Playwright fail-fast timeouts (0 retries / 15s global), `GET /api/system/monitor-status` monitoring endpoint powering status.agnox.dev
 
 ### Q2 2026
 - Advanced analytics dashboards and trend charts

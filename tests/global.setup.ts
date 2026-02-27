@@ -42,8 +42,12 @@ setup('authenticate via UI', async ({ page }) => {
     const token = await page.evaluate(() => localStorage.getItem('authToken'));
 
     if (token) {
-        // The producer service is running on port 3000 and registers routes exactly at /api/executions
-        const apiUrl = 'http://localhost:3000';
+        // Extract the base API URL dynamically to avoid Docker ECONNREFUSED inside the container
+        let apiUrl = process.env.PUBLIC_API_URL || 'https://api.agnox.dev';
+        // Normalize to prevent /api/api duplication if PUBLIC_API_URL includes it
+        if (apiUrl.endsWith('/api')) {
+            apiUrl = apiUrl.slice(0, -4);
+        }
 
         const apiContext = await request.newContext({
             extraHTTPHeaders: {

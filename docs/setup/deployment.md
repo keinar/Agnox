@@ -701,7 +701,7 @@ docker exec -it automation-redis redis-cli INFO memory
 
 ### 3. System Health Endpoint (v3.5.0)
 
-The `GET /api/system/health-check` endpoint provides a machine-readable health signal for external uptime monitors. It powers [status.agnox.dev](https://status.agnox.dev).
+The `GET /api/system/monitor-status` endpoint provides a machine-readable health signal for external uptime monitors. It powers [status.agnox.dev](https://status.agnox.dev).
 
 **Required environment variable:** Set `AGNOX_MONITOR_SECRET` in your `.env` to a secure random string (min 32 chars):
 ```bash
@@ -712,13 +712,13 @@ AGNOX_MONITOR_SECRET=$(openssl rand -hex 32)
 ```bash
 curl -s \
   -H "X-Agnox-Monitor-Secret: $AGNOX_MONITOR_SECRET" \
-  https://api.agnox.dev/api/system/health-check
+  https://api.agnox.dev/api/system/monitor-status
 # Expected:
 # { "success": true, "data": { "status": "healthy", "version": "3.5.0", "timestamp": "..." } }
 ```
 
 **Uptime monitor setup (e.g., UptimeRobot / BetterStack):**
-1. Create a new HTTP(S) monitor pointing to `https://api.agnox.dev/api/system/health-check`.
+1. Create a new HTTP(S) monitor pointing to `https://api.agnox.dev/api/system/monitor-status`.
 2. Add a custom HTTP header: `X-Agnox-Monitor-Secret: <your-secret>`.
 3. Set the expected keyword or status code to `"healthy"` / `200`.
 4. Connect to your status page at `status.agnox.dev`.

@@ -500,7 +500,7 @@ These settings ensure that a single stuck test cannot hold a worker container in
 
 ### Monitoring Endpoint
 
-`GET /api/system/health-check` provides a machine-readable signal for external uptime monitors (UptimeRobot, BetterStack, etc.) that powers [status.agnox.dev](https://status.agnox.dev).
+`GET /api/system/monitor-status` provides a machine-readable signal for external uptime monitors (UptimeRobot, BetterStack, etc.) that powers [status.agnox.dev](https://status.agnox.dev).
 
 **Authentication:** The endpoint requires a valid `X-Agnox-Monitor-Secret` header. This header value must match the `AGNOX_MONITOR_SECRET` environment variable configured on the server. Requests with a missing or incorrect value receive `401 Unauthorized`. This prevents public enumeration of internal service health details.
 
@@ -508,7 +508,7 @@ These settings ensure that a single stuck test cannot hold a worker container in
 # Example health probe
 curl -s \
   -H "X-Agnox-Monitor-Secret: <your-monitor-secret>" \
-  https://api.agnox.dev/api/system/health-check
+  https://api.agnox.dev/api/system/monitor-status
 ```
 
 **Example Response:**
