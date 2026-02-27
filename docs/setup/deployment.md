@@ -1,8 +1,8 @@
-# 🚀 Deployment Guide - Phase 1 Multi-Tenant System
+# 🚀 Deployment Guide
 
-**Version:** 1.0.0
-**Date:** January 29, 2026
-**Phase:** 1 (Multi-Tenant Foundation)
+**Version:** 3.5.0
+**Date:** February 27, 2026
+**Phase:** Multi-Tenant SaaS — Automated Docker Lifecycle & Reliability
 **Status:** ✅ **PRODUCTION READY**
 
 ---
@@ -270,6 +270,54 @@ db.organizations.getIndexes()
 # Exit
 exit
 ```
+
+---
+
+## 🐳 Automated Test Image Lifecycle (v3.5.0)
+
+### Overview
+
+Starting with v3.5.0, the platform automatically builds and publishes a multi-platform Docker image for the Agnox test suite on every push to `main`. This eliminates the manual step of rebuilding and re-pushing the test image after each change.
+
+### How It Works
+
+The `build-test-image` job in `.github/workflows/deploy.yml` runs **after** the `quality-check` job passes:
+
+1. **Docker Buildx setup:** Enables cross-platform builds via QEMU emulation.
+2. **Docker Hub login:** Authenticates using the `DOCKER_USERNAME` and `DOCKER_PASSWORD` GitHub secrets.
+3. **Multi-platform build & push:** Builds the `./tests/Dockerfile` for both `linux/amd64` (x86 servers) and `linux/arm64` (Oracle Cloud ARM instances), then pushes as `keinar101/agnox-tests:latest`.
+
+### User Workflow
+
+1. Make your test changes in the `tests/` directory.
+2. Commit and push to `main`:
+   ```bash
+   git add tests/
+   git commit -m "test: add login flow coverage"
+   git push origin main
+   ```
+3. The GitHub Actions pipeline runs quality checks, then automatically rebuilds and republishes `keinar101/agnox-tests:latest`.
+4. All subsequent test executions launched from the Agnox Dashboard will use the freshly built image — no manual action required.
+
+> **Dashboard configuration:** In **Settings → Run Settings**, ensure your project's **Docker Image** field is set to `keinar101/agnox-tests:latest`. This is the image tag the worker will pull before each test run.
+
+### Manual Build (Local Testing)
+
+To reproduce the CI build locally — useful for debugging image build failures:
+
+```bash
+# Ensure Docker Buildx builder is active
+docker buildx create --use --name multiarch-builder || docker buildx use multiarch-builder
+
+# Build and push
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t keinar101/agnox-tests:latest \
+  --push \
+  .
+```
+
+> Requires `docker login` with credentials that have push access to `keinar101/agnox-tests`.
 
 ---
 
@@ -650,6 +698,32 @@ docker exec -it automation-rabbitmq rabbitmqctl list_queues
 docker exec -it automation-redis redis-cli INFO memory
 # Expected: Memory usage statistics
 ```
+
+### 3. System Health Endpoint (v3.5.0)
+
+The `GET /api/system/health-check` endpoint provides a machine-readable health signal for external uptime monitors. It powers [status.agnox.dev](https://status.agnox.dev).
+
+**Required environment variable:** Set `AGNOX_MONITOR_SECRET` in your `.env` to a secure random string (min 32 chars):
+```bash
+AGNOX_MONITOR_SECRET=$(openssl rand -hex 32)
+```
+
+**Probe the endpoint:**
+```bash
+curl -s \
+  -H "X-Agnox-Monitor-Secret: $AGNOX_MONITOR_SECRET" \
+  https://api.agnox.dev/api/system/health-check
+# Expected:
+# { "success": true, "data": { "status": "healthy", "version": "3.5.0", "timestamp": "..." } }
+```
+
+**Uptime monitor setup (e.g., UptimeRobot / BetterStack):**
+1. Create a new HTTP(S) monitor pointing to `https://api.agnox.dev/api/system/health-check`.
+2. Add a custom HTTP header: `X-Agnox-Monitor-Secret: <your-secret>`.
+3. Set the expected keyword or status code to `"healthy"` / `200`.
+4. Connect to your status page at `status.agnox.dev`.
+
+> **Security:** Never expose `AGNOX_MONITOR_SECRET` publicly. Requests without a valid header receive `401 Unauthorized`. This ensures the health endpoint cannot be used for information gathering by unauthorized parties.
 
 ### 3. Error Monitoring (First 24 Hours)
 

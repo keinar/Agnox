@@ -574,6 +574,10 @@ PLATFORM_RABBITMQ_URL=amqp://localhost:5672
 PLATFORM_GEMINI_API_KEY=<REDACTED_GOOGLE_API_KEY>
 PLATFORM_JWT_SECRET=your-super-secret-key-min-32-chars
 PLATFORM_WORKER_CALLBACK_SECRET=worker-secret-key
+
+# Internal Monitoring (ops dashboard & status.agnox.dev)
+# Generate with: openssl rand -hex 32
+MONITORING_SECRET_KEY=your-random-256-bit-hex-secret
 ```
 
 ### Optional: Billing & Email (Self-Hosting Only)
@@ -761,6 +765,74 @@ See the [Deployment Guide](docs/setup/deployment.md) for full deployment instruc
 
 ---
 
+### v3.5.0 — Automated Docker Lifecycle & Multi-Tenant Reliability ✅
+
+**Status:** Production Ready
+
+#### Automated Test Image Sync
+
+Every push to the `tests/` directory (or to `main`) triggers a GitHub Actions job that builds and publishes a multi-platform Docker image to Docker Hub — no manual intervention required.
+
+- **Multi-Platform Build:** The `build-test-image` job uses Docker Buildx to produce a single manifest covering `linux/amd64` and `linux/arm64`, ensuring the image runs on both cloud VM types (Oracle Cloud ARM64 and standard x86 servers).
+- **Automatic Publishing:** The image is pushed to `keinar101/agnox-tests:latest` after every successful quality-check pipeline.
+- **User Workflow:** Make changes to your tests, run `git push`, and the platform handles the rest. In **Settings → Run Settings**, ensure your project's Docker Image field is set to `keinar101/agnox-tests:latest` so every subsequent execution picks up the freshly built image.
+- **Manual Build:** To reproduce the CI build locally for debugging:
+  ```bash
+  docker buildx build \
+    --platform linux/amd64,linux/arm64 \
+    -t keinar101/agnox-tests:latest \
+    --push .
+  ```
+  > Requires `docker buildx` and an active Docker Hub session (`docker login`).
+
+#### Fair Scheduling via RabbitMQ Priority Queue
+
+Prevents large organizations from starving smaller ones during peak load.
+
+- **Priority Queue:** `test_queue` is declared with `x-max-priority: 10`. Every message is assigned a priority from 1 (lowest) to 10 (highest) before being enqueued.
+- **Dynamic Priority Calculation:** `computeOrgPriority()` in `utils/scheduling.ts` counts an organization's currently RUNNING executions and computes `priority = max(1, 10 - runningCount * 2)`. An org already running 5 concurrent jobs receives priority 1; an idle org receives priority 10.
+- **Effect:** The RabbitMQ broker delivers higher-priority messages first, ensuring active large orgs do not block idle small orgs.
+
+#### Hardened Playwright Timeouts & Worker Scaling (Fail-Fast)
+
+Worker efficiency is improved by bounding test execution time and scaling horizontally.
+
+- Playwright is configured with `retries: 0` — no automatic retries on flaky failures; every failure surfaces immediately.
+- A **15-second global timeout** and a **5-second `actionTimeout`** apply to each test. Long-running or stuck tests are terminated quickly, freeing the worker container for the next job.
+- **Worker scaling:** `docker-compose.prod.yml` runs **10 worker replicas** via Docker Compose's `deploy.replicas: 10` with resource limits of `1.0 CPU` and `1 GB RAM` per replica. The worker service has no `container_name` so Docker can assign unique names per replica automatically.
+
+#### Internal Monitoring Suite
+
+Powers the ops dashboard at [status.agnox.dev](https://status.agnox.dev) with live infrastructure metrics.
+
+- **Route:** `GET /api/system/monitor-status`
+- **Auth:** Bypasses global JWT middleware. Requires the `X-Agnox-Monitor-Secret` header whose value must match the `MONITORING_SECRET_KEY` environment variable. Requests with a missing or invalid secret receive `401 Unauthorized`.
+- **Response:** Returns a live JSON snapshot of RabbitMQ queue depth, active worker consumer count, and a MongoDB connectivity status.
+
+```bash
+# Example probe
+curl -H "X-Agnox-Monitor-Secret: <your-secret>" \
+  https://api.agnox.dev/api/system/monitor-status
+```
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-02-27T12:00:00.000Z",
+  "data": {
+    "queueDepth": 3,
+    "activeWorkers": 10,
+    "dbConnected": true
+  }
+}
+```
+
+- **Status Dashboard:** `status-dashboard.html` is a standalone single-file ops page. Open it in any browser (no build step), configure the two constants at the top (`apiBase` and `monitorSecret`), and it will auto-refresh every 30 seconds. A "Fetch Now" button triggers an immediate poll. The dashboard shows a large green/red health banner, live counters for Pending Tasks and Active Workers, and a MongoDB connectivity indicator.
+
+> **Setup:** Add `MONITORING_SECRET_KEY=<random-256-bit-hex>` to your `.env` and to the producer service's environment block in `docker-compose.prod.yml`. Use the same value in the `CONFIG.monitorSecret` constant inside `status-dashboard.html` (or inject it via your CI/CD pipeline).
+
+---
+
 ## Technology Stack
 
 ### Frontend
@@ -912,6 +984,7 @@ Please read our [Contributing Guide](CONTRIBUTING.md) _(coming soon)_ for detail
 | **Sprint 10:** Reporting & Automation Infrastructure | ✅ Complete | 100% |
 | **Sprint 11:** Security & RBAC Testing (Suite A) | ✅ Complete | 100% |
 | **Env Variables & Secrets Management** | ✅ Complete | 100% |
+| **v3.5.0: Automated Docker Lifecycle & Reliability** | ✅ Complete | 100% |
 
 ---
 
@@ -931,6 +1004,7 @@ Please read our [Contributing Guide](CONTRIBUTING.md) _(coming soon)_ for detail
 - Sprint 10: Live HTML cycle reports, automated version pipeline (`VersionDisplay`, Vite build injection)
 - Sprint 11: 3-layer testing architecture — Unit (Vitest), API Integration (Supertest + MongoMemoryServer), E2E (Playwright), Suite A RBAC coverage
 - Env Variables & Secrets Management: per-project env vars with AES-256-GCM encryption, secret masking, Docker injection, log sanitization
+- v3.5.0: Automated multi-platform Docker image sync via GitHub Actions Buildx, RabbitMQ priority queue for fair scheduling, Playwright fail-fast timeouts (0 retries / 15s global), `GET /api/system/health-check` monitoring endpoint powering status.agnox.dev
 
 ### Q2 2026
 - Advanced analytics dashboards and trend charts

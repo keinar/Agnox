@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md — Agnox
 
-> Generated: 2026-02-26 | Current Phase: Env Variables & Secrets Management | Version: 3.4.0
+> Generated: 2026-02-27 | Current Phase: Automated Docker Lifecycle & Multi-Tenant Reliability | Version: 3.5.0
 > Source: Full monorepo scan of code, docs, configs, and shared types.
 
 ---
@@ -134,6 +134,7 @@ Agnostic-Automation-Center/
 | 11 (**Complete**) | Security Hardening (Defense in Depth) | Redis-backed JWT revocation blacklist, `PLATFORM_*` prefix namespace for safe Docker orchestration, RabbitMQ Zod schema validation, HMAC-signed static report access, SSRF protections, and HS256 algorithm pinning. |
 | 12 (**Complete**) | Layered Defense Testing Strategy | Implemented a comprehensive 3-Layer testing architecture encompassing Unit Testing (Vitest), API Integration Testing (Vitest, Supertest, MongoMemoryServer), and E2E Testing (Playwright). Suite A (Security & RBAC) achieved 100% verification for cross-tenant data isolation and role boundaries. |
 | 13 (**Complete**) | Env Variables & Secrets Management | Per-project environment variable storage with AES-256-GCM encryption at rest for secrets. New `projectEnvVars` MongoDB collection (migration 007). Full CRUD API under `/api/projects/:projectId/env`. Secrets masked in API responses. Variables decrypted server-side and injected into Docker containers via RabbitMQ task payload (`config.envVars`). Worker log sanitization via `sanitizeLogLine()` prevents secret values from appearing in logs. New `EnvironmentVariablesTab` in Settings UI. Includes background Docker image Pre-fetching mechanism for faster run starts. |
+| 14 (**Complete**) | Automated Docker Lifecycle & Multi-Tenant Reliability (v3.5.0) | **Automated Test Image Sync:** `build-test-image` GitHub Actions job builds and pushes `keinar101/agnox-tests:latest` as a multi-platform image (`linux/amd64`, `linux/arm64`) after every successful quality-check. **Fair Scheduling:** `test_queue` upgraded to a RabbitMQ priority queue (`x-max-priority: 10`). `computeOrgPriority()` in `utils/scheduling.ts` calculates dynamic per-org priority before every `sendToQueue()` call. **Hardened Timeouts:** Playwright configured with `retries: 0`, 15s global timeout, and 5s `actionTimeout` for fail-fast worker behavior. **Worker Scaling:** `docker-compose.prod.yml` deploys 10 worker replicas (`cpus: 1.0`, `memory: 1G` each, no fixed `container_name`). **Internal Monitoring Suite:** `GET /api/system/monitor-status` bypasses JWT and uses `X-Agnox-Monitor-Secret` header auth; returns live RabbitMQ queue depth, active worker count, and MongoDB ping. Standalone `status-dashboard.html` ops page with auto-refresh powers internal monitoring at `status.agnox.dev`. |
 
 ### Security Posture (Score: 100/100)
 
@@ -257,6 +258,14 @@ Agnostic-Automation-Center/
 | GET | `/health` | Public | Pings MongoDB, Redis, RabbitMQ. Returns healthy/degraded. |
 | GET | `/config/defaults` | Public | Default image, baseUrl, folder, env mapping |
 | GET | `/api/tests-structure` | Public | Available test folders from `/app/tests-source` |
+
+### Internal Monitoring (`/api/system/*`)
+
+> **Auth model:** bypasses global JWT middleware. Validated by a shared-secret header.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/system/monitor-status` | `X-Agnox-Monitor-Secret` header | Returns live infra health: `queueDepth` (pending RabbitMQ messages), `activeWorkers` (connected consumers), `dbConnected` (MongoDB ping). Requires header value matching `MONITORING_SECRET_KEY` env var. Companion `status-dashboard.html` auto-refreshes every 30 s and powers `status.agnox.dev`. Response shape: `{ status: 'ok', timestamp: ISO, data: { queueDepth, activeWorkers, dbConnected } }`. |
 
 **Total: 50+ endpoints**
 
@@ -835,7 +844,7 @@ Admin clicks "Upgrade" → POST /api/billing/checkout
 |---|----------|------|---------|
 | 1 | HIGH | Env Config | `env.example` uses `MONGODB_URI`, docker-compose uses `MONGO_URI`/`MONGODB_URL`. Inconsistent. |
 | 2 | MEDIUM | Worker | Unused deps: `uuid`, `zod` (not used for validation), `@github/copilot-sdk`. |
-| 3 | MEDIUM | Worker | No dead-letter queue for rejected RabbitMQ messages (permanent message loss). |
+| 3 | MEDIUM | Worker | No dead-letter queue for rejected RabbitMQ messages (permanent message loss). Priority queue (`x-max-priority:10`) implemented in v3.5.0 for fair scheduling, but DLQ remains missing. |
 | 4 | MEDIUM | Worker | No Gemini API timeout (could hang indefinitely in ANALYZING state). |
 | 5 | MEDIUM | Worker | Unbounded `logsBuffer` (no max size, memory risk on verbose tests). |
 | 6 | MEDIUM | Frontend | No centralized API client (axios calls duplicated across all hooks/components). |

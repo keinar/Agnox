@@ -186,9 +186,21 @@ graph TB
 ---
 
 ### RabbitMQ
-**Purpose:** Task queue for test execution distribution
+**Purpose:** Task queue for test execution distribution, with fair multi-tenant scheduling
 
-**Queue:** `test_queue`
+**Queue:** `test_queue` — declared with `{ durable: true, arguments: { 'x-max-priority': 10 } }`
+
+**Fair Scheduling (v3.5.0):**
+Every message is assigned a numeric priority (1–10) before being enqueued. The priority is computed by `computeOrgPriority()` in `apps/producer-service/src/utils/scheduling.ts`:
+
+```
+priority = max(1, 10 - runningCount × 2)
+```
+
+Where `runningCount` is the number of RUNNING executions for that organization. An idle organization receives priority 10 (highest); an organization already running 5 concurrent jobs receives priority 1 (lowest). The RabbitMQ broker delivers higher-priority messages first, preventing large organizations from starving smaller ones during peak load.
+
+> **Migration note:** If upgrading from a version without `x-max-priority`, the existing `test_queue` must be deleted from the RabbitMQ Management UI before the first deploy, as queue arguments cannot be changed on an existing queue.
+
 **Message Format:**
 ```json
 {
@@ -462,6 +474,60 @@ services:
 - [API Documentation](../api/README.md)
 - [Deployment Guide](../setup/deployment.md)
 - [Security Audit](../setup/security-audit.md)
+
+---
+
+## v3.5.0 Reliability & Operations Improvements
+
+### Fair Scheduling
+
+See the [RabbitMQ section](#rabbitmq) above for the priority queue implementation. The key design principle is that **queue priority is dynamically recalculated per-message** based on real-time RUNNING execution counts — there are no static quotas or reserved slots. This means:
+
+- Small organizations are always preferred over busy large organizations.
+- Organizations that have finished all their runs immediately return to priority 10 for the next submission.
+- The system is self-correcting: no operator intervention is needed to rebalance load.
+
+### Hardened Playwright Timeouts (Fail-Fast)
+
+The system test runner (`tests/`) enforces strict timeouts to protect worker capacity:
+
+| Setting | Value | Rationale |
+|---------|-------|-----------|
+| `retries` | `0` | No automatic retries. Every flaky or slow test fails immediately and surfaces in the report. |
+| Global test timeout | `15 000 ms` | A test that does not complete within 15 seconds is aborted, the container exits, and the worker is freed for the next job. |
+
+These settings ensure that a single stuck test cannot hold a worker container indefinitely, which is critical in a shared multi-tenant environment.
+
+### Monitoring Endpoint
+
+`GET /api/system/health-check` provides a machine-readable signal for external uptime monitors (UptimeRobot, BetterStack, etc.) that powers [status.agnox.dev](https://status.agnox.dev).
+
+**Authentication:** The endpoint requires a valid `X-Agnox-Monitor-Secret` header. This header value must match the `AGNOX_MONITOR_SECRET` environment variable configured on the server. Requests with a missing or incorrect value receive `401 Unauthorized`. This prevents public enumeration of internal service health details.
+
+```bash
+# Example health probe
+curl -s \
+  -H "X-Agnox-Monitor-Secret: <your-monitor-secret>" \
+  https://api.agnox.dev/api/system/health-check
+```
+
+**Example Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "status": "healthy",
+    "version": "3.5.0",
+    "timestamp": "2026-02-27T10:00:00.000Z"
+  }
+}
+```
+
+**Infrastructure note:** Add `AGNOX_MONITOR_SECRET` to your `.env` and to the GitHub Actions deployment secrets. The monitoring service (UptimeRobot / BetterStack) should be configured with the same secret value as a custom HTTP header in its check configuration.
+
+### Automated Test Image Lifecycle
+
+The CI/CD pipeline now automatically builds and publishes `keinar101/agnox-tests:latest` as a multi-platform Docker image (`linux/amd64` + `linux/arm64`) on every push to `main`. See [Deployment Guide — Automated Test Image Lifecycle](../setup/deployment.md#automated-test-image-lifecycle-v350) for full details.
 
 ---
 

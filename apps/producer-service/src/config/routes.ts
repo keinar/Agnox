@@ -23,6 +23,7 @@ import { testCycleRoutes } from '../routes/test-cycles.js';
 import { aiRoutes } from '../routes/ai.js';
 import { ciRoutes } from '../routes/ci.js';
 import { reportRoutes } from '../routes/reports.js';
+import { monitorStatusRoutes } from '../routes/monitor-status.js';
 import { sendExecutionNotification, FINAL_EXECUTION_STATUSES } from '../utils/notifier.js';
 import { generateReportToken, REPORT_TOKEN_TTL } from '../utils/reportToken.js';
 import { createTestRunLimitMiddleware } from '../middleware/planLimits.js';
@@ -90,6 +91,9 @@ export async function setupRoutes(
 
     // Report static serving routes (Custom JWT & Report Token Auth)
     await reportRoutes(app);
+
+    // Internal monitoring route (shared-secret auth — no JWT required)
+    await monitorStatusRoutes(app, dbClient);
 
     // Create plan enforcement middleware
     const db = dbClient.db(DB_NAME);

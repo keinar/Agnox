@@ -1,4 +1,4 @@
-import { test as setup, expect } from '@playwright/test';
+import { test as setup, expect, request } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 
@@ -33,6 +33,62 @@ setup('authenticate via UI', async ({ page }) => {
     // CRITICAL: Wait for the navigation to finish by waiting for the dashboard URL
     await page.waitForURL('**/dashboard**', { timeout: 15000 });
 
+    // Ensure we have some data for the tests to run by requesting executions from the API
+    console.log('[Playwright Setup] Checking for existing executions...');
+
+    // Playwright API context uses the browser cookies/auth state automatically if we pass it the page context
+    // However, the backend expects a Bearer token in the Authorization header.
+    // Let's grab the token from localStorage and use a new API context
+    const token = await page.evaluate(() => localStorage.getItem('authToken'));
+
+    if (token) {
+        // The producer service is running on port 3000 and registers routes exactly at /api/executions
+        const apiUrl = 'http://localhost:3000';
+
+        const apiContext = await request.newContext({
+            extraHTTPHeaders: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const executionsReq = await apiContext.get(`${apiUrl}/api/executions`);
+        if (executionsReq.ok()) {
+            const body = await executionsReq.json();
+            const total = body.data?.total || 0;
+
+            if (total < 3) {
+                console.log(`[Playwright Setup] Found ${total} executions. Seeding 3 dummy executions...`);
+                // Queue 3 dummy test runs using the API
+                for (let i = 1; i <= 3; i++) {
+                    const reqPayload = {
+                        taskId: `seed-task-${Date.now()}-${i}`,
+                        image: 'alpine:latest',
+                        command: `echo "Seeded Test Execution ${i}"`,
+                        folder: 'all',
+                        config: {
+                            environment: 'development',
+                        }
+                    };
+
+                    await apiContext.post(`${apiUrl}/api/execution-request`, {
+                        data: reqPayload,
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                }
+
+                // Wait slightly for tests to show up in the DB
+                await page.waitForTimeout(3000);
+                console.log('[Playwright Setup] Successfully queued 3 dummy test executions.');
+            } else {
+                console.log(`[Playwright Setup] Found ${total} executions. No seeding required.`);
+            }
+        } else {
+            console.log(`[Playwright Setup] Failed to fetch executions. Status: ${executionsReq.status()} ${executionsReq.statusText()}`);
+            console.log(`[Playwright Setup] Response Body: ${await executionsReq.text()}`);
+        }
+    } else {
+        console.log('[Playwright Setup] No auth_token found in localStorage, skipping API seeding.');
+    }
     // Save the authenticated state
     await page.context().storageState({ path: authFile });
     console.log('[Playwright Setup] Successfully authenticated test user via UI.');

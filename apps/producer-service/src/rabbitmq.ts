@@ -78,6 +78,21 @@ export class RabbitMqService {
             organizationId,
         }, 1);
     }
+
+    /**
+     * Return live queue metrics for the monitoring API.
+     * Uses amqplib's passive `checkQueue` which never creates or mutates the queue.
+     */
+    async getQueueStats(): Promise<{ messageCount: number; consumerCount: number }> {
+        if (!this.channel) {
+            throw new Error('RabbitMQ channel is not established. Call connect() first.');
+        }
+        const info = await this.channel.checkQueue(QUEUE_NAME);
+        return {
+            messageCount: info.messageCount,
+            consumerCount: info.consumerCount,
+        };
+    }
 }
 
 export const rabbitMqService = new RabbitMqService();

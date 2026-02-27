@@ -81,6 +81,7 @@ export function setupGlobalAuth(
 
         // Public route prefixes - no authentication required
         // Note: '/reports/' handles its own authentication via routes/reports.ts
+        // Note: '/api/system/monitor-status' uses its own shared-secret auth (X-Agnox-Monitor-Secret)
         const publicPrefixes = [
             '/api/auth/signup',
             '/api/auth/login',
@@ -88,7 +89,8 @@ export function setupGlobalAuth(
             '/api/auth/refresh',
             '/__webpack_hmr',
             '/health',
-            '/reports/'
+            '/reports/',
+            '/api/system/monitor-status',
         ];
 
         // Invitation validation endpoint (public)
