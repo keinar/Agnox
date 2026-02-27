@@ -88,6 +88,7 @@ services:
 
   status-page:
     image: nginx:alpine
+    container_name: agnox-status-page-1
     volumes:
       - ./status-dashboard.html:/usr/share/nginx/html/index.html:ro
     restart: unless-stopped
