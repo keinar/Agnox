@@ -92,7 +92,7 @@ services:
       - ./status-dashboard.html:/usr/share/nginx/html/index.html:ro
     restart: unless-stopped
     networks:
-      - default
+      - agnox_app-network
 
   worker:
     build:
