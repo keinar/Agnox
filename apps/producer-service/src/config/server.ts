@@ -69,6 +69,10 @@ export function createServer(): FastifyInstance {
         ? rawAllowedOrigins.split(',').map(origin => origin.trim())
         : defaultDevOrigins;
 
+    // Explicitly allow core platform and status dashboard domains
+    if (!ALLOWED_ORIGINS.includes('https://agnox.dev')) ALLOWED_ORIGINS.push('https://agnox.dev');
+    if (!ALLOWED_ORIGINS.includes('https://status.agnox.dev')) ALLOWED_ORIGINS.push('https://status.agnox.dev');
+
     app.register(cors, {
         origin: (origin, callback) => {
             // Allow requests with no origin (e.g., mobile apps, Postman, server-to-server)
