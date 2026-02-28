@@ -10,11 +10,8 @@ export class ExecutionDrawerPage {
         this.drawer = page.locator('role=dialog');
     }
 
-    async navigateToDrawer(baseURL?: string, executionId: string = TEST_EXECUTION_ID) {
-        const urlToVisit = baseURL
-            ? `${baseURL}/dashboard?drawerId=${executionId}`
-            : `http://localhost:8080/dashboard?drawerId=${executionId}`;
-        await this.page.goto(urlToVisit);
+    async navigateToDrawer(executionId: string = TEST_EXECUTION_ID) {
+        await this.page.goto(`/dashboard?drawerId=${executionId}`);
         await this.page.waitForSelector('text=Terminal');
     }
     async mockAuthAsViewer() {

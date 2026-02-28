@@ -21,8 +21,8 @@ export class SettingsIntegrationsPage {
         this.saveJiraBtn = page.getByRole('button', { name: 'Save Configuration', exact: true });
     }
 
-    async navigateToSettings(baseURL?: string) {
-        await this.page.goto(`${baseURL || 'http://localhost:8080'}/settings`);
+    async navigateToSettings() {
+        await this.page.goto('/settings');
         await expect(this.integrationsTabBtn).toBeVisible();
         await this.integrationsTabBtn.click();
     }

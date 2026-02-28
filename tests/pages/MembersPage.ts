@@ -10,8 +10,8 @@ export class MembersPage {
         this.membersTabBtn = page.getByRole('button', { name: 'Team Members', exact: true });
     }
 
-    async navigateToMembers(baseURL?: string) {
-        await this.page.goto(`${baseURL || 'http://localhost:8080'}/settings`);
+    async navigateToMembers() {
+        await this.page.goto('/settings');
         await expect(this.membersTabBtn).toBeVisible();
         await this.membersTabBtn.click();
     }
