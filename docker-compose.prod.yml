@@ -93,7 +93,7 @@ services:
       - ./status-dashboard.html:/usr/share/nginx/html/index.html:ro
     restart: unless-stopped
     networks:
-      - agnox_app-network
+      - app-network
 
   worker:
     build:
