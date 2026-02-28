@@ -165,7 +165,7 @@ curl -H "x-api-key: pk_live_..." ...
 ### AI Root Cause Analysis (Investigation Hub)
 If a test fails:
 1. Click on any execution row in the dashboard to open the **Investigation Hub** (side drawer).
-2. Select the **AI Analysis** tab (third tab) to view the Gemini-generated diagnosis and suggested fix. Note: The AI Analysis tab is hidden if the execution status is `ERROR`, as AI cannot effectively analyze platform or container launch errors.
+2. Select the **AI Analysis** tab (third tab) to view the diagnosis and suggested fix. The analysis is produced by a two-step pipeline: an **Analyzer** model generates an initial structured diagnosis, then a **Critic** model validates it against the raw logs and eliminates hallucinations before presenting the final output. Note: The AI Analysis tab is hidden if the execution status is `ERROR`, as AI cannot effectively analyze platform or container launch errors.
 3. AI analysis can be disabled per-organization in **Settings** → **Organization**.
 
 ### Investigation Hub

@@ -138,7 +138,7 @@ graph TB
 
 **Key Files:**
 - `worker.ts` - Main consumer and orchestrator
-- `analysisService.ts` - Google Gemini AI integration
+- `analysisService.ts` - Google Gemini dual-agent AI pipeline (Analyzer → Critic)
 
 ---
 
@@ -502,7 +502,7 @@ These settings ensure that a single stuck test cannot hold a worker container in
 
 `GET /api/system/monitor-status` provides a machine-readable signal for external uptime monitors (UptimeRobot, BetterStack, etc.) that powers [status.agnox.dev](https://status.agnox.dev).
 
-**Authentication:** The endpoint requires a valid `X-Agnox-Monitor-Secret` header. This header value must match the `AGNOX_MONITOR_SECRET` environment variable configured on the server. Requests with a missing or incorrect value receive `401 Unauthorized`. This prevents public enumeration of internal service health details.
+**Authentication:** The endpoint requires a valid `X-Agnox-Monitor-Secret` header. This header value must match the `MONITORING_SECRET_KEY` environment variable configured on the server. Requests with a missing or incorrect value receive `401 Unauthorized`. This prevents public enumeration of internal service health details.
 
 ```bash
 # Example health probe
@@ -523,7 +523,7 @@ curl -s \
 }
 ```
 
-**Infrastructure note:** Add `AGNOX_MONITOR_SECRET` to your `.env` and to the GitHub Actions deployment secrets. The monitoring service (UptimeRobot / BetterStack) should be configured with the same secret value as a custom HTTP header in its check configuration.
+**Infrastructure note:** Add `MONITORING_SECRET_KEY` to your `.env` and to the GitHub Actions deployment secrets. The monitoring service (UptimeRobot / BetterStack) should be configured with the same secret value as a custom HTTP header in its check configuration.
 
 ### Automated Test Image Lifecycle
 

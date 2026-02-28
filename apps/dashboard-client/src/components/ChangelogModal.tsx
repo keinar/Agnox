@@ -12,6 +12,15 @@ interface IChangelogEntry {
 
 const CHANGELOG: IChangelogEntry[] = [
   {
+    version: 'v3.6.0',
+    title: 'Dual-Agent AI Analysis Pipeline',
+    items: [
+      'AI root cause analysis now uses a two-step Analyzer + Critic pipeline — the Critic validates the initial diagnosis against raw logs and eliminates hallucinations before output.',
+      'Log context passed to Gemini expanded to 60 000 characters, capturing full suite output and earlier setup failures.',
+      'Analysis accuracy improvements: Analyzer uses structured JSON schema; Critic runs at temperature 0.0 for factual grounding.',
+    ],
+  },
+  {
     version: 'v3.5.0',
     title: 'DocSync & Multi-Tenant Architecture Alignment',
     items: [

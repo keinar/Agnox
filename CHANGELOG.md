@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.6.0] — 2026-02-28
+
+### Added
+- **Dual-Agent AI Analysis Pipeline** — `analysisService.ts` now runs two sequential Gemini 2.5 Flash calls: an **Analyzer** (temperature 0.4) generates a structured JSON `{ rootCause, suggestedFix }` using a constrained `responseSchema`; a **Critic** (temperature 0.0) validates the output against the raw logs and overrides hallucinations before producing the final developer-facing Markdown. Improves analysis accuracy and eliminates non-grounded suggestions.
+- **Extended Log Context** — Log slice passed to Gemini increased from 30 000 to 60 000 characters, capturing full suite output and earlier setup failures.
+
+### Changed
+- `PROJECT_CONTEXT.md` — Updated `analysisService.ts` description to reflect dual-agent pipeline; added Phase 15 to the feature registry.
+- `docs/architecture/overview.md` — Updated Worker Service key files section to reflect dual-agent pipeline; fixed incorrect `AGNOX_MONITOR_SECRET` references to the correct `MONITORING_SECRET_KEY` env var name.
+- `docs/features/user-guide.md` — AI Analysis section updated to explain the Analyzer + Critic validation step.
+- `README.md` — AI-Powered Root Cause Analysis section updated to document the dual-agent architecture.
+- `PLAN.md` — Marked Sprint 7 tasks (7.1–7.5) as complete; marked Task 9.5 and Tasks 10.1–10.2 as complete with implementation notes reflecting the live HTML report substitution for the originally planned PDF backend.
+
+### Purged (Ghosts)
+- `PLAN.md`: Sprint 7 tasks (7.1–7.5) were all marked `[ ]` despite Phase 7 being fully implemented and shipped — corrected to `[x]`.
+- `PLAN.md`: Task 9.5 (Dual Progress Bar) and Tasks 10.1/10.2 (PDF backend/UI) were `[ ]` despite the cycle report being live as `CycleReportPage.tsx` with browser-print-to-PDF — corrected to `[x]` with implementation notes.
+- `docs/architecture/overview.md`: `AGNOX_MONITOR_SECRET` env var name replaced with the actual variable `MONITORING_SECRET_KEY` (two occurrences).
+
 ## [3.5.0] — 2026-02-26 — DocSync & Multi-Tenant Architecture Alignment
 
 ### Changed

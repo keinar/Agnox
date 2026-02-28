@@ -24,7 +24,7 @@ Agnostic-Automation-Center/
 │   ├── worker-service/            # Docker container orchestrator
 │   │   ├── src/
 │   │   │   ├── worker.ts          # RabbitMQ consumer, Docker orchestration
-│   │   │   ├── analysisService.ts # Google Gemini AI integration (55 lines)
+│   │   │   ├── analysisService.ts # Google Gemini dual-agent AI pipeline (Analyzer + Critic)
 │   │   │   └── utils/logger.ts    # Pino structured logger (14 lines)
 │   │   ├── Dockerfile             # node:20-slim + Java + Allure CLI
 │   │   ├── package.json
@@ -135,6 +135,7 @@ Agnostic-Automation-Center/
 | 12 (**Complete**) | Layered Defense Testing Strategy | Implemented a comprehensive 3-Layer testing architecture encompassing Unit Testing (Vitest), API Integration Testing (Vitest, Supertest, MongoMemoryServer), and E2E Testing (Playwright). Suite A (Security & RBAC) achieved 100% verification for cross-tenant data isolation and role boundaries. |
 | 13 (**Complete**) | Env Variables & Secrets Management | Per-project environment variable storage with AES-256-GCM encryption at rest for secrets. New `projectEnvVars` MongoDB collection (migration 007). Full CRUD API under `/api/projects/:projectId/env`. Secrets masked in API responses. Variables decrypted server-side and injected into Docker containers via RabbitMQ task payload (`config.envVars`). Worker log sanitization via `sanitizeLogLine()` prevents secret values from appearing in logs. New `EnvironmentVariablesTab` in Settings UI. Includes background Docker image Pre-fetching mechanism for faster run starts. |
 | 14 (**Complete**) | Automated Docker Lifecycle & Multi-Tenant Reliability (v3.5.0) | **Automated Test Image Sync:** `build-test-image` GitHub Actions job builds and pushes `keinar101/agnox-tests:latest` as a multi-platform image (`linux/amd64`, `linux/arm64`) after every successful quality-check. **Fair Scheduling:** `test_queue` upgraded to a RabbitMQ priority queue (`x-max-priority: 10`). `computeOrgPriority()` in `utils/scheduling.ts` calculates dynamic per-org priority before every `sendToQueue()` call. **Hardened Timeouts:** Playwright configured with `retries: 0`, 15s global timeout, and 5s `actionTimeout` for fail-fast worker behavior. **Worker Scaling:** `docker-compose.prod.yml` deploys 10 worker replicas (`cpus: 1.0`, `memory: 1G` each, no fixed `container_name`). **Internal Monitoring Suite:** `GET /api/system/monitor-status` bypasses JWT and uses `X-Agnox-Monitor-Secret` header auth; returns live RabbitMQ queue depth, active worker count, and MongoDB ping. Standalone `status-dashboard.html` ops page with auto-refresh powers internal monitoring at `status.agnox.dev`. |
+| 15 (**Complete**) | Dual-Agent AI Analysis Pipeline (v3.6.0) | **Analyzer + Critic architecture:** `analysisService.ts` now runs two sequential Gemini 2.5 Flash calls. Step 1 (Analyzer) generates an initial `{ rootCause, suggestedFix }` JSON object using a structured `responseSchema`. Step 2 (Critic) receives the raw logs and the initial analysis, evaluates it for hallucinations, and outputs the final developer-facing Markdown. Expands log slice from 30 000 to 60 000 chars to capture full suite context. Temperature 0.4 (Analyzer) / 0.0 (Critic) for factuality. |
 
 ### Security Posture (Score: 100/100)
 

@@ -39,9 +39,9 @@ Agnox is a unified platform designed to seamlessly integrate with your CI/CD pip
 No more digging through thousands of log lines.
 
 - **Automatic Detection:** When tests fail, the system captures logs automatically
-- **Gemini 2.5 Flash:** Analyzes failure context, identifies exact errors, suggests fixes
+- **Dual-Agent Pipeline:** Two sequential Gemini 2.5 Flash calls — an **Analyzer** generates a structured root cause + fix as JSON, then a **Critic** evaluates it against the raw logs and overrides hallucinations before producing the final developer-facing Markdown
 - **Privacy Controls:** Organization-level toggle to opt-out of AI processing
-- **Instant Reports:** View styled analysis directly in the dashboard
+- **Instant Reports:** View styled analysis directly in the dashboard via the Investigation Hub AI Analysis tab
 
 ### Multi-Tenant SaaS Architecture
 

@@ -42,15 +42,13 @@ Deliver exportable PDF test reports for cycles and executions, and harden the au
 
 ## 📋 Task Breakdown
 
-### [ ] Task 10.1: PDF Cycle Report Generation (Backend)
+### [x] Task 10.1: PDF Cycle Report Generation (Backend) ✅ — Substituted
 **Goal:** Generate a downloadable PDF summary for a completed test cycle.
-- **Action:** Add `GET /api/test-cycles/:cycleId/report/pdf` endpoint in the Producer service using a PDF library (e.g., `pdfkit`).
-- **Action:** PDF must include: cycle name, date range, overall pass/fail/skip counts, automation rate, and per-item status table.
+- **Implemented as:** Live HTML report page (`CycleReportPage.tsx`) with browser-native print-to-PDF. No backend PDF library required — the frontend route handles generation via `window.print()` with `@media print` CSS. Cycle data is fetched from the existing `GET /api/test-cycles/:cycleId` endpoint.
 
-### [ ] Task 10.2: PDF Download UI (Frontend)
+### [x] Task 10.2: PDF Download UI (Frontend) ✅ — Substituted
 **Goal:** Surface the PDF export as a one-click button inside the Test Cycles page.
-- **Action:** Add a "Download PDF" button (`FileDown` Lucide icon) in the cycle row actions.
-- **Action:** Trigger a `blob` download via Axios with `responseType: 'blob'` and `URL.createObjectURL`.
+- **Implemented as:** "View Report" button in the cycle row opens `CycleReportPage.tsx`. A "Print Report" button within that page triggers the browser print dialog, enabling save-as-PDF from any browser without a blob download flow.
 
 ### [x] Task 10.3: Automated Version Infrastructure ✅
 **Goal:** Eliminate the hardcoded `APP_VERSION` constant so the UI always reflects the root `package.json` version without manual intervention.
@@ -96,10 +94,10 @@ Transform the agnox from a pure execution engine into a comprehensive Test Manag
 - **Action:** Worker forwards `cycleId`/`cycleItemId` in execution callbacks; Producer syncs cycle item status on terminal results.
 - **Action:** Added `PUT /api/test-cycles/:cycleId/items/:itemId` endpoint for manual results. Cycles auto-complete when all items reach terminal state.
 
-### [ ] Task 9.5: Consolidated Cycle Report & UX Polish
+### [x] Task 9.5: Consolidated Cycle Report & UX Polish ✅
 **Goal:** Deliver the executive summary view.
-- **Action:** Build the Cycle Summary view displaying total success rate, automation vs. manual ratio, and duration.
-- **Action:** Implement the Dual Progress Bar (one automating moving via RabbitMQ events, one moving via manual QA input) for a true "Command Center" feel.
+- **Action:** Built `CycleReportPage.tsx` — a dedicated live HTML report page with stat cards (total, passed, failed, automation rate), expandable item list with status badges, and full browser-print optimization (`@media print` forces manual steps visible, high-contrast badges for PDF export).
+- **Note:** Implemented as a live, browser-printable HTML page rather than the originally planned "Dual Progress Bar" UI. Print-to-PDF workflow replaces the backend PDF generation requirement from the sprint brief.
 
 ## Archive / Completed Sprints
 
@@ -149,20 +147,20 @@ Transform the debugging and triage experience by consolidating logs, AI analysis
 
 ## 🛠️ PHASE 7A: Drawer, Terminal & AI
 
-### [ ] Task 7.1: Overlay Drawer Architecture & URL State
+### [x] Task 7.1: Overlay Drawer Architecture & URL State ✅
 **Goal:** Build the slide-over shell with deep-linking support.
 - **Action:** Create `ExecutionDrawer.tsx` utilizing `@headlessui/react` `Dialog`. This IS intended to be a modal overlay (with a backdrop) that slides in from the right, taking ~60% width on desktop.
 - **Action:** State Management MUST use URL search parameters (e.g., `?drawerId=<taskId>`) via React Router's `useSearchParams`. This enables sharing direct links to specific execution failures.
 - **Action:** Implement a 3-tab header: "Terminal", "Artifacts", and "AI Analysis".
 - **Notes for Claude:** The semantic tokens `gh-bg-dark`, `gh-border-dark`, etc., ARE already configured in `tailwind.config.js`. Use them confidently.
 
-### [ ] Task 7.2: The Live Terminal Tab
+### [x] Task 7.2: The Live Terminal Tab ✅
 **Goal:** Port existing real-time logging into the Drawer.
 - **Action:** Move the existing `TerminalView` into the first tab of the Drawer.
 - **Action:** Ensure Socket.io events (`execution-log`, `execution-updated`) correctly target the active `drawerId`.
 - **Action:** Add utility controls: "Auto-scroll to bottom" toggle, and "Download Logs" button (.txt export).
 
-### [ ] Task 7.3: AI Analysis Integration & UI Cleanup
+### [x] Task 7.3: AI Analysis Integration & UI Cleanup ✅
 **Goal:** Move the AI diagnosis out of the blocking modal and clean up the list.
 - **Action:** Refactor `AIAnalysisView.tsx` to render as the third tab inside the Drawer.
 - **Action:** Remove the old inline Accordion logs from `ExecutionRow.tsx`. The main Execution List must be perfectly flat. Clicking a row sets the `drawerId` URL param.
@@ -171,12 +169,12 @@ Transform the debugging and triage experience by consolidating logs, AI analysis
 
 ## 📦 PHASE 7B: Artifacts Pipeline (Media Gallery)
 
-### [ ] Task 7.4-PRE: Artifact Storage Audit
+### [x] Task 7.4-PRE: Artifact Storage Audit ✅
 **Goal:** Confirm backend readiness for serving images/videos.
 - **Action:** Analyze `apps/worker-service/src/worker.ts` and `docker-compose.yml` to understand exactly how test-results (png, webm, zip) are extracted and shared with `producer-service`.
 - **Checkpoint:** Do not proceed to 7.5 until the storage and transfer mechanism for media files is confirmed and documented.
 
-### [ ] Task 7.5: Artifacts API & Gallery UI
+### [x] Task 7.5: Artifacts API & Gallery UI ✅
 **Goal:** Serve and display test media.
 - **Action (Backend):** Create `GET /api/executions/:taskId/artifacts` in Producer to list available media files.
 - **Action (Frontend):** Build `ArtifactsView.tsx` in the second tab. Fetch the list via TanStack Query and display a CSS Grid gallery for images/videos, and download links for traces/zips.
