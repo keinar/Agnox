@@ -75,6 +75,25 @@ export class ExecutionDrawerPage {
         });
     }
 
+    async mockSingleExecution(executionMock: any) {
+        await this.page.route('**/api/executions/*', async (route) => {
+            if (route.request().url().includes('/artifacts')) {
+                return route.fallback();
+            }
+            // Prevent intercepting the list API by falling back if there is no specific ID in the path
+            // e.g. /api/executions?limit=25
+            if (route.request().url().match(/api\/executions\?./)) {
+                return route.fallback();
+            }
+            await route.fulfill({
+                json: {
+                    success: true,
+                    data: executionMock
+                }
+            });
+        });
+    }
+
     async mockArtifacts(executionId: string, artifacts: any[]) {
         await this.page.route(`**/api/executions/${executionId}/artifacts`, async (route) => {
             await route.fulfill({
