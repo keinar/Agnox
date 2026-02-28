@@ -69,12 +69,15 @@ export class SettingsIntegrationsPage {
     }
 
     async mockAuthAsAdmin() {
-        await this.page.route('**/api/auth/me', async (route) => {
+        await this.page.route('**/api/auth/me*', async (route) => {
             const resp = await route.fetch();
             const json = await resp.json();
-            if (json.user) {
-                json.user.role = 'admin';
-            }
+
+            // The robust injection mapping:
+            if (json?.data?.user) json.data.user.role = 'admin';
+            else if (json?.data) json.data.role = 'admin';
+            else if (json?.user) json.user.role = 'admin';
+
             await route.fulfill({ json });
         });
     }
