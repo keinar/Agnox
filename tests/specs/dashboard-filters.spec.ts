@@ -65,22 +65,38 @@ test.describe('Suite D — Dashboard Filters', () => {
 
         // 2. Action: Navigate to /dashboard
         const urlToVisit = baseURL ? `${baseURL}/dashboard` : 'http://localhost:8080/dashboard';
+
+        // Wait for the network request resolving the table data
+        const initialResponsePromise = page.waitForResponse(response =>
+            response.url().includes('/api/executions') && response.status() === 200
+        );
+
         await page.goto(urlToVisit);
+        await initialResponsePromise;
 
         // Ensure the table initially loaded all 3 mock items
-        // Wait for the table body to render exactly 3 rows
-        await expect(page.locator('tbody tr')).toHaveCount(3);
+        // Wait for the specific texts to be visible in the DOM first, allowing React time to render
         await expect(page.locator(`text=${ID_PASSED}`)).toBeVisible();
         await expect(page.locator(`text=${ID_FAILED}`)).toBeVisible();
         await expect(page.locator(`text=${ID_ERROR}`)).toBeVisible();
+
+        // Once visible, confirming the strict count is safe
+        await expect(page.locator('tbody tr')).toHaveCount(3);
 
         // 2. Action: Click the "Failed" filter button
         // Playwright strictly selects the button using the exact recognizable text.
         const failedButton = page.getByRole('button', { name: 'Failed', exact: true });
         await expect(failedButton).toBeVisible();
+
+        const filterResponsePromise = page.waitForResponse(response =>
+            response.url().includes('/api/executions') && response.url().includes('status=FAILED') && response.status() === 200
+        );
         await failedButton.click();
+        await filterResponsePromise;
 
         // 4. Assertion: Verify the table now shows exactly 1 row
+        // Wait for the specific mock ID string to ensure data matched
+        await expect(page.locator(`text=${ID_FAILED}`)).toBeVisible();
         await expect(page.locator('tbody tr')).toHaveCount(1);
 
         // Assertion: Verify the PASSED and ERROR rows disappeared

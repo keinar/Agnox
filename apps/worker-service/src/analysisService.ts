@@ -83,18 +83,27 @@ ${truncatedLogs}
             generationConfig: {
                 temperature: 0.0, // Strict, no hallucinations
             },
-            systemInstruction: "You are a strict Principal Software Engineer reviewing a junior's analysis. You will receive raw system logs AND a proposed root cause + fix. Check if the proposed fix is actually grounded in the logs. If it's hallucinating (e.g., suggesting a database fix when it's clearly a frontend hardcoded URL issue), override it with the correct analysis. Format the final output in clean, readable Markdown."
+            systemInstruction: "You are an expert QA technical evaluator. You will receive raw logs and a proposed root cause + fix. Evaluate if the proposed fix is grounded in the logs. If it's hallucinating, override it with the correct analysis. DO NOT mention any 'draft', 'junior', or 'review process' in your output. DO NOT include the raw logs in the output. Keep the output extremely concise and directly structured to the developer."
         });
 
         const criticPrompt = `
 RAW LOGS:
 ${truncatedLogs}
 
-PROPOSED ANALYSIS (FROM JUNIOR INVESTIGATOR):
+PROPOSED ANALYSIS:
 - Proposed Root Cause: ${initialAnalysis.rootCause}
 - Proposed Fix: ${initialAnalysis.suggestedFix}
 
-Task: Evaluate if the junior's analysis is correct based strictly on the raw logs. If it is hallucinatory, unhelpful, or factually wrong based on the logs, override it entirely with the correct analysis. Write your final report in Markdown.
+Task: Evaluate if the proposed analysis is correct based strictly on the raw logs. If it is hallucinatory, unhelpful, or factually wrong based on the logs, override it entirely with the correct analysis. 
+
+CRITICAL - You MUST strictly follow this exact Markdown structure for your final output, with no exceptions and no extra conversational text/filler:
+
+### 🚨 Root Cause
+[Direct, concise 2-sentence explanation of what failed]
+
+### 🛠️ Suggested Fix
+1. [Actionable step 1]
+2. [Actionable step 2]
 `;
 
         const criticResult = await criticModel.generateContent(criticPrompt);
