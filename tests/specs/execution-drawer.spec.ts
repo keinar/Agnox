@@ -39,8 +39,8 @@ test.describe('Suite C — AI Analysis & Triage', () => {
             id: TEST_EXECUTION_ID,
             name: 'Test Execution',
             status: 'COMPLETED',
-            // התיקון: 3 סולמיות כדי לייצר h3, וטקסט נקי כדי שהסלקטורים ימצאו התאמה מדויקת
-            aiAnalysis: '### Root Cause Analysis\n\nIssue: Timeout\n\nRecommendation: Check Redis connection.'
+            // שינינו מ-aiAnalysis ל-analysis
+            analysis: '### Root Cause Analysis\n\nIssue: Timeout\n\nRecommendation: Check Redis connection.'
         };
         await drawerPage.mockExecutionList([executionMock]);
         await drawerPage.mockSingleExecution(executionMock);
@@ -53,9 +53,9 @@ test.describe('Suite C — AI Analysis & Triage', () => {
         await drawerPage.clickTab('AI Analysis');
         await expect(drawerPage.getTabLocator('AI Analysis')).toHaveClass(/.*text-blue-600.*/);
 
-        const rootCauseHeader = drawerPage.drawer.locator('h3', { hasText: /^Root Cause Analysis$/ });
+        const rootCauseHeader = drawerPage.drawer.getByRole('heading', { name: 'Root Cause Analysis' });
         await expect(rootCauseHeader).toBeVisible();
-        await expect(drawerPage.drawer.locator('text="Issue: Timeout"')).toBeVisible();
-        await expect(drawerPage.drawer.locator('text="Recommendation: Check Redis connection."')).toBeVisible();
+        await expect(drawerPage.drawer.getByText('Issue: Timeout')).toBeVisible();
+        await expect(drawerPage.drawer.getByText('Recommendation: Check Redis connection.')).toBeVisible();
     });
 });
