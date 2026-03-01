@@ -12,7 +12,7 @@ export class SettingsIntegrationsPage {
 
     constructor(page: Page) {
         this.page = page;
-        this.integrationsTabBtn = page.getByRole('button', { name: 'Integrations', exact: true });
+        this.integrationsTabBtn = page.getByRole('button', { name: 'Connectors', exact: true });
         this.slackWebhookInput = page.locator('#slack-webhook-url');
         this.saveSlackBtn = page.getByRole('button', { name: 'Save Webhook', exact: true });
         this.jiraDomainInput = page.locator('#jira-domain');
