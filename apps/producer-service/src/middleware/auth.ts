@@ -130,10 +130,9 @@ export async function authMiddleware(
  * app.get('/api/executions', { preHandler: authWithApiKey }, handler);
  */
 export function createApiKeyAuthMiddleware(db: any) {
-  // Import dynamically to avoid circular dependency
-  const apiKeyUtils = require('../utils/apiKeys.js');
-
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+    // Import dynamically inside the handler to avoid circular dependency and fix Vitest
+    const apiKeyUtils = await import('../utils/apiKeys.js');
     // Check for API key first
     const apiKey = request.headers['x-api-key'] as string;
 
