@@ -19,20 +19,20 @@ type TabId = 'profile' | 'organization' | 'members' | 'billing' | 'security' | '
 
 export function Settings() {
   const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
   const allTabs = [
-    { id: 'profile' as const, label: 'My Profile', component: ProfileTab },
-    { id: 'organization' as const, label: 'Organization', component: OrganizationTab },
-    { id: 'members' as const, label: 'Team Members', component: MembersTab },
-    { id: 'billing' as const, label: 'Billing & Plans', component: BillingTab },
-    { id: 'security' as const, label: 'Security', component: SecurityTab },
-    { id: 'usage' as const, label: 'Usage', component: UsageTab },
-    { id: 'run-settings' as const, label: 'Run Settings', component: RunSettingsTab },
-    { id: 'env-vars' as const, label: 'Env Variables', component: EnvironmentVariablesTab },
-    { id: 'integrations' as const, label: 'Integrations', component: IntegrationsTab },
-    { id: 'schedules' as const, label: 'Schedules', component: SchedulesList },
-    { id: 'features' as const, label: 'Features', component: FeaturesTab },
+    { id: 'profile'       as const, label: 'My Profile',     component: ProfileTab },
+    { id: 'organization'  as const, label: 'Organization',   component: OrganizationTab },
+    { id: 'members'       as const, label: 'Team Members',   component: MembersTab },
+    { id: 'billing'       as const, label: 'Billing & Plans', component: BillingTab },
+    { id: 'security'      as const, label: 'Security',       component: SecurityTab },
+    { id: 'usage'         as const, label: 'Usage',          component: UsageTab },
+    { id: 'run-settings'  as const, label: 'Run Settings',   component: RunSettingsTab },
+    { id: 'env-vars'      as const, label: 'Env Variables',  component: EnvironmentVariablesTab },
+    { id: 'integrations'  as const, label: 'Integrations',   component: IntegrationsTab },
+    { id: 'schedules'     as const, label: 'Schedules',      component: SchedulesList },
+    { id: 'features'      as const, label: 'Features',       component: FeaturesTab },
   ];
 
   // Filter admin-only tabs for non-admins to prevent 403 errors
@@ -45,10 +45,7 @@ export function Settings() {
   const validTabIds = tabs.map(t => t.id);
   const activeTab: TabId = tabParam && validTabIds.includes(tabParam) ? tabParam : 'organization';
 
-  const handleTabChange = (tabId: TabId) => {
-    setSearchParams({ tab: tabId });
-  };
-
+  const activeTabLabel    = tabs.find(t => t.id === activeTab)?.label ?? 'Settings';
   const ActiveTabComponent = tabs.find(t => t.id === activeTab)?.component || OrganizationTab;
 
   return (
@@ -56,41 +53,19 @@ export function Settings() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gh-text dark:text-gh-text-dark leading-tight">
-          Settings
+          Settings / {activeTabLabel}
         </h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           Manage your organization, team members, and preferences
         </p>
       </div>
 
-      {/* Settings Card */}
-      <div className="bg-white dark:bg-gh-bg-subtle-dark rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-gh-border-dark">
-        {/* Tab Navigation */}
-        <nav className="flex border-b border-slate-200 dark:border-gh-border-dark px-4 overflow-x-auto gap-6 scrollbar-hide">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => handleTabChange(tab.id)}
-              className={`py-4 px-1 text-sm font-semibold whitespace-nowrap cursor-pointer border-b-2 -mb-px transition-all duration-200 ${
-                activeTab === tab.id
-                  ? 'text-gh-accent dark:text-gh-accent-dark border-gh-accent dark:border-gh-accent-dark'
-                  : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-gh-border-dark'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-
-        {/* Tab Content */}
-        <div className="p-6">
-          <Suspense fallback={
-            <div className="py-5 text-sm text-slate-400 dark:text-slate-500">Loading...</div>
-          }>
-            <ActiveTabComponent />
-          </Suspense>
-        </div>
-      </div>
+      {/* Tab Content — full width, driven by sidebar navigation */}
+      <Suspense fallback={
+        <div className="py-5 text-sm text-slate-400 dark:text-slate-500">Loading...</div>
+      }>
+        <ActiveTabComponent />
+      </Suspense>
     </div>
   );
 }
