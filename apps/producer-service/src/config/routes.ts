@@ -22,6 +22,7 @@ import { testCaseRoutes } from '../routes/test-cases.js';
 import { testCycleRoutes } from '../routes/test-cycles.js';
 import { aiRoutes } from '../routes/ai.js';
 import { ciRoutes } from '../routes/ci.js';
+import { ingestRoutes } from '../routes/ingest.js';
 import { reportRoutes } from '../routes/reports.js';
 import { monitorStatusRoutes } from '../routes/monitor-status.js';
 import { sendExecutionNotification, FINAL_EXECUTION_STATUSES } from '../utils/notifier.js';
@@ -88,6 +89,10 @@ export async function setupRoutes(
 
     // CI Trigger routes (Jenkins, GitHub Actions — JWT protected via standard global auth middleware)
     await ciRoutes(app, dbClient, strictRateLimit);
+
+    // Ingest routes (external CI passive reporter — API key auth, higher-burst rate limit on /event)
+    await ingestRoutes(app, dbClient, redis);
+    app.log.info('Ingest routes registered');
 
     // Report static serving routes (Custom JWT & Report Token Auth)
     await reportRoutes(app);

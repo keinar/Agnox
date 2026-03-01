@@ -196,7 +196,11 @@ jobs:
               "folder": "specs",
               "config": {
                 "environment": "production",
-                "baseUrl": "https://agnox.dev"
+                "baseUrl": "https://agnox.dev",
+                "envVars": {
+                  "E2E_EMAIL": "${{ secrets.E2E_EMAIL }}",
+                  "E2E_PASSWORD": "${{ secrets.E2E_PASSWORD }}"
+                }
               },
               "ciContext": {
                 "source": "github",
