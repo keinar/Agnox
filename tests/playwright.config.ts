@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices, ReporterDescription } from '@playwright/test';
 import dotenv from 'dotenv';
 import path from 'path';
 import os from 'os';
@@ -10,6 +10,19 @@ try {
 }
 
 const authFile = path.resolve(__dirname, '.auth/user.json');
+
+const reporters: ReporterDescription[] = [
+    ['list'],
+    ['html', { outputFolder: '../playwright-report', open: 'never' }]
+];
+
+if (process.env.AGNOX_API_KEY && process.env.AGNOX_PROJECT_ID) {
+    reporters.push(['@agnox/playwright-reporter', {
+        apiKey: process.env.AGNOX_API_KEY,
+        projectId: process.env.AGNOX_PROJECT_ID,
+        baseUrl: process.env.AGNOX_BASE_URL || 'https://api.agnox.dev'
+    }]);
+}
 
 export default defineConfig({
     testDir: '.',
@@ -24,15 +37,7 @@ export default defineConfig({
         timeout: 10000,
     },
 
-    reporter: [
-        ['list'],
-        ['html', { outputFolder: '../playwright-report', open: 'never' }],
-        ['@agnox/playwright-reporter', {
-            apiKey: process.env.AGNOX_API_KEY || '',
-            projectId: process.env.AGNOX_PROJECT_ID || '',
-            baseUrl: 'https://api.agnox.dev:3000/api'
-        }]
-    ],
+    reporter: reporters,
 
     use: {
         actionTimeout: 5000,
