@@ -23,7 +23,7 @@ export class AgnoxClient {
   private readonly debug: boolean;
 
   constructor(config: Pick<AgnoxReporterConfig, 'baseUrl' | 'apiKey' | 'debug'>) {
-    this.baseUrl = (config.baseUrl ?? 'https://app.agnox.io').replace(/\/$/, '');
+    this.baseUrl = (config.baseUrl ?? 'https://dev.agnox.dev').replace(/\/$/, '');
     this.headers = {
       'Content-Type': 'application/json',
       'x-api-key': config.apiKey,

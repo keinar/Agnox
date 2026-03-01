@@ -85,7 +85,7 @@ export default class AgnoxReporter implements Reporter {
     if (!config.projectId) throw new Error('[agnox] projectId is required');
 
     this.cfg = {
-      baseUrl: config.baseUrl ?? 'https://app.agnox.io',
+      baseUrl: config.baseUrl ?? 'https://dev.agnox.dev',
       runName: config.runName,
       environment: config.environment ?? 'production',
       flushIntervalMs: config.flushIntervalMs ?? 2_000,
