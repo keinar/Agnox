@@ -12,6 +12,15 @@ interface IChangelogEntry {
 
 const CHANGELOG: IChangelogEntry[] = [
   {
+    version: 'v3.8.1',
+    title: 'Reporter Troubleshooting & Dual Architecture Docs',
+    items: [
+      'Added Troubleshooting / FAQ to the @agnox/playwright-reporter README covering the three most common setup pitfalls.',
+      'Integration Quickstart now explains the Agnox Hosted vs. External CI dual architecture with a side-by-side comparison table.',
+      'CI/CD guide updated with a dedicated reporter section including GitHub Actions workflow and a troubleshooting table.',
+    ],
+  },
+  {
     version: 'v3.8.0',
     title: 'Native Playwright Reporter',
     items: [

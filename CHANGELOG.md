@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.8.1] — 2026-03-01
+
+### Changed
+- `packages/playwright-reporter/README.md` — Added dedicated **Troubleshooting / FAQ** section documenting the three most common pitfalls: missing `dotenv.config()` at the top of `playwright.config.ts`, `baseUrl` accidentally pointed at the application under test instead of the Agnox API, and `MODULE_NOT_FOUND` caused by the git-ignored `dist/` folder not being built in CI.
+- `docs/integration/quickstart.md` — Added **Dual Architecture** comparison table at the top of the guide explaining the difference between Agnox Hosted (Docker) and External CI (Passive Reporter) integration modes. Added Option D (Native Playwright Reporter) walkthrough and expanded Troubleshooting section with reporter-specific entries.
+- `docs/setup/ci-cd.md` — Added **Section 5: Using the `@agnox/playwright-reporter` in CI** with required CI secrets, a full GitHub Actions workflow example, and a troubleshooting table for `MODULE_NOT_FOUND`, silent reporter, and wrong `baseUrl` issues.
+- `README.md` — Fixed duplicate "Option C (Legacy)" label (was colliding with existing "Option C" for generic execution request) — renamed to "Option E (Legacy)".
+
+### Purged (Ghosts)
+- `README.md`: Duplicate heading "Option C (Legacy)" conflicted with "Option C" (generic execution endpoint). Corrected to "Option E (Legacy)".
+
 ## [3.8.0] — 2026-03-01
 
 ### Added

@@ -92,3 +92,55 @@ The Worker Service uses the platform environment variables to connect to infrast
 | **Billing not working** | Verify `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are in GitHub Secrets and that the webhook URL is registered in Stripe dashboard. |
 | **Emails not sending** | Verify `SENDGRID_API_KEY` is valid. Check SendGrid Activity for delivery status. |
 | **"Permission denied"** | Ensure the SSH Key in GitHub Secrets matches the one on the VPS (`~/.ssh/authorized_keys`). |
+
+---
+
+## 5. Using the `@agnox/playwright-reporter` in CI
+
+The `@agnox/playwright-reporter` is the **External CI** integration path — tests run natively in your pipeline and stream results to Agnox without a Docker container.
+
+### Required CI Secrets
+
+Add these to your CI provider secrets (in addition to the deployment secrets above):
+
+| Secret Name | Description |
+| :--- | :--- |
+| `AGNOX_API_KEY` | An Agnox API key from **Settings → Profile → API Access** |
+| `AGNOX_PROJECT_ID` | Your Agnox Project ID from **Settings → Run Settings** |
+
+### GitHub Actions Workflow (Reporter)
+
+```yaml
+# .github/workflows/e2e.yml
+name: E2E Tests (Passive Reporter)
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Playwright reporter
+        run: npm run build -w @agnox/playwright-reporter
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        env:
+          AGNOX_API_KEY:    ${{ secrets.AGNOX_API_KEY }}
+          AGNOX_PROJECT_ID: ${{ secrets.AGNOX_PROJECT_ID }}
+        run: npx playwright test
+```
+
+### Troubleshooting the Reporter in CI
+
+| Symptom | Cause | Fix |
+| --- | --- | --- |
+| **`MODULE_NOT_FOUND` for `@agnox/playwright-reporter`** | The `dist/` folder is git-ignored. CI clones the repo without built output. | Add `npm run build -w @agnox/playwright-reporter` as a step before `npx playwright test`. |
+| **Reporter is silent; no data in dashboard** | `dotenv.config()` is missing at the top of `playwright.config.ts`, so `AGNOX_API_KEY` is undefined when Playwright evaluates the config. | Add `import 'dotenv/config';` as the very first line of `playwright.config.ts`. |
+| **Reporter makes requests but 404s** | The reporter `baseUrl` is accidentally set to the application under test instead of `https://api.agnox.dev`. | Remove the `baseUrl` option from the reporter config (the default is correct) or set it explicitly to `https://api.agnox.dev`. |

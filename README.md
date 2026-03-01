@@ -418,7 +418,7 @@ export default defineConfig({
 
 The reporter auto-detects your CI provider and attaches the branch, PR number, and commit SHA. Results appear in the Dashboard under the **External CI** source filter.
 
-#### Option C (Legacy): Node.js Integration
+#### Option E (Legacy): Node.js Integration
 
 ```javascript
 const axios = require('axios');
