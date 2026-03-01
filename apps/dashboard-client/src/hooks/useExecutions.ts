@@ -36,6 +36,8 @@ export interface IExecutionFilters {
     startBefore?: string;
     /** Exact match on groupName field. Empty string = no filter. */
     groupName?: string;
+    /** Filter by execution source. Empty string = all. */
+    source?: 'agnox-hosted' | 'external-ci' | '';
     /** Records per page. Default 25, max 100. */
     limit?: number;
     /** Zero-based offset into the result set. */
@@ -60,6 +62,7 @@ function buildExecutionsUrl(filters: IExecutionFilters): string {
     if (filters.startAfter)      params.set('startAfter',   filters.startAfter);
     if (filters.startBefore)     params.set('startBefore',  filters.startBefore);
     if (filters.groupName)       params.set('groupName',    filters.groupName);
+    if (filters.source)          params.set('source',       filters.source);
     return `${API_URL}/api/executions?${params.toString()}`;
 }
 

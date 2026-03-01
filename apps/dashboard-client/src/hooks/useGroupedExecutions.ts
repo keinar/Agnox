@@ -23,6 +23,8 @@ export interface IGroupedFilters {
     startBefore?: string;
     /** Exact match on groupName — filters to show only this group. Empty string = all groups. */
     groupName?: string;
+    /** Filter by execution source. Empty string = all. */
+    source?: 'agnox-hosted' | 'external-ci' | '';
     /** Number of groups per page. Default 10, max 50. */
     limit?: number;
     /** Zero-based group offset. */
@@ -42,6 +44,7 @@ function buildGroupedUrl(filters: IGroupedFilters): string {
     if (filters.startAfter)      params.set('startAfter',   filters.startAfter);
     if (filters.startBefore)     params.set('startBefore',  filters.startBefore);
     if (filters.groupName)       params.set('groupName',    filters.groupName);
+    if (filters.source)          params.set('source',       filters.source);
     return `${API_URL}/api/executions/grouped?${params.toString()}`;
 }
 

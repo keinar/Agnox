@@ -1,6 +1,10 @@
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react';
-import { X, FileText, BarChart2, Loader2, Bug } from 'lucide-react';
+import {
+  X, FileText, BarChart2, Loader2, Bug,
+  Github, Gitlab, Cloud, GitBranch, GitCommit, GitPullRequest, ExternalLink,
+  ChevronDown, ChevronRight,
+} from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import type { Execution } from '../types';
@@ -37,6 +41,7 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
   const queryClient = useQueryClient();
   const [fetchingReport, setFetchingReport] = useState(false);
   const [showJiraModal, setShowJiraModal] = useState(false);
+  const [ciContextOpen, setCiContextOpen] = useState(true);
 
   // ── Log-history hydration ────────────────────────────────────────────────
   // Fetches the full accumulated log buffer from the server and seeds the
@@ -351,6 +356,120 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
                     </button>
                   </div>
                 </div>
+
+                {/* ── CI Context panel — only for external-ci runs ──────── */}
+                {(execution as any)?.source === 'external-ci' && (() => {
+                  const ci = (execution as any)?.ingestMeta?.ciContext;
+                  const CI_PROVIDER_ICONS: Record<string, React.ElementType> = {
+                    github: Github, gitlab: Gitlab, azure: Cloud,
+                    jenkins: Cloud, local: Cloud,
+                  };
+                  const ProviderIcon = ci?.source ? (CI_PROVIDER_ICONS[ci.source] ?? Cloud) : Cloud;
+                  const providerLabel: Record<string, string> = {
+                    github: 'GitHub', gitlab: 'GitLab', azure: 'Azure DevOps',
+                    jenkins: 'Jenkins', local: 'Local',
+                  };
+
+                  return (
+                    <div className="shrink-0 border-b border-violet-100 dark:border-violet-900/50 bg-violet-50/60 dark:bg-violet-950/20">
+                      {/* Collapsible header */}
+                      <button
+                        type="button"
+                        onClick={() => setCiContextOpen((v) => !v)}
+                        className="w-full flex items-center justify-between px-6 py-2.5 cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-2">
+                          <ProviderIcon size={14} className="text-violet-600 dark:text-violet-400 shrink-0" />
+                          <span className="text-xs font-semibold text-violet-700 dark:text-violet-300 uppercase tracking-wide">
+                            CI Context
+                            {ci?.source && (
+                              <span className="ml-1.5 font-normal normal-case text-violet-500 dark:text-violet-400">
+                                — {providerLabel[ci.source] ?? ci.source}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        {ciContextOpen
+                          ? <ChevronDown size={14} className="text-violet-400 dark:text-violet-500 group-hover:text-violet-600 dark:group-hover:text-violet-300 transition-colors" />
+                          : <ChevronRight size={14} className="text-violet-400 dark:text-violet-500 group-hover:text-violet-600 dark:group-hover:text-violet-300 transition-colors" />
+                        }
+                      </button>
+
+                      {/* Collapsible body */}
+                      {ciContextOpen && (
+                        <div className="px-6 pb-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+
+                          {ci?.repository && (
+                            <div className="flex items-start gap-2 min-w-0">
+                              <ProviderIcon size={12} className="text-violet-400 dark:text-violet-500 mt-0.5 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-medium text-violet-400 dark:text-violet-500 uppercase tracking-wide mb-0.5">Repository</p>
+                                <p className="text-xs text-slate-700 dark:text-slate-300 font-medium truncate">{ci.repository}</p>
+                              </div>
+                            </div>
+                          )}
+
+                          {ci?.branch && (
+                            <div className="flex items-start gap-2 min-w-0">
+                              <GitBranch size={12} className="text-violet-400 dark:text-violet-500 mt-0.5 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-medium text-violet-400 dark:text-violet-500 uppercase tracking-wide mb-0.5">Branch</p>
+                                <p className="text-xs text-slate-700 dark:text-slate-300 font-mono truncate">{ci.branch}</p>
+                              </div>
+                            </div>
+                          )}
+
+                          {ci?.prNumber && (
+                            <div className="flex items-start gap-2 min-w-0">
+                              <GitPullRequest size={12} className="text-violet-400 dark:text-violet-500 mt-0.5 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-medium text-violet-400 dark:text-violet-500 uppercase tracking-wide mb-0.5">Pull Request</p>
+                                <p className="text-xs text-slate-700 dark:text-slate-300 font-mono">#{ci.prNumber}</p>
+                              </div>
+                            </div>
+                          )}
+
+                          {ci?.commitSha && (
+                            <div className="flex items-start gap-2 min-w-0">
+                              <GitCommit size={12} className="text-violet-400 dark:text-violet-500 mt-0.5 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-medium text-violet-400 dark:text-violet-500 uppercase tracking-wide mb-0.5">Commit</p>
+                                <p className="text-xs text-slate-700 dark:text-slate-300 font-mono truncate" title={ci.commitSha}>
+                                  {ci.commitSha.slice(0, 12)}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {ci?.runUrl && (
+                            <div className="flex items-start gap-2 min-w-0 sm:col-span-2">
+                              <ExternalLink size={12} className="text-violet-400 dark:text-violet-500 mt-0.5 shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-medium text-violet-400 dark:text-violet-500 uppercase tracking-wide mb-0.5">CI Job URL</p>
+                                <a
+                                  href={ci.runUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium truncate block max-w-xs"
+                                >
+                                  {ci.runUrl}
+                                </a>
+                              </div>
+                            </div>
+                          )}
+
+                          {!ci && (
+                            <p className="text-xs text-violet-400 dark:text-violet-500 italic sm:col-span-2">
+                              No CI context metadata available for this run.
+                            </p>
+                          )}
+
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* ── Tab bar ───────────────────────────────────────────── */}
                 <div className="flex items-center gap-1 px-6 border-b border-slate-200 dark:border-gh-border-dark shrink-0">

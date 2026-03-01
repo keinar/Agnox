@@ -4,7 +4,7 @@ import {
     Trash2, CheckCircle, XCircle,
     Clock, PlayCircle, FileText, BarChart2,
     Sparkles, Loader2, AlertTriangle,
-    User2, Timer, Github, Gitlab, Settings2, Link2, Bug,
+    User2, Timer, Github, Gitlab, Settings2, Link2, Bug, Cloud,
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { formatDistanceToNow, differenceInSeconds } from 'date-fns';
@@ -98,6 +98,28 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 const DEFAULT_BADGE = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
+
+// ── External CI source badge ───────────────────────────────────────────────────
+
+const CI_PROVIDER_MAP: Record<string, { icon: React.ElementType; label: string }> = {
+    github:  { icon: Github,   label: 'GitHub CI'  },
+    gitlab:  { icon: Gitlab,   label: 'GitLab CI'  },
+    azure:   { icon: Cloud,    label: 'Azure CI'   },
+    jenkins: { icon: Settings2, label: 'Jenkins'   },
+    local:   { icon: Link2,    label: 'Local CI'   },
+};
+
+const SourceBadge: React.FC<{ execution: any }> = ({ execution }) => {
+    const ciSource: string = execution.ingestMeta?.ciContext?.source ?? '';
+    const provider = CI_PROVIDER_MAP[ciSource] ?? { icon: Cloud, label: 'External CI' };
+    const Icon = provider.icon;
+    return (
+        <span className="font-sans inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-800">
+            <Icon size={9} />
+            {provider.label}
+        </span>
+    );
+};
 
 /** Returns the appropriate icon for a given execution status. Module-level for stable reference. */
 function getStatusIcon(status: string) {
@@ -240,7 +262,14 @@ export const ExecutionRow: React.FC<ExecutionRowProps> = React.memo(function Exe
 
                 {/* Run ID — mandatory, always first */}
                 <td className="px-4 py-4 font-mono text-xs text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                    {execution.taskId}
+                    {execution.source === 'external-ci' ? (
+                        <div className="flex flex-col gap-1">
+                            <span>{execution.taskId}</span>
+                            <SourceBadge execution={execution} />
+                        </div>
+                    ) : (
+                        execution.taskId
+                    )}
                 </td>
 
                 {/* Status — mandatory */}
