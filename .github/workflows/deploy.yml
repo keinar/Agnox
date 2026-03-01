@@ -181,6 +181,9 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     steps:
+      - name: Wait for API to boot
+        run: sleep 20
+
       - name: Trigger Production E2E Tests on Agnox
         run: |
           curl -X POST https://api.agnox.dev/api/executions \
