@@ -177,3 +177,17 @@ jobs:
             docker compose -f docker-compose.prod.yml up -d
             
             docker image prune -f
+  trigger-agnox-e2e:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Production E2E Tests on Agnox
+        run: |
+          curl -X POST https://api.agnox.dev/api/executions \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: ${{ secrets.AGNOX_API_KEY }}" \
+            -d '{
+              "image": "keinar101/agnox-tests:latest",
+              "folder": "specs",
+              "baseUrl": "https://agnox.dev"
+            }'
