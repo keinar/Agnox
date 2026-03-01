@@ -198,6 +198,93 @@
   border-top-color: rgba(78, 91, 166, 0.12);
 }
 
+/* Feature Showcase Section */
+.showcase {
+  background-color: var(--ifm-background-color);
+  border-top: 1px solid rgba(103, 120, 214, 0.12);
+}
+
+.showcaseRow {
+  align-items: center;
+  margin-bottom: 5rem;
+}
+
+.showcaseRow:last-child {
+  margin-bottom: 0;
+}
+
+.showcaseText {
+  padding: 1.5rem 0;
+}
+
+.showcaseBadge {
+  display: inline-block;
+  background: rgba(103, 120, 214, 0.15);
+  color: #a8b4f0;
+  border: 1px solid rgba(103, 120, 214, 0.3);
+  border-radius: 20px;
+  padding: 0.25rem 0.875rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.showcaseHeading {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.25;
+  margin-bottom: 1rem;
+  color: var(--ifm-heading-color);
+}
+
+.showcaseBody {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.75;
+  margin-bottom: 1.25rem;
+}
+
+.showcaseList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.75rem;
+}
+
+.showcaseList li {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.6;
+  margin-bottom: 0.6rem;
+}
+
+.showcaseImageWrapper {
+  padding: 1.5rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(103, 120, 214, 0.08) 0%, rgba(103, 120, 214, 0.02) 100%);
+  border: 1px solid rgba(103, 120, 214, 0.12);
+}
+
+[data-theme='light'] .showcaseBadge {
+  background: rgba(78, 91, 166, 0.1);
+  color: #4e5ba6;
+  border-color: rgba(78, 91, 166, 0.25);
+}
+
+[data-theme='light'] .showcaseBody {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme='light'] .showcaseList li {
+  color: rgba(0, 0, 0, 0.65);
+}
+
+[data-theme='light'] .showcaseImageWrapper {
+  background: linear-gradient(135deg, rgba(78, 91, 166, 0.06) 0%, rgba(78, 91, 166, 0.01) 100%);
+  border-color: rgba(78, 91, 166, 0.12);
+}
+
 /* Responsive */
 @media screen and (max-width: 996px) {
   .heroBanner {
@@ -219,5 +306,18 @@
   .buttons .button {
     width: 100%;
     max-width: 280px;
+  }
+
+  .showcaseRow {
+    flex-direction: column;
+    margin-bottom: 3rem;
+  }
+
+  .showcaseImageWrapper {
+    margin-top: 1.5rem;
+  }
+
+  .showcaseHeading {
+    font-size: 1.5rem;
   }
 }

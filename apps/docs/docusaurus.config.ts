@@ -70,10 +70,11 @@ const config: Config = {
     navbar: {
       title: 'Agnox',
       style: 'dark',
-      // logo: {
-      //   alt: 'AAC Logo',
-      //   src: 'img/logo.svg',
-      // },
+      logo: {
+        alt: 'Agnox Logo',
+        src: 'img/logo.png',
+        srcDark: 'img/logo.png',
+      },
       items: [
         {
           type: 'docSidebar',

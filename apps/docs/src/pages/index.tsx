@@ -121,7 +121,7 @@ const highlights: HighlightItem[] = [
   {
     icon: '⚡',
     title: 'Zero-Config Setup',
-    body: 'Drop our reporter into your Playwright config and see your tests appear in a beautiful dashboard in seconds.',
+    body: "Drop our reporter into your Playwright, Cypress, or Pytest config, or let Agnox host your containerized runs. Watch your test results stream into a beautiful dashboard in seconds.",
   },
   {
     icon: '🤝',
@@ -156,6 +156,78 @@ function PlatformHighlights(): ReactNode {
   );
 }
 
+function FeatureShowcase(): ReactNode {
+  return (
+    <section className={clsx('padding-vert--xl', styles.showcase)}>
+      <div className="container">
+        {/* Showcase 1 — Text Left / Image Right */}
+        <div className={clsx('row', styles.showcaseRow)}>
+          <div className="col col--6">
+            <div className={styles.showcaseText}>
+              <div className={styles.showcaseBadge}>The Investigation Hub</div>
+              <Heading as="h2" className={styles.showcaseHeading}>
+                Debug Failures in Seconds, Not Hours
+              </Heading>
+              <p className={styles.showcaseBody}>
+                Stop digging through raw CI logs. Agnox streams your test output in real time directly into a terminal built for debugging — so you see exactly what went wrong the moment it happens.
+              </p>
+              <ul className={styles.showcaseList}>
+                <li>🖥️ <strong>Real-time streaming terminal</strong> — no more refreshing CI pages</li>
+                <li>🖼️ <strong>Visual artifact gallery</strong> — screenshots, traces, and videos at a glance</li>
+                <li>🤖 <strong>AI root-cause analysis</strong> — Gemini surfaces the fix, not just the failure</li>
+              </ul>
+              <Link className="button button--primary" to="/docs/features/investigation-hub">
+                Explore the Hub →
+              </Link>
+            </div>
+          </div>
+          <div className="col col--6">
+            <div className={styles.showcaseImageWrapper}>
+              <img
+                src="/img/dashboard-preview.png"
+                alt="Agnox Dashboard"
+                style={{ borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', width: '100%', border: '1px solid #eaeaea' }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Showcase 2 — Image Left / Text Right */}
+        <div className={clsx('row', styles.showcaseRow)}>
+          <div className="col col--6">
+            <div className={styles.showcaseImageWrapper}>
+              <img
+                src="/img/cycles-preview.png"
+                alt="Hybrid Test Cycles"
+                style={{ borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', width: '100%', border: '1px solid #eaeaea' }}
+              />
+            </div>
+          </div>
+          <div className="col col--6">
+            <div className={styles.showcaseText}>
+              <div className={styles.showcaseBadge}>Hybrid Test Cycles</div>
+              <Heading as="h2" className={styles.showcaseHeading}>
+                Automated & Manual Tests, Finally Unified
+              </Heading>
+              <p className={styles.showcaseBody}>
+                No more spreadsheets for manual QA alongside a separate dashboard for automation. Agnox brings them together in a single cycle — with live result sync and a dedicated interactive player for manual execution.
+              </p>
+              <ul className={styles.showcaseList}>
+                <li>🔄 <strong>Unified cycle view</strong> — mix automated and manual items seamlessly</li>
+                <li>▶️ <strong>Interactive player</strong> — step-by-step manual execution with pass/fail controls</li>
+                <li>📊 <strong>Live progress tracking</strong> — watch the cycle complete in real time</li>
+              </ul>
+              <Link className="button button--primary" to="/docs/features/test-cycles">
+                Learn About Cycles →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function Home(): ReactNode {
   const { siteConfig } = useDocusaurusContext();
   return (
@@ -166,6 +238,7 @@ export default function Home(): ReactNode {
       <main>
         <HomepageFeatures />
         <PlatformHighlights />
+        <FeatureShowcase />
       </main>
     </Layout>
   );
