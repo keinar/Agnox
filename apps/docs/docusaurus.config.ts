@@ -4,7 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'Agnox',
-  tagline: 'Universal test execution and instant AI debugging for modern engineering teams.',
+  tagline: 'The Unified QA Platform: Seamlessly integrate automated pipelines, manage manual test cycles, and debug failures instantly with AI.',
   favicon: 'img/favicon.png',
 
   future: {

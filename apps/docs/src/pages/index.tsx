@@ -43,10 +43,10 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    icon: '🐳',
-    title: 'Framework Agnostic',
+    icon: '🔌',
+    title: 'Dual Architecture & CI Sync',
     description:
-      'Run Playwright, Pytest, Mocha, and more in isolated, secure Docker containers. Package your tests once and execute them on any infrastructure without configuration lock-in.',
+      'Stream results instantly from your existing GitHub Actions/GitLab pipelines using our native reporters, or let Agnox host and execute your containerized tests directly.',
   },
   {
     icon: '🔬',
@@ -71,6 +71,12 @@ const FeatureList: FeatureItem[] = [
     title: 'Hybrid Test Cycles',
     description:
       'Combine manual and automated tests into unified cycles. Execute manual steps with an interactive player while automated items sync results in real time.',
+  },
+  {
+    icon: '🔗',
+    title: 'Enterprise Connectors',
+    description:
+      'Create Jira tickets with one click directly from failed tests. Keep your team in the loop with real-time Slack notifications and custom Webhooks.',
   },
 ];
 
@@ -100,15 +106,66 @@ function HomepageFeatures(): ReactNode {
   );
 }
 
+type HighlightItem = {
+  icon: string;
+  title: string;
+  body: string;
+};
+
+const highlights: HighlightItem[] = [
+  {
+    icon: '🗂️',
+    title: 'Single Source of Truth',
+    body: 'Stop jumping between your CI logs, Jira, and spreadsheets. Agnox centralizes your entire QA operation.',
+  },
+  {
+    icon: '⚡',
+    title: 'Zero-Config Setup',
+    body: 'Drop our reporter into your Playwright config and see your tests appear in a beautiful dashboard in seconds.',
+  },
+  {
+    icon: '🤝',
+    title: 'Empower Everyone',
+    body: 'From QA engineers writing manual steps to SDETs investigating flaky automated tests, Agnox speaks everyone\'s language.',
+  },
+];
+
+function PlatformHighlights(): ReactNode {
+  return (
+    <section className={clsx('padding-vert--xl', styles.highlights)}>
+      <div className="container">
+        <div className="text--center margin-bottom--lg">
+          <Heading as="h2">Why Choose Agnox?</Heading>
+          <p className={styles.highlightsSubtitle}>
+            Built for modern engineering teams who refuse to compromise on visibility, speed, or quality.
+          </p>
+        </div>
+        <div className="row">
+          {highlights.map(({ icon, title, body }) => (
+            <div key={title} className="col col--4 text--center">
+              <div className={styles.highlightCard}>
+                <div className={styles.highlightIcon}>{icon}</div>
+                <Heading as="h3" className={styles.highlightTitle}>{title}</Heading>
+                <p className={styles.highlightBody}>{body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function Home(): ReactNode {
   const { siteConfig } = useDocusaurusContext();
   return (
     <Layout
       title={siteConfig.title}
-      description="Universal test execution and instant AI debugging for modern engineering teams.">
+      description="Agnox is the ultimate unified testing platform for modern engineering teams. External CI ingestion, hybrid test cycles, and AI-driven triage.">
       <HomepageHeader />
       <main>
         <HomepageFeatures />
+        <PlatformHighlights />
       </main>
     </Layout>
   );

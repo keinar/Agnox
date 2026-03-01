@@ -137,6 +137,67 @@
   color: rgba(0, 0, 0, 0.6);
 }
 
+/* Platform Highlights Section */
+.highlights {
+  background: linear-gradient(180deg, var(--ifm-background-color) 0%, rgba(103, 120, 214, 0.04) 100%);
+  border-top: 1px solid rgba(103, 120, 214, 0.12);
+}
+
+.highlightsSubtitle {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.6);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+.highlightCard {
+  padding: 2rem 1.5rem;
+  border-radius: 12px;
+  background: rgba(103, 120, 214, 0.05);
+  border: 1px solid rgba(103, 120, 214, 0.1);
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.highlightCard:hover {
+  background: rgba(103, 120, 214, 0.1);
+  border-color: rgba(103, 120, 214, 0.25);
+  transform: translateY(-2px);
+}
+
+.highlightIcon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.highlightTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--ifm-heading-color);
+}
+
+.highlightBody {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+  margin: 0;
+}
+
+[data-theme='light'] .highlightsSubtitle {
+  color: rgba(0, 0, 0, 0.55);
+}
+
+[data-theme='light'] .highlightBody {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme='light'] .highlights {
+  background: linear-gradient(180deg, var(--ifm-background-color) 0%, rgba(78, 91, 166, 0.04) 100%);
+  border-top-color: rgba(78, 91, 166, 0.12);
+}
+
 /* Responsive */
 @media screen and (max-width: 996px) {
   .heroBanner {
