@@ -12,6 +12,23 @@ interface IChangelogEntry {
 
 const CHANGELOG: IChangelogEntry[] = [
   {
+    version: 'v3.8.0',
+    title: 'Native Playwright Reporter',
+    items: [
+      'New @agnox/playwright-reporter package streams live Playwright test results directly to your Agnox dashboard in real-time.',
+      'Auto-detects CI environment (GitHub Actions, GitLab CI, Azure DevOps, Jenkins) and attaches CI context to every run.',
+      'New "Source" filter on the Dashboard separates Agnox-hosted Docker runs from External CI passive runs.',
+    ],
+  },
+  {
+    version: 'v3.7.0',
+    title: 'CI/CD API Key Authentication',
+    items: [
+      'The /api/ci/trigger endpoint now accepts x-api-key header authentication — CI pipelines no longer need a user Bearer token.',
+      'Project ID field added to Run Settings with a one-click Copy button for use in CI/CD workflows.',
+    ],
+  },
+  {
     version: 'v3.6.0',
     title: 'Dual-Agent AI Analysis Pipeline',
     items: [
