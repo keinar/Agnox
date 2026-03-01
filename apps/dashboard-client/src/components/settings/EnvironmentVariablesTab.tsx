@@ -19,18 +19,18 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 // ── Shared class strings (matches RunSettingsTab style) ────────────────────────
 
 const INPUT_CLASS =
-    'w-full px-3 py-2 text-sm border border-slate-300 dark:border-gh-border-dark rounded-lg ' +
+    'w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-gh-border-dark rounded-lg ' +
     'bg-white dark:bg-gh-bg-dark text-slate-900 dark:text-slate-200 ' +
     'placeholder-slate-400 dark:placeholder-slate-500 ' +
     'focus:outline-none focus:ring-2 focus:ring-gh-accent dark:focus:ring-gh-accent-dark focus:border-transparent transition';
 
 const SELECT_CLASS =
-    'w-full px-3 py-2 text-sm border border-slate-300 dark:border-gh-border-dark rounded-lg ' +
+    'w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-gh-border-dark rounded-lg ' +
     'bg-white dark:bg-gh-bg-dark text-slate-900 dark:text-slate-200 ' +
     'focus:outline-none focus:ring-2 focus:ring-gh-accent dark:focus:ring-gh-accent-dark focus:border-transparent transition cursor-pointer';
 
 const BTN_PRIMARY =
-    'px-4 py-2 text-sm font-medium rounded-lg bg-gh-accent dark:bg-gh-accent-dark text-white ' +
+    'px-3 py-1.5 text-sm font-medium rounded-lg bg-gh-accent dark:bg-gh-accent-dark text-white ' +
     'hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed';
 
 const BTN_DANGER =
@@ -240,7 +240,7 @@ export function EnvironmentVariablesTab() {
             {selectedProjectId && (
                 <>
                     {/* ── Add / Edit Form ─────────────────────────────────────── */}
-                    <div className="border border-slate-200 dark:border-gh-border-dark rounded-xl p-5 bg-slate-50 dark:bg-gh-surface-dark space-y-4">
+                    <div className="border border-slate-200 dark:border-gh-border-dark rounded-xl p-5 bg-slate-50 dark:bg-gh-bg-subtle-dark space-y-4">
                         <h3 className="text-sm font-semibold text-gh-text dark:text-gh-text-dark">
                             {editingId ? 'Edit Variable' : 'Add Variable'}
                         </h3>
@@ -350,7 +350,7 @@ export function EnvironmentVariablesTab() {
                             </div>
                         ) : (
                             <table className="w-full text-sm">
-                                <thead className="bg-slate-50 dark:bg-gh-surface-dark border-b border-slate-200 dark:border-gh-border-dark">
+                                <thead className="bg-slate-50 dark:bg-gh-bg-subtle-dark border-b border-slate-200 dark:border-gh-border-dark">
                                     <tr>
                                         <th className="text-left px-4 py-2.5 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide w-[35%]">
                                             Key

@@ -25,12 +25,12 @@ interface Organization {
 // ── Shared class strings ───────────────────────────────────────────────────────
 
 const INPUT_CLASS =
-  'w-full max-w-sm px-3 py-2.5 text-sm border border-slate-300 dark:border-gh-border-dark rounded-lg ' +
+  'w-full max-w-sm px-3 py-1.5 text-[13px] border border-slate-300 dark:border-gh-border-dark rounded-lg ' +
   'bg-white dark:bg-gh-bg-dark text-slate-900 dark:text-slate-200 ' +
   'focus:outline-none focus:ring-2 focus:ring-gh-accent dark:focus:ring-gh-accent-dark focus:border-transparent transition';
 
 const INPUT_DISABLED_CLASS =
-  'w-full max-w-sm px-3 py-2.5 text-sm border border-slate-200 dark:border-gh-border-dark rounded-lg ' +
+  'w-full max-w-sm px-3 py-1.5 text-[13px] border border-slate-200 dark:border-gh-border-dark rounded-lg ' +
   'bg-slate-100 dark:bg-gh-bg-subtle-dark text-slate-500 dark:text-slate-500 cursor-not-allowed';
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -120,12 +120,12 @@ export function OrganizationTab() {
       )}
 
       {/* ── Organization Details ──────────────────────────────────────────── */}
-      <section className="mb-8">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Organization Details</h2>
+      <section className="mb-6">
+        <h2 className="text-base font-medium text-slate-900 dark:text-slate-100 mb-4">Organization Details</h2>
 
         {/* Name */}
-        <div className="mb-5">
-          <label htmlFor="org-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+        <div className="mb-4">
+          <label htmlFor="org-name" className="block text-[13px] font-medium text-slate-700 dark:text-slate-300 mb-2">
             Organization Name
           </label>
           <input
@@ -140,7 +140,7 @@ export function OrganizationTab() {
             <button
               onClick={handleSave}
               disabled={saving || !name.trim() || name === organization.name}
-              className="mt-3 px-5 py-2.5 text-sm font-semibold text-white bg-gh-accent dark:bg-gh-accent-dark hover:opacity-90 rounded-lg transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="mt-2 px-4 py-1.5 text-[13px] font-semibold text-white bg-gh-accent dark:bg-gh-accent-dark hover:opacity-90 rounded-lg transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
@@ -148,8 +148,8 @@ export function OrganizationTab() {
         </div>
 
         {/* Plan badge */}
-        <div className="mb-5">
-          <p className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+        <div className="mb-4">
+          <p className="block text-[13px] font-medium text-slate-700 dark:text-slate-300 mb-2">
             Current Plan
           </p>
           <span className="inline-block px-3 py-1 rounded-md text-xs font-bold uppercase tracking-wide bg-blue-600 dark:bg-blue-500 text-white">
@@ -158,8 +158,8 @@ export function OrganizationTab() {
         </div>
 
         {/* Organization ID */}
-        <div className="mb-5">
-          <p className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+        <div className="mb-4">
+          <p className="block text-[13px] font-medium text-slate-700 dark:text-slate-300 mb-2">
             Organization ID
           </p>
           <code className="text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-gh-bg-dark px-2 py-1 rounded break-all">
@@ -168,15 +168,15 @@ export function OrganizationTab() {
         </div>
 
         {/* Created */}
-        <div className="mb-5">
-          <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Created</p>
-          <span className="text-sm text-slate-700 dark:text-slate-300">{formatDate(organization.createdAt)}</span>
+        <div className="mb-4">
+          <p className="text-[13px] font-medium text-slate-700 dark:text-slate-300 mb-2">Created</p>
+          <span className="text-[13px] text-slate-700 dark:text-slate-300">{formatDate(organization.createdAt)}</span>
         </div>
       </section>
 
       {/* ── Plan Limits ───────────────────────────────────────────────────── */}
-      <section className="mb-8">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Plan Limits</h2>
+      <section className="mb-6">
+        <h2 className="text-base font-medium text-slate-900 dark:text-slate-100 mb-4">Plan Limits</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { label: 'Test Runs / Month', value: organization.limits.maxTestRuns.toLocaleString() },
@@ -185,8 +185,8 @@ export function OrganizationTab() {
             { label: 'Projects', value: organization.limits.maxProjects },
           ].map((item) => (
             <div key={item.label} className="bg-slate-50 dark:bg-gh-bg-dark p-4 rounded-lg border border-slate-200 dark:border-gh-border-dark">
-              <span className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{item.label}</span>
-              <span className="text-xl font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{item.value}</span>
+              <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">{item.label}</span>
+              <span className="text-lg font-semibold text-slate-900 dark:text-slate-100 tabular-nums">{item.value}</span>
             </div>
           ))}
         </div>

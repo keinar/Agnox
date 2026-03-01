@@ -38,7 +38,7 @@ const ALL_SETTINGS_TABS = [
   { id: 'usage',         label: 'Usage',          icon: Activity },
   { id: 'run-settings',  label: 'Run Settings',   icon: Play },
   { id: 'env-vars',      label: 'Env Variables',  icon: Database },
-  { id: 'integrations',  label: 'Integrations',   icon: LinkIcon },
+  { id: 'integrations',  label: 'Connectors',     icon: LinkIcon },
   { id: 'schedules',     label: 'Schedules',      icon: Clock },
   { id: 'features',      label: 'Features',       icon: Sparkles },
 ] as const;
@@ -306,7 +306,6 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
       <Link
         to="/dashboard"
         data-testid="sidebar-mobile-back-link"
-        onClick={onMobileClose}
         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors duration-150 ${DEFAULT_CLASS}`}
       >
         <ArrowLeft size={18} className="flex-shrink-0" />

@@ -30,7 +30,7 @@ export function Settings() {
     { id: 'usage'         as const, label: 'Usage',          component: UsageTab },
     { id: 'run-settings'  as const, label: 'Run Settings',   component: RunSettingsTab },
     { id: 'env-vars'      as const, label: 'Env Variables',  component: EnvironmentVariablesTab },
-    { id: 'integrations'  as const, label: 'Integrations',   component: IntegrationsTab },
+    { id: 'integrations'  as const, label: 'Connectors',     component: IntegrationsTab },
     { id: 'schedules'     as const, label: 'Schedules',      component: SchedulesList },
     { id: 'features'      as const, label: 'Features',       component: FeaturesTab },
   ];
@@ -49,13 +49,13 @@ export function Settings() {
   const ActiveTabComponent = tabs.find(t => t.id === activeTab)?.component || OrganizationTab;
 
   return (
-    <div className="p-4 max-w-[1200px] mx-auto font-sans">
+    <div className="p-4 max-w-4xl mx-auto font-sans">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gh-text dark:text-gh-text-dark leading-tight">
+        <h1 className="text-xl font-semibold text-gh-text dark:text-gh-text-dark leading-tight">
           Settings / {activeTabLabel}
         </h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-[13px] text-slate-500 dark:text-slate-400">
           Manage your organization, team members, and preferences
         </p>
       </div>
