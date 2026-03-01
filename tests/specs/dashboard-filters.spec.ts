@@ -70,8 +70,9 @@ test.describe('Suite D — Dashboard Filters', () => {
         // navigation fires — preventing the race condition where the mock response
         // resolves before Playwright starts listening.
         await Promise.all([
-            page.waitForResponse(response =>
-                response.url().includes('/api/executions') && response.status() === 200
+            page.waitForResponse(
+                response => response.url().includes('/api/executions') && response.status() === 200,
+                { timeout: 15000 }
             ),
             page.goto(urlToVisit),
         ]);

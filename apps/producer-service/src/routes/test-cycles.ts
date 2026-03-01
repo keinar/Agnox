@@ -350,7 +350,12 @@ export async function testCycleRoutes(
         }
 
         if (query.source) {
-            filter.source = query.source;
+            const src = query.source.trim();
+            if (src === 'agnox-hosted') {
+                filter.$or = [{ source: 'agnox-hosted' }, { source: { $exists: false } }];
+            } else {
+                filter.source = src;
+            }
         }
 
         try {

@@ -426,8 +426,14 @@ export async function setupRoutes(
         }
 
         // Source filter: 'agnox-hosted' | 'external-ci'
+        // 'agnox-hosted' uses $or to include legacy records that pre-date the source field
         if (q.source) {
-            filter.source = q.source.trim();
+            const src = q.source.trim();
+            if (src === 'agnox-hosted') {
+                filter.$or = [{ source: 'agnox-hosted' }, { source: { $exists: false } }];
+            } else {
+                filter.source = src;
+            }
         }
 
         // Date range filter on startTime
@@ -701,8 +707,14 @@ export async function setupRoutes(
         }
 
         // Source filter: 'agnox-hosted' | 'external-ci'
+        // 'agnox-hosted' uses $or to include legacy records that pre-date the source field
         if (q.source) {
-            matchFilter.source = q.source.trim();
+            const src = q.source.trim();
+            if (src === 'agnox-hosted') {
+                matchFilter.$or = [{ source: 'agnox-hosted' }, { source: { $exists: false } }];
+            } else {
+                matchFilter.source = src;
+            }
         }
 
         if (q.startAfter || q.startBefore) {
