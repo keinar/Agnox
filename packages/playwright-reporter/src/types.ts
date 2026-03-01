@@ -7,7 +7,7 @@ export interface AgnoxReporterConfig {
   apiKey: string;
   /** The Agnox Project ID to associate this run with. Required. */
   projectId: string;
-  /** Agnox API base URL. Defaults to 'https://app.agnox.io'. */
+  /** Agnox API base URL. Defaults to 'https://dev.agnox.dev'. */
   baseUrl?: string;
   /** Human-readable label for this run (e.g. "PR #42 smoke tests"). */
   runName?: string;
@@ -40,12 +40,14 @@ export interface ICiContext {
 
 /** Discriminated union of every event type the reporter can emit. */
 export type IngestEvent =
-  | { type: 'log';        testId?: string; chunk: string; timestamp: number }
-  | { type: 'test-begin'; testId: string;  title: string; file: string; timestamp: number }
-  | { type: 'test-end';   testId: string;
-      status: 'passed' | 'failed' | 'skipped' | 'timedOut';
-      duration: number; error?: string; timestamp: number }
-  | { type: 'status';     status: 'RUNNING' | 'ANALYZING'; timestamp: number };
+  | { type: 'log'; testId?: string; chunk: string; timestamp: number }
+  | { type: 'test-begin'; testId: string; title: string; file: string; timestamp: number }
+  | {
+    type: 'test-end'; testId: string;
+    status: 'passed' | 'failed' | 'skipped' | 'timedOut';
+    duration: number; error?: string; timestamp: number
+  }
+  | { type: 'status'; status: 'RUNNING' | 'ANALYZING'; timestamp: number };
 
 // ============================================================================
 // HTTP PAYLOAD SHAPES

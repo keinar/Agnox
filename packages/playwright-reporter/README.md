@@ -1,6 +1,6 @@
 # @agnox/playwright-reporter
 
-> **Stream live Playwright test results to your [Agnox](https://app.agnox.io) dashboard — test-by-test, in real time.**
+> **Stream live Playwright test results to your [Agnox](https://dev.agnox.dev) dashboard — test-by-test, in real time.**
 
 Drop this reporter into any Playwright project and every test result, log line, and run summary will appear inside Agnox the moment it happens. No polling. No waiting until the run finishes. Just live visibility into your CI pipeline.
 
@@ -77,7 +77,7 @@ That's it. Open your Agnox dashboard and watch results stream in live.
 | `flushIntervalMs` | `number` | No | `2000` | How often (ms) to batch-flush events to the API. |
 | `maxBatchSize` | `number` | No | `50` | Max events per batch before a size-triggered flush. |
 | `debug` | `boolean` | No | `false` | Writes Agnox reporter activity to `stderr`. Useful for troubleshooting. |
-| `baseUrl` | `string` | No | `'https://app.agnox.io'` | Override the Agnox API base URL (self-hosted installs only). |
+| `baseUrl` | `string` | No | `'https://dev.agnox.dev'` | Override the Agnox API base URL (self-hosted installs only). |
 
 ### Full example
 
@@ -207,4 +207,4 @@ Enable `debug: true` to print every request and response status to `stderr`. Thi
 
 ## License
 
-MIT © [Agnox](https://app.agnox.io)
+MIT © [Agnox](https://dev.agnox.dev)

@@ -354,7 +354,7 @@ export interface AgnoxReporterConfig {
   apiKey: string;
   /** The Agnox Project ID to associate this run with */
   projectId: string;
-  /** Agnox API base URL (default: https://app.agnox.io) */
+  /** Agnox API base URL (default: https://dev.agnox.dev) */
   baseUrl?: string;
   /** Human-readable name for this run (e.g. "PR #42 smoke tests") */
   runName?: string;
@@ -381,7 +381,7 @@ export class AgnoxClient {
   private readonly debug: boolean;
 
   constructor(config: AgnoxReporterConfig) {
-    this.baseUrl = (config.baseUrl ?? 'https://app.agnox.io').replace(/\/$/, '');
+    this.baseUrl = (config.baseUrl ?? 'https://dev.agnox.dev').replace(/\/$/, '');
     this.headers = {
       'Content-Type': 'application/json',
       'x-api-key': config.apiKey,
@@ -495,7 +495,7 @@ export default class AgnoxReporter implements Reporter {
     if (!config.projectId) throw new Error('[agnox] projectId is required');
 
     this.cfg = {
-      baseUrl: 'https://app.agnox.io',
+      baseUrl: 'https://dev.agnox.dev',
       runName: undefined,
       environment: 'production',
       flushIntervalMs: 2000,
