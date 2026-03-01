@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md — Agnox
 
-> Generated: 2026-02-27 | Current Phase: Automated Docker Lifecycle & Multi-Tenant Reliability | Version: 3.5.0
+> Generated: 2026-03-01 | Current Phase: CI/CD API Key Integration | Version: 3.7.0
 > Source: Full monorepo scan of code, docs, configs, and shared types.
 
 ---
@@ -250,6 +250,12 @@ Agnostic-Automation-Center/
 | POST | `/api/schedules` | JWT | 100/min/org | Create a CRON schedule. Validates expression with `cron.validate()`. Registers job immediately. |
 | GET | `/api/schedules` | JWT | 100/min/org | List all schedules for the organization (sorted by `createdAt` desc) |
 | DELETE | `/api/schedules/:id` | JWT | 100/min/org | Delete schedule and remove from live in-memory job registry |
+
+### CI/CD Integration (`/api/ci/*`)
+
+| Method | Path | Auth | Rate Limit | Description |
+|--------|------|------|-----------|-------------|
+| POST | `/api/ci/trigger` | `x-api-key` or Bearer JWT | Standard | Trigger a test cycle from an external CI/CD pipeline. Accepts Zod-validated payload: `projectId`, `image`, `command`, `folder`, `config` (environment, baseUrl, envVars), and `ciContext` (source, repository, prNumber, commitSha). Creates a `test_cycles` document and an `executions` document, then queues the task to RabbitMQ. Returns `{ cycleId, taskId, status: 'PENDING' }`. Route is excluded from the global JWT `authMiddleware` (added to `PUBLIC_PATHS`); authentication is handled at the route level by `createApiKeyAuthMiddleware` — tries `x-api-key` header first, falls back to Bearer JWT. |
 
 ### Public / Health
 
@@ -528,7 +534,7 @@ Indexes: { organizationId: 1, projectId: 1 },
 | `billing` | BillingTab (lazy) | Admin only | Stripe plans, upgrade, portal, invoices |
 | `security` | SecurityTab | All roles | AI analysis toggle, privacy disclosure |
 | `usage` | UsageTab | All roles | Test runs, users, storage usage stats |
-| `run-settings` | RunSettingsTab | All roles | Per-project docker image, URLs, test folder |
+| `run-settings` | RunSettingsTab | All roles | Per-project docker image, URLs, test folder. Displays read-only **Project ID** with one-click copy at the top of Execution Defaults (for use in CI/CD `POST /api/ci/trigger` payloads). |
 | `env-vars` | EnvironmentVariablesTab | All roles | Per-project env vars; secrets encrypted at rest, masked in UI |
 | `integrations` | IntegrationsTab | All roles | Jira credentials (AES-encrypted) + Slack webhook URL |
 | `schedules` | SchedulesList | All roles | View and delete CRON schedules (delete hidden for Viewer role) |

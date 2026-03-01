@@ -154,6 +154,39 @@ Add the `x-api-key` header to your requests:
 curl -H "x-api-key: pk_live_..." ...
 ```
 
+### Triggering Tests from CI/CD Pipelines
+
+Use the dedicated `POST /api/ci/trigger` endpoint to start a test cycle from a pipeline and pass CI context (repository, PR number, commit SHA) for automatic cycle naming and traceability.
+
+**Step 1 — Get your Project ID:**
+Go to **Settings → Run Settings**, select your project, and copy the **Project ID** shown at the top of the Execution Defaults section.
+
+**Step 2 — Call the endpoint from your pipeline:**
+
+```bash
+curl -X POST https://api.agnox.dev/api/ci/trigger \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $AGNOX_API_KEY" \
+  -d '{
+    "projectId": "<your-project-id>",
+    "image": "myorg/my-tests:latest",
+    "command": "npx playwright test",
+    "folder": "tests/e2e",
+    "config": {
+      "environment": "staging",
+      "baseUrl": "https://staging.myapp.com"
+    },
+    "ciContext": {
+      "source": "github",
+      "repository": "myorg/my-repo",
+      "prNumber": 42,
+      "commitSha": "abc1234"
+    }
+  }'
+```
+
+The endpoint returns `{ cycleId, taskId, status: "PENDING" }`. The cycle appears immediately in **Test Cycles** with a name derived from the repository and PR number.
+
 ---
 
 ## 9. AI Analysis & Results

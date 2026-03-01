@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.7.0] — 2026-03-01
+
+### Added
+- **`/api/ci/trigger` API Key Authentication** — The CI trigger endpoint now accepts `x-api-key` header auth via `createApiKeyAuthMiddleware`. The global JWT `authMiddleware` bypasses this route (added to `PUBLIC_PATHS`); authentication is handled at the route level, checking `x-api-key` first and falling back to Bearer JWT. CI/CD callers no longer need a user Bearer token to trigger test cycles.
+- **Project ID Field in Run Settings** — `RunSettingsTab.tsx` now displays a read-only "Project ID (Required for CI/CD API triggers)" field at the top of the Execution Defaults section. Clicking the field selects its content; a one-click **Copy** button writes the value to the clipboard and shows a success banner.
+
+### Changed
+- `PROJECT_CONTEXT.md` — Added `POST /api/ci/trigger` to the routes table (new CI/CD Integration section); updated `run-settings` tab description to mention Project ID field; bumped version header to `3.7.0`.
+- `docs/architecture/overview.md` — Added `/api/ci/trigger` to the Producer Service routes list.
+- `docs/features/user-guide.md` — Section 8 (API Keys) expanded with a "Triggering Tests from CI/CD Pipelines" sub-section documenting the dedicated endpoint and Project ID retrieval.
+- `README.md` — Option B in the CI/CD integration section replaced with the native `POST /api/ci/trigger` endpoint (GitHub Actions + GitLab CI examples); original generic execution request moved to Option C; added v3.7.0 "What's Included" entry.
+- `package.json` — Version bumped from `3.6.0` to `3.7.0`.
+
 ## [3.6.0] — 2026-02-28
 
 ### Added

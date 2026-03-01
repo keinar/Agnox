@@ -282,13 +282,17 @@ curl -X POST https://api.agnox.dev/api/execution-request \
   }'
 ```
 
-#### Option B: Integrate with CI/CD
+#### Option B: Dedicated CI/CD Trigger (Recommended for Pipelines)
+
+Use `POST /api/ci/trigger` to start a test cycle from your pipeline and automatically attach CI context (repository, PR number, commit SHA). The cycle appears in Test Cycles with a name derived from the repository and PR number.
+
+**Your Project ID** is shown in **Settings → Run Settings** → Execution Defaults (copy it with the one-click button).
 
 **GitHub Actions Example:**
 
 ```yaml
 name: Run E2E Tests
-on: [push]
+on: [push, pull_request]
 
 jobs:
   test:
@@ -296,20 +300,25 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Trigger Tests on Agnostic Platform
+      - name: Trigger Tests via Agnox CI Endpoint
         run: |
-          curl -X POST ${{ secrets.AUTOMATION_API_URL }}/api/execution-request \
+          curl -X POST ${{ secrets.AGNOX_API_URL }}/api/ci/trigger \
             -H "Content-Type: application/json" \
-            -H "x-api-key: ${{ secrets.AAC_API_KEY }}" \
+            -H "x-api-key: ${{ secrets.AGNOX_API_KEY }}" \
             -d '{
-              "taskId": "ci-run-${{ github.run_id }}",
-              "image": "mcr.microsoft.com/playwright:v1.40.0",
-              "command": "npm test",
-              "folder": "tests",
-              "groupName": "ci-${{ github.ref_name }}",
+              "projectId": "${{ secrets.AGNOX_PROJECT_ID }}",
+              "image": "myorg/my-tests:latest",
+              "command": "npx playwright test",
+              "folder": "tests/e2e",
               "config": {
-                "environment": "production",
-                "baseUrl": "${{ secrets.PROD_URL }}"
+                "environment": "staging",
+                "baseUrl": "${{ secrets.STAGING_URL }}"
+              },
+              "ciContext": {
+                "source": "github",
+                "repository": "${{ github.repository }}",
+                "prNumber": ${{ github.event.number || 0 }},
+                "commitSha": "${{ github.sha }}"
               }
             }'
 ```
@@ -321,18 +330,42 @@ e2e-tests:
   stage: test
   script:
     - |
-      curl -X POST $AUTOMATION_API_URL/api/execution-request \
+      curl -X POST $AGNOX_API_URL/api/ci/trigger \
         -H "Content-Type: application/json" \
-        -H "x-api-key: $AAC_API_KEY" \
+        -H "x-api-key: $AGNOX_API_KEY" \
         -d '{
-          "taskId": "gitlab-'$CI_PIPELINE_ID'",
-          "image": "cypress/included:13.6.0",
-          "command": "cypress run",
-          "folder": "cypress/e2e",
-          "config": {
-            "environment": "staging"
+          "projectId": "'"$AGNOX_PROJECT_ID"'",
+          "image": "myorg/my-tests:latest",
+          "command": "npx playwright test",
+          "folder": "tests/e2e",
+          "config": { "environment": "staging" },
+          "ciContext": {
+            "source": "gitlab",
+            "repository": "'"$CI_PROJECT_PATH"'",
+            "commitSha": "'"$CI_COMMIT_SHA"'"
           }
         }'
+```
+
+#### Option C: Generic Execution Request
+
+For simple runs without CI context, call the generic execution endpoint:
+
+```bash
+curl -X POST ${{ secrets.AUTOMATION_API_URL }}/api/execution-request \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: ${{ secrets.AGNOX_API_KEY }}" \
+  -d '{
+    "taskId": "ci-run-'$(date +%s)'",
+    "image": "mcr.microsoft.com/playwright:v1.40.0",
+    "command": "npm test",
+    "folder": "tests",
+    "groupName": "ci-main",
+    "config": {
+      "environment": "production",
+      "baseUrl": "https://prod.myapp.com"
+    }
+  }'
 ```
 
 #### Option C: Node.js Integration
@@ -762,6 +795,15 @@ See the [Deployment Guide](docs/setup/deployment.md) for full deployment instruc
 - **Docker Container Injection:** Worker passes all env vars to containers via the Docker `Env` configuration array
 - **Log Sanitization:** `sanitizeLogLine()` in the worker redacts secret values from every streamed log line before dashboard delivery or persistent storage
 - **Settings UI:** `EnvironmentVariablesTab` with Add/Edit form, secret toggle switch, masked table view, and inline Edit/Delete actions
+
+---
+
+### v3.7.0 — CI/CD API Key Integration ✅
+
+**Status:** Production Ready
+
+- **`/api/ci/trigger` API Key Auth:** The dedicated CI/CD trigger endpoint now accepts `x-api-key` header authentication via `createApiKeyAuthMiddleware`. The global JWT middleware bypasses this route; auth is handled dynamically at the route level — tries API key first, falls back to Bearer JWT. CI tools no longer need to obtain a user Bearer token.
+- **Project ID in Run Settings:** `RunSettingsTab` now displays a read-only **Project ID** field with a one-click **Copy** button at the top of the Execution Defaults section. Required when calling `POST /api/ci/trigger` from pipelines.
 
 ---
 

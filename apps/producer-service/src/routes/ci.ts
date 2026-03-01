@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import { getDbName } from '../config/server.js';
 import { rabbitMqService } from '../rabbitmq.js';
+import { createApiKeyAuthMiddleware } from '../middleware/auth.js';
 
 const DB_NAME = getDbName();
 
@@ -35,6 +36,7 @@ export async function ciRoutes(
     apiRateLimit: (request: FastifyRequest, reply: FastifyReply) => Promise<void>
 ): Promise<void> {
     const db = mongoClient.db(DB_NAME);
+    const apiKeyAuth = createApiKeyAuthMiddleware(db);
     const projectsCollection = db.collection('projects');
     const cyclesCollection = db.collection('test_cycles');
     const executionsCollection = db.collection('executions');
@@ -43,7 +45,7 @@ export async function ciRoutes(
      * POST /api/ci/trigger
      * Securely triggers an automated test cycle from an external CI/CD pipeline
      */
-    app.post('/api/ci/trigger', { preHandler: [apiRateLimit] }, async (request, reply) => {
+    app.post('/api/ci/trigger', { preHandler: [apiKeyAuth, apiRateLimit] }, async (request, reply) => {
         const organizationId = request.user!.organizationId;
 
         // 1. Validate incoming payload against strict schema

@@ -18,7 +18,8 @@ const PUBLIC_PATHS = [
   '/api/auth/refresh',
   '/__webpack_hmr',
   '/health',
-  '/documentation'
+  '/documentation',
+  '/api/ci/trigger'
 ];
 
 /**

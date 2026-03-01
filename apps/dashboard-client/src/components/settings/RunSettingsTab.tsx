@@ -276,6 +276,32 @@ export function RunSettingsTab() {
                             These values pre-fill the Launch Modal when triggering a new test run.
                         </p>
 
+                        {/* Project ID */}
+                        <div className="mb-5">
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                Project ID <span className="font-normal text-slate-500 dark:text-slate-400">(Required for CI/CD API triggers)</span>
+                            </label>
+                            <div className="flex gap-2 items-center max-w-lg">
+                                <input
+                                    type="text"
+                                    readOnly
+                                    value={selectedProjectId}
+                                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                                    className="flex-1 min-w-0 px-3 py-2.5 text-sm border border-slate-300 dark:border-gh-border-dark rounded-lg bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 cursor-text focus:outline-none focus:ring-2 focus:ring-gh-accent dark:focus:ring-gh-accent-dark focus:border-transparent transition select-all"
+                                />
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(selectedProjectId);
+                                        setMessage({ type: 'success', text: 'Project ID copied to clipboard' });
+                                        setTimeout(() => setMessage(null), 3000);
+                                    }}
+                                    className="px-4 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-gh-bg-dark border border-slate-300 dark:border-gh-border-dark rounded-lg hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark transition-colors cursor-pointer whitespace-nowrap"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+
                         {/* Docker Image */}
                         <div className="mb-5">
                             <label htmlFor="rs-docker-image" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">

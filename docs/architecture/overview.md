@@ -113,6 +113,7 @@ graph TB
 - `/api/test-cases/*` - Manual test case CRUD with AI step generation (Sprint 9)
 - `/api/test-cycles/*` - Hybrid test cycle management + item updates (Sprint 9)
 - `/api/projects/:projectId/env` - Per-project environment variable CRUD (secrets encrypted at rest)
+- `/api/ci/trigger` - Native CI/CD pipeline trigger; accepts `x-api-key` or Bearer JWT; creates test cycle + execution and queues to RabbitMQ
 - `/api/metrics/:image` - Performance insights
 - `/reports/*` - Static HTML test reports
 

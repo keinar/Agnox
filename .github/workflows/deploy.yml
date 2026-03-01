@@ -186,11 +186,21 @@ jobs:
 
       - name: Trigger Production E2E Tests on Agnox
         run: |
-          curl -X POST https://api.agnox.dev/api/executions \
+          curl -X POST https://api.agnox.dev/api/ci/trigger \
             -H "Content-Type: application/json" \
             -H "x-api-key: ${{ secrets.AGNOX_API_KEY }}" \
             -d '{
+              "projectId": "69a0093e9f7cf615581b1e81",
               "image": "keinar101/agnox-tests:latest",
+              "command": "npm run test:e2e",
               "folder": "specs",
-              "baseUrl": "https://agnox.dev"
+              "config": {
+                "environment": "production",
+                "baseUrl": "https://agnox.dev"
+              },
+              "ciContext": {
+                "source": "github",
+                "repository": "${{ github.repository }}",
+                "commitSha": "${{ github.sha }}"
+              }
             }'
