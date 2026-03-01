@@ -22,7 +22,9 @@ jobs:
         run: npm ci
 
       - name: Build Shared Types
-        run: npm run build -w shared-types
+        run: |
+          npm run build -w shared-types
+          npm run build -w @agnox/playwright-reporter
 
       - name: Linting
         run: npm run lint --if-present
