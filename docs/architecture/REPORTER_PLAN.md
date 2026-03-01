@@ -2,24 +2,22 @@
 
 **Author:** Claude Code (Senior Architect Mode)
 **Date:** 2026-03-01
-**Status:** DRAFT — Pending approval before implementation
+**Status:** IMPLEMENTED — Shipped in v3.8.0. This document is the original design plan and is preserved for historical reference. See `CHANGELOG.md` for the implementation record.
 
 ---
 
 ## 0. Vision & Motivation
 
-Agnox currently operates as an **Active Runner**: it provisions Docker containers, executes tests,
-and streams results. v4.0 extends Agnox into a **Central Quality Hub** by adding a
-**Passive Reporter** channel: developers run tests *anywhere* (GitHub Actions, local CI, Jenkins)
-and stream live results into the Agnox Dashboard in real-time — no Docker container required.
+Prior to v3.8.0, Agnox operated solely as an **Active Runner**: it provisioned Docker containers, executed tests, and streamed results. With v3.8.0, Agnox expanded into a **Central Quality Hub** by shipping a **Passive Reporter** channel: developers run tests *anywhere* (GitHub Actions, local CI, Jenkins) and stream live results into the Agnox Dashboard in real-time — no Docker container required.
 
 ```
-BEFORE (Active Runner only)
+BEFORE v3.8.0 (Active Runner only)
   Agnox → pulls Docker image → runs tests → streams logs back
 
-AFTER (Active Runner + Passive Reporter)
-  Agnox ← receives events from external runner (GitHub Actions, local CLI, Jenkins)
-  The UI updates in real-time exactly as it does for hosted runs.
+AS OF v3.8.0 (Active Runner + Passive Reporter — BOTH ACTIVE)
+  Path A: Agnox Hosted  → RabbitMQ → Worker → Docker container → results
+  Path B: External CI   → @agnox/playwright-reporter → POST /api/ingest/* → results
+  Both paths produce identical Dashboard entries and real-time Socket.IO updates.
 ```
 
 ---
@@ -873,4 +871,4 @@ Documentation (Phase 5)
 
 ---
 
-*End of plan. Ready for review and sprint planning.*
+*End of original design plan. This specification was fully implemented in v3.8.0. See `CHANGELOG.md` for the implementation record and `docs/integration/quickstart.md` for the live user-facing documentation.*

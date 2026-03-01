@@ -16,23 +16,24 @@ graph TB
         UI[Dashboard Client<br/>React + Vite]
     end
 
+    subgraph "Active Runner Path — Agnox Hosted"
+        RabbitMQ[RabbitMQ<br/>Task Distribution]
+        Worker[Worker Service<br/>Docker Orchestration]
+        Docker[Docker Engine<br/>Test Containers]
+    end
+
+    subgraph "Passive Reporter Path — External CI"
+        Reporter["@agnox/playwright-reporter<br/>External CI<br/>(GitHub Actions / GitLab / Jenkins)"]
+    end
+
     subgraph "API Layer"
         Producer[Producer Service<br/>Fastify + TypeScript]
         Socket[Socket.io<br/>Real-time Updates]
     end
 
-    subgraph "Worker Layer"
-        Worker[Worker Service<br/>Docker Orchestration]
-        Docker[Docker Engine<br/>Test Containers]
-    end
-
     subgraph "Data Layer"
         Mongo[(MongoDB<br/>Multi-tenant Data)]
         Redis[(Redis<br/>Cache + Queues)]
-    end
-
-    subgraph "Message Queue"
-        RabbitMQ[RabbitMQ<br/>Task Distribution]
     end
 
     subgraph "External Services"
@@ -54,8 +55,12 @@ graph TB
     Worker --> Redis
     Worker --> Gemini
 
+    Reporter -->|"POST /api/ingest/setup|event|teardown"| Producer
+
     Socket -.->|Organization Rooms| UI
 ```
+
+> **Dual Architecture:** Agnox supports two integration modes. **Agnox Hosted** provisions Docker containers and executes tests via the RabbitMQ → Worker pipeline. **External CI** allows `@agnox/playwright-reporter` to stream results from any existing CI environment directly to the Ingest API — no Docker image or infrastructure changes required.
 
 ---
 
@@ -74,7 +79,7 @@ graph TB
 - Mobile-responsive design powered strictly by Tailwind CSS
 - Real-time WebSocket connection with JWT authentication
 - Auth context for global authentication state
-- Settings pages (Organization, Members, Security, Usage)
+- **Contextual Sliding Sidebar:** When navigating to `/settings`, the persistent sidebar animates to reveal a dedicated settings sub-menu. The full settings sections are: **Profile**, **Organization**, **Team Members**, **Billing & Plans**, **Security**, **Usage**, **Run Settings**, **Env Variables**, **Connectors**, **Schedules**, and **Features**. Admin-only tabs (Billing & Plans, Features) are hidden for non-admin roles.
 
 **Port:** 8080 (exposed via Docker Compose)
 
@@ -290,6 +295,42 @@ sequenceDiagram
     Worker->>API: HTTP callback: final status
     API->>UI: WebSocket: final status
 ```
+
+---
+
+### External CI Ingest Flow (Passive Reporter)
+
+```mermaid
+sequenceDiagram
+    participant CI as CI Pipeline<br/>(GitHub Actions / GitLab / etc.)
+    participant Reporter as @agnox/playwright-reporter
+    participant API as Producer Service
+    participant Redis as Redis
+    participant MongoDB as MongoDB
+    participant UI as Dashboard Client
+
+    CI->>Reporter: Playwright test run starts
+    Reporter->>API: POST /api/ingest/setup {projectId, framework, totalTests, ciContext}
+    API->>MongoDB: Create Execution (status: RUNNING, source: external-ci)
+    API->>Redis: SET ingest:session:{sessionId} (TTL: 24h)
+    API->>UI: WebSocket: execution-updated (status: RUNNING)
+    API-->>Reporter: 201 { sessionId, taskId }
+
+    loop Every 2 s (batched events)
+        Reporter->>API: POST /api/ingest/event {sessionId, events[]}
+        API->>Redis: APPEND live:logs:{taskId}
+        API->>UI: WebSocket: execution-log (live terminal)
+    end
+
+    CI->>Reporter: Playwright suite finishes
+    Reporter->>API: POST /api/ingest/teardown {sessionId, status, summary}
+    API->>MongoDB: Update Execution (status: PASSED/FAILED, tests[], output)
+    API->>Redis: DEL session + live:logs keys
+    API->>UI: WebSocket: execution-updated (final status)
+    API-->>Reporter: 200 OK
+```
+
+> Results appear in the Dashboard under the **External CI** source filter. The reporter never blocks or crashes the CI pipeline — all errors are caught silently.
 
 ---
 

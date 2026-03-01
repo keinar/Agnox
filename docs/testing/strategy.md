@@ -67,7 +67,7 @@ If you are running the E2E suite against a **fresh production or staging environ
    ```
 2. **Set environment variables:** Export `E2E_EMAIL` and `E2E_PASSWORD` matching the account you just created.
 3. **Configure Project Settings:** In **Settings → Run Settings**, ensure a project exists with a valid Docker image (e.g., `keinar101/agnox-tests:latest`) and at least one target URL configured. Several E2E tests assert that the Run Settings form is pre-populated; without saved settings, these tests will fail.
-4. **Configure API Credentials (if testing integrations):** Integration-specific tests (Jira, Slack, CI providers) require valid credentials to be stored in **Settings → Integrations**. Without them, those tests must be skipped or the assertions adjusted for the "not configured" UI state.
+4. **Configure API Credentials (if testing integrations):** Integration-specific tests (Jira, Slack, CI providers) require valid credentials to be stored in **Settings → Connectors**. Without them, those tests must be skipped or the assertions adjusted for the "not configured" UI state.
 
 ### Root Cause Analysis: "Empty State" E2E Failures
 

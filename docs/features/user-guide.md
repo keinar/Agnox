@@ -234,15 +234,15 @@ Go to **Settings** → **Schedules** to see a table of all active CRON schedules
 
 ### Slack Notifications
 To receive a Slack message whenever a test run completes:
-1. Go to **Settings** → **Integrations**.
+1. Go to **Settings** → **Connectors**.
 2. Under the **Slack** card, paste your Slack **Incoming Webhook URL**. (This is optional to modify if the integration is already connected).
 3. Select which test execution statuses (PASSED, FAILED, ERROR, UNSTABLE) should trigger notifications.
 4. Click **Save Webhook**.
 
 Notifications are generated according to your selected statuses. Failed executions include a truncated AI analysis snippet and a direct link to the Investigation Hub.
 
-### CI/CD Integrations
-The dashboard displays "Connected" status badges for Jira, GitHub, GitLab, and Azure DevOps integration cards when valid credentials have been securely stored.
+### CI/CD Connectors
+The dashboard displays "Connected" status badges for Jira, GitHub, GitLab, and Azure DevOps connector cards when valid credentials have been securely stored.
 
 ---
 

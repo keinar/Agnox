@@ -25,19 +25,17 @@
 ### Critical Requirements
 
 #### 1. Environment Variables (CRITICAL)
-- [ ] **JWT_SECRET** - Generate cryptographically secure 64-character random string
+- [ ] **PLATFORM_JWT_SECRET** - Generate cryptographically secure 64-character random string
   ```bash
-  # Generate JWT_SECRET
+  # Generate PLATFORM_JWT_SECRET
   openssl rand -hex 32
   # OR
   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
   ```
-- [ ] **JWT_EXPIRY** - Set token expiration (default: `24h`, recommended: `8h` for production)
-- [ ] **PASSWORD_SALT_ROUNDS** - Set bcrypt salt rounds (default: `10`, min: `10`)
-- [ ] **MONGODB_URL** - Production MongoDB connection string with authentication
-- [ ] **RABBITMQ_URL** - Production RabbitMQ connection string
-- [ ] **REDIS_URL** - Production Redis connection string
-- [ ] **GEMINI_API_KEY** - Google Gemini API key for AI analysis
+- [ ] **PLATFORM_MONGO_URI** - Production MongoDB connection string with authentication
+- [ ] **PLATFORM_RABBITMQ_URL** - Production RabbitMQ connection string
+- [ ] **PLATFORM_REDIS_URL** - Production Redis connection string
+- [ ] **PLATFORM_GEMINI_API_KEY** - Google Gemini API key for AI analysis
 - [ ] **ALLOWED_ORIGINS** - Comma-separated list of allowed CORS origins
 - [ ] **PUBLIC_API_URL** - Public-facing API URL (for report links)
 
@@ -101,9 +99,7 @@ sudo nano .env
 # ================================
 
 # JWT Authentication (CRITICAL - CHANGE THESE!)
-JWT_SECRET=<64-character-random-hex-string>  # Generate: openssl rand -hex 32
-JWT_EXPIRY=8h
-PASSWORD_SALT_ROUNDS=12
+PLATFORM_JWT_SECRET=<64-character-random-hex-string>  # Generate: openssl rand -hex 32
 
 # Database (MongoDB)
 PLATFORM_MONGO_URI=mongodb://admin:<password>@mongodb-prod:27017/automation_platform?authSource=admin
@@ -164,13 +160,13 @@ echo "REDIS_PASSWORD=$REDIS_PASSWORD"
 
 ```bash
 # Check all critical variables are set
-cat .env | grep -E "JWT_SECRET|MONGODB_URL|RABBITMQ_URL|REDIS_URL|GEMINI_API_KEY"
+cat .env | grep -E "PLATFORM_JWT_SECRET|PLATFORM_MONGO_URI|PLATFORM_RABBITMQ_URL|PLATFORM_REDIS_URL|PLATFORM_GEMINI_API_KEY"
 
-# Verify JWT_SECRET is not default
+# Verify PLATFORM_JWT_SECRET is not default
 if grep -q "dev-secret-CHANGE-IN-PRODUCTION" .env; then
-  echo "❌ ERROR: JWT_SECRET is still using default value!"
+  echo "❌ ERROR: PLATFORM_JWT_SECRET is still using default value!"
 else
-  echo "✅ JWT_SECRET is set correctly"
+  echo "✅ PLATFORM_JWT_SECRET is set correctly"
 fi
 ```
 
@@ -703,15 +699,15 @@ docker exec -it automation-redis redis-cli INFO memory
 
 The `GET /api/system/monitor-status` endpoint provides a machine-readable health signal for external uptime monitors. It powers [status.agnox.dev](https://status.agnox.dev).
 
-**Required environment variable:** Set `AGNOX_MONITOR_SECRET` in your `.env` to a secure random string (min 32 chars):
+**Required environment variable:** Set `MONITORING_SECRET_KEY` in your `.env` to a secure random string (min 32 chars):
 ```bash
-AGNOX_MONITOR_SECRET=$(openssl rand -hex 32)
+MONITORING_SECRET_KEY=$(openssl rand -hex 32)
 ```
 
 **Probe the endpoint:**
 ```bash
 curl -s \
-  -H "X-Agnox-Monitor-Secret: $AGNOX_MONITOR_SECRET" \
+  -H "X-Agnox-Monitor-Secret: $MONITORING_SECRET_KEY" \
   https://api.agnox.dev/api/system/monitor-status
 # Expected:
 # { "success": true, "data": { "status": "healthy", "version": "3.5.0", "timestamp": "..." } }
@@ -723,7 +719,7 @@ curl -s \
 3. Set the expected keyword or status code to `"healthy"` / `200`.
 4. Connect to your status page at `status.agnox.dev`.
 
-> **Security:** Never expose `AGNOX_MONITOR_SECRET` publicly. Requests without a valid header receive `401 Unauthorized`. This ensures the health endpoint cannot be used for information gathering by unauthorized parties.
+> **Security:** Never expose `MONITORING_SECRET_KEY` publicly. Requests without a valid header receive `401 Unauthorized`. This ensures the health endpoint cannot be used for information gathering by unauthorized parties.
 
 ### 3. Error Monitoring (First 24 Hours)
 

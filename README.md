@@ -118,7 +118,7 @@ Stream live Playwright test results to your Agnox dashboard without wrapping tes
 - **Batched delivery:** `EventBatcher` groups events and flushes every 2 s (configurable) to minimize HTTP overhead
 - **Auto CI detection:** Automatically detects GitHub Actions, GitLab CI, Azure DevOps, and Jenkins environment variables and attaches CI context (repository, branch, PR number, commit SHA, run URL) to the session
 - **Do No Harm:** All reporter errors are caught and suppressed — the reporter is always a silent no-op if the Agnox API is unreachable; your test suite is never affected
-- **Dashboard source filter:** Runs from the reporter appear as `external-ci` source in the Dashboard. Use the new Source filter to separate external CI passive runs from Agnox-hosted Docker runs
+- **Dashboard source filter:** Runs from the reporter appear as `external-ci` source in the Dashboard. Use the **Source** filter to separate **External CI** passive runs from **Agnox Hosted** Docker runs
 
 **Usage (`playwright.config.ts`):**
 ```typescript

@@ -67,7 +67,7 @@ Agnostic-Automation-Center/
 │   ├── deployment/                # stripe-production-checklist
 │   └── system/                    # project-history-archive
 │
-├── migrations/                    # Migration files (001–007)
+├── migrations/                    # Migration files (001–008)
 │   ├── 001-add-organization-to-existing-data.ts
 │   ├── 002-create-invitations-indexes.js
 │   ├── 003-create-audit-logs-indexes.js
@@ -97,7 +97,11 @@ Agnostic-Automation-Center/
 
 ### Service Topology
 
+Agnox operates as a **Dual Architecture** platform: tests can be executed via the **Agnox Hosted** (Active Runner) path or observed via the **External CI** (Passive Reporter) path.
+
 ```
+  ── AGNOX HOSTED (Active Runner) ────────────────────────────────────────
+
                   ┌──────────────┐
    Browser ─────► │  Dashboard   │ React 19 SPA (port 8080)
                   │  (nginx)     │
@@ -123,6 +127,21 @@ Agnostic-Automation-Center/
                               │ Test      │ User's Docker image
                               │ Container │ /app/entrypoint.sh
                               └──────────┘
+
+  ── EXTERNAL CI (Passive Reporter) ──────────────────────────────────────
+
+   CI Pipeline  ──► @agnox/playwright-reporter
+   (GitHub Actions,      │  POST /api/ingest/setup
+    GitLab CI,           │  POST /api/ingest/event   (batched, every 2s)
+    Jenkins, local)      │  POST /api/ingest/teardown
+                         │
+                  ┌──────▼───────┐
+                  │   Producer   │ validates x-api-key, writes to Redis +
+                  │   Service    │ MongoDB, emits Socket.IO events
+                  └──────────────┘
+                         │
+                  Browser receives live logs & final status via WebSocket
+                  (identical UX to Agnox Hosted runs)
 ```
 
 ### Product Features (Phases 1-5 — All Complete)
@@ -136,7 +155,7 @@ Agnostic-Automation-Center/
 | 5 | Email Integration | SendGrid transactional emails (invitations, welcome, payment events), console fallback |
 | 6 | Enterprise UI Overhaul | Full Tailwind CSS migration (zero inline styles), GitHub-inspired semantic token palette (`gh-bg`, `gh-border`, etc.), `ThemeContext` with Light/Dark toggle, collapsible sidebar, version footer with Changelog modal, DateRangeFilter, responsive filter drawer |
 | 7 (**Complete**) | The Investigation Hub | Unified side-drawer (`ExecutionDrawer.tsx`) with URL-state deep-linking (`?drawerId=<taskId>`), 3-tab layout: Terminal / Artifacts / AI Analysis. `ArtifactsView.tsx` media gallery. `GET /api/executions/:taskId/artifacts` endpoint for filesystem artifact listing. |
-| 8 (**Complete**) | CRON Scheduling & Slack Notifications | Native CRON scheduling engine (`node-cron`) with `scheduler.ts` in-memory job registry, 3 REST endpoints (`POST/GET/DELETE /api/schedules`), `schedules` MongoDB collection. Dual-mode Execution Modal (Immediate / Schedule Run). `SchedulesList` settings tab. Slack Incoming Webhook notifications (`notifier.ts`) on final execution statuses — configured per-org via Integrations tab. |
+| 8 (**Complete**) | CRON Scheduling & Slack Notifications | Native CRON scheduling engine (`node-cron`) with `scheduler.ts` in-memory job registry, 3 REST endpoints (`POST/GET/DELETE /api/schedules`), `schedules` MongoDB collection. Dual-mode Execution Modal (Immediate / Schedule Run). `SchedulesList` settings tab. Slack Incoming Webhook notifications (`notifier.ts`) on final execution statuses — configured per-org via Connectors tab. |
 | 9 (**Complete**) | Quality Hub: Manual Testing & Hybrid Cycles | Test case repository (`test_cases` collection) with CRUD + AI bulk generation via Gemini. `TestCases.tsx` page with suite-grouped accordions and `TestCaseDrawer.tsx` side drawer. Hybrid cycle builder: `test_cycles` collection, `CycleBuilderDrawer.tsx`, `TestCycles.tsx` page. Manual execution player (`ManualExecutionDrawer.tsx`) with step-by-step Pass/Fail/Skip. Worker→Producer cycle sync via `cycleId`/`cycleItemId`. `PUT /api/test-cycles/:cycleId/items/:itemId` for manual results. |
 | 10 (**Complete**) | Reporting & Automation Infrastructure | Live HTML cycle reports (`CycleReportPage.tsx`) with native print optimization. `VersionDisplay.tsx` component reads `__APP_VERSION__` injected at build time from root `package.json`. Automated version pipeline eliminates manual version strings. Print CSS forces manual-step expansion and high-contrast badges for PDF output. |
 | 11 (**Complete**) | Security Hardening (Defense in Depth) | Redis-backed JWT revocation blacklist, `PLATFORM_*` prefix namespace for safe Docker orchestration, RabbitMQ Zod schema validation, HMAC-signed static report access, SSRF protections, and HS256 algorithm pinning. |
