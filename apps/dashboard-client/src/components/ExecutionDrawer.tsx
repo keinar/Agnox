@@ -235,7 +235,7 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
 
   return (
     <Transition show={isOpen}>
-      <Dialog onClose={onClose} className="relative z-50">
+      <Dialog onClose={onClose} aria-labelledby="execution-drawer-title" className="relative z-50">
 
         {/* ── Backdrop ────────────────────────────────────────────────────── */}
         <TransitionChild
@@ -247,6 +247,7 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
           leaveTo="opacity-0"
         >
           <div
+            data-testid="execution-drawer-backdrop"
             className="fixed inset-0 bg-slate-900/50 dark:bg-black/70"
             aria-hidden="true"
           />
@@ -263,12 +264,12 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
               leaveFrom="translate-x-0"
               leaveTo="translate-x-full"
             >
-              <DialogPanel className="relative flex h-full flex-col bg-white dark:bg-gh-bg-dark border-l border-slate-200 dark:border-gh-border-dark shadow-2xl w-full max-w-full md:w-[600px] lg:w-[896px]">
+              <DialogPanel data-testid="execution-drawer-panel" className="relative flex h-full flex-col bg-white dark:bg-gh-bg-dark border-l border-slate-200 dark:border-gh-border-dark shadow-2xl w-full max-w-full md:w-[600px] lg:w-[896px]">
 
                 {/* ── Header ────────────────────────────────────────────── */}
-                <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-200 dark:border-gh-border-dark shrink-0">
+                <div data-testid="execution-drawer-header" className="flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-200 dark:border-gh-border-dark shrink-0">
                   <div className="flex flex-col gap-0.5 min-w-0">
-                    <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    <h2 id="execution-drawer-title" className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                       Execution Details
                     </h2>
                     <p className="text-xs font-mono text-slate-500 dark:text-slate-400 truncate">
@@ -279,6 +280,7 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
                     {/* Analyzing spinner */}
                     {execution?.status === 'ANALYZING' && (
                       <div
+                        data-testid="execution-drawer-analyzing-spinner"
                         role="status"
                         aria-label="AI Analysis in progress"
                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
@@ -293,6 +295,7 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
                       const hasTickets = ((execution as any).jiraTickets?.length ?? 0) > 0;
                       return (
                         <button
+                          data-testid="execution-drawer-jira-button"
                           onClick={() => setShowJiraModal(true)}
                           title={hasTickets ? `${(execution as any).jiraTickets.length} Jira ticket(s) linked — click to view or create another` : 'Create Jira Ticket'}
                           aria-label={hasTickets ? 'View or create Jira ticket' : 'Create Jira Ticket'}
@@ -320,6 +323,7 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
                           <>
                             {execution.hasNativeReport === true && (
                               <button
+                                data-testid="execution-drawer-html-report-button"
                                 type="button"
                                 disabled={fetchingReport}
                                 title="HTML Report"
@@ -332,6 +336,7 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
                             )}
                             {execution.hasAllureReport === true && (
                               <button
+                                data-testid="execution-drawer-allure-report-button"
                                 type="button"
                                 disabled={fetchingReport}
                                 title="Allure Report"
@@ -348,6 +353,7 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
                     )}
 
                     <button
+                      data-testid="execution-drawer-close-button"
                       onClick={onClose}
                       aria-label="Close drawer"
                       className="ml-2 flex shrink-0 items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors duration-150 cursor-pointer"
@@ -371,11 +377,14 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
                   };
 
                   return (
-                    <div className="shrink-0 border-b border-violet-100 dark:border-violet-900/50 bg-violet-50/60 dark:bg-violet-950/20">
+                    <div data-testid="execution-drawer-ci-context-panel" className="shrink-0 border-b border-violet-100 dark:border-violet-900/50 bg-violet-50/60 dark:bg-violet-950/20">
                       {/* Collapsible header */}
                       <button
                         type="button"
+                        data-testid="execution-drawer-ci-context-toggle"
                         onClick={() => setCiContextOpen((v) => !v)}
+                        aria-expanded={ciContextOpen}
+                        aria-controls="execution-drawer-ci-context-body"
                         className="w-full flex items-center justify-between px-6 py-2.5 cursor-pointer group"
                       >
                         <div className="flex items-center gap-2">
@@ -397,7 +406,7 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
 
                       {/* Collapsible body */}
                       {ciContextOpen && (
-                        <div className="px-6 pb-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+                        <div id="execution-drawer-ci-context-body" data-testid="execution-drawer-ci-context-body" className="px-6 pb-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
 
                           {ci?.repository && (
                             <div className="flex items-start gap-2 min-w-0">
@@ -447,6 +456,7 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
                               <div className="min-w-0">
                                 <p className="text-[10px] font-medium text-violet-400 dark:text-violet-500 uppercase tracking-wide mb-0.5">CI Job URL</p>
                                 <a
+                                  data-testid="execution-drawer-ci-run-url"
                                   href={ci.runUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
@@ -472,10 +482,14 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
                 })()}
 
                 {/* ── Tab bar ───────────────────────────────────────────── */}
-                <div className="flex items-center gap-1 px-6 border-b border-slate-200 dark:border-gh-border-dark shrink-0">
+                <div role="tablist" data-testid="execution-drawer-tab-bar" className="flex items-center gap-1 px-6 border-b border-slate-200 dark:border-gh-border-dark shrink-0">
                   {visibleTabs.map((tab) => (
                     <button
                       key={tab.id}
+                      id={`execution-drawer-tab-${tab.id}`}
+                      data-testid={`execution-drawer-tab-${tab.id}`}
+                      role="tab"
+                      aria-selected={effectiveTab === tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors duration-150 cursor-pointer ${effectiveTab === tab.id
                         ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
@@ -489,7 +503,7 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
 
                 {/* ── Tab content ───────────────────────────────────────── */}
                 {/* Terminal manages its own scroll; other tabs own their padding wrapper. */}
-                <div className="flex-1 overflow-hidden">
+                <div data-testid="execution-drawer-tab-content" className="flex-1 overflow-hidden">
 
                   {effectiveTab === 'terminal' && (
                     <TerminalView
@@ -499,13 +513,13 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
                   )}
 
                   {effectiveTab === 'artifacts' && (
-                    <div className="h-full overflow-y-auto p-6">
+                    <div role="tabpanel" aria-labelledby="execution-drawer-tab-artifacts" className="h-full overflow-y-auto p-6">
                       <ArtifactsView artifacts={artifacts} isLoading={artifactsLoading} />
                     </div>
                   )}
 
                   {effectiveTab === 'ai-analysis' && (
-                    <div className="h-full overflow-y-auto p-6">
+                    <div role="tabpanel" aria-labelledby="execution-drawer-tab-ai-analysis" className="h-full overflow-y-auto p-6">
                       <AIAnalysisView
                         analysis={execution?.analysis ?? null}
                         status={execution?.status ?? ''}

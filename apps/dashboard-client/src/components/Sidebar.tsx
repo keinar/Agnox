@@ -85,8 +85,8 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
 
   // ── Logo header ───────────────────────────────────────────────────────────
   const logoBlock = (
-    <div className="flex items-center justify-between px-3 py-4 border-b border-slate-300 dark:border-gh-border-dark">
-      <Link to="/dashboard" className="flex-shrink-0 min-w-0">
+    <div data-testid="sidebar-logo-header" className="flex items-center justify-between px-3 py-4 border-b border-slate-300 dark:border-gh-border-dark">
+      <Link to="/dashboard" data-testid="sidebar-logo-link" className="flex-shrink-0 min-w-0">
         <img
           src={logo}
           alt="Agnox"
@@ -94,8 +94,11 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
         />
       </Link>
       <button
+        data-testid="sidebar-collapse-button"
         onClick={onToggle}
         aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-expanded={!isCollapsed}
+        aria-controls="sidebar-desktop-nav"
         className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-md text-slate-400 hover:text-slate-600 hover:bg-gh-bg-subtle dark:text-slate-500 dark:hover:text-gh-text-dark dark:hover:bg-gh-bg-subtle-dark transition-colors duration-150"
       >
         {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -105,12 +108,13 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
 
   // ── Desktop: left panel (main nav) ────────────────────────────────────────
   const desktopMainNav = (
-    <nav className="w-1/2 overflow-y-auto px-2 py-4 flex flex-col gap-1">
+    <nav data-testid="sidebar-main-nav" aria-label="Main navigation" className="w-1/2 overflow-y-auto px-2 py-4 flex flex-col gap-1">
       {visibleNavItems.map(({ icon: Icon, label, to, href, disabled }) => {
         if (disabled) {
           return (
             <div
               key={label}
+              data-testid={`sidebar-nav-${label.toLowerCase().replace(/\s+/g, '-')}-disabled`}
               title={label}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium opacity-50 cursor-not-allowed ${DEFAULT_CLASS}`}
             >
@@ -126,6 +130,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
               href={href}
               target="_blank"
               rel="noreferrer"
+              data-testid={`sidebar-nav-${label.toLowerCase().replace(/\s+/g, '-')}`}
               title={isCollapsed ? label : undefined}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors duration-150 ${DEFAULT_CLASS}`}
             >
@@ -138,6 +143,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
           <NavLink
             key={label}
             to={to!}
+            data-testid={`sidebar-nav-${label.toLowerCase().replace(/\s+/g, '-')}`}
             title={isCollapsed ? label : undefined}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors duration-150 ${isActive ? ACTIVE_CLASS : DEFAULT_CLASS}`
@@ -153,10 +159,11 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
 
   // ── Desktop: right panel (settings sub-menu) ─────────────────────────────
   const desktopSettingsNav = (
-    <nav className="w-1/2 overflow-y-auto px-2 py-4 flex flex-col gap-1">
+    <nav data-testid="sidebar-settings-nav" aria-label="Settings navigation" className="w-1/2 overflow-y-auto px-2 py-4 flex flex-col gap-1">
       {/* Back to main menu */}
       <Link
         to="/dashboard"
+        data-testid="sidebar-back-link"
         title={isCollapsed ? 'Back to Main Menu' : undefined}
         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors duration-150 ${DEFAULT_CLASS}`}
       >
@@ -171,6 +178,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
       {settingsTabs.map(({ id, label, icon: Icon }) => (
         <button
           key={id}
+          data-testid={`sidebar-settings-tab-${id}`}
           onClick={() => setSearchParams({ tab: id })}
           title={isCollapsed ? label : undefined}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors duration-150 ${
@@ -189,8 +197,9 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
   // Translating by -50% of its own width (= -100% of viewport width) reveals
   // the right panel when the user is inside /settings.
   const desktopSlidingNav = (
-    <div className="overflow-hidden relative flex-1">
+    <div data-testid="sidebar-sliding-nav" className="overflow-hidden relative flex-1">
       <div
+        id="sidebar-desktop-nav"
         className={`absolute top-0 left-0 bottom-0 w-[200%] flex transition-transform duration-300 ease-in-out ${
           isSettings ? '-translate-x-1/2' : 'translate-x-0'
         }`}
@@ -203,9 +212,10 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
 
   // ── Version footer ────────────────────────────────────────────────────────
   const versionFooter = (
-    <div className="px-3 py-3 border-t border-slate-300 dark:border-gh-border-dark flex items-center justify-center">
+    <div data-testid="sidebar-version-footer" className="px-3 py-3 border-t border-slate-300 dark:border-gh-border-dark flex items-center justify-center">
       {isCollapsed ? (
         <button
+          data-testid="sidebar-changelog-button"
           onClick={() => setShowChangelog(true)}
           title={`Version ${APP_VERSION} — What's New`}
           aria-label="Open changelog"
@@ -215,6 +225,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
         </button>
       ) : (
         <button
+          data-testid="sidebar-changelog-button"
           onClick={() => setShowChangelog(true)}
           aria-label="Open changelog"
           className="hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors"
@@ -228,6 +239,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
   // ── Desktop sidebar ───────────────────────────────────────────────────────
   const desktopSidebar = (
     <aside
+      data-testid="sidebar-desktop"
       className={`hidden md:flex flex-col bg-white shadow-sm dark:shadow-none dark:bg-gh-bg-dark border-r border-slate-300 dark:border-gh-border-dark transition-all duration-300 flex-shrink-0 ${
         isCollapsed ? 'w-16' : 'w-60'
       }`}
@@ -240,12 +252,13 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
 
   // ── Mobile: left panel (main nav) ─────────────────────────────────────────
   const mobileMainNav = (
-    <nav className="w-1/2 overflow-y-auto px-2 py-4 flex flex-col gap-1">
+    <nav data-testid="sidebar-mobile-main-nav" aria-label="Main navigation" className="w-1/2 overflow-y-auto px-2 py-4 flex flex-col gap-1">
       {visibleNavItems.map(({ icon: Icon, label, to, href, disabled }) => {
         if (disabled) {
           return (
             <div
               key={label}
+              data-testid={`sidebar-mobile-nav-${label.toLowerCase().replace(/\s+/g, '-')}-disabled`}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium opacity-50 cursor-not-allowed ${DEFAULT_CLASS}`}
             >
               <Icon size={18} className="flex-shrink-0" />
@@ -260,6 +273,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
               href={href}
               target="_blank"
               rel="noreferrer"
+              data-testid={`sidebar-mobile-nav-${label.toLowerCase().replace(/\s+/g, '-')}`}
               onClick={onMobileClose}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors duration-150 ${DEFAULT_CLASS}`}
             >
@@ -272,6 +286,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
           <NavLink
             key={label}
             to={to!}
+            data-testid={`sidebar-mobile-nav-${label.toLowerCase().replace(/\s+/g, '-')}`}
             onClick={onMobileClose}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors duration-150 ${isActive ? ACTIVE_CLASS : DEFAULT_CLASS}`
@@ -287,9 +302,10 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
 
   // ── Mobile: right panel (settings sub-menu) ───────────────────────────────
   const mobileSettingsNav = (
-    <nav className="w-1/2 overflow-y-auto px-2 py-4 flex flex-col gap-1">
+    <nav data-testid="sidebar-mobile-settings-nav" aria-label="Settings navigation" className="w-1/2 overflow-y-auto px-2 py-4 flex flex-col gap-1">
       <Link
         to="/dashboard"
+        data-testid="sidebar-mobile-back-link"
         onClick={onMobileClose}
         className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors duration-150 ${DEFAULT_CLASS}`}
       >
@@ -302,6 +318,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
       {settingsTabs.map(({ id, label, icon: Icon }) => (
         <button
           key={id}
+          data-testid={`sidebar-mobile-settings-tab-${id}`}
           onClick={() => setSearchParams({ tab: id })}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors duration-150 ${
             activeTab === id ? ACTIVE_CLASS : DEFAULT_CLASS
@@ -333,6 +350,7 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
     <>
       {isMobileOpen && (
         <div
+          data-testid="sidebar-mobile-overlay"
           role="button"
           tabIndex={-1}
           aria-label="Close navigation"
@@ -343,16 +361,20 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
       )}
 
       <aside
+        data-testid="sidebar-mobile"
+        aria-hidden={!isMobileOpen}
         className={`fixed inset-y-0 left-0 z-50 w-60 bg-white shadow-lg dark:shadow-none dark:bg-gh-bg-dark border-r border-slate-300 dark:border-gh-border-dark flex flex-col md:hidden transition-transform duration-300 ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between px-4 py-4 border-b border-slate-300 dark:border-gh-border-dark">
-          <Link to="/dashboard" onClick={onMobileClose} className="flex-shrink-0">
+        <div data-testid="sidebar-mobile-header" className="flex items-center justify-between px-4 py-4 border-b border-slate-300 dark:border-gh-border-dark">
+          <Link to="/dashboard" data-testid="sidebar-mobile-logo-link" onClick={onMobileClose} className="flex-shrink-0">
             <img src={logo} alt="Agnox" className="h-10 w-auto object-contain" />
           </Link>
           <button
+            data-testid="sidebar-mobile-close-button"
             onClick={onMobileClose}
+            aria-label="Close sidebar"
             className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-gh-bg-subtle dark:hover:bg-gh-bg-subtle-dark transition-colors duration-150"
           >
             <X size={18} />
@@ -361,8 +383,9 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
 
         {mobileSlidingNav}
 
-        <div className="px-4 py-3 border-t border-slate-300 dark:border-gh-border-dark">
+        <div data-testid="sidebar-mobile-version-footer" className="px-4 py-3 border-t border-slate-300 dark:border-gh-border-dark">
           <button
+            data-testid="sidebar-mobile-changelog-button"
             onClick={() => { onMobileClose(); setShowChangelog(true); }}
             aria-label="Open changelog"
             className="hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer transition-colors"
