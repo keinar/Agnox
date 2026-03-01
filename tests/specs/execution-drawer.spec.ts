@@ -53,7 +53,10 @@ test.describe('Suite C — AI Analysis & Triage', () => {
         await drawerPage.clickTab('AI Analysis');
         await expect(drawerPage.getTabLocator('AI Analysis')).toHaveClass(/.*text-blue-600.*/);
 
-        const rootCauseHeader = drawerPage.drawer.getByRole('heading', { name: 'Root Cause Analysis' });
+        const rootCauseHeader = drawerPage.drawer.getByRole('heading', {
+            name: /^Root Cause Analysis$/,
+            exact: true
+        });
         await expect(rootCauseHeader).toBeVisible();
         await expect(drawerPage.drawer.getByText('Issue: Timeout')).toBeVisible();
         await expect(drawerPage.drawer.getByText('Recommendation: Check Redis connection.')).toBeVisible();
