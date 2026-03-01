@@ -332,7 +332,7 @@ export async function testCycleRoutes(
 
     app.get('/api/test-cycles', { preHandler: [apiRateLimit] }, async (request, reply) => {
         const organizationId = request.user!.organizationId;
-        const query = request.query as { projectId?: string; status?: string };
+        const query = request.query as { projectId?: string; status?: string; source?: string };
 
         if (!query.projectId || query.projectId.trim().length === 0) {
             return reply.status(400).send({ success: false, error: 'projectId query parameter is required' });
@@ -347,6 +347,10 @@ export async function testCycleRoutes(
 
         if (query.status && VALID_CYCLE_STATUSES.has(query.status as CycleStatus)) {
             filter.status = query.status;
+        }
+
+        if (query.source) {
+            filter.source = query.source;
         }
 
         try {

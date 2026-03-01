@@ -384,6 +384,7 @@ export async function setupRoutes(
         startAfter?: string;
         startBefore?: string;
         groupName?: string;
+        source?: string;
     }
 
     app.get('/api/executions', async (request, reply) => {
@@ -422,6 +423,11 @@ export async function setupRoutes(
         // Group name filter: exact match
         if (q.groupName) {
             filter.groupName = q.groupName.trim();
+        }
+
+        // Source filter: 'agnox-hosted' | 'external-ci'
+        if (q.source) {
+            filter.source = q.source.trim();
         }
 
         // Date range filter on startTime
@@ -655,6 +661,7 @@ export async function setupRoutes(
         startBefore?: string;
         /** Exact match — filters to show only this group's executions. */
         groupName?: string;
+        source?: string;
     }
 
     app.get('/api/executions/grouped', async (request, reply) => {
@@ -691,6 +698,11 @@ export async function setupRoutes(
         // Group name filter: exact match (pre-filters executions before aggregation)
         if (q.groupName) {
             matchFilter.groupName = q.groupName.trim();
+        }
+
+        // Source filter: 'agnox-hosted' | 'external-ci'
+        if (q.source) {
+            matchFilter.source = q.source.trim();
         }
 
         if (q.startAfter || q.startBefore) {
