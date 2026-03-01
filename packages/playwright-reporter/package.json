@@ -1,6 +1,6 @@
 {
   "name": "@agnox/playwright-reporter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Official Playwright reporter for Agnox — stream live test results to your dashboard",
   "type": "module",
   "main": "dist/index.js",

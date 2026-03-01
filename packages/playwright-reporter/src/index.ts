@@ -34,7 +34,7 @@ import { AgnoxClient } from './client.js';
 import { EventBatcher } from './batcher.js';
 import type { AgnoxReporterConfig, ICiContext, IngestEvent } from './types.js';
 
-const PACKAGE_VERSION = '1.0.0';
+const PACKAGE_VERSION = '1.0.1';
 
 // Playwright's TestResult.status includes 'interrupted' which has no matching
 // IngestEvent status — we normalise it to 'failed'.
