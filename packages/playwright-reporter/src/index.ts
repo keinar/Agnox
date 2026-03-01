@@ -65,9 +65,12 @@ interface RunSummary {
 }
 
 export default class AgnoxReporter implements Reporter {
-  private readonly client: AgnoxClient;
-  private readonly batcher: EventBatcher;
-  private readonly cfg: ResolvedConfig;
+  private readonly client!: AgnoxClient;
+  private readonly batcher!: EventBatcher;
+  private readonly cfg!: ResolvedConfig;
+
+  /** If true, reporter is completely disabled (missing config). */
+  private readonly disabled: boolean = false;
 
   /** Set after a successful /setup call. If null, reporter is a no-op. */
   private sessionId: string | null = null;
@@ -81,8 +84,14 @@ export default class AgnoxReporter implements Reporter {
   };
 
   constructor(config: AgnoxReporterConfig) {
-    if (!config.apiKey) throw new Error('[agnox] apiKey is required');
-    if (!config.projectId) throw new Error('[agnox] projectId is required');
+    if (!config.apiKey || !config.projectId) {
+      console.warn(
+        '[agnox] Reporter disabled — apiKey or projectId not provided. '
+        + 'Tests will run normally without Agnox reporting.'
+      );
+      this.disabled = true;
+      return;
+    }
 
     this.cfg = {
       baseUrl: config.baseUrl ?? 'https://dev.agnox.dev',
@@ -112,6 +121,7 @@ export default class AgnoxReporter implements Reporter {
   // ---------------------------------------------------------------------------
 
   async onBegin(_config: FullConfig, suite: Suite): Promise<void> {
+    if (this.disabled) return;
     this.summary.startTime = Date.now();
 
     const res = await this.client.setup({
@@ -131,7 +141,7 @@ export default class AgnoxReporter implements Reporter {
   }
 
   onTestBegin(test: TestCase, _result: TestResult): void {
-    if (!this.sessionId) return;
+    if (this.disabled || !this.sessionId) return;
 
     this.batcher.push({
       type: 'test-begin',
@@ -143,7 +153,7 @@ export default class AgnoxReporter implements Reporter {
   }
 
   onStdOut(chunk: string | Buffer, test?: TestCase, _result?: TestResult): void {
-    if (!this.sessionId) return;
+    if (this.disabled || !this.sessionId) return;
 
     this.batcher.push({
       type: 'log',
@@ -154,7 +164,7 @@ export default class AgnoxReporter implements Reporter {
   }
 
   onStdErr(chunk: string | Buffer, test?: TestCase, _result?: TestResult): void {
-    if (!this.sessionId) return;
+    if (this.disabled || !this.sessionId) return;
 
     this.batcher.push({
       type: 'log',
@@ -165,6 +175,7 @@ export default class AgnoxReporter implements Reporter {
   }
 
   onTestEnd(test: TestCase, result: TestResult): void {
+    if (this.disabled) return;
     // Always accumulate summary stats — we need them for teardown even if
     // setup succeeded after this hook was first called.
     const ingestStatus = toIngestStatus(result.status);
@@ -185,6 +196,7 @@ export default class AgnoxReporter implements Reporter {
   }
 
   async onEnd(result: FullResult): Promise<void> {
+    if (this.disabled) return;
     // Flush remaining buffered events BEFORE sending teardown so the backend
     // receives all test-end events prior to finalising the execution record.
     await this.batcher.drain();

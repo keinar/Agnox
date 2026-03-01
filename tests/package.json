@@ -9,6 +9,7 @@
     "report": "playwright show-report ../playwright-report"
   },
   "devDependencies": {
+    "@agnox/playwright-reporter": "file:../packages/playwright-reporter",
     "@playwright/test": "^1.57.0",
     "@types/node": "^22.10.5"
   },

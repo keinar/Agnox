@@ -64,8 +64,6 @@ export class AgnoxClient {
 
       return res.json() as T;
     } catch (err: unknown) {
-      // Retry once on transient network errors (NOT on 4xx / 5xx — those are
-      // caught by the !res.ok branch above and don't throw).
       if (attempt < 2) {
         await new Promise<void>(resolve => setTimeout(resolve, RETRY_DELAY_MS));
         return this.post<T>(path, body, attempt + 1);

@@ -26,7 +26,12 @@ export default defineConfig({
 
     reporter: [
         ['list'],
-        ['html', { outputFolder: '../playwright-report', open: 'never' }]
+        ['html', { outputFolder: '../playwright-report', open: 'never' }],
+        ['@agnox/playwright-reporter', {
+            apiKey: process.env.AGNOX_API_KEY || '',
+            projectId: process.env.AGNOX_PROJECT_ID || '',
+            baseUrl: 'https://api.agnox.dev:3000/api'
+        }]
     ],
 
     use: {

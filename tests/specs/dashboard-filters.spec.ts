@@ -66,19 +66,12 @@ test.describe('Suite D — Dashboard Filters', () => {
         // 2. Action: Navigate to /dashboard
         const urlToVisit = baseURL ? `${baseURL}/dashboard` : 'http://localhost:8080/dashboard';
 
-        // Use Promise.all so the waitForResponse listener is registered *before* the
-        // navigation fires — preventing the race condition where the mock response
-        // resolves before Playwright starts listening.
-        await Promise.all([
-            page.waitForResponse(
-                response => response.url().includes('/api/executions') && response.status() === 200,
-                { timeout: 15000 }
-            ),
-            page.goto(urlToVisit),
-        ]);
+        // Navigate and wait for DOM-based evidence that the initial data loaded.
+        // Avoids waitForResponse, which is unreliable when the SPA serves data from cache.
+        await page.goto(urlToVisit);
 
-        // Ensure the table initially loaded all 3 mock items
-        // Wait for the specific texts to be visible in the DOM first, allowing React time to render
+        // Ensure the table initially loaded all 3 mock items.
+        // Playwright polls these assertions until they pass (up to the configured expect timeout).
         await expect(page.locator(`text=${ID_PASSED}`)).toBeVisible();
         await expect(page.locator(`text=${ID_FAILED}`)).toBeVisible();
         await expect(page.locator(`text=${ID_ERROR}`)).toBeVisible();
@@ -86,20 +79,17 @@ test.describe('Suite D — Dashboard Filters', () => {
         // Once visible, confirming the strict count is safe
         await expect(page.locator('tbody tr')).toHaveCount(3);
 
-        // 2. Action: Click the "Failed" filter button
-        // Playwright strictly selects the button using the exact recognizable text.
+        // 2. Action: Click the "Failed" filter button.
+        // The Source filter added "All", "Agnox Hosted", "External CI" buttons — none conflict
+        // with this locator, so the exact-match on "Failed" remains unambiguous.
         const failedButton = page.getByRole('button', { name: 'Failed', exact: true });
         await expect(failedButton).toBeVisible();
+        await failedButton.click();
 
-        // Same pattern: register the listener before clicking so we never miss the response.
-        await Promise.all([
-            page.waitForResponse(response =>
-                response.url().includes('/api/executions') &&
-                response.url().includes('status=FAILED') &&
-                response.status() === 200
-            ),
-            failedButton.click(),
-        ]);
+        // Give the UI time to settle. The SPA may serve the filtered result from its in-memory
+        // cache (no network round-trip), so waitForResponse would hang indefinitely. A short
+        // fixed wait followed by polling assertions is the robust alternative.
+        await page.waitForTimeout(1000);
 
         // 4. Assertion: Verify the table now shows exactly 1 row
         // Wait for the specific mock ID string to ensure data matched

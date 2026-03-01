@@ -1,14 +1,17 @@
 {
   "name": "@agnox/playwright-reporter",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Official Playwright reporter for Agnox — stream live test results to your dashboard",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     }
   },
   "scripts": {
@@ -23,7 +26,15 @@
     "@playwright/test": "^1.51.0",
     "typescript": "^5.4.0"
   },
-  "keywords": ["playwright", "reporter", "agnox", "testing", "ci"],
+  "keywords": [
+    "playwright",
+    "reporter",
+    "agnox",
+    "testing",
+    "ci"
+  ],
   "license": "MIT",
-  "files": ["dist"]
+  "files": [
+    "dist"
+  ]
 }
