@@ -4,6 +4,24 @@ export interface ExecutionConfig {
     retryAttempts: number;
 }
 
+export interface IIngestCiContext {
+    source: 'github' | 'gitlab' | 'azure' | 'jenkins' | 'local';
+    repository?: string;
+    branch?: string;
+    prNumber?: number;
+    commitSha?: string;
+    /** URL back to the originating CI job (e.g. GitHub Actions run URL). */
+    runUrl?: string;
+}
+
+export interface IIngestMeta {
+    sessionId: string;
+    reporterVersion: string;
+    framework: string;
+    totalTests: number;
+    ciContext?: IIngestCiContext;
+}
+
 export interface Execution {
     _id: string;
     taskId: string;
@@ -21,6 +39,10 @@ export interface Execution {
     groupName?: string;
     /** CI-level batch identifier shared by runs triggered together. */
     batchId?: string;
+    /** Discriminates hosted Docker runs from external CI passive runs. */
+    source?: 'agnox-hosted' | 'external-ci';
+    /** Populated only when source === 'external-ci'. */
+    ingestMeta?: IIngestMeta;
 }
 
 /** A single bucket returned by GET /api/executions/grouped */

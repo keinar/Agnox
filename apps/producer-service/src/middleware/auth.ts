@@ -19,7 +19,10 @@ const PUBLIC_PATHS = [
   '/__webpack_hmr',
   '/health',
   '/documentation',
-  '/api/ci/trigger'
+  '/api/ci/trigger',
+  // Ingest endpoints authenticate via x-api-key inside the route preHandler,
+  // identical to /api/ci/trigger. The global JWT hook must skip them here.
+  '/api/ingest/',
 ];
 
 /**

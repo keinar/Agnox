@@ -41,6 +41,7 @@ const DEFAULT_FILTERS: IExecutionFilters = {
   startAfter: '',
   startBefore: '',
   groupName: '',
+  source: '',
   limit: 25,
   offset: 0,
 };
@@ -70,7 +71,7 @@ export const Dashboard = () => {
   const [filters, setFilters] = useState<IExecutionFilters>(DEFAULT_FILTERS);
 
   const handleFilterChange = useCallback(
-    (patch: Partial<Pick<IExecutionFilters, 'status' | 'environment' | 'startAfter' | 'startBefore' | 'groupName'>>) => {
+    (patch: Partial<Pick<IExecutionFilters, 'status' | 'environment' | 'startAfter' | 'startBefore' | 'groupName' | 'source'>>) => {
       setFilters((prev) => ({ ...prev, ...patch, offset: 0 }));
     },
     [],
@@ -101,6 +102,7 @@ export const Dashboard = () => {
     startAfter: filters.startAfter,
     startBefore: filters.startBefore,
     groupName: filters.groupName,
+    source: filters.source,
     limit: 10,
     offset: filters.offset,
     enabled: viewMode === 'grouped',  // Only fetch when grouped view is active

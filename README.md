@@ -109,6 +109,31 @@ Built with security best practices from the ground up.
 - **Security Headers:** OWASP-recommended headers (HSTS preload, CSP-ready, X-Frame-Options)
 - **CORS Protection:** Environment-based origin validation
 
+### Native Playwright Reporter
+
+Stream live Playwright test results to your Agnox dashboard without wrapping tests in a Docker container.
+
+- **Zero-friction install:** Add `@agnox/playwright-reporter` to your existing Playwright config — no Dockerfile, no CI changes
+- **Live ingest:** Test results stream to the Ingest API (`/api/ingest/*`) in real-time as each test completes
+- **Batched delivery:** `EventBatcher` groups events and flushes every 2 s (configurable) to minimize HTTP overhead
+- **Auto CI detection:** Automatically detects GitHub Actions, GitLab CI, Azure DevOps, and Jenkins environment variables and attaches CI context (repository, branch, PR number, commit SHA, run URL) to the session
+- **Do No Harm:** All reporter errors are caught and suppressed — the reporter is always a silent no-op if the Agnox API is unreachable; your test suite is never affected
+- **Dashboard source filter:** Runs from the reporter appear as `external-ci` source in the Dashboard. Use the new Source filter to separate external CI passive runs from Agnox-hosted Docker runs
+
+**Usage (`playwright.config.ts`):**
+```typescript
+import AgnoxReporter from '@agnox/playwright-reporter';
+export default defineConfig({
+  reporter: [
+    ['list'],
+    [AgnoxReporter, {
+      apiKey:    process.env.AGNOX_API_KEY,
+      projectId: process.env.AGNOX_PROJECT_ID,
+    }],
+  ],
+});
+```
+
 ### Smart Environment Mapping & Secrets Management
 
 Framework-agnostic environment configuration with first-class secret support. Test images and environment variables are **managed per-organization in the Database**, not in a `.env` file.
@@ -368,7 +393,32 @@ curl -X POST ${{ secrets.AUTOMATION_API_URL }}/api/execution-request \
   }'
 ```
 
-#### Option C: Node.js Integration
+#### Option D: Native Playwright Reporter (No Docker Required)
+
+Install the official reporter and stream live results directly from your existing Playwright runs:
+
+```bash
+npm install --save-dev @agnox/playwright-reporter
+```
+
+```typescript
+// playwright.config.ts
+import AgnoxReporter from '@agnox/playwright-reporter';
+export default defineConfig({
+  reporter: [
+    ['list'],
+    [AgnoxReporter, {
+      apiKey:    process.env.AGNOX_API_KEY,
+      projectId: process.env.AGNOX_PROJECT_ID,
+      // Optional: environment, runName, debug
+    }],
+  ],
+});
+```
+
+The reporter auto-detects your CI provider and attaches the branch, PR number, and commit SHA. Results appear in the Dashboard under the **External CI** source filter.
+
+#### Option C (Legacy): Node.js Integration
 
 ```javascript
 const axios = require('axios');

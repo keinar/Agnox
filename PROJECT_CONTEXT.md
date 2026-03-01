@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md — Agnox
 
-> Generated: 2026-03-01 | Current Phase: CI/CD API Key Integration | Version: 3.7.0
+> Generated: 2026-03-01 | Current Phase: Playwright Reporter (Phase 2) | Version: 3.8.0
 > Source: Full monorepo scan of code, docs, configs, and shared types.
 
 ---
@@ -46,9 +46,17 @@ Agnostic-Automation-Center/
 │   └── promo-video/               # Marketing assets
 │
 ├── packages/
-│   └── shared-types/              # Zod schemas + TypeScript interfaces
-│       ├── index.ts               # IOrganization, IUser, IExecution, IProject, etc.
-│       └── package.json           # zod@4.2.1, mongodb@7.0.0
+│   ├── shared-types/              # Zod schemas + TypeScript interfaces
+│   │   ├── index.ts               # IOrganization, IUser, IExecution, IProject, etc.
+│   │   └── package.json           # zod@4.2.1, mongodb@7.0.0
+│   └── playwright-reporter/       # @agnox/playwright-reporter — official Playwright reporter
+│       ├── src/
+│       │   ├── index.ts           # AgnoxReporter (implements Playwright Reporter interface)
+│       │   ├── client.ts          # AgnoxClient — HTTP wrapper for /api/ingest/* endpoints
+│       │   ├── batcher.ts         # EventBatcher — interval-based batched event delivery
+│       │   └── types.ts           # AgnoxReporterConfig, IngestEvent, ICiContext
+│       ├── package.json           # @agnox/playwright-reporter@1.0.0
+│       └── tsconfig.build.json    # ESM build config
 │
 ├── docs/                          # 20 markdown files across 6 subdirectories
 │   ├── architecture/overview.md
@@ -136,6 +144,8 @@ Agnostic-Automation-Center/
 | 13 (**Complete**) | Env Variables & Secrets Management | Per-project environment variable storage with AES-256-GCM encryption at rest for secrets. New `projectEnvVars` MongoDB collection (migration 007). Full CRUD API under `/api/projects/:projectId/env`. Secrets masked in API responses. Variables decrypted server-side and injected into Docker containers via RabbitMQ task payload (`config.envVars`). Worker log sanitization via `sanitizeLogLine()` prevents secret values from appearing in logs. New `EnvironmentVariablesTab` in Settings UI. Includes background Docker image Pre-fetching mechanism for faster run starts. |
 | 14 (**Complete**) | Automated Docker Lifecycle & Multi-Tenant Reliability (v3.5.0) | **Automated Test Image Sync:** `build-test-image` GitHub Actions job builds and pushes `keinar101/agnox-tests:latest` as a multi-platform image (`linux/amd64`, `linux/arm64`) after every successful quality-check. **Fair Scheduling:** `test_queue` upgraded to a RabbitMQ priority queue (`x-max-priority: 10`). `computeOrgPriority()` in `utils/scheduling.ts` calculates dynamic per-org priority before every `sendToQueue()` call. **Hardened Timeouts:** Playwright configured with `retries: 0`, 15s global timeout, and 5s `actionTimeout` for fail-fast worker behavior. **Worker Scaling:** `docker-compose.prod.yml` deploys 10 worker replicas (`cpus: 1.0`, `memory: 1G` each, no fixed `container_name`). **Internal Monitoring Suite:** `GET /api/system/monitor-status` bypasses JWT and uses `X-Agnox-Monitor-Secret` header auth; returns live RabbitMQ queue depth, active worker count, and MongoDB ping. Standalone `status-dashboard.html` ops page with auto-refresh powers internal monitoring at `status.agnox.dev`. |
 | 15 (**Complete**) | Dual-Agent AI Analysis Pipeline (v3.6.0) | **Analyzer + Critic architecture:** `analysisService.ts` now runs two sequential Gemini 2.5 Flash calls. Step 1 (Analyzer) generates an initial `{ rootCause, suggestedFix }` JSON object using a structured `responseSchema`. Step 2 (Critic) receives the raw logs and the initial analysis, evaluates it for hallucinations, and outputs the final developer-facing Markdown. Expands log slice from 30 000 to 60 000 chars to capture full suite context. Temperature 0.4 (Analyzer) / 0.0 (Critic) for factuality. |
+| 16 (**Complete**) | CI/CD API Key Authentication (v3.7.0) | `/api/ci/trigger` now accepts `x-api-key` header auth via `createApiKeyAuthMiddleware`. Route added to `PUBLIC_PATHS` so the global JWT hook bypasses it; route-level handler checks `x-api-key` first. `RunSettingsTab.tsx` gains a read-only Project ID field with one-click Copy for use in CI pipelines. |
+| 17 (**Complete**) | Native Playwright Reporter (v3.8.0) | **`@agnox/playwright-reporter` package** (`packages/playwright-reporter/`) — implements Playwright's `Reporter` interface and streams live test results to `/api/ingest/*` in real-time. `AgnoxClient` handles HTTP calls; `EventBatcher` buffers events and flushes every 2 s (configurable). Auto-detects CI platform (GitHub Actions, GitLab CI, Azure DevOps, Jenkins) and attaches `ICiContext` to the setup call. "Do No Harm" policy: all errors are caught silently so the reporter never affects the test suite. **Dashboard source filter:** `FilterBar.tsx` gains a Source segment (`agnox-hosted` / `external-ci` / All) backed by the `source` query param on `GET /api/executions`. `Execution` type extended with `source`, `ingestMeta`, and `batchId` fields. |
 
 ### Security Posture (Score: 100/100)
 

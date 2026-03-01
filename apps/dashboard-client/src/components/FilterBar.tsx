@@ -5,7 +5,7 @@ import {
     DialogPanel,
     DialogTitle,
 } from '@headlessui/react';
-import { Filter, X, List, LayoutList, Tag } from 'lucide-react';
+import { Filter, X, List, LayoutList, Tag, Cloud } from 'lucide-react';
 import type { IExecutionFilters } from '../hooks/useExecutions';
 import type { ViewMode } from '../types';
 import { DateRangeFilter } from './DateRangeFilter';
@@ -13,11 +13,11 @@ import { DateRangeFilter } from './DateRangeFilter';
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type FilterPatch = Partial<
-    Pick<IExecutionFilters, 'status' | 'environment' | 'startAfter' | 'startBefore' | 'groupName'>
+    Pick<IExecutionFilters, 'status' | 'environment' | 'startAfter' | 'startBefore' | 'groupName' | 'source'>
 >;
 
 interface FilterBarProps {
-    filters: Pick<IExecutionFilters, 'status' | 'environment' | 'startAfter' | 'startBefore' | 'groupName'>;
+    filters: Pick<IExecutionFilters, 'status' | 'environment' | 'startAfter' | 'startBefore' | 'groupName' | 'source'>;
     onChange: (patch: FilterPatch) => void;
     viewMode: ViewMode;
     onViewModeChange: (mode: ViewMode) => void;
@@ -59,6 +59,12 @@ const ENV_OPTIONS = [
     { value: 'development', label: 'Dev' },
     { value: 'staging', label: 'Staging' },
     { value: 'production', label: 'Prod' },
+] as const;
+
+const SOURCE_OPTIONS = [
+    { value: '', label: 'All' },
+    { value: 'agnox-hosted', label: 'Agnox Hosted' },
+    { value: 'external-ci', label: 'External CI' },
 ] as const;
 
 /** Stable empty default for the groupNames prop — avoids a new array reference on every render. */
@@ -150,6 +156,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         startAfter = '',
         startBefore = '',
         groupName = '',
+        source = '',
     } = filters;
 
     const isActive =
@@ -157,7 +164,8 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         environment !== '' ||
         startAfter !== '' ||
         startBefore !== '' ||
-        groupName !== '';
+        groupName !== '' ||
+        source !== '';
 
     // Count how many filter categories are active (for the badge).
     const activeCount = [
@@ -165,6 +173,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         environment !== '',
         startAfter !== '' || startBefore !== '',
         groupName !== '',
+        source !== '',
     ].filter(Boolean).length;
 
     const toggleStatus = (value: string) => {
@@ -175,7 +184,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     };
 
     const handleClear = () =>
-        onChange({ status: [], environment: '', startAfter: '', startBefore: '', groupName: '' });
+        onChange({ status: [], environment: '', startAfter: '', startBefore: '', groupName: '', source: '' });
 
     // ── Shared section renders ─────────────────────────────────────────────────
 
@@ -226,6 +235,31 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         </div>
     );
 
+
+    const sourceButtons = (
+        <div className="inline-flex w-auto max-w-[280px] sm:max-w-full overflow-x-auto whitespace-nowrap scrollbar-hide rounded-lg border border-slate-200 dark:border-gh-border-dark">
+            {SOURCE_OPTIONS.map((opt, i) => {
+                const isSelected = source === opt.value;
+                return (
+                    <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => onChange({ source: opt.value as IExecutionFilters['source'] })}
+                        className={`
+                            px-2.5 py-1 text-[11px] font-semibold transition-colors duration-100 cursor-pointer
+                            ${i > 0 ? 'border-l border-slate-200 dark:border-gh-border-dark' : ''}
+                            ${isSelected
+                                ? 'bg-violet-600 dark:bg-violet-700 text-white'
+                                : 'bg-white dark:bg-gh-bg-dark text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark'
+                            }
+                        `}
+                    >
+                        {opt.label}
+                    </button>
+                );
+            })}
+        </div>
+    );
 
     const viewModeToggle = (size: number) => (
         <div className="flex rounded-lg overflow-hidden border border-slate-200 dark:border-gh-border-dark">
@@ -326,6 +360,17 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                                 onChange={onChange}
                             />
                         </div>
+                    </div>
+
+                    <DesktopDivider />
+
+                    {/* Source */}
+                    <div className="flex items-center gap-1.5">
+                        <span className={`flex items-center gap-1 ${SECTION_LABEL}`}>
+                            <Cloud size={10} />
+                            Source:
+                        </span>
+                        {sourceButtons}
                     </div>
 
                     <DesktopDivider />
@@ -506,6 +551,17 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                                     groupNames={groupNames}
                                     onChange={onChange}
                                 />
+                            </div>
+
+                            <DrawerDivider />
+
+                            {/* Source */}
+                            <div className="space-y-2">
+                                <span className="flex items-center gap-1 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                                    <Cloud size={11} />
+                                    Source
+                                </span>
+                                {sourceButtons}
                             </div>
                         </div>
 

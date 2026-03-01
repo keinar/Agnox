@@ -194,6 +194,10 @@ export interface IExecution {
     trigger?: CiTriggerSource;
     /** Automation framework used for this execution. */
     framework?: AutomationFramework;
+    /** Discriminates hosted Docker runs from external CI passive runs. */
+    source?: 'agnox-hosted' | 'external-ci';
+    /** Populated only when source === 'external-ci'. */
+    ingestMeta?: IIngestMeta;
 }
 
 // ============================================================================
@@ -470,6 +474,8 @@ export interface ITestCycle {
     projectId: string;
     name: string;
     status: CycleStatus;
+    /** Discriminates hosted runs from external CI passive runs. */
+    source?: 'agnox-hosted' | 'external-ci';
     items: ICycleItem[];
     summary: {
         total: number;
@@ -481,9 +487,70 @@ export interface ITestCycle {
     createdAt: Date;
     createdBy: string;
     ciContext?: {
-        source: 'github' | 'gitlab' | 'azure' | 'jenkins' | 'webhook';
+        source: 'github' | 'gitlab' | 'azure' | 'jenkins' | 'webhook' | 'local';
         repository?: string;
+        branch?: string;
         prNumber?: number;
         commitSha?: string;
+        runUrl?: string;
     };
 }
+
+// ============================================================================
+// INGEST API TYPES (v4.0 — Passive Reporter)
+// ============================================================================
+
+export type IngestFramework = 'playwright' | 'jest' | 'vitest' | 'cypress';
+
+/** CI context sent by the reporter at setup time. */
+export interface IIngestCiContext {
+    source: 'github' | 'gitlab' | 'azure' | 'jenkins' | 'local';
+    repository?: string;
+    branch?: string;
+    prNumber?: number;
+    commitSha?: string;
+    /** URL back to the originating CI job (e.g. GitHub Actions run URL). */
+    runUrl?: string;
+}
+
+/** Embedded in IExecution when source === 'external-ci'. */
+export interface IIngestMeta {
+    sessionId: string;
+    reporterVersion: string;
+    framework: IngestFramework;
+    totalTests: number;
+    ciContext?: IIngestCiContext;
+}
+
+/**
+ * Ingest session document.
+ * Lives in Redis during a run (24h TTL), then archived to `ingest_sessions` in MongoDB at teardown.
+ */
+export interface IIngestSession {
+    sessionId: string;
+    organizationId: string;
+    projectId: string;
+    taskId: string;
+    cycleId: string;
+    cycleItemId: string;
+    projectName: string;
+    status: 'RUNNING' | 'COMPLETED' | 'FAILED';
+    framework: IngestFramework;
+    reporterVersion: string;
+    totalTests: number;
+    startTime: Date;
+    createdAt: Date;
+}
+
+/** Batch of events POSTed by the reporter every flush interval. */
+export interface IIngestEventBatch {
+    sessionId: string;
+    events: IIngestEvent[];
+}
+
+export type IIngestEvent =
+    | { type: 'log';        testId?: string; chunk: string; timestamp: number }
+    | { type: 'test-begin'; testId: string; title: string; file: string; timestamp: number }
+    | { type: 'test-end';   testId: string; status: 'passed' | 'failed' | 'skipped' | 'timedOut';
+        duration: number; error?: string; timestamp: number }
+    | { type: 'status';     status: 'RUNNING' | 'ANALYZING'; timestamp: number };

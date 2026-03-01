@@ -304,7 +304,61 @@ Hybrid test cycles combine manual and automated tests into a single, unified wor
 
 ---
 
-## 13. Support
+## 13. Native Playwright Reporter
+
+Stream live Playwright results directly to your Agnox dashboard from your existing CI pipelines — no Docker container required.
+
+### Installing the Reporter
+
+```bash
+npm install --save-dev @agnox/playwright-reporter
+```
+
+### Configuring Playwright
+
+```typescript
+// playwright.config.ts
+import AgnoxReporter from '@agnox/playwright-reporter';
+
+export default defineConfig({
+  reporter: [
+    ['list'],
+    [AgnoxReporter, {
+      apiKey:    process.env.AGNOX_API_KEY,
+      projectId: process.env.AGNOX_PROJECT_ID,
+      // Optional options:
+      // environment: 'staging',   // 'development' | 'staging' | 'production'
+      // runName: 'nightly suite', // label shown in the Dashboard
+      // debug: true,              // logs reporter activity to stdout
+    }],
+  ],
+});
+```
+
+Your **API Key** is in **Settings → Profile → API Access**. Your **Project ID** is in **Settings → Run Settings** (Execution Defaults section).
+
+### How It Works
+
+1. When Playwright starts, the reporter calls `/api/ingest/setup` and receives a `sessionId`.
+2. As tests run, events (`test-begin`, `test-end`, `log`) are batched and sent to `/api/ingest/event`.
+3. When Playwright finishes, the reporter calls `/api/ingest/teardown` with pass/fail/skip counts. The execution record is created and appears in the Dashboard.
+
+The reporter automatically detects your CI provider (GitHub Actions, GitLab CI, Azure DevOps, Jenkins) and attaches the repository, branch, PR number, and commit SHA to every run.
+
+### Filtering by Source
+
+Use the **Source** filter on the Dashboard to distinguish:
+- **Agnox Hosted** — runs executed inside Docker containers orchestrated by Agnox
+- **External CI** — runs streamed by `@agnox/playwright-reporter` from your CI pipelines
+
+### Reliability
+
+- All reporter errors are caught and suppressed. If the Agnox API is unreachable, the reporter is a silent no-op — your test suite is never affected.
+- Events are batched (default: 2 s flush interval, 50 events per batch) to minimize HTTP overhead.
+
+---
+
+## 14. Support
 
 - **Documentation**: [docs.agnox.dev](https://docs.agnox.dev)
 - **Email**: info@digital-solution.co.il

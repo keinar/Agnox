@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.8.0] — 2026-03-01
+
+### Added
+- **`@agnox/playwright-reporter` package** — New official Playwright reporter (`packages/playwright-reporter/`) that implements Playwright's `Reporter` interface and streams live test results to the Agnox Ingest API in real-time. Features: batched event delivery (`EventBatcher`), configurable flush interval and batch size, auto-detection of CI environment (GitHub Actions, GitLab CI, Azure DevOps, Jenkins), and a "Do No Harm" design where reporter failures are always silent no-ops that never affect the user's test suite.
+- **Dashboard Source Filter** — New "Source" segment in `FilterBar.tsx` (Cloud icon) with chips for `agnox-hosted`, `external-ci`, and `All`. Enables teams to separate Agnox-hosted Docker runs from external CI passive runs at a glance.
+- **`Execution` type extensions** — `source` (`'agnox-hosted' | 'external-ci'`), `ingestMeta` (`IIngestMeta`), and `batchId` fields added to the `Execution` interface. `IIngestMeta` and `IIngestCiContext` interfaces added to `types/index.ts`.
+
+### Changed
+- `useExecutions.ts` / `useGroupedExecutions.ts` — `source` filter parameter wired through the URL builder and passed to `GET /api/executions` and `GET /api/executions/grouped`.
+- `PROJECT_CONTEXT.md` — Added `playwright-reporter` package to the monorepo structure map and packages section; bumped version header to `3.8.0`; updated current phase to "Playwright Reporter (Phase 2)".
+- `README.md` — Added "Native Playwright Reporter" feature section documenting the new `@agnox/playwright-reporter` package.
+- `package.json` — Version bumped from `3.7.0` to `3.8.0`.
+
 ## [3.7.0] — 2026-03-01
 
 ### Added

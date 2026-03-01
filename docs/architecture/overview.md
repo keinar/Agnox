@@ -114,8 +114,32 @@ graph TB
 - `/api/test-cycles/*` - Hybrid test cycle management + item updates (Sprint 9)
 - `/api/projects/:projectId/env` - Per-project environment variable CRUD (secrets encrypted at rest)
 - `/api/ci/trigger` - Native CI/CD pipeline trigger; accepts `x-api-key` or Bearer JWT; creates test cycle + execution and queues to RabbitMQ
+- `/api/ingest/setup` - Reporter session setup (100 req/min per API key)
+- `/api/ingest/event` - Stream batched test events from external reporters (500 req/min per API key)
+- `/api/ingest/teardown` - Finalize reporter session and persist execution record
 - `/api/metrics/:image` - Performance insights
 - `/reports/*` - Static HTML test reports
+
+---
+
+### Playwright Reporter (`packages/playwright-reporter/`)
+**Package:** `@agnox/playwright-reporter` — published as an npm package for external Playwright users.
+
+**Responsibilities:**
+- Implement Playwright's `Reporter` interface to intercept test lifecycle events
+- Stream live test results to the Agnox Ingest API (`/api/ingest/*`) without requiring Docker
+- Auto-detect CI platform environment variables and attach CI context to each run
+
+**Key Files:**
+- `src/index.ts` - `AgnoxReporter` class (Playwright `Reporter` implementation)
+- `src/client.ts` - `AgnoxClient` — typed HTTP client for the Ingest API
+- `src/batcher.ts` - `EventBatcher` — buffers events and flushes every 2 s (configurable)
+- `src/types.ts` - `AgnoxReporterConfig`, `IngestEvent`, `ICiContext` interfaces
+
+**Design Principles:**
+- "Do No Harm" — all errors are caught silently; reporter failures never affect the test suite
+- Zero peer dependencies beyond `@playwright/test`
+- Runs produced by this reporter appear as `source: 'external-ci'` in the Dashboard
 
 ---
 

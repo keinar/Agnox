@@ -1,0 +1,29 @@
+{
+  "name": "@agnox/playwright-reporter",
+  "version": "1.0.1",
+  "description": "Official Playwright reporter for Agnox — stream live test results to your dashboard",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "@playwright/test": ">=1.40.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.51.0",
+    "typescript": "^5.4.0"
+  },
+  "keywords": ["playwright", "reporter", "agnox", "testing", "ci"],
+  "license": "MIT",
+  "files": ["dist"]
+}
