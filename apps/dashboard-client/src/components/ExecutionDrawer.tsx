@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react';
 import {
-  X, FileText, BarChart2, Loader2, Bug,
+  X, FileText, BarChart2, Loader2, Bug, Sparkles,
   Github, Gitlab, Cloud, GitBranch, GitCommit, GitPullRequest, ExternalLink,
   ChevronDown, ChevronRight,
 } from 'lucide-react';
@@ -13,6 +13,8 @@ import { TerminalView } from './TerminalView';
 import { AIAnalysisView } from './AIAnalysisView';
 import { ArtifactsView, type IArtifact } from './ArtifactsView';
 import { CreateJiraTicketModal } from './CreateJiraTicketModal';
+import { AutoBugModal, type IBugReport } from './AutoBugModal';
+import { useOrganizationFeatures } from '../hooks/useOrganizationFeatures';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -38,10 +40,14 @@ export type DrawerTab = 'terminal' | 'artifacts' | 'ai-analysis';
 
 export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }: ExecutionDrawerProps) {
   const { token } = useAuth();
+  const { aiFeatures } = useOrganizationFeatures();
   const queryClient = useQueryClient();
   const [fetchingReport, setFetchingReport] = useState(false);
   const [showJiraModal, setShowJiraModal] = useState(false);
   const [ciContextOpen, setCiContextOpen] = useState(true);
+  const [generatingBug, setGeneratingBug] = useState(false);
+  const [bugReport, setBugReport] = useState<IBugReport | null>(null);
+  const [bugError, setBugError] = useState<string | null>(null);
 
   // ── Log-history hydration ────────────────────────────────────────────────
   // Fetches the full accumulated log buffer from the server and seeds the
@@ -231,6 +237,35 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
     }
   };
 
+  // Normalise to uppercase so API responses with mixed case still match
+  const executionStatusUpper = execution?.status?.toUpperCase() ?? '';
+  const canGenerateBug =
+    aiFeatures.autoBugGeneration &&
+    execution !== null &&
+    (executionStatusUpper === 'FAILED' || executionStatusUpper === 'ERROR');
+
+  async function handleGenerateBug() {
+    if (!executionId || generatingBug) return;
+    setBugError(null);
+    setGeneratingBug(true);
+    try {
+      const { data } = await axios.post(
+        `${API_URL}/api/ai/generate-bug-report`,
+        { executionId },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (data.success) {
+        setBugReport(data.data as IBugReport);
+      } else {
+        setBugError(data.error ?? 'Failed to generate bug report');
+      }
+    } catch (err: any) {
+      setBugError(err?.response?.data?.error ?? 'Failed to generate bug report');
+    } finally {
+      setGeneratingBug(false);
+    }
+  }
+
   const iconBtnBase = 'flex items-center justify-center w-8 h-8 rounded-lg border transition-colors cursor-pointer';
 
   return (
@@ -288,6 +323,30 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
                         <Loader2 size={12} className="animate-spin" />
                         <span>Analyzing...</span>
                       </div>
+                    )}
+
+                    {/* Auto-Generate Bug button — visible only when autoBugGeneration flag is on */}
+                    {canGenerateBug && (
+                      <button
+                        data-testid="execution-drawer-auto-bug-button"
+                        type="button"
+                        onClick={handleGenerateBug}
+                        disabled={generatingBug}
+                        aria-label="Generate AI bug report"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 hover:bg-violet-100 dark:hover:bg-violet-950/60 disabled:opacity-50 disabled:cursor-wait transition-colors"
+                      >
+                        {generatingBug
+                          ? <><Loader2 size={13} className="animate-spin" /> Generating…</>
+                          : <><Sparkles size={13} /> Auto Bug</>
+                        }
+                      </button>
+                    )}
+
+                    {/* Bug generation error inline (non-modal) */}
+                    {bugError && (
+                      <span className="text-xs text-red-600 dark:text-red-400 max-w-[140px] truncate" title={bugError}>
+                        {bugError}
+                      </span>
                     )}
 
                     {/* Create / View Jira Ticket button — FAILED/ERROR/UNSTABLE */}
@@ -540,6 +599,14 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
         <CreateJiraTicketModal
           execution={execution}
           onClose={() => setShowJiraModal(false)}
+        />
+      )}
+
+      {bugReport && execution && (
+        <AutoBugModal
+          execution={execution}
+          bugReport={bugReport}
+          onClose={() => setBugReport(null)}
         />
       )}
     </Transition>

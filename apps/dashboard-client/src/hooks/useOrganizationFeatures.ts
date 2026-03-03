@@ -9,25 +9,58 @@ interface IOrganizationFeatures {
     testCyclesEnabled: boolean;
 }
 
+export interface IAiFeatureFlags {
+    rootCauseAnalysis:  boolean;
+    autoBugGeneration:  boolean;
+    flakinessDetective: boolean;
+    testOptimizer:      boolean;
+    prRouting:          boolean;
+    qualityChatbot:     boolean;
+}
+
+type FeatureUpdatePayload =
+    Partial<IOrganizationFeatures> &
+    { aiFeatures?: Partial<IAiFeatureFlags> };
+
 const DEFAULT_FEATURES: IOrganizationFeatures = {
     testCasesEnabled: true,
     testCyclesEnabled: true,
+};
+
+const DEFAULT_AI_FEATURES: IAiFeatureFlags = {
+    rootCauseAnalysis:  false,
+    autoBugGeneration:  false,
+    flakinessDetective: false,
+    testOptimizer:      false,
+    prRouting:          false,
+    qualityChatbot:     false,
 };
 
 export function useOrganizationFeatures() {
     const { token } = useAuth();
     const queryClient = useQueryClient();
 
-    const { data: features, isLoading } = useQuery({
+    const { data, isLoading } = useQuery({
         queryKey: ['organization-features'],
-        queryFn: async (): Promise<IOrganizationFeatures> => {
+        queryFn: async (): Promise<{ features: IOrganizationFeatures; aiFeatures: IAiFeatureFlags }> => {
             const res = await axios.get(`${API_URL}/api/organization`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            const f = res.data.organization?.features;
+            const f  = res.data.organization?.features;
+            const af = res.data.organization?.aiFeatures;
             return {
-                testCasesEnabled: f?.testCasesEnabled !== false,
-                testCyclesEnabled: f?.testCyclesEnabled !== false,
+                features: {
+                    testCasesEnabled:  f?.testCasesEnabled  !== false,
+                    testCyclesEnabled: f?.testCyclesEnabled !== false,
+                },
+                aiFeatures: {
+                    rootCauseAnalysis:  af?.rootCauseAnalysis  ?? false,
+                    autoBugGeneration:  af?.autoBugGeneration  ?? false,
+                    flakinessDetective: af?.flakinessDetective ?? false,
+                    testOptimizer:      af?.testOptimizer      ?? false,
+                    prRouting:          af?.prRouting          ?? false,
+                    qualityChatbot:     af?.qualityChatbot     ?? false,
+                },
             };
         },
         enabled: !!token,
@@ -35,7 +68,7 @@ export function useOrganizationFeatures() {
     });
 
     const mutation = useMutation({
-        mutationFn: async (updates: Partial<IOrganizationFeatures>) => {
+        mutationFn: async (updates: FeatureUpdatePayload) => {
             const res = await axios.patch(
                 `${API_URL}/api/organization/features`,
                 updates,
@@ -49,9 +82,10 @@ export function useOrganizationFeatures() {
     });
 
     return {
-        features: features ?? DEFAULT_FEATURES,
+        features:      data?.features   ?? DEFAULT_FEATURES,
+        aiFeatures:    data?.aiFeatures  ?? DEFAULT_AI_FEATURES,
         isLoading,
         updateFeatures: mutation.mutateAsync,
-        isUpdating: mutation.isPending,
+        isUpdating:    mutation.isPending,
     };
 }

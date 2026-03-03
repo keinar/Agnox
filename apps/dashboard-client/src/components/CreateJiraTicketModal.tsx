@@ -51,6 +51,10 @@ interface IJiraTicketRef {
 interface CreateJiraTicketModalProps {
     execution: any;
     onClose: () => void;
+    /** Optional pre-filled summary (e.g. from AutoBugModal). Overrides the default taskId-based summary. */
+    initialSummary?: string;
+    /** Optional pre-filled description (e.g. from AutoBugModal). Overrides the auto-generated description. */
+    initialDescription?: string;
 }
 
 type SubmitState = 'idle' | 'loading' | 'success' | 'error';
@@ -116,7 +120,7 @@ const INPUT_CLASS =
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketModalProps) {
+export function CreateJiraTicketModal({ execution, onClose, initialSummary, initialDescription }: CreateJiraTicketModalProps) {
     const { token } = useAuth();
 
     // Derive existing tickets from the execution document
@@ -148,8 +152,8 @@ export function CreateJiraTicketModal({ execution, onClose }: CreateJiraTicketMo
     const [customFieldsLoading, setCustomFieldsLoading] = React.useState(false);
 
     // ── Form fields ───────────────────────────────────────────────────────────
-    const [summary, setSummary] = React.useState(`[AAC] Failed Run: ${execution.taskId}`);
-    const [description, setDescription] = React.useState(() => buildDescription(execution));
+    const [summary, setSummary] = React.useState(initialSummary ?? `[AAC] Failed Run: ${execution.taskId}`);
+    const [description, setDescription] = React.useState(initialDescription ?? (() => buildDescription(execution)));
 
     // ── Submit state ──────────────────────────────────────────────────────────
     const [submitState, setSubmitState] = React.useState<SubmitState>('idle');

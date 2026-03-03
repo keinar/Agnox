@@ -1,28 +1,36 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Trash2, Tag, Unlink, X, Loader2 } from 'lucide-react';
+import { Trash2, Tag, Unlink, X, Loader2, Sparkles } from 'lucide-react';
 
 interface BulkActionsBarProps {
   count: number;
-  /** True when at least one selected execution already belongs to a group. */
-  hasGroupedSelected: boolean;
-  onDelete: () => Promise<void>;
-  onGroup: (groupName: string) => Promise<void>;
-  /** Removes the groupName from all selected executions. */
-  onUngroup: () => Promise<void>;
   onClear: () => void;
+  /** Delete action — required for execution context, optional for test-case context. */
+  onDelete?: () => Promise<void>;
+  /** True when at least one selected execution already belongs to a group. */
+  hasGroupedSelected?: boolean;
+  /** Assign selected executions to a group. */
+  onGroup?: (groupName: string) => Promise<void>;
+  /** Removes the groupName from all selected executions. */
+  onUngroup?: () => Promise<void>;
+  /** AI optimizer (test-case context only). Shown when showOptimize is true. */
+  onOptimize?: () => Promise<void>;
+  /** Controls visibility of the "Optimize with AI" button. */
+  showOptimize?: boolean;
 }
 
 export function BulkActionsBar({
   count,
-  hasGroupedSelected,
+  hasGroupedSelected = false,
   onDelete,
   onGroup,
   onUngroup,
   onClear,
+  onOptimize,
+  showOptimize = false,
 }: BulkActionsBarProps) {
   const [groupPopoverOpen, setGroupPopoverOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
-  const [loading, setLoading] = useState<'delete' | 'group' | 'ungroup' | null>(null);
+  const [loading, setLoading] = useState<'delete' | 'group' | 'ungroup' | 'optimize' | null>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -39,11 +47,24 @@ export function BulkActionsBar({
   }, [groupPopoverOpen]);
 
   const handleDelete = async () => {
+    if (!onDelete) return;
     setLoading('delete');
     try {
       await onDelete();
     } catch {
       // Error is alerted upstream; keep bar visible so user can retry
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleOptimize = async () => {
+    if (!onOptimize) return;
+    setLoading('optimize');
+    try {
+      await onOptimize();
+    } catch {
+      // Error is alerted upstream
     } finally {
       setLoading(null);
     }
@@ -86,20 +107,36 @@ export function BulkActionsBar({
 
       <div className="w-px h-5 bg-slate-600 mx-1" />
 
+      {/* AI Optimize — only shown in test-case context when flag is enabled */}
+      {showOptimize && onOptimize && (
+        <button
+          onClick={handleOptimize}
+          disabled={!!loading}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading === 'optimize'
+            ? <Loader2 size={13} className="animate-spin" />
+            : <Sparkles size={13} />}
+          Optimize with AI
+        </button>
+      )}
+
       {/* Bulk Delete — count shown on button for confirmation clarity */}
-      <button
-        onClick={handleDelete}
-        disabled={!!loading}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {loading === 'delete'
-          ? <Loader2 size={13} className="animate-spin" />
-          : <Trash2 size={13} />}
-        Delete {count}
-      </button>
+      {onDelete && (
+        <button
+          onClick={handleDelete}
+          disabled={!!loading}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading === 'delete'
+            ? <Loader2 size={13} className="animate-spin" />
+            : <Trash2 size={13} />}
+          Delete {count}
+        </button>
+      )}
 
       {/* Ungroup — only shown when at least one selected execution is in a group */}
-      {hasGroupedSelected && (
+      {hasGroupedSelected && onUngroup && (
         <button
           onClick={handleUngroup}
           disabled={!!loading}
@@ -113,8 +150,8 @@ export function BulkActionsBar({
         </button>
       )}
 
-      {/* Group / Change Group — triggers a small popover for group name input */}
-      <div className="relative" ref={popoverRef}>
+      {/* Group / Change Group — triggers a small popover for group name input (execution context only) */}
+      {onGroup && <div className="relative" ref={popoverRef}>
         <button
           onClick={() => setGroupPopoverOpen(v => !v)}
           disabled={!!loading}
@@ -152,7 +189,7 @@ export function BulkActionsBar({
             </form>
           </div>
         )}
-      </div>
+      </div>}
 
       <div className="w-px h-5 bg-slate-600 mx-1" />
 

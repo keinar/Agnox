@@ -19,7 +19,10 @@ import {
     FolderOpen, FolderClosed, ChevronDown, ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useOrganizationFeatures } from '../hooks/useOrganizationFeatures';
 import { TestCaseDrawer, type ITestCaseInitialData } from '../components/TestCaseDrawer';
+import { BulkActionsBar } from '../components/BulkActionsBar';
+import { OptimizedTestCasesModal, type IOptimizedTestCase } from '../components/OptimizedTestCasesModal';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -77,6 +80,7 @@ function groupBySuite(testCases: ITestCaseRow[]): Record<string, ITestCaseRow[]>
 export function TestCases() {
     const { token } = useAuth();
     const queryClient = useQueryClient();
+    const { aiFeatures } = useOrganizationFeatures();
     const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
     // ── Drawer state ────────────────────────────────────────────────────────
@@ -91,6 +95,13 @@ export function TestCases() {
     const [aiFeature, setAiFeature] = useState('');
     const [isGeneratingSuite, setIsGeneratingSuite] = useState(false);
     const [aiSuiteError, setAiSuiteError] = useState<string | null>(null);
+
+    // ── Selection state (for bulk optimizer) ───────────────────────────────
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+    // ── AI optimizer modal state ────────────────────────────────────────────
+    const [optimizerModalOpen, setOptimizerModalOpen] = useState(false);
+    const [optimizedCases, setOptimizedCases] = useState<IOptimizedTestCase[]>([]);
 
     // ── Success banner state ────────────────────────────────────────────────
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -195,6 +206,65 @@ export function TestCases() {
     function showSuccess(message: string) {
         setSuccessMessage(message);
         setTimeout(() => setSuccessMessage(null), 4000);
+    }
+
+    // ── Selection helpers ────────────────────────────────────────────────────
+
+    function toggleSelect(id: string) {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }
+
+    function clearSelection() {
+        setSelectedIds(new Set());
+    }
+
+    // True only when every selected ID belongs to a MANUAL test case
+    const selectedManualIds = useMemo(() => {
+        const allManual = testCases.filter(tc => tc.type === 'MANUAL').map(tc => tc._id);
+        return [...selectedIds].filter(id => allManual.includes(id));
+    }, [selectedIds, testCases]);
+
+    // Lookup map used by OptimizedTestCasesModal to build the full PUT body
+    const testCasesLookup = useMemo(
+        () => new Map(testCases.map(tc => [
+            tc._id,
+            {
+                title: tc.title,
+                type: tc.type as string,
+                description: tc.description,
+                suite: tc.suite,
+                preconditions: tc.preconditions,
+            },
+        ])),
+        [testCases],
+    );
+
+    // ── AI optimizer handler ─────────────────────────────────────────────────
+
+    async function handleOptimize() {
+        if (selectedManualIds.length === 0) return;
+        try {
+            const { data } = await axios.post(
+                `${API_URL}/api/ai/optimize-test-cases`,
+                { testCaseIds: selectedManualIds },
+                { headers: { Authorization: `Bearer ${token}` } },
+            );
+            if (!data.success || !Array.isArray(data.data?.optimizedCases)) {
+                throw new Error(data.error ?? 'AI optimization failed');
+            }
+            setOptimizedCases(data.data.optimizedCases as IOptimizedTestCase[]);
+            setOptimizerModalOpen(true);
+        } catch (err: unknown) {
+            const message = axios.isAxiosError(err)
+                ? err.response?.data?.error ?? err.message
+                : 'Failed to optimize test cases.';
+            showSuccess(`Error: ${message}`);
+        }
     }
 
     // ── AI suite generation handler ─────────────────────────────────────────
@@ -399,6 +469,7 @@ export function TestCases() {
                                         <table className="w-full text-sm">
                                             <thead className="sticky top-0 z-10">
                                                 <tr className="border-t border-b border-slate-200 dark:border-gh-border-dark bg-slate-50 dark:bg-gh-bg-subtle-dark">
+                                                    <th className="px-3 py-2.5 w-8" />
                                                     <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                                         Title
                                                     </th>
@@ -422,6 +493,16 @@ export function TestCases() {
                                                         key={tc._id}
                                                         className="hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark transition-colors duration-100"
                                                     >
+                                                        {/* Checkbox — only MANUAL test cases are selectable for the optimizer */}
+                                                        <td className="px-3 py-3 w-8">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedIds.has(tc._id)}
+                                                                onChange={() => toggleSelect(tc._id)}
+                                                                aria-label={`Select ${tc.title}`}
+                                                                className="rounded border-slate-300 dark:border-slate-600 text-violet-600 focus:ring-violet-500 cursor-pointer"
+                                                            />
+                                                        </td>
                                                         <td className="px-4 py-3">
                                                             <p className="font-medium text-slate-900 dark:text-slate-100 truncate max-w-xs">
                                                                 {tc.title}
@@ -485,6 +566,28 @@ export function TestCases() {
                 onClose={() => { setIsDrawerOpen(false); setEditingTestCase(null); }}
                 onSaved={() => queryClient.invalidateQueries({ queryKey: ['test-cases'] })}
                 initialData={editingTestCase}
+            />
+
+            {/* ── Bulk actions bar (floats at bottom when test cases are selected) ── */}
+            {selectedIds.size > 0 && (
+                <BulkActionsBar
+                    count={selectedIds.size}
+                    onClear={clearSelection}
+                    showOptimize={aiFeatures.testOptimizer && selectedManualIds.length > 0}
+                    onOptimize={handleOptimize}
+                />
+            )}
+
+            {/* ── AI Optimizer results modal ─────────────────────────────── */}
+            <OptimizedTestCasesModal
+                isOpen={optimizerModalOpen}
+                optimizedCases={optimizedCases}
+                testCasesLookup={testCasesLookup}
+                onClose={() => { setOptimizerModalOpen(false); setOptimizedCases([]); clearSelection(); }}
+                onApplied={(count) => {
+                    queryClient.invalidateQueries({ queryKey: ['test-cases'] });
+                    showSuccess(`Applied AI optimization to ${count} test case${count !== 1 ? 's' : ''}.`);
+                }}
             />
 
             {/* ── AI Suite Generation Modal (Headless UI) ──────────────── */}

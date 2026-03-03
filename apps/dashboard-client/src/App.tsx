@@ -11,19 +11,24 @@ import { Settings } from './pages/Settings';
 import { TestCases } from './pages/TestCases';
 import { TestCycles } from './pages/TestCycles';
 import { CycleReportPage } from './pages/CycleReportPage';
+import { StabilityPage } from './pages/StabilityPage';
+import { ChatPage } from './pages/ChatPage';
 import { PrivacyPolicy } from './components/legal/PrivacyPolicy';
 import { useOrganizationFeatures } from './hooks/useOrganizationFeatures';
 
 function FeatureGatedRoute({
   featureKey,
+  aiFeatureKey,
   children,
 }: {
-  featureKey: 'testCasesEnabled' | 'testCyclesEnabled';
+  featureKey?: 'testCasesEnabled' | 'testCyclesEnabled';
+  aiFeatureKey?: 'rootCauseAnalysis' | 'autoBugGeneration' | 'flakinessDetective' | 'testOptimizer' | 'prRouting' | 'qualityChatbot';
   children: React.ReactNode;
 }) {
-  const { features, isLoading } = useOrganizationFeatures();
+  const { features, aiFeatures, isLoading } = useOrganizationFeatures();
   if (isLoading) return null; // avoid flash-redirect while loading
-  if (!features[featureKey]) return <Navigate to="/dashboard" replace />;
+  if (featureKey   && !features[featureKey])     return <Navigate to="/dashboard" replace />;
+  if (aiFeatureKey && !aiFeatures[aiFeatureKey]) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
@@ -60,6 +65,16 @@ function App() {
                   <Route path="/test-cycles" element={
                     <FeatureGatedRoute featureKey="testCyclesEnabled">
                       <TestCycles />
+                    </FeatureGatedRoute>
+                  } />
+                  <Route path="/stability" element={
+                    <FeatureGatedRoute aiFeatureKey="flakinessDetective">
+                      <StabilityPage />
+                    </FeatureGatedRoute>
+                  } />
+                  <Route path="/chat" element={
+                    <FeatureGatedRoute aiFeatureKey="qualityChatbot">
+                      <ChatPage />
                     </FeatureGatedRoute>
                   } />
                   <Route path="/settings" element={<Settings />} />

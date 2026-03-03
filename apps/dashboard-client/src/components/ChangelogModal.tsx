@@ -12,6 +12,29 @@ interface IChangelogEntry {
 
 const CHANGELOG: IChangelogEntry[] = [
   {
+    version: 'v3.10.0',
+    title: 'AI Quality Orchestrator (All Phases)',
+    items: [
+      'Feature A — Auto-Bug Generator: "Auto Bug" button in the Investigation Hub generates a structured bug report (title, steps to reproduce, expected/actual behavior, code patch suggestions) from execution logs. Edit before submitting directly to Jira.',
+      'Feature B — Flakiness Detective: New Stability page (/stability) analyzes a test group\'s last 20 executions to produce a flakiness score, verdict, findings, and recommendations. Full history persisted and clickable.',
+      'Feature C — Test Case Optimizer: Select test cases in the Test Cases page and click "Optimize with AI" to get a dual-agent BDD optimization with duplicate detection and edge-case suggestions. Side-by-side diff view before applying.',
+      'Feature D — Smart PR Routing: GitHub push webhooks trigger automatic test selection — the LLM maps changed files to the appropriate test folder and dispatches the run via RabbitMQ. Configure in Settings → Run Settings.',
+      'Feature E — Quality Chatbot: New Ask AI page (/chat) answers natural-language questions about your test data using a two-turn LLM pipeline with a 5-layer NoSQL injection sanitizer and optional chart responses.',
+      'BYOK Support: Settings → Security now lets admins set the org\'s default AI model (Gemini, GPT-4o, Claude) and store per-provider API keys encrypted at rest. AI features are individually toggled in Settings → Features.',
+    ],
+  },
+  {
+    version: 'v3.9.0',
+    title: 'Onboarding Widget & Guided Tours',
+    items: [
+      'New getting-started checklist widget (bottom-right) guides new users through three key actions: connecting a Docker image, running their first test, and exploring platform features.',
+      '11-step guided tour (buildEmptyStateTour) walks through Run Settings configuration, first execution launch, and Investigation Hub walkthrough.',
+      '5-step platform discovery tour (buildFeatureTour) spotlights Test Cases, Test Cycles, Team Members, and Env Variables via sidebar navigation.',
+      'Sidebar "Getting Started" recovery button re-opens a dismissed onboarding widget without a page reload.',
+      'Completed checklist items show a "Replay" badge and remain clickable for revisiting any tour.',
+    ],
+  },
+  {
     version: 'v3.8.1',
     title: 'Reporter Troubleshooting & Dual Architecture Docs',
     items: [

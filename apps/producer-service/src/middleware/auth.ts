@@ -23,6 +23,9 @@ const PUBLIC_PATHS = [
   // Ingest endpoints authenticate via x-api-key inside the route preHandler,
   // identical to /api/ci/trigger. The global JWT hook must skip them here.
   '/api/ingest/',
+  // PR Routing webhook: authenticated via ?token=orgId query param inside the
+  // route handler — no JWT required from GitHub/GitLab CI callers.
+  '/api/webhooks/ci/pr',
 ];
 
 /**

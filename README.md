@@ -26,6 +26,7 @@ Agnox is a unified platform designed to seamlessly integrate with your CI/CD pip
 **The Solution:** Agnox provides:
 - **Framework-agnostic execution** - Bring your own Docker image, we handle the rest
 - **AI-powered debugging** - Instant root cause analysis for test failures
+- **AI Quality Orchestrator** - Auto-bug generation, flakiness detection, test optimization, smart PR routing, and natural-language data queries
 - **Multi-tenant SaaS** - Complete isolation between teams/organizations
 - **Real-time monitoring** - Live logs, WebSocket updates, interactive dashboard
 - **Smart environment management** - Dynamic configuration injection per test run
@@ -845,6 +846,21 @@ See the [Deployment Guide](docs/setup/deployment.md) for full deployment instruc
 - **Docker Container Injection:** Worker passes all env vars to containers via the Docker `Env` configuration array
 - **Log Sanitization:** `sanitizeLogLine()` in the worker redacts secret values from every streamed log line before dashboard delivery or persistent storage
 - **Settings UI:** `EnvironmentVariablesTab` with Add/Edit form, secret toggle switch, masked table view, and inline Edit/Delete actions
+
+---
+
+### v3.10.0 — AI Quality Orchestrator ✅
+
+**Status:** Production Ready
+
+A full suite of AI-powered quality tools, each independently toggled per organization in **Settings → Features**.
+
+- **Feature A — Auto-Bug Generator:** Click "Auto Bug" on any FAILED/ERROR execution in the Investigation Hub to generate a structured bug report (title, steps to reproduce, expected/actual behavior, severity, code patch suggestions). Edit before submitting directly to Jira via the pre-filled `CreateJiraTicketModal`.
+- **Feature B — Flakiness Detective:** New `/stability` page analyzes a test group's last 20 executions to produce a flakiness score (0–100 gauge), verdict badge (Stable → Highly Unstable), findings list, and recommendations. Results are persisted in `stability_reports` and displayed in a clickable history panel.
+- **Feature C — Test Case Optimizer:** Select test cases in the Test Cases page and click "Optimize with AI". A dual-agent pipeline (Analyzer → Critic) returns BDD-formatted steps, detected duplicates, and new edge cases in a side-by-side diff modal. Apply per-case or all at once.
+- **Feature D — Smart PR Routing:** Configure a webhook in GitHub → Agnox maps changed files to the correct test folder via LLM → dispatches a RabbitMQ run automatically. PR Routing toggle and webhook URL callout in **Settings → Run Settings**.
+- **Feature E — Quality Chatbot:** New `/chat` page with a two-panel conversational UI. Ask natural-language questions about your test data; the LLM generates a MongoDB aggregation pipeline (sanitized through a 5-layer NoSQL injection guard), executes it, and returns a plain-English answer with optional bar charts.
+- **BYOK Support:** **Settings → Security** now lets admins select the org's default AI model and store per-provider API keys (Gemini / OpenAI / Anthropic) encrypted at rest with AES-256-GCM. The platform key is used as fallback.
 
 ---
 

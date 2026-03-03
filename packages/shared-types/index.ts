@@ -2,6 +2,59 @@ import { z } from 'zod';
 import { ObjectId } from 'mongodb';
 
 // ============================================================================
+// ENCRYPTED PAYLOAD INTERFACE (shared — avoids circular imports with worker)
+// ============================================================================
+
+/**
+ * AES-256-GCM encrypted value container.
+ * Defined here so both producer and worker can reference it without
+ * creating a circular dependency on apps/producer-service/utils/encryption.ts.
+ */
+export interface IEncryptedPayload {
+    encrypted: string; // hex-encoded ciphertext
+    iv: string;        // hex-encoded initialization vector
+    authTag: string;   // hex-encoded GCM authentication tag
+}
+
+// ============================================================================
+// AI ORCHESTRATOR INTERFACES
+// ============================================================================
+
+/**
+ * Per-organization AI model configuration and BYOK keys.
+ * Stored on IOrganization.aiConfig. Absent = use platform defaults.
+ */
+export interface IAiConfig {
+    /** The model used by default for all AI features in this org. */
+    defaultModel: 'gemini-2.5-flash' | 'gpt-4o' | 'claude-3-5-sonnet';
+    /**
+     * Per-provider BYOK keys, encrypted with AES-256-GCM via encryption.ts.
+     * Keys are NEVER returned to the frontend in plaintext.
+     */
+    byok?: {
+        gemini?:    IEncryptedPayload;
+        openai?:    IEncryptedPayload;
+        anthropic?: IEncryptedPayload;
+    };
+    updatedAt?: Date;
+}
+
+/**
+ * Granular AI feature flags.
+ * Replaces the legacy flat `aiAnalysisEnabled` boolean on IOrganization.
+ * Backwards-compat rule: if `aiFeatures` is absent on the org document,
+ * `rootCauseAnalysis` falls back to `org.aiAnalysisEnabled !== false`.
+ */
+export interface IAiFeatureFlags {
+    rootCauseAnalysis:  boolean; // was aiAnalysisEnabled — migrated in 009
+    autoBugGeneration:  boolean;
+    flakinessDetective: boolean;
+    testOptimizer:      boolean;
+    prRouting:          boolean;
+    qualityChatbot:     boolean;
+}
+
+// ============================================================================
 // ZOD VALIDATION SCHEMAS (existing)
 // ============================================================================
 
@@ -104,6 +157,18 @@ export interface IOrganization {
             updatedAt?: Date;
         };
     };
+    /** AI provider config & BYOK keys. Absent = use platform defaults. */
+    aiConfig?: IAiConfig;
+    /**
+     * Granular AI feature flags. Replaces the legacy flat `aiAnalysisEnabled`.
+     * When absent, `rootCauseAnalysis` falls back to `aiAnalysisEnabled !== false`.
+     */
+    aiFeatures?: IAiFeatureFlags;
+    /**
+     * @deprecated Use aiFeatures.rootCauseAnalysis instead.
+     * Kept in place (not $unset) so a rollback can still read it.
+     */
+    aiAnalysisEnabled?: boolean;
     createdAt: Date;
     updatedAt: Date;
 }

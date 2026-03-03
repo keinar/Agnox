@@ -1,6 +1,6 @@
 # PROJECT_CONTEXT.md — Agnox
 
-> Generated: 2026-03-01 | Current Phase: Playwright Reporter (Phase 2) | Version: 3.8.0
+> Generated: 2026-03-03 | Current Phase: AI Quality Orchestrator (All Phases) | Version: 3.10.0
 > Source: Full monorepo scan of code, docs, configs, and shared types.
 
 ---
@@ -16,7 +16,7 @@ Agnostic-Automation-Center/
 │   │   │   ├── routes/            # All API route handlers
 │   │   │   ├── middleware/        # auth.ts, rateLimiter.ts, planLimits.ts
 │   │   │   ├── config/            # plans.ts, middleware.ts (security headers, global auth hook)
-│   │   │   └── utils/             # audit-log.ts, password.ts, usage helpers
+│   │   │   └── utils/             # audit-log.ts, password.ts, usage helpers, llm-config.ts, chat-sanitizer.ts
 │   │   ├── Dockerfile
 │   │   ├── package.json
 │   │   └── tsconfig.json
@@ -35,7 +35,7 @@ Agnostic-Automation-Center/
 │   │   │   ├── App.tsx            # Router + QueryClient + AuthProvider
 │   │   │   ├── context/           # AuthContext.tsx (JWT + user state)
 │   │   │   ├── hooks/             # useExecutions, useDashboardData, useSettings
-│   │   │   ├── pages/             # Login, Signup, Settings, TestCases, TestCycles
+│   │   │   ├── pages/             # Login, Signup, Settings, TestCases, TestCycles, StabilityPage, ChatPage
 │   │   │   ├── components/        # Dashboard, ExecutionRow, modals, settings tabs, drawers
 │   │   │   └── types/             # index.ts (Execution, ExecutionConfig)
 │   │   ├── Dockerfile
@@ -67,7 +67,7 @@ Agnostic-Automation-Center/
 │   ├── deployment/                # stripe-production-checklist
 │   └── system/                    # project-history-archive
 │
-├── migrations/                    # Migration files (001–008)
+├── migrations/                    # Migration files (001–010)
 │   ├── 001-add-organization-to-existing-data.ts
 │   ├── 002-create-invitations-indexes.js
 │   ├── 003-create-audit-logs-indexes.js
@@ -77,7 +77,10 @@ Agnostic-Automation-Center/
 │   ├── 005-add-execution-group-fields.ts
 │   ├── 005-encrypt-slack-webhooks.ts
 │   ├── 006-add-feature-flags.ts
-│   └── 007-add-project-env-vars.ts
+│   ├── 007-add-project-env-vars.ts
+│   ├── 008-add-ingest-support.ts
+│   ├── 009-add-ai-orchestrator.ts  # Backfills aiFeatures, aiConfig.defaultModel, sparse index
+│   └── 010-add-stability-reports.ts # Creates stability_reports collection + indexes
 │
 ├── tests/                         # System sanity tests (Playwright)
 │   └── legacy_archive/            # Archived test files
@@ -165,6 +168,8 @@ Agnox operates as a **Dual Architecture** platform: tests can be executed via th
 | 15 (**Complete**) | Dual-Agent AI Analysis Pipeline (v3.6.0) | **Analyzer + Critic architecture:** `analysisService.ts` now runs two sequential Gemini 2.5 Flash calls. Step 1 (Analyzer) generates an initial `{ rootCause, suggestedFix }` JSON object using a structured `responseSchema`. Step 2 (Critic) receives the raw logs and the initial analysis, evaluates it for hallucinations, and outputs the final developer-facing Markdown. Expands log slice from 30 000 to 60 000 chars to capture full suite context. Temperature 0.4 (Analyzer) / 0.0 (Critic) for factuality. |
 | 16 (**Complete**) | CI/CD API Key Authentication (v3.7.0) | `/api/ci/trigger` now accepts `x-api-key` header auth via `createApiKeyAuthMiddleware`. Route added to `PUBLIC_PATHS` so the global JWT hook bypasses it; route-level handler checks `x-api-key` first. `RunSettingsTab.tsx` gains a read-only Project ID field with one-click Copy for use in CI pipelines. |
 | 17 (**Complete**) | Native Playwright Reporter (v3.8.0) | **`@agnox/playwright-reporter` package** (`packages/playwright-reporter/`) — implements Playwright's `Reporter` interface and streams live test results to `/api/ingest/*` in real-time. `AgnoxClient` handles HTTP calls; `EventBatcher` buffers events and flushes every 2 s (configurable). Auto-detects CI platform (GitHub Actions, GitLab CI, Azure DevOps, Jenkins) and attaches `ICiContext` to the setup call. "Do No Harm" policy: all errors are caught silently so the reporter never affects the test suite. **Dashboard source filter:** `FilterBar.tsx` gains a Source segment (`agnox-hosted` / `external-ci` / All) backed by the `source` query param on `GET /api/executions`. `Execution` type extended with `source`, `ingestMeta`, and `batchId` fields. |
+| 18 (**Complete**) | Onboarding UX Sprint (v3.9.0) | **`OnboardingWidget.tsx`** — Floating bottom-right getting-started checklist for new users with 3 items persisted in `localStorage`. **`buildEmptyStateTour`** — 11-step driver.js tour through Run Settings configuration, first execution launch, and Investigation Hub review; uses `MutationObserver` for DOM-based step advancement and `setInterval` URL polling for cross-page navigation. **`buildFeatureTour`** — 5-step platform discovery tour spotlighting sidebar nav items (Test Cases, Test Cycles, Settings > Members, Settings > Env Variables). **Sidebar recovery button** — `Rocket`-icon "Getting Started" button in desktop and mobile sidebar footers dispatches `agnox:open-onboarding` custom window event to re-open a dismissed widget. **Replay mode** — Completed items remain clickable with "Replay" badge. `allowClose: false` applied globally to all driver.js configs. `data-testid` tour anchors added to `ExecutionModal.tsx` (`modal-launch-button`, `modal-schedule-tab`, `modal-environment-select`). |
+| 19 (**Complete**) | AI Quality Orchestrator (v3.10.0) — Phases 1-4 | **Phase 1 (Foundation):** `IAiConfig` + `IAiFeatureFlags` shared-types interfaces; `IOrganization` extended. Migration 009 backfills feature flags. `resolveLlmConfig()` (`utils/llm-config.ts`) — BYOK key resolver (Gemini/OpenAI/Anthropic fallback chain). `GET/PATCH /api/organization/ai-config` — BYOK admin endpoints. `FeaturesTab.tsx` + `SecurityTab.tsx` updated with AI toggles and BYOK key UI. **Feature A — Auto-Bug Generator:** `POST /api/ai/generate-bug-report`; `AutoBugModal.tsx` edit-before-submit form; "Auto Bug" button in `ExecutionDrawer.tsx` for FAILED/ERROR executions. **Feature B — Flakiness Detective:** `POST /api/ai/analyze-stability` + `GET /api/ai/stability-reports`; flakiness score (0-100), findings/recommendations persisted in `stability_reports` collection (Migration 010); `StabilityPage.tsx` at `/stability`. **Feature C — Test Optimizer:** `POST /api/ai/optimize-test-cases` (dual-agent Analyzer→Critic); `OptimizedTestCasesModal.tsx` side-by-side diff UI; `BulkActionsBar.tsx` extended with `onOptimize` prop. **Feature D — Smart PR Routing:** `POST /api/webhooks/ci/pr?token=<orgId>` (`pr-routing.ts`); LLM maps changed files to `targetFolder`; PR Routing toggle in `RunSettingsTab.tsx`. **Feature E — Quality Chatbot:** `POST /api/ai/chat` two-turn pipeline (NL→pipeline→summary); `sanitizePipeline()` (`chat-sanitizer.ts`) 5-layer NoSQL injection guard; `chat_sessions` collection (24h TTL); `ChatPage.tsx` at `/chat` with session history sidebar + CSS charts. `Sidebar.tsx` shows "Stability" and "Ask AI" items conditionally via `aiFeatures` flags. |
 
 ### Security Posture (Score: 100/100)
 
@@ -210,8 +215,11 @@ Agnox operates as a **Dual Architecture** platform: tests can be executed via th
 
 | Method | Path | Auth | Rate Limit | Description |
 |--------|------|------|-----------|-------------|
-| GET | `/api/organization` | JWT | 100/min/org | Org profile + plan + limits + user count |
-| PATCH | `/api/organization` | Admin | 100/min/org | Update name, toggle `aiAnalysisEnabled`. Audited. |
+| GET | `/api/organization` | JWT | 100/min/org | Org profile + plan + limits + user count + `aiConfig` + `aiFeatures` |
+| PATCH | `/api/organization` | Admin | 100/min/org | Update name. Audited. |
+| PATCH | `/api/organization/features` | Admin | 100/min/org | Toggle module flags (`testCasesEnabled`, `testCyclesEnabled`) and `aiFeatures` block (`rootCauseAnalysis`, `autoBugGeneration`, `flakinessDetective`, `testOptimizer`, `prRouting`, `qualityChatbot`) |
+| GET | `/api/organization/ai-config` | JWT | 100/min/org | Returns default AI model and `byokConfigured` map (never returns plaintext keys) |
+| PATCH | `/api/organization/ai-config` | Admin | 100/min/org | Set default AI model; store/remove per-provider BYOK keys (AES-256-GCM encrypted at rest) |
 | GET | `/api/organization/usage` | JWT | 100/min/org | Monthly usage: test runs, users, storage |
 | GET | `/api/organization/usage/alerts` | JWT | 100/min/org | Usage warnings at 80%/90%/100% thresholds |
 
@@ -256,6 +264,7 @@ Agnox operates as a **Dual Architecture** platform: tests can be executed via th
 |--------|------|------|-----------|-------------|
 | POST | `/api/webhooks/stripe` | Stripe Signature | None | Process: subscription.created/updated/deleted, invoice.payment_succeeded/failed |
 | GET | `/api/webhooks/test` | Public | None | Webhook connectivity check |
+| POST | `/api/webhooks/ci/pr?token=<orgId>` | Token (org `_id`) | None | Smart PR Routing webhook: receives GitHub push payload, LLM maps changed files to `targetFolder`, dispatches RabbitMQ task. Guarded by `prRouting` feature flag. Returns `{ taskId, targetFolder, reasoning, dispatchedAt }`. Route file: `pr-routing.ts`. |
 
 ### Executions (`/api/executions*` & `/executions/*`)
 
@@ -286,6 +295,20 @@ Agnox operates as a **Dual Architecture** platform: tests can be executed via th
 |--------|------|------|-----------|-------------|
 | POST | `/api/ci/trigger` | `x-api-key` or Bearer JWT | Standard | Trigger a test cycle from an external CI/CD pipeline. Accepts Zod-validated payload: `projectId`, `image`, `command`, `folder`, `config` (environment, baseUrl, envVars), and `ciContext` (source, repository, prNumber, commitSha). Creates a `test_cycles` document and an `executions` document, then queues the task to RabbitMQ. Returns `{ cycleId, taskId, status: 'PENDING' }`. Route is excluded from the global JWT `authMiddleware` (added to `PUBLIC_PATHS`); authentication is handled at the route level by `createApiKeyAuthMiddleware` — tries `x-api-key` header first, falls back to Bearer JWT. |
 
+### AI Orchestrator (`/api/ai/*`)
+
+> **Auth:** JWT required on all routes. All routes except history endpoints guarded by `featureFlagGuard` preHandler.
+
+| Method | Path | Auth | Feature Flag | Description |
+|--------|------|------|-------------|-------------|
+| POST | `/api/ai/generate-bug-report` | JWT | `autoBugGeneration` | Feature A: Generates structured bug report from execution logs with log truncation (8k head + 72k tail at 80k). Returns `title`, `stepsToReproduce`, `expectedBehavior`, `actualBehavior`, `codePatches[]`, `severity`. |
+| POST | `/api/ai/analyze-stability` | JWT | `flakinessDetective` | Feature B: Fetches last 20 executions for a group, calculates flakiness score (0–100), and returns `{ flakinessScore, verdict, findings[], recommendations[], passRate, executionsAnalyzed }`. Persists result in `stability_reports`. |
+| GET | `/api/ai/stability-reports` | JWT | None | Returns last 50 stability report docs for org (filtered by optional `groupName` query param). No flag guard — history always readable. |
+| POST | `/api/ai/optimize-test-cases` | JWT | `testOptimizer` | Feature C: Dual-agent optimization of up to 20 test cases. Returns `optimizedCases[]` each with `originalId`, `optimizedSteps` (BDD), `duplicatesRemoved`, `edgeCases`, `rationale`. |
+| POST | `/api/ai/chat` | JWT | `qualityChatbot` | Feature E: Two-turn chatbot — turn 1 translates message to `{ collection, pipeline }`, turn 2 summarises DB results to `{ answer, chartData? }`. Body: `{ message, conversationId? }`. Persists to `chat_sessions`. |
+| GET | `/api/ai/chat/history` | JWT | None | Returns list of `chat_sessions` for org. No flag guard. |
+| GET | `/api/ai/chat/:conversationId` | JWT | None | Returns full message array for a conversation. Tenant-isolated. No flag guard. |
+
 ### Public / Health
 
 | Method | Path | Auth | Description |
@@ -303,7 +326,7 @@ Agnox operates as a **Dual Architecture** platform: tests can be executed via th
 |--------|------|------|-------------|
 | GET | `/api/system/monitor-status` | `X-Agnox-Monitor-Secret` header | Returns live infra health: `queueDepth` (pending RabbitMQ messages), `activeWorkers` (connected consumers), `dbConnected` (MongoDB ping). Requires header value matching `MONITORING_SECRET_KEY` env var. Companion `status-dashboard.html` auto-refreshes every 30 s and powers `status.agnox.dev`. Response shape: `{ status: 'ok', timestamp: ISO, data: { queueDepth, activeWorkers, dbConnected } }`. |
 
-**Total: 50+ endpoints**
+**Total: 60+ endpoints**
 
 ---
 
@@ -330,7 +353,18 @@ billing.currentPeriodEnd       Date | null
 billing.cancelAtPeriodEnd      Boolean
 billing.lastPaymentDate        Date | null
 billing.lastPaymentAmount      Number | null
-aiAnalysisEnabled  Boolean (default: true)
+aiAnalysisEnabled  Boolean (legacy — kept for rollback safety; superseded by aiFeatures.rootCauseAnalysis)
+aiConfig           Object | undefined
+  .defaultModel    'gemini-2.5-flash' | 'gpt-4o' | 'claude-3-5-sonnet'
+  .byok            Object | undefined (per-provider IEncryptedPayload — never returned to frontend in plaintext)
+  .updatedAt       Date | undefined
+aiFeatures         Object | undefined
+  .rootCauseAnalysis  Boolean (migrated from aiAnalysisEnabled via migration 009)
+  .autoBugGeneration  Boolean (default: false — opt-in)
+  .flakinessDetective Boolean (default: false — opt-in)
+  .testOptimizer      Boolean (default: false — opt-in)
+  .prRouting          Boolean (default: false — opt-in)
+  .qualityChatbot     Boolean (default: false — opt-in)
 slackWebhookUrl    String | null (optional — Incoming Webhook URL for Slack notifications)
 slackNotificationEvents Array<String> (e.g. ['PASSED', 'FAILED'])
 createdAt          Date
@@ -533,7 +567,38 @@ Indexes: { organizationId: 1, projectId: 1 },
          { organizationId: 1, projectId: 1, key: 1 } (unique)
 ```
 
-**Total: 13 collections**
+### `stability_reports`
+
+```
+_id                  ObjectId
+organizationId       String (FK → organizations — mandatory)
+groupName            String (test group analyzed)
+flakinessScore       Number (0–100; higher = more flaky)
+verdict              'stable' | 'mildly-flaky' | 'flaky' | 'highly-unstable'
+findings             Array<String>
+recommendations      Array<String>
+executionsAnalyzed   Number
+passRate             Number (0–100)
+createdAt            Date
+Indexes: { organizationId: 1, createdAt: -1 },
+         { organizationId: 1, groupName: 1, createdAt: -1 }
+```
+
+### `chat_sessions`
+
+```
+_id                  ObjectId
+organizationId       String (FK → organizations — mandatory)
+conversationId       String (UUID, unique per conversation)
+messages             Array<{ role: 'user'|'assistant', content: String, timestamp: Date }>
+createdAt            Date
+updatedAt            Date
+TTL: 24h (managed by calling code; session key expires in Redis; MongoDB doc persists for history)
+Indexes: { organizationId: 1, conversationId: 1 } (unique compound),
+         { organizationId: 1, updatedAt: -1 }
+```
+
+**Total: 15 collections**
 
 ---
 
@@ -552,6 +617,8 @@ Indexes: { organizationId: 1, projectId: 1 },
 | `/test-cycles` | `TestCycles` | ProtectedRoute | Hybrid cycle listing with expandable items |
 | `/dashboard` | `Dashboard` | ProtectedRoute | Execution monitoring, stats, run modal |
 | `/settings` | `Settings` | ProtectedRoute | Multi-tab settings (URL param `?tab=`) |
+| `/stability` | `StabilityPage` | FeatureGatedRoute (`flakinessDetective`) | Flakiness Detective — group selector, gauge, findings, history |
+| `/chat` | `ChatPage` | FeatureGatedRoute (`qualityChatbot`) | Quality Chatbot — multi-turn AI chat with optional chart responses |
 
 ### Settings Tabs (`/settings?tab=<id>`)
 
@@ -561,7 +628,7 @@ Indexes: { organizationId: 1, projectId: 1 },
 | `organization` | OrganizationTab | All roles | Org info, name (default tab) |
 | `members` | MembersTab | All roles | Team members, invitations, role management |
 | `billing` | BillingTab (lazy) | Admin only | Stripe plans, upgrade, portal, invoices |
-| `security` | SecurityTab | All roles | AI analysis toggle, privacy disclosure |
+| `security` | SecurityTab | All roles | AI model selector (Gemini/GPT-4o/Claude), BYOK key management (per-provider encrypted keys), privacy disclosure |
 | `usage` | UsageTab | All roles | Test runs, users, storage usage stats |
 | `run-settings` | RunSettingsTab | All roles | Per-project docker image, URLs, test folder. Displays read-only **Project ID** with one-click copy at the top of Execution Defaults (for use in CI/CD `POST /api/ci/trigger` payloads). |
 | `env-vars` | EnvironmentVariablesTab | All roles | Per-project env vars; secrets encrypted at rest, masked in UI |
@@ -579,21 +646,29 @@ App
 │       ├── /dashboard → ProtectedRoute → Dashboard
 │       │   ├── DashboardHeader (sticky, mobile menu)
 │       │   ├── StatsGrid (total runs, pass rate, active services)
-│       │   ├── ExecutionModal (form: folder, env, URL, image)
+│       │   ├── ExecutionModal (form: folder, env, URL, image; testids: modal-launch-button, modal-schedule-tab, modal-environment-select)
+│       │   ├── OnboardingWidget (floating bottom-right; 3-item checklist; buildEmptyStateTour / buildFeatureTour driver.js tours; localStorage persistence)
 │       │   └── ExecutionList
 │       │       └── ExecutionRow[] (flat — click sets ?drawerId= URL param)
 │       │           └── ExecutionDrawer.tsx (slide-over, ?drawerId= URL state — Sprint 7 ✅)
 │       │               ├── TerminalView (tab 1, real-time logs via Socket.io)
 │       │               ├── ArtifactsView (tab 2, media gallery — images/videos/zips)
-│       │               └── AIAnalysisView (tab 3, Gemini root-cause analysis)
+│       │               ├── AIAnalysisView (tab 3, Gemini root-cause analysis)
+│       │               └── AutoBugModal (FAILED/ERROR + autoBugGeneration flag; edit-before-submit → CreateJiraTicketModal)
 │       ├── /test-cases → ProtectedRoute → TestCases
-│       │   └── TestCaseDrawer (Headless UI slide-over for create/edit test cases)
-│       │       └── AI Step Generation (Gemini-powered bulk step creation)
+│       │   ├── TestCaseDrawer (Headless UI slide-over for create/edit test cases)
+│       │   │   └── AI Step Generation (Gemini-powered bulk step creation)
+│       │   └── BulkActionsBar (floating; includes "Optimize with AI" when testOptimizer enabled)
+│       │       └── OptimizedTestCasesModal (side-by-side BDD diff; per-case "Apply" + "Apply All")
 │       ├── /test-cycles → ProtectedRoute → TestCycles
 │       │   ├── CycleBuilderDrawer (Headless UI slide-over for composing hybrid cycles)
 │       │   └── ManualExecutionDrawer (Step-by-step manual execution player)
+│       ├── /stability → FeatureGatedRoute (flakinessDetective) → StabilityPage
+│       │   └── Group selector → POST /api/ai/analyze-stability → flakiness gauge + findings + history
+│       ├── /chat → FeatureGatedRoute (qualityChatbot) → ChatPage
+│       │   └── Two-panel: session history sidebar (left) + chat interface (right) + optional CSS bar chart
 │       └── /settings → ProtectedRoute → Settings
-│           └── [8 tab components listed above]
+│           └── [10 tab components listed above]
 ```
 
 ### State Management
@@ -684,7 +759,9 @@ createApiKeyAuthMiddleware(db)
 | `DASHBOARD_URL` | No | `http://localhost:8080` | Dashboard URL |
 
 | `REPORTS_DIR` | No | `/app/reports` | Reports storage directory |
-| `PLATFORM_GEMINI_API_KEY` | No | `mock_gemini` | Gemini API (for strict checks) |
+| `PLATFORM_GEMINI_API_KEY` | No | `mock_gemini` | Gemini API (platform default; overridden by org BYOK) |
+| `PLATFORM_OPENAI_API_KEY` | No | — | OpenAI API key (platform default; overridden by org BYOK) |
+| `PLATFORM_ANTHROPIC_API_KEY` | No | — | Anthropic API key (platform default; overridden by org BYOK) |
 
 ### Worker Service
 
@@ -749,6 +826,8 @@ CLAUDE.md mandates: **"Styling is STRICTLY Tailwind CSS (Pure CSS is deprecated.
 | **Email** | `@sendgrid/mail` | ^8.1.6 | SendGrid |
 | **Validation** | `zod` | ^4.2.1 | Schema validation |
 | **Scheduling** | `node-cron` | ^4.2.1 | CRON job scheduling engine |
+| **AI** | `openai` | latest | OpenAI SDK (Feature A/C/D/E when model=gpt-4o) |
+| | `@anthropic-ai/sdk` | latest | Anthropic SDK (Feature A/C/D/E when model=claude) |
 | **Env** | `dotenv` | ^17.2.3 | .env loading |
 
 ### Worker Service (`apps/worker-service/package.json`)

@@ -23,6 +23,7 @@ import { testCycleRoutes } from '../routes/test-cycles.js';
 import { aiRoutes } from '../routes/ai.js';
 import { ciRoutes } from '../routes/ci.js';
 import { ingestRoutes } from '../routes/ingest.js';
+import { prRoutingRoutes } from '../routes/pr-routing.js';
 import { reportRoutes } from '../routes/reports.js';
 import { monitorStatusRoutes } from '../routes/monitor-status.js';
 import { sendExecutionNotification, FINAL_EXECUTION_STATUSES } from '../utils/notifier.js';
@@ -84,8 +85,8 @@ export async function setupRoutes(
     await testCaseRoutes(app, dbClient, apiRateLimit);
     await testCycleRoutes(app, dbClient, apiRateLimit, rabbitMqService);
 
-    // AI generation routes (Gemini-powered — JWT protected)
-    await aiRoutes(app, apiRateLimit);
+    // AI generation routes (multi-provider, BYOK-aware — JWT protected)
+    await aiRoutes(app, dbClient, apiRateLimit);
 
     // CI Trigger routes (Jenkins, GitHub Actions — JWT protected via standard global auth middleware)
     await ciRoutes(app, dbClient, strictRateLimit);
@@ -93,6 +94,9 @@ export async function setupRoutes(
     // Ingest routes (external CI passive reporter — API key auth, higher-burst rate limit on /event)
     await ingestRoutes(app, dbClient, redis);
     app.log.info('Ingest routes registered');
+
+    // PR Routing webhook (Feature D — token-auth via ?token=orgId, no JWT)
+    await prRoutingRoutes(app, dbClient);
 
     // Report static serving routes (Custom JWT & Report Token Auth)
     await reportRoutes(app);

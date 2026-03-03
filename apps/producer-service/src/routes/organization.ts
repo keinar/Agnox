@@ -22,7 +22,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { authMiddleware, adminOnly } from '../middleware/auth.js';
 import { checkUsageAlerts } from '../utils/usageAlerts.js';
-import { encrypt, decrypt, IEncryptedPayload } from '../utils/encryption.js';
+import { encrypt } from '../utils/encryption.js';
 
 const DB_NAME = 'automation_platform';
 const REPORTS_DIR = process.env.REPORTS_DIR || path.join(process.cwd(), 'reports');
@@ -184,6 +184,16 @@ export async function organizationRoutes(
             999 // enterprise
       );
 
+      // Backwards-compat: if aiFeatures absent, derive rootCauseAnalysis from legacy flag
+      const aiFeatures = {
+        rootCauseAnalysis:  org.aiFeatures?.rootCauseAnalysis  ?? (org.aiAnalysisEnabled !== false),
+        autoBugGeneration:  org.aiFeatures?.autoBugGeneration  ?? false,
+        flakinessDetective: org.aiFeatures?.flakinessDetective ?? false,
+        testOptimizer:      org.aiFeatures?.testOptimizer      ?? false,
+        prRouting:          org.aiFeatures?.prRouting          ?? false,
+        qualityChatbot:     org.aiFeatures?.qualityChatbot     ?? false,
+      };
+
       return reply.send({
         success: true,
         organization: {
@@ -194,7 +204,16 @@ export async function organizationRoutes(
           limits: org.limits,
           userCount,
           userLimit,
-          aiAnalysisEnabled: org.aiAnalysisEnabled !== false, // default: true
+          aiAnalysisEnabled: aiFeatures.rootCauseAnalysis, // legacy compat — mirrors rootCauseAnalysis
+          aiFeatures,
+          aiConfig: {
+            defaultModel: org.aiConfig?.defaultModel ?? 'gemini-2.5-flash',
+            byokConfigured: {
+              gemini:    !!org.aiConfig?.byok?.gemini,
+              openai:    !!org.aiConfig?.byok?.openai,
+              anthropic: !!org.aiConfig?.byok?.anthropic,
+            },
+          },
           slackWebhookUrl: org.slackWebhookUrl
             ? (typeof org.slackWebhookUrl === 'object' ? 'configured' : 'configured (legacy)')
             : null,
@@ -460,20 +479,24 @@ export async function organizationRoutes(
   app.patch('/api/organization/features', {
     preHandler: [authMiddleware, adminOnly, apiRateLimit]
   }, async (request, reply) => {
-    const { testCasesEnabled, testCyclesEnabled } = request.body as any;
+    const { testCasesEnabled, testCyclesEnabled, aiFeatures } = request.body as any;
     const currentUser = request.user!;
+
+    const AI_FLAG_KEYS = [
+      'rootCauseAnalysis', 'autoBugGeneration', 'flakinessDetective',
+      'testOptimizer', 'prRouting', 'qualityChatbot',
+    ] as const;
 
     try {
       // Validate at least one field is provided
-      if (testCasesEnabled === undefined && testCyclesEnabled === undefined) {
+      if (testCasesEnabled === undefined && testCyclesEnabled === undefined && aiFeatures === undefined) {
         return reply.code(400).send({
           success: false,
           error: 'Missing fields',
-          message: 'At least one field (testCasesEnabled or testCyclesEnabled) is required'
+          message: 'At least one field (testCasesEnabled, testCyclesEnabled, or aiFeatures) is required'
         });
       }
 
-      // Validate both are boolean if provided
       if (testCasesEnabled !== undefined && typeof testCasesEnabled !== 'boolean') {
         return reply.code(400).send({
           success: false,
@@ -490,6 +513,33 @@ export async function organizationRoutes(
         });
       }
 
+      // Validate aiFeatures if provided
+      if (aiFeatures !== undefined) {
+        if (typeof aiFeatures !== 'object' || Array.isArray(aiFeatures)) {
+          return reply.code(400).send({
+            success: false,
+            error: 'Invalid aiFeatures',
+            message: 'aiFeatures must be an object'
+          });
+        }
+        for (const key of Object.keys(aiFeatures)) {
+          if (!AI_FLAG_KEYS.includes(key as any)) {
+            return reply.code(400).send({
+              success: false,
+              error: 'Invalid aiFeatures key',
+              message: `Unknown AI feature flag: "${key}"`
+            });
+          }
+          if (typeof aiFeatures[key] !== 'boolean') {
+            return reply.code(400).send({
+              success: false,
+              error: `Invalid aiFeatures.${key}`,
+              message: `aiFeatures.${key} must be a boolean`
+            });
+          }
+        }
+      }
+
       const orgId = new ObjectId(currentUser.organizationId);
 
       // Build $set payload with dot-notation keys
@@ -499,6 +549,13 @@ export async function organizationRoutes(
       }
       if (testCyclesEnabled !== undefined) {
         setFields['features.testCyclesEnabled'] = testCyclesEnabled;
+      }
+      if (aiFeatures !== undefined) {
+        for (const key of AI_FLAG_KEYS) {
+          if (aiFeatures[key] !== undefined) {
+            setFields[`aiFeatures.${key}`] = aiFeatures[key];
+          }
+        }
       }
 
       const result = await orgsCollection.updateOne(
@@ -513,10 +570,8 @@ export async function organizationRoutes(
         });
       }
 
-      // Fetch updated org to return accurate values
       const updatedOrg = await orgsCollection.findOne({ _id: orgId });
 
-      // Audit log
       await logAuditEvent(
         db,
         {
@@ -538,7 +593,15 @@ export async function organizationRoutes(
         features: {
           testCasesEnabled: updatedOrg?.features?.testCasesEnabled !== false,
           testCyclesEnabled: updatedOrg?.features?.testCyclesEnabled !== false,
-        }
+        },
+        aiFeatures: {
+          rootCauseAnalysis:  updatedOrg?.aiFeatures?.rootCauseAnalysis  ?? (updatedOrg?.aiAnalysisEnabled !== false),
+          autoBugGeneration:  updatedOrg?.aiFeatures?.autoBugGeneration  ?? false,
+          flakinessDetective: updatedOrg?.aiFeatures?.flakinessDetective ?? false,
+          testOptimizer:      updatedOrg?.aiFeatures?.testOptimizer      ?? false,
+          prRouting:          updatedOrg?.aiFeatures?.prRouting          ?? false,
+          qualityChatbot:     updatedOrg?.aiFeatures?.qualityChatbot     ?? false,
+        },
       });
 
     } catch (error: any) {
@@ -728,10 +791,187 @@ export async function organizationRoutes(
     }
   });
 
+  /**
+   * GET /api/organization/ai-config
+   * Returns the current AI model selection and BYOK status (no keys in plaintext).
+   * Auth: JWT (all roles may read)
+   *
+   * Response 200:
+   * { success: true, data: { defaultModel, byokConfigured: { gemini, openai, anthropic } } }
+   */
+  app.get('/api/organization/ai-config', {
+    preHandler: [authMiddleware, apiRateLimit]
+  }, async (request, reply) => {
+    try {
+      const orgId = new ObjectId(request.user!.organizationId);
+      const org = await orgsCollection.findOne(
+        { _id: orgId },
+        { projection: { aiConfig: 1 } }
+      );
+
+      if (!org) {
+        return reply.code(404).send({ success: false, error: 'Organization not found' });
+      }
+
+      return reply.send({
+        success: true,
+        data: {
+          defaultModel: org.aiConfig?.defaultModel ?? 'gemini-2.5-flash',
+          byokConfigured: {
+            gemini:    !!org.aiConfig?.byok?.gemini,
+            openai:    !!org.aiConfig?.byok?.openai,
+            anthropic: !!org.aiConfig?.byok?.anthropic,
+          },
+        },
+      });
+
+    } catch (error: any) {
+      app.log.error(`GET ai-config error: ${error?.message || error}`);
+      return reply.code(500).send({ success: false, error: 'Failed to fetch AI config' });
+    }
+  });
+
+  /**
+   * PATCH /api/organization/ai-config
+   * Update default model and/or BYOK keys.
+   * Auth: JWT + Admin only
+   *
+   * Body (all optional, at least one required):
+   * {
+   *   defaultModel?: 'gemini-2.5-flash' | 'gpt-4o' | 'claude-3-5-sonnet';
+   *   byok?: { provider: 'gemini'|'openai'|'anthropic'; apiKey: string };
+   *   removeByok?: 'gemini' | 'openai' | 'anthropic';
+   * }
+   */
+  app.patch('/api/organization/ai-config', {
+    preHandler: [authMiddleware, adminOnly, apiRateLimit]
+  }, async (request, reply) => {
+    const { defaultModel, byok, removeByok } = request.body as any;
+    const currentUser = request.user!;
+
+    const VALID_MODELS = ['gemini-2.5-flash', 'gpt-4o', 'claude-3-5-sonnet'] as const;
+    const VALID_PROVIDERS = ['gemini', 'openai', 'anthropic'] as const;
+
+    try {
+      if (defaultModel === undefined && byok === undefined && removeByok === undefined) {
+        return reply.code(400).send({
+          success: false,
+          error: 'Missing fields',
+          message: 'At least one of defaultModel, byok, or removeByok is required'
+        });
+      }
+
+      if (defaultModel !== undefined && !VALID_MODELS.includes(defaultModel)) {
+        return reply.code(400).send({
+          success: false,
+          error: 'Invalid defaultModel',
+          message: `defaultModel must be one of: ${VALID_MODELS.join(', ')}`
+        });
+      }
+
+      if (byok !== undefined) {
+        if (!byok.provider || !VALID_PROVIDERS.includes(byok.provider)) {
+          return reply.code(400).send({
+            success: false,
+            error: 'Invalid byok.provider',
+            message: `byok.provider must be one of: ${VALID_PROVIDERS.join(', ')}`
+          });
+        }
+        if (typeof byok.apiKey !== 'string' || byok.apiKey.trim().length === 0) {
+          return reply.code(400).send({
+            success: false,
+            error: 'Invalid byok.apiKey',
+            message: 'byok.apiKey must be a non-empty string'
+          });
+        }
+      }
+
+      if (removeByok !== undefined && !VALID_PROVIDERS.includes(removeByok)) {
+        return reply.code(400).send({
+          success: false,
+          error: 'Invalid removeByok',
+          message: `removeByok must be one of: ${VALID_PROVIDERS.join(', ')}`
+        });
+      }
+
+      const orgId = new ObjectId(currentUser.organizationId);
+      const setFields: Record<string, any> = { updatedAt: new Date(), 'aiConfig.updatedAt': new Date() };
+      const unsetFields: Record<string, any> = {};
+
+      if (defaultModel !== undefined) {
+        setFields['aiConfig.defaultModel'] = defaultModel;
+      }
+
+      if (byok !== undefined) {
+        // Encrypt the plaintext key before storing — never persist in plaintext
+        const encryptedKey = encrypt(byok.apiKey.trim());
+        setFields[`aiConfig.byok.${byok.provider}`] = encryptedKey;
+        app.log.info(`BYOK key set for provider "${byok.provider}" on org ${currentUser.organizationId}`);
+      }
+
+      if (removeByok !== undefined) {
+        unsetFields[`aiConfig.byok.${removeByok}`] = '';
+        app.log.info(`BYOK key removed for provider "${removeByok}" on org ${currentUser.organizationId}`);
+      }
+
+      const updateOp: Record<string, any> = { $set: setFields };
+      if (Object.keys(unsetFields).length > 0) {
+        updateOp.$unset = unsetFields;
+      }
+
+      const result = await orgsCollection.updateOne({ _id: orgId }, updateOp);
+
+      if (result.matchedCount === 0) {
+        return reply.code(404).send({ success: false, error: 'Organization not found' });
+      }
+
+      await logAuditEvent(
+        db,
+        {
+          organizationId: currentUser.organizationId,
+          userId: currentUser.userId,
+          action: 'org.ai_config_updated',
+          targetType: 'organization',
+          targetId: currentUser.organizationId,
+          details: {
+            defaultModelChanged: defaultModel !== undefined,
+            byokProviderSet: byok?.provider ?? null,
+            byokProviderRemoved: removeByok ?? null,
+          },
+          ip: request.ip
+        },
+        app.log
+      );
+
+      const updatedOrg = await orgsCollection.findOne(
+        { _id: orgId },
+        { projection: { aiConfig: 1 } }
+      );
+
+      return reply.send({
+        success: true,
+        data: {
+          defaultModel: updatedOrg?.aiConfig?.defaultModel ?? 'gemini-2.5-flash',
+          byokConfigured: {
+            gemini:    !!updatedOrg?.aiConfig?.byok?.gemini,
+            openai:    !!updatedOrg?.aiConfig?.byok?.openai,
+            anthropic: !!updatedOrg?.aiConfig?.byok?.anthropic,
+          },
+        },
+      });
+
+    } catch (error: any) {
+      app.log.error(`PATCH ai-config error: ${error?.message || error}`);
+      return reply.code(500).send({ success: false, error: 'Failed to update AI config' });
+    }
+  });
+
   app.log.info('✅ Organization routes registered');
-  app.log.info('  - GET /api/organization (All roles)');
+  app.log.info('  - GET  /api/organization (All roles)');
   app.log.info('  - PATCH /api/organization (Admin only)');
   app.log.info('  - PATCH /api/organization/features (Admin only)');
-  app.log.info('  - GET /api/organization/usage (All roles)');
-  app.log.info('  - GET /api/organization/usage/alerts (All roles)');
+  app.log.info('  - GET  /api/organization/ai-config (All roles)');
+  app.log.info('  - PATCH /api/organization/ai-config (Admin only)');
+  app.log.info('  - GET  /api/organization/usage (All roles)');
+  app.log.info('  - GET  /api/organization/usage/alerts (All roles)');
 }

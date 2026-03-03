@@ -3,7 +3,7 @@ import { NavLink, Link, useLocation, useSearchParams } from 'react-router-dom';
 import {
   LayoutDashboard, Settings, BookOpen, X, ChevronLeft, ChevronRight, Info, ClipboardList, Layers,
   User, Building, Users, CreditCard, Shield, Activity, Play, Database, Link as LinkIcon,
-  Clock, Sparkles, ArrowLeft, Rocket,
+  Clock, Sparkles, ArrowLeft, Rocket, MessageSquare,
 } from 'lucide-react';
 import logoLight from '../assets/logo.png';
 import logoDark from '../assets/logo-dark.png';
@@ -22,11 +22,13 @@ interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { icon: LayoutDashboard, label: 'Dashboard', to: '/dashboard', href: null, disabled: false },
-  { icon: ClipboardList,   label: 'Test Cases', to: '/test-cases', href: null, disabled: false },
-  { icon: Layers,          label: 'Test Cycles', to: '/test-cycles', href: null, disabled: false },
-  { icon: Settings,        label: 'Settings', to: '/settings', href: null, disabled: false },
-  { icon: BookOpen,        label: 'Docs', to: null, href: 'http://docs.agnox.dev/', disabled: false },
+  { icon: LayoutDashboard, label: 'Dashboard',  to: '/dashboard',  href: null, disabled: false, aiFlag: null },
+  { icon: ClipboardList,   label: 'Test Cases', to: '/test-cases', href: null, disabled: false, aiFlag: null },
+  { icon: Layers,          label: 'Test Cycles',to: '/test-cycles',href: null, disabled: false, aiFlag: null },
+  { icon: Activity,        label: 'Stability',  to: '/stability',  href: null, disabled: false, aiFlag: 'flakinessDetective' as const },
+  { icon: MessageSquare,   label: 'Ask AI',     to: '/chat',       href: null, disabled: false, aiFlag: 'qualityChatbot' as const },
+  { icon: Settings,        label: 'Settings',   to: '/settings',   href: null, disabled: false, aiFlag: null },
+  { icon: BookOpen,        label: 'Docs',       to: null, href: 'http://docs.agnox.dev/', disabled: false, aiFlag: null },
 ] as const;
 
 const ALL_SETTINGS_TABS = [
@@ -49,7 +51,7 @@ const DEFAULT_CLASS = 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dar
 export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: SidebarProps) {
   const { theme } = useTheme();
   const [showChangelog, setShowChangelog] = useState(false);
-  const { features } = useOrganizationFeatures();
+  const { features, aiFeatures } = useOrganizationFeatures();
   const { user } = useAuth();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -57,9 +59,10 @@ export function Sidebar({ isMobileOpen, onMobileClose, isCollapsed, onToggle }: 
   const isSettings = location.pathname.startsWith('/settings');
   const activeTab   = searchParams.get('tab') ?? 'organization';
 
-  const visibleNavItems = NAV_ITEMS.filter(({ to }) => {
-    if (to === '/test-cases'  && !features.testCasesEnabled)  return false;
-    if (to === '/test-cycles' && !features.testCyclesEnabled) return false;
+  const visibleNavItems = NAV_ITEMS.filter(({ to, aiFlag }) => {
+    if (to === '/test-cases'  && !features.testCasesEnabled)              return false;
+    if (to === '/test-cycles' && !features.testCyclesEnabled)             return false;
+    if (aiFlag && !aiFeatures[aiFlag])                                    return false;
     return true;
   });
 

@@ -8,7 +8,9 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useOrganizationFeatures } from '../../hooks/useOrganizationFeatures';
 import axios from 'axios';
+import { GitBranch, Info } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -52,7 +54,9 @@ const SELECT_CLASS =
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export function RunSettingsTab() {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
+    const { aiFeatures, updateFeatures, isUpdating: isAiUpdating } = useOrganizationFeatures();
+    const isAdmin = user?.role === 'admin';
 
     const [projects, setProjects] = useState<Project[]>([]);
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -397,6 +401,82 @@ export function RunSettingsTab() {
                         >
                             {saving ? 'Saving...' : 'Save Settings'}
                         </button>
+                    </section>
+
+                    <hr className="border-0 border-t border-slate-200 dark:border-gh-border-dark my-7" />
+
+                    {/* ── Smart PR Routing ──────────────────────────────────────────── */}
+                    <section className="mb-8">
+                        <div className="flex items-center gap-2 mb-1">
+                            <GitBranch size={18} className="text-violet-600 dark:text-violet-400 shrink-0" />
+                            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                                Smart PR Routing
+                            </h2>
+                        </div>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
+                            Automatically select and trigger only the relevant test suite when a pull request is opened,
+                            based on the files changed.
+                        </p>
+
+                        {/* Toggle row */}
+                        <div className="flex items-center justify-between py-4 rounded-xl bg-slate-50 dark:bg-gh-bg-dark border border-slate-200 dark:border-gh-border-dark px-4 mb-5">
+                            <div className="flex-1 min-w-0 pr-4">
+                                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                                    Enable Smart PR Routing
+                                </p>
+                                <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+                                    When enabled, your CI system can call the webhook below to trigger targeted test runs.
+                                </p>
+                            </div>
+                            {isAdmin ? (
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={aiFeatures.prRouting}
+                                    disabled={isAiUpdating}
+                                    onClick={() => updateFeatures({ aiFeatures: { prRouting: !aiFeatures.prRouting } })}
+                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors duration-200
+                                        ${aiFeatures.prRouting ? 'bg-gh-accent dark:bg-gh-accent-dark' : 'bg-slate-300 dark:bg-slate-600'}
+                                        ${isAiUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                >
+                                    <span
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200
+                                            ${aiFeatures.prRouting ? 'translate-x-6' : 'translate-x-1'}`}
+                                    />
+                                </button>
+                            ) : (
+                                <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                                    aiFeatures.prRouting
+                                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                                }`}>
+                                    {aiFeatures.prRouting ? 'Enabled' : 'Disabled'}
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Webhook URL callout — always shown so users can copy */}
+                        <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 text-sm">
+                            <Info size={16} className="shrink-0 mt-0.5 text-blue-600 dark:text-blue-400" />
+                            <div className="min-w-0">
+                                <p className="font-medium text-blue-800 dark:text-blue-200 mb-1">
+                                    Webhook Configuration
+                                </p>
+                                <p className="text-blue-700 dark:text-blue-300 text-xs mb-2">
+                                    Configure your repository to send PR / push webhooks to the URL below.
+                                    The <code className="font-mono bg-blue-100 dark:bg-blue-900/40 px-1 rounded">token</code> parameter
+                                    is your Organization ID.
+                                </p>
+                                <code className="block text-xs font-mono bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 px-3 py-2 rounded-lg break-all select-all border border-blue-200 dark:border-blue-700">
+                                    {`${API_URL}/api/webhooks/ci/pr?token=[YOUR_ORG_ID]`}
+                                </code>
+                                {selectedProjectId && (
+                                    <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">
+                                        Your Org ID can be found in the Project ID field above (first portion of the UUID) — or use the value from <strong>Settings → Security → API Keys</strong>.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
                     </section>
                 </>
             )}
