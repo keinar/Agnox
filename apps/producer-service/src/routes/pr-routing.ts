@@ -24,7 +24,7 @@
 
 import { FastifyInstance } from 'fastify';
 import { MongoClient, ObjectId } from 'mongodb';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHmac, timingSafeEqual } from 'crypto';
 import { resolveLlmConfig, LlmNotConfiguredError } from '../utils/llm-config.js';
 import { rabbitMqService } from '../rabbitmq.js';
 import { computeOrgPriority } from '../utils/scheduling.js';
@@ -140,11 +140,37 @@ export async function prRoutingRoutes(
 
         const org = await orgsCollection.findOne(
             { _id: orgId },
-            { projection: { _id: 1, aiFeatures: 1, aiConfig: 1, name: 1 } },
+            { projection: { _id: 1, aiFeatures: 1, aiConfig: 1, name: 1, webhookSecret: 1 } },
         );
 
         if (!org) {
             return reply.status(404).send({ success: false, error: 'Organization not found' });
+        }
+
+        // ── HMAC Signature Verification (HIGH-1) ──────────────────────────────
+        // If the org has a webhookSecret configured, enforce X-Hub-Signature-256.
+        // Uses timingSafeEqual to prevent timing-based attacks.
+        // NOTE: For exact GitHub compatibility the Fastify server should be
+        //       configured with rawBody: true. We fall back to JSON.stringify(body)
+        //       which is equivalent when the webhook sender encodes without
+        //       extraneous whitespace.
+        if (org.webhookSecret) {
+            const sigHeader = (request.headers['x-hub-signature-256'] ?? '') as string;
+            if (!sigHeader) {
+                return reply.status(401).send({ success: false, error: 'Missing X-Hub-Signature-256 header' });
+            }
+            const rawBody  = JSON.stringify(request.body ?? {});
+            const expected = `sha256=${createHmac('sha256', org.webhookSecret as string).update(rawBody, 'utf8').digest('hex')}`;
+            let signatureValid = false;
+            try {
+                signatureValid = timingSafeEqual(Buffer.from(sigHeader), Buffer.from(expected));
+            } catch {
+                signatureValid = false;
+            }
+            if (!signatureValid) {
+                app.log.warn(`[pr-routing] Invalid X-Hub-Signature-256 for org "${org.name}" — rejecting webhook`);
+                return reply.status(401).send({ success: false, error: 'Invalid webhook signature' });
+            }
         }
 
         // Feature flag guard

@@ -18,8 +18,11 @@ import { randomUUID } from 'crypto';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
+import Redis from 'ioredis';
+import { z } from 'zod';
 import { resolveLlmConfig, LlmNotConfiguredError, IResolvedLlmConfig } from '../utils/llm-config.js';
 import { sanitizePipeline, PipelineSanitizationError, ALLOWED_COLLECTIONS } from '../utils/chat-sanitizer.js';
+import { createCustomRateLimiter } from '../middleware/rateLimiter.js';
 
 const DB_NAME = 'automation_platform';
 const LOG_TRUNCATION_LIMIT = 80_000;
@@ -129,6 +132,31 @@ function stripCodeFences(text: string): string {
         .trim();
 }
 
+// ── HIGH-3: Chat input controls ───────────────────────────────────────────────
+
+/** Zod schema for the chat endpoint body. Enforces non-empty + max 5000 chars. */
+const ChatMessageSchema = z.object({
+    message:        z.string().min(1).max(5000),
+    conversationId: z.string().optional(),
+});
+
+/**
+ * Phrases that indicate a prompt-injection attempt.
+ * Checked against the lowercased message before calling the LLM.
+ */
+const PROMPT_INJECTION_DENYLIST = [
+    'ignore previous',
+    'ignore prior',
+    'disregard',
+    'disregard previous',
+    'forget previous',
+    'system prompt',
+    'bypass',
+    'jailbreak',
+    'new instructions',
+    'override instructions',
+] as const;
+
 // ── Stability Report document shape ───────────────────────────────────────────
 
 interface IStabilityReportDoc {
@@ -149,9 +177,14 @@ export async function aiRoutes(
     app: FastifyInstance,
     mongoClient: MongoClient,
     apiRateLimit: (request: any, reply: any) => Promise<void>,
+    redis: Redis,
 ): Promise<void> {
 
     const db = mongoClient.db(DB_NAME);
+
+    // HIGH-3: Stricter per-org rate limit for the chat endpoint to prevent
+    // LLM quota exhaustion — 20 requests per minute per org.
+    const chatRateLimit = createCustomRateLimiter(redis, 20, 60_000, 'rl:ai:chat:');
     const orgsCollection = db.collection('organizations');
     const exeCollection = db.collection('executions');
     const stabilityReportsCollection = db.collection<IStabilityReportDoc>('stability_reports');
@@ -988,21 +1021,31 @@ Review the draft. Correct any invalid IDs, empty step arrays, or non-BDD actions
     //   3. MongoDB aggregate() — execute sanitized pipeline
     //   4. LLM B: summarise DB results in natural language + optional chartData
 
-    app.post('/api/ai/chat', { preHandler: [apiRateLimit] }, async (request, reply) => {
-        const body = request.body as { message?: unknown; conversationId?: unknown };
+    app.post('/api/ai/chat', { preHandler: [chatRateLimit] }, async (request, reply) => {
         const currentUser = request.user!;
 
-        // ── Input validation ───────────────────────────────────────────────────
-        if (typeof body.message !== 'string' || body.message.trim().length === 0) {
-            return reply.status(400).send({ success: false, error: 'message is required' });
+        // ── Input validation (HIGH-3) ──────────────────────────────────────────
+        const parseResult = ChatMessageSchema.safeParse(request.body);
+        if (!parseResult.success) {
+            const issue = parseResult.error.issues[0];
+            return reply.status(400).send({ success: false, error: issue?.message ?? 'Invalid request body' });
         }
-        const message = body.message.trim();
-        if (message.length > 1_000) {
-            return reply.status(400).send({ success: false, error: 'message must be 1000 characters or less' });
+        const { conversationId: rawConversationId } = parseResult.data;
+        const message = parseResult.data.message.trim();
+
+        // ── Prompt injection denylist (HIGH-3) ────────────────────────────────
+        const lowercasedMsg = message.toLowerCase();
+        const injectionPhrase = PROMPT_INJECTION_DENYLIST.find(phrase => lowercasedMsg.includes(phrase));
+        if (injectionPhrase) {
+            app.log.warn(`[ai:chat] Prompt injection attempt blocked for org "${currentUser.organizationId}" — phrase: "${injectionPhrase}"`);
+            return reply.status(400).send({
+                success: false,
+                error: 'Your message was flagged for potential prompt injection. Please rephrase your question.',
+            });
         }
         const conversationId: string =
-            typeof body.conversationId === 'string' && body.conversationId.trim().length > 0
-                ? body.conversationId.trim()
+            rawConversationId && rawConversationId.trim().length > 0
+                ? rawConversationId.trim()
                 : randomUUID();
 
         // ── Feature flag guard ─────────────────────────────────────────────────

@@ -86,7 +86,7 @@ export async function setupRoutes(
     await testCycleRoutes(app, dbClient, apiRateLimit, rabbitMqService);
 
     // AI generation routes (multi-provider, BYOK-aware — JWT protected)
-    await aiRoutes(app, dbClient, apiRateLimit);
+    await aiRoutes(app, dbClient, apiRateLimit, redis);
 
     // CI Trigger routes (Jenkins, GitHub Actions — JWT protected via standard global auth middleware)
     await ciRoutes(app, dbClient, strictRateLimit);

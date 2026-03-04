@@ -5,7 +5,7 @@ import { createServer, connectToMongo, setupSocketIO } from './config/server.js'
 import { setupSecurityHeaders, setupGlobalAuth } from './config/middleware.js';
 import { setupRoutes } from './config/routes.js';
 import { rabbitMqService } from './rabbitmq.js';
-import { createAuthRateLimiter, createApiRateLimiter, createStrictRateLimiter } from './middleware/rateLimiter.js';
+import { createAuthRateLimiter, createApiRateLimiter, createStrictRateLimiter, createCustomRateLimiter } from './middleware/rateLimiter.js';
 import { initScheduler, stopAllJobs } from './utils/scheduler.js';
 
 // Load environment variables
@@ -42,15 +42,18 @@ const start = async () => {
         setupSecurityHeaders(app);
 
         // Step 4: Create rate limiters
-        const authRateLimit = createAuthRateLimiter(redis);
-        const apiRateLimit = createApiRateLimiter(redis);
-        const strictRateLimit = createStrictRateLimiter(redis);
+        const authRateLimit    = createAuthRateLimiter(redis);
+        const apiRateLimit     = createApiRateLimiter(redis);
+        const strictRateLimit  = createStrictRateLimiter(redis);
+        // HIGH-2: dedicated limiter for worker callbacks — high ceiling to allow
+        // legitimate burst from a 10-replica worker fleet, but not unbounded.
+        const workerRateLimit  = createCustomRateLimiter(redis, 10_000, 60_000, 'rl:worker:cb:');
 
         // Step 5: Register all routes (auth, users, orgs, invitations, executions, etc.)
         await setupRoutes(app, dbClient, redis, authRateLimit, apiRateLimit, strictRateLimit);
 
         // Step 6: Setup global authentication middleware
-        setupGlobalAuth(app, apiRateLimit);
+        setupGlobalAuth(app, apiRateLimit, workerRateLimit);
 
         // Step 7: Start HTTP server
         await app.listen({ port: 3000, host: '0.0.0.0' });

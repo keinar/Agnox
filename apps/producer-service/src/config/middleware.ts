@@ -34,7 +34,8 @@ export function setupSecurityHeaders(app: FastifyInstance): void {
  */
 export function setupGlobalAuth(
     app: FastifyInstance,
-    apiRateLimit: (request: any, reply: any) => Promise<void>
+    apiRateLimit: (request: any, reply: any) => Promise<void>,
+    workerRateLimit?: (request: any, reply: any) => Promise<void>,
 ): void {
     // ── SECURITY_PLAN §1.2 — Hook 1: Worker callback authentication ──────────
     // Registers FIRST so it fires before the JWT preHandler.
@@ -74,8 +75,11 @@ export function setupGlobalAuth(
             return;
         }
 
-        // If already authenticated by the worker callback hook, skip JWT check
+        // If already authenticated by the worker callback hook, skip JWT check.
+        // HIGH-2: still apply a dedicated high-ceiling rate limit (10k req/min)
+        // to prevent DB exhaustion from a runaway or compromised worker fleet.
         if (request.isWorkerCallback) {
+            if (workerRateLimit) await workerRateLimit(request, reply);
             return;
         }
 
@@ -115,9 +119,9 @@ export function setupGlobalAuth(
         app.log.info(`[GlobalAuth] Applying auth to: ${request.url}`);
         await authMiddleware(request, reply);
 
-        // Apply rate limiting after authentication (uses organizationId from request.user)
-        // Skip rate limiting for internal worker callbacks and lightweight metrics polling
-        if (!request.url.startsWith('/executions/') && !request.url.startsWith('/api/metrics/')) {
+        // Apply rate limiting after authentication (uses organizationId from request.user).
+        // Only /api/metrics/ polling is exempted — worker callbacks are handled above.
+        if (!request.url.startsWith('/api/metrics/')) {
             await apiRateLimit(request, reply);
         }
     });
