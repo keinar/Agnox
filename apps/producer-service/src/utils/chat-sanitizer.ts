@@ -140,6 +140,11 @@ function sanitizeOperators(node: unknown, path: string): void {
 
     const obj = node as Record<string, unknown>;
     for (const key of Object.keys(obj)) {
+        const forbiddenKeys = /password|secret|token|credential|key|env|pass/i;
+        if (forbiddenKeys.test(key) && !key.toLowerCase().includes('foreignkey')) {
+            throw new Error(`[Security Guard] Access to sensitive field pattern '${key}' is strictly forbidden.`);
+        }
+
         if (key.startsWith('$')) {
             // Allow $$-prefixed system variables
             if (key.startsWith('$$')) {
@@ -291,6 +296,20 @@ export function sanitizePipeline(
     // Recursively validate every key in the pipeline. Any '$'-prefixed key not in
     // the allowlist triggers a PipelineSanitizationError.
     sanitizeOperators(stages, 'pipeline');
+
+    // ── Shift-left data redaction ──────────────────────────────────────────────
+    //
+    // Insert $unset at index 1 (immediately after the guaranteed $match at index 0)
+    // so MongoDB strips sensitive fields from its working set BEFORE any $group,
+    // $project, or $addFields stage can read them. Placing this at the END (push)
+    // only redacts the final result — intermediate documents are still exposed
+    // in memory. This insertion runs after sanitizeOperators so the $unset stage
+    // is not subject to the LLM operator allowlist.
+    stages.splice(1, 0, {
+        $unset: [
+            "env", "envVars", "secrets", "password", "token", "credentials", "adminPass", "apiKey"
+        ]
+    });
 
     return stages;
 }

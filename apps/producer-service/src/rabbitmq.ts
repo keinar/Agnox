@@ -1,4 +1,7 @@
 import amqp, { Channel } from 'amqplib';
+import pino from 'pino';
+
+const logger = pino({ name: 'rabbitmq' });
 
 // ── Queue configuration ────────────────────────────────────────────────────────
 //
@@ -31,20 +34,20 @@ export class RabbitMqService {
 
         while (retries > 0) {
             try {
-                console.log(`Connecting to RabbitMQ at ${RABBITMQ_URL}... (attempt ${maxRetries - retries + 1}/${maxRetries})`);
+                logger.info({ attempt: maxRetries - retries + 1, maxRetries }, 'Connecting to RabbitMQ...');
                 this.connection = await amqp.connect(RABBITMQ_URL);
                 this.channel = await this.connection.createChannel();
                 await this.channel.assertQueue(QUEUE_NAME, QUEUE_OPTIONS);
-                console.log('✅ Connected to RabbitMQ (priority queue, x-max-priority=10)');
+                logger.info('Connected to RabbitMQ (priority queue, x-max-priority=10)');
                 return;
             } catch (error) {
-                console.error(`Failed to connect to RabbitMQ (retry in ${delay / 1000}s):`, (error as Error).message);
+                logger.error({ err: (error as Error).message, retryInSec: delay / 1000 }, 'Failed to connect to RabbitMQ');
                 retries--;
                 await new Promise(res => setTimeout(res, delay));
                 delay = Math.min(delay * 1.5, 10000); // Exponential backoff, max 10s
             }
         }
-        console.error('❌ Could not connect to RabbitMQ after multiple attempts.');
+        logger.fatal('Could not connect to RabbitMQ after multiple attempts');
         process.exit(1);
     }
 
@@ -63,7 +66,7 @@ export class RabbitMqService {
             Buffer.from(JSON.stringify(data)),
             { persistent: true, priority: clampedPriority },
         );
-        console.log(`Message sent to queue (priority=${clampedPriority}):`, data);
+        logger.info({ priority: clampedPriority }, 'Message sent to queue');
     }
 
     /**

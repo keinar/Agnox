@@ -184,5 +184,3 @@ export async function revokeApiKey(keyId: ObjectId, userId: ObjectId, db: Db): P
     const result = await apiKeysCollection.deleteOne({ _id: keyId, userId });
     return result.deletedCount > 0;
 }
-
-console.log('🔑 API Key utilities loaded');

@@ -8,8 +8,9 @@
 import jwt from 'jsonwebtoken';
 import { redis } from '../config/redis.js';
 
-// JWT Configuration from environment
-const JWT_SECRET = process.env.PLATFORM_JWT_SECRET || 'dev-secret-CHANGE-IN-PRODUCTION';
+// JWT Configuration from environment.
+// PLATFORM_JWT_SECRET existence is enforced by the synchronous startup guard in index.ts.
+const JWT_SECRET = process.env.PLATFORM_JWT_SECRET as string;
 const JWT_EXPIRY = process.env.JWT_EXPIRY || '24h';
 
 /**
@@ -100,7 +101,6 @@ export async function verifyToken(token: string): Promise<IJWTPayload | null> {
 
     // Validate required fields
     if (!decoded.userId || !decoded.email || !decoded.organizationId || !decoded.role) {
-      console.error('JWT payload missing required fields');
       return null;
     }
 
@@ -109,24 +109,13 @@ export async function verifyToken(token: string): Promise<IJWTPayload | null> {
       const jti = `${decoded.userId}:${decoded.iat}`;
       const isRevoked = await redis.get(`revoked:${jti}`);
       if (isRevoked) {
-        console.error('JWT token has been revoked / blacklisted');
         throw new Error('Token has been revoked');
       }
     }
 
     return decoded;
   } catch (error) {
-    if (error instanceof jwt.TokenExpiredError) {
-      console.log('JWT token expired:', error.message);
-      throw error;
-    } else if (error instanceof jwt.JsonWebTokenError) {
-      console.log('JWT verification failed:', error.message);
-      throw error;
-    } else {
-      console.error('Unexpected JWT error:', error);
-      throw error;
-    }
-    return null;
+    throw error;
   }
 }
 
@@ -177,8 +166,7 @@ export function _decodeTokenUnsafe(token: string): IJWTPayload | null {
   try {
     const decoded = jwt.decode(token) as IJWTPayload;
     return decoded;
-  } catch (error) {
-    console.error('Failed to decode JWT token:', error);
+  } catch {
     return null;
   }
 }
@@ -213,22 +201,3 @@ export function isTokenExpired(token: string): boolean {
   return expiresIn === null || expiresIn <= 0;
 }
 
-/**
- * Security: Enforce JWT_SECRET in production
- */
-if (JWT_SECRET === 'dev-secret-CHANGE-IN-PRODUCTION') {
-  if (process.env.NODE_ENV === 'production') {
-    console.error('🚨 CRITICAL: JWT_SECRET is not set! Cannot start in production mode.');
-    console.error('   Set the JWT_SECRET environment variable and restart.');
-    process.exit(1);
-  } else {
-    console.warn('⚠️  WARNING: Using default JWT_SECRET! Set JWT_SECRET environment variable in production.');
-  }
-}
-
-// Log JWT configuration on module load
-console.info('🔐 JWT Configuration:');
-console.info(`  - Secret: [REDACTED] (${JWT_SECRET.length} chars)`);
-console.info(`  - Expiry: ${JWT_EXPIRY}`);
-console.info(`  - Issuer: agnostic-automation-center`);
-console.info(`  - Audience: agnox-api`);

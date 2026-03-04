@@ -116,9 +116,8 @@ export async function authMiddleware(
     });
   }
 
-  // Log authentication (optional, useful for debugging)
   if (process.env.LOG_AUTH === 'true') {
-    console.log(`[AUTH] User ${request.user.userId} (${request.user.role}) from org ${request.user.organizationId}`);
+    request.log.info({ userId: request.user.userId, role: request.user.role, orgId: request.user.organizationId }, '[AUTH] JWT authenticated');
   }
 }
 
@@ -154,7 +153,7 @@ export function createApiKeyAuthMiddleware(db: any) {
         }
 
         if (process.env.LOG_AUTH === 'true') {
-          console.log(`[AUTH/API-KEY] User ${request.user.userId} authenticated via API key`);
+          request.log.info({ userId: request.user.userId }, '[AUTH/API-KEY] authenticated via API key');
         }
         return;
       }
@@ -204,7 +203,7 @@ export function createApiKeyAuthMiddleware(db: any) {
     }
 
     if (process.env.LOG_AUTH === 'true') {
-      console.log(`[AUTH/JWT] User ${request.user.userId} (${request.user.role}) from org ${request.user.organizationId}`);
+      request.log.info({ userId: request.user.userId, role: request.user.role, orgId: request.user.organizationId }, '[AUTH/JWT] authenticated');
     }
   };
 }
@@ -254,9 +253,8 @@ export function requireRole(...allowedRoles: Array<'admin' | 'developer' | 'view
       });
     }
 
-    // Log authorization (optional)
     if (process.env.LOG_AUTH === 'true') {
-      console.log(`[AUTHZ] User ${request.user.userId} authorized with role ${request.user.role}`);
+      request.log.info({ userId: request.user.userId, role: request.user.role }, '[AUTHZ] authorized');
     }
   };
 }
@@ -384,13 +382,4 @@ export function verifyOrganizationOwnership(
       });
     }
   };
-}
-
-
-console.log('🛡️  Authentication Middleware Loaded');
-console.log('  - JWT verification enabled');
-console.log('  - Role-based access control (admin, developer, viewer)');
-console.log('  - Rate limiting available (in-memory)');
-if (process.env.LOG_AUTH === 'true') {
-  console.log('  - Authentication logging enabled');
 }

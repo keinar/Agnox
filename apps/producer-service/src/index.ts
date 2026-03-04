@@ -11,6 +11,18 @@ import { initScheduler, stopAllJobs } from './utils/scheduler.js';
 // Load environment variables
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
+// ── Synchronous startup guard ────────────────────────────────────────────────
+// Must run before any async logic so the process never starts in a broken state.
+// These vars are read at module-load time by jwt.ts and other utilities, so a
+// missing value would silently degrade security (e.g., undefined JWT secret).
+const REQUIRED_ENV_VARS = ['PLATFORM_JWT_SECRET', 'PLATFORM_MONGO_URI', 'ENCRYPTION_KEY'] as const;
+for (const varName of REQUIRED_ENV_VARS) {
+    if (!process.env[varName]) {
+        process.stderr.write(`[FATAL] Required environment variable "${varName}" is not set. Set it and restart.\n`);
+        process.exit(1);
+    }
+}
+
 import { redis } from './config/redis.js';
 
 /**
@@ -62,7 +74,7 @@ const start = async () => {
         process.on('SIGTERM', shutdown);
         process.on('SIGINT', shutdown);
     } catch (err) {
-        console.error(err);
+        process.stderr.write(`[FATAL] Producer service failed to start: ${(err as Error).message}\n`);
         process.exit(1);
     }
 };

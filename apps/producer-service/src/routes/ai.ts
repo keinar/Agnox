@@ -1056,7 +1056,9 @@ DATE RULES (CRITICAL):
 NULL GROUP RULES (CRITICAL):
 11. When grouping by "groupName" (or any nullable field), ALWAYS add a $match stage immediately before the $group stage to filter out null and empty values:
     { "$match": { "groupName": { "$ne": null, "$gt": "" } } }
-    This prevents null/empty keys from appearing in the grouped output.`;
+    This prevents null/empty keys from appearing in the grouped output.
+
+SECURITY DIRECTIVE: You are strictly forbidden from querying, summarizing, or discussing passwords, secrets, API keys, tokens, or environment variables. If the user requests sensitive information, you must politely decline and state that you are restricted to test metrics and metadata.`;
 
             // ── Resolve dynamic date placeholders ─────────────────────────────
             const _now = new Date();
@@ -1090,10 +1092,7 @@ Translate this into a MongoDB aggregation pipeline. Return ONLY the JSON object 
                 parsedQuery = obj as { collection: string; pipeline: unknown[] };
             } catch (parseErr) {
                 app.log.warn({ pipelineRaw }, '[ai:chat] LLM returned unparseable pipeline JSON');
-                return reply.status(502).send({
-                    success: false,
-                    error: 'AI returned an unparseable response. Please rephrase your question.',
-                });
+                throw parseErr; // Rethrow to handle in the main catch block
             }
 
             // ── Layer 4: Collection whitelist ──────────────────────────────────
@@ -1111,21 +1110,7 @@ Translate this into a MongoDB aggregation pipeline. Return ONLY the JSON object 
 
             // ── Layers 1–3 & 5: Pipeline sanitisation (NoSQL injection guard) ──
             let safePipeline: Record<string, unknown>[];
-            try {
-                safePipeline = sanitizePipeline(parsedQuery.pipeline, currentUser.organizationId);
-            } catch (sanitizeErr) {
-                const sanitizeMsg = sanitizeErr instanceof PipelineSanitizationError
-                    ? sanitizeErr.message
-                    : 'Unknown sanitization error';
-                app.log.warn(
-                    { error: sanitizeMsg, pipeline: JSON.stringify(parsedQuery.pipeline) },
-                    '[ai:chat] Pipeline rejected by sanitizer',
-                );
-                return reply.status(422).send({
-                    success: false,
-                    error: 'AI generated an unsafe query. Please rephrase your question.',
-                });
-            }
+            safePipeline = sanitizePipeline(parsedQuery.pipeline, currentUser.organizationId);
 
             app.log.info({ pipeline: JSON.stringify(safePipeline, null, 2) }, '🛠️ FINAL SANITIZED PIPELINE');
             app.log.info(`[ai:chat] Executing sanitized pipeline against "${targetCollection}"`);
@@ -1146,6 +1131,8 @@ Translate this into a MongoDB aggregation pipeline. Return ONLY the JSON object 
             const SUMMARY_SYSTEM = `You are a helpful QA analytics assistant. A MongoDB query was executed on behalf of the user and returned results. Your job is to:
 1. Answer the user's question in clear, plain English based on the data.
 2. Optionally produce a simple chart if the data is numeric and a chart adds value.
+
+SECURITY DIRECTIVE: You are strictly forbidden from querying, summarizing, or discussing passwords, secrets, API keys, tokens, or environment variables. If the user requests sensitive information, you must politely decline and state that you are restricted to test metrics and metadata.
 
 RESPONSE FORMAT — you MUST return ONLY a single valid JSON object with these fields:
 - "answer": (string) A 1-4 sentence natural language answer to the question.
@@ -1241,6 +1228,23 @@ Summarise these results and answer the user's question.`;
                 return reply.status(503).send({ success: false, error: err.message });
             }
             const message = err instanceof Error ? err.message : 'Unknown error';
+
+            if (err instanceof PipelineSanitizationError || message.includes('[Security Guard]')) {
+                app.log.warn({ error: message }, '[ai:chat] Query blocked due to sensitive data access policies');
+                return reply.status(403).send({
+                    success: false,
+                    error: 'Security Alert: Query blocked due to sensitive data access policies.',
+                });
+            }
+
+            if (err instanceof SyntaxError) {
+                app.log.warn({ error: message }, '[ai:chat] LLM returned unparseable JSON (likely a security refusal)');
+                return reply.status(403).send({
+                    success: false,
+                    error: 'Security Alert: AI refused to process this query due to security constraints.',
+                });
+            }
+
             app.log.error({ error: message }, '[ai:chat] Chat endpoint failed');
             return reply.status(500).send({ success: false, error: 'Failed to process your question. Please try again.' });
         }
@@ -1334,6 +1338,36 @@ Summarise these results and answer the user's question.`;
             const message = err instanceof Error ? err.message : 'Unknown error';
             app.log.error({ error: message }, '[ai:chat] Failed to fetch conversation');
             return reply.status(500).send({ success: false, error: 'Failed to fetch conversation' });
+        }
+    });
+
+    // ── DELETE /api/ai/chat/history/:conversationId ───────────────────────────
+    //
+    // Deletes a specific conversation history from the database.
+    // Tenant-isolated: only deletes conversations belonging to the current org.
+    //
+    // Response: { success: true }
+
+    app.delete('/api/ai/chat/history/:conversationId', { preHandler: [apiRateLimit] }, async (request, reply) => {
+        const { conversationId } = request.params as { conversationId: string };
+        const currentUser = request.user!;
+        const chatSessionsCollection = db.collection('chat_sessions');
+
+        if (!conversationId || conversationId.trim().length === 0) {
+            return reply.status(400).send({ success: false, error: 'conversationId is required' });
+        }
+
+        try {
+            await chatSessionsCollection.deleteOne({
+                conversationId: conversationId.trim(),
+                organizationId: currentUser.organizationId,
+            });
+
+            return reply.send({ success: true });
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Unknown error';
+            app.log.error({ error: message }, '[ai:chat] Failed to delete conversation');
+            return reply.status(500).send({ success: false, error: 'Failed to delete conversation' });
         }
     });
 

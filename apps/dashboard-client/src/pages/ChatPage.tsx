@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect, useCallback, FormEvent } from 'react';
+import { useState, useRef, useEffect, useCallback, type FormEvent } from 'react';
 import axios from 'axios';
 import {
-    Send, Bot, User, BarChart2, Loader2, Plus, MessageSquare, Clock, Menu, X,
+    Send, Bot, User, BarChart2, Loader2, Plus, MessageSquare, Clock, Menu, X, Trash2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -171,6 +171,7 @@ function HistorySidebar({
     isLoading,
     activeId,
     onSelect,
+    onDelete,
     onNewChat,
     isOpen,
     onClose,
@@ -179,6 +180,7 @@ function HistorySidebar({
     isLoading: boolean;
     activeId: string | null;
     onSelect: (id: string) => void;
+    onDelete: (id: string) => void;
     onNewChat: () => void;
     isOpen: boolean;
     onClose: () => void;
@@ -251,22 +253,33 @@ function HistorySidebar({
                         </div>
                     ) : (
                         sessions.map((s) => (
-                            <button
-                                key={s.conversationId}
-                                onClick={() => { onSelect(s.conversationId); onClose(); }}
-                                className={`w-full text-left px-3 py-2.5 rounded-lg mb-0.5 transition-colors group ${activeId === s.conversationId
-                                    ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300'
-                                    : 'text-slate-700 dark:text-gh-text-dark hover:bg-slate-50 dark:hover:bg-gh-bg-subtle-dark'
-                                    }`}
-                            >
-                                <p className="text-[12px] font-medium leading-snug truncate">{s.title}</p>
-                                <div className="flex items-center gap-1 mt-0.5">
-                                    <Clock size={10} className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
-                                    <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                                        {fmt(s.updatedAt)}
-                                    </span>
-                                </div>
-                            </button>
+                            <div key={s.conversationId} className="relative group mb-0.5">
+                                <button
+                                    onClick={() => { onSelect(s.conversationId); onClose(); }}
+                                    className={`w-full text-left px-3 py-2.5 pr-10 rounded-lg transition-colors group-hover:bg-slate-50 dark:group-hover:bg-gh-bg-subtle-dark ${activeId === s.conversationId
+                                        ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300'
+                                        : 'text-slate-700 dark:text-gh-text-dark'
+                                        }`}
+                                >
+                                    <p className="text-[12px] font-medium leading-snug truncate">{s.title}</p>
+                                    <div className="flex items-center gap-1 mt-0.5">
+                                        <Clock size={10} className="text-slate-400 dark:text-slate-500 flex-shrink-0" />
+                                        <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                                            {fmt(s.updatedAt)}
+                                        </span>
+                                    </div>
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDelete(s.conversationId);
+                                    }}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-red-500 transition-all"
+                                    aria-label="Delete conversation"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
                         ))
                     )}
                 </div>
@@ -359,6 +372,25 @@ export function ChatPage() {
         }
     };
 
+    // ── Delete chat ────────────────────────────────────────────────────────────
+    const handleDeleteConversation = async (id: string) => {
+        try {
+            await axios.delete(`${API_URL}/api/ai/chat/history/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setSessions((prev) => prev.filter((s) => s.conversationId !== id));
+            if (conversationId === id) {
+                handleNewChat();
+            }
+        } catch (err: unknown) {
+            console.error('Failed to delete conversation', err);
+            const errorText = axios.isAxiosError(err) && err.response?.data?.error
+                ? err.response.data.error
+                : 'Failed to delete conversation. Please try again.';
+            alert(errorText); // Minimal feedback for deletion failures
+        }
+    };
+
     // ── Send message ───────────────────────────────────────────────────────────
     const handleSubmit = async (e: FormEvent | null, overrideText?: string) => {
         if (e) e.preventDefault();
@@ -418,10 +450,15 @@ export function ChatPage() {
                 axios.isAxiosError(err) && err.response?.data?.error
                     ? err.response.data.error
                     : 'Something went wrong. Please try again.';
-            setMessages((prev) => [
-                ...prev.filter((m) => !m.isLoading),
-                { id: crypto.randomUUID(), role: 'assistant', content: errorText },
-            ]);
+
+            // Revert finding the loading message to append error and ensure loading spinner is removed
+            setMessages((prev) => {
+                const filtered = prev.filter((m) => !m.isLoading);
+                return [
+                    ...filtered,
+                    { id: crypto.randomUUID(), role: 'assistant', content: errorText },
+                ];
+            });
         } finally {
             setIsSending(false);
             inputRef.current?.focus();
@@ -445,6 +482,7 @@ export function ChatPage() {
                 isLoading={isHistoryLoading}
                 activeId={conversationId}
                 onSelect={handleSelectConversation}
+                onDelete={handleDeleteConversation}
                 onNewChat={handleNewChat}
                 isOpen={isSidebarOpen}
                 onClose={() => setIsSidebarOpen(false)}
