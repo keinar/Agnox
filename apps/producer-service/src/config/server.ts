@@ -92,10 +92,10 @@ export function createServer(): FastifyInstance {
         methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     });
 
-    // Socket.IO plugin
+    // Socket.IO plugin — mirror HTTP CORS allowlist, never use wildcard
     app.register(socketio, {
         cors: {
-            origin: "*",
+            origin: ALLOWED_ORIGINS,
             methods: ["GET", "POST"]
         }
     });

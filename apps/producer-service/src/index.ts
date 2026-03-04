@@ -23,6 +23,12 @@ for (const varName of REQUIRED_ENV_VARS) {
     }
 }
 
+// Validate MONITORING_SECRET_KEY strength when provided
+if (process.env.MONITORING_SECRET_KEY !== undefined && process.env.MONITORING_SECRET_KEY.length < 32) {
+    process.stderr.write('[FATAL] MONITORING_SECRET_KEY must be at least 32 characters long for security.\n');
+    process.exit(1);
+}
+
 import { redis } from './config/redis.js';
 
 /**

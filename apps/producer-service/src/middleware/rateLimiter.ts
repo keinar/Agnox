@@ -275,12 +275,3 @@ export async function getRateLimitStatus(
   };
 }
 
-console.log('🛡️  Redis-Based Rate Limiter Loaded');
-console.log('  - Per-organization rate limiting for authenticated requests');
-console.log('  - Per-IP rate limiting for unauthenticated requests');
-console.log('  - Auth routes: 5 requests/minute');
-console.log('  - API routes: 100 requests/minute per org');
-console.log('  - Strict routes: 10 requests/minute');
-if (process.env.LOG_RATE_LIMIT === 'true') {
-  console.log('  - Rate limit logging enabled');
-}

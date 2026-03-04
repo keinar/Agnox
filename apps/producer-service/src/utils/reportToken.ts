@@ -9,7 +9,8 @@
 
 import { createHmac, timingSafeEqual } from 'crypto';
 
-const HMAC_SECRET = process.env.PLATFORM_JWT_SECRET || 'dev-secret-CHANGE-IN-PRODUCTION';
+// PLATFORM_JWT_SECRET is enforced by the startup guard in index.ts — never undefined at runtime
+const HMAC_SECRET = process.env.PLATFORM_JWT_SECRET as string;
 const TOKEN_TTL_SECONDS = 300; // 5 minutes
 
 export interface IReportTokenPayload {
