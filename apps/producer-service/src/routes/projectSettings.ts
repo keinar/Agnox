@@ -22,6 +22,7 @@ const EMPTY_SETTINGS = {
     dockerImage: '',
     targetUrls: { dev: '', staging: '', prod: '' },
     defaultTestFolder: '',
+    autoQuarantineEnabled: false,
 };
 
 export async function projectSettingsRoutes(
@@ -77,6 +78,7 @@ export async function projectSettingsRoutes(
                             prod: settings.targetUrls?.prod || '',
                         },
                         defaultTestFolder: settings.defaultTestFolder || '',
+                        autoQuarantineEnabled: settings.autoQuarantineEnabled === true,
                     }
                     : { ...EMPTY_SETTINGS },
             });
@@ -133,6 +135,10 @@ export async function projectSettingsRoutes(
                 update.defaultTestFolder = body.defaultTestFolder;
             }
 
+            if (typeof body.autoQuarantineEnabled === 'boolean') {
+                update.autoQuarantineEnabled = body.autoQuarantineEnabled;
+            }
+
             // Upsert: create if not exists, update if exists
             await settingsCollection.updateOne(
                 { organizationId, projectId },
@@ -161,6 +167,7 @@ export async function projectSettingsRoutes(
                         prod: saved?.targetUrls?.prod || '',
                     },
                     defaultTestFolder: saved?.defaultTestFolder || '',
+                    autoQuarantineEnabled: saved?.autoQuarantineEnabled === true,
                 },
             });
         } catch (error) {
@@ -201,6 +208,7 @@ export async function projectSettingsRoutes(
                             prod: settings.targetUrls?.prod || '',
                         },
                         defaultTestFolder: settings.defaultTestFolder || '',
+                        autoQuarantineEnabled: settings.autoQuarantineEnabled === true,
                     }
                     : { ...EMPTY_SETTINGS },
             });

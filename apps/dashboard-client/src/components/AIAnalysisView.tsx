@@ -9,12 +9,16 @@ import { Bot, Sparkles, AlertTriangle, Loader2, Lightbulb, CheckCircle2, Info } 
 
 
 interface AIAnalysisViewProps {
-
   analysis: string | null | undefined;
-
   status: string;
-
+  aiModel?: string;
 }
+
+const MODEL_DISPLAY_NAMES: Record<string, string> = {
+  'gemini-2.5-flash': 'Gemini 2.5 Flash',
+  'gpt-4o': 'OpenAI GPT-4o',
+  'claude-3-5-sonnet': 'Claude 3.5 Sonnet'
+};
 
 
 
@@ -540,11 +544,10 @@ function LoadingDots() {
 
 
 
-export function AIAnalysisView({ analysis, status }: AIAnalysisViewProps) {
-
+export function AIAnalysisView({ analysis, status, aiModel }: AIAnalysisViewProps) {
   const isAnalyzing = status === 'ANALYZING';
-
   const isUnstable = status === 'UNSTABLE';
+  const displayModel = MODEL_DISPLAY_NAMES[aiModel || 'gemini-2.5-flash'] || aiModel;
 
 
 
@@ -585,140 +588,72 @@ export function AIAnalysisView({ analysis, status }: AIAnalysisViewProps) {
           <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 flex items-center justify-center gap-1">
 
             AI is analysing your run<LoadingDots />
-
           </p>
-
           <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
-
-            Gemini 2.5 Flash is processing the execution logs and identifying root causes.
-
+            {displayModel} is processing the execution logs and identifying root causes.
           </p>
-
         </div>
-
       </div>
-
     );
-
   }
-
-
 
   // ── Empty state ───────────────────────────────────────────────────────────
-
   if (!analysis) {
-
     return (
-
       <div className="flex flex-col items-center justify-center h-40 gap-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-700/60 bg-slate-50/50 dark:bg-slate-800/20">
-
         <Bot size={22} className="text-slate-300 dark:text-slate-600" />
-
         <p className="text-sm text-slate-400 dark:text-slate-500">
-
           No AI analysis available for this run.
-
         </p>
-
       </div>
-
     );
-
   }
 
-
-
   // ── Analysis content ──────────────────────────────────────────────────────
-
   return (
-
     <div className="flex flex-col gap-5">
 
-
-
       {/* ── Header card ──────────────────────────────────────────────────── */}
-
       <div
-
         className={`relative overflow-hidden rounded-xl px-5 py-4 border ${isUnstable
-
           ? 'bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/20 border-amber-200/70 dark:border-amber-700/40'
-
           : 'bg-gradient-to-r from-rose-50 to-pink-50 dark:from-rose-950/30 dark:to-pink-950/20 border-rose-200/70 dark:border-rose-700/40'
-
           }`}
-
       >
-
         {/* Decorative blurred orb */}
-
         <div
-
           aria-hidden
-
           className={`pointer-events-none absolute -top-6 -right-6 w-24 h-24 rounded-full blur-2xl opacity-40 ${isUnstable ? 'bg-amber-400' : 'bg-rose-400'
-
             }`}
-
         />
 
-
-
         <div className="relative flex items-center gap-4">
-
           {/* Icon */}
-
           <div
-
             className={`flex items-center justify-center w-11 h-11 rounded-xl shadow-md shrink-0 ${isUnstable
-
               ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-amber-300/40 dark:shadow-amber-700/30'
-
               : 'bg-gradient-to-br from-rose-500 to-pink-600 shadow-rose-300/40 dark:shadow-rose-700/30'
-
               }`}
-
           >
-
             <Bot size={20} className="text-white" />
-
           </div>
-
-
 
           {/* Text */}
-
           <div className="flex-1 min-w-0">
-
             <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 m-0">
-
               AI Root Cause Analysis
-
               <Sparkles
-
                 size={13}
-
                 className="text-blue-400 dark:text-blue-300 animate-pulse shrink-0"
-
               />
-
             </h3>
-
             <p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5">
-
               Powered by{' '}
-
               <span className="font-medium text-slate-600 dark:text-slate-300">
-
-                Gemini 2.5 Flash
-
+                {displayModel}
               </span>
-
             </p>
-
           </div>
-
-
 
           {/* Status badge */}
 

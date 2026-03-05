@@ -1,21 +1,11 @@
 import { z } from 'zod';
 import { ObjectId } from 'mongodb';
+import { IEncryptedPayload } from './utils/encryption.js';
 
 // ============================================================================
-// ENCRYPTED PAYLOAD INTERFACE (shared — avoids circular imports with worker)
+// ENCRYPTED PAYLOAD INTERFACE
+// Defined in utils/encryption.ts now.
 // ============================================================================
-
-/**
- * AES-256-GCM encrypted value container.
- * Defined here so both producer and worker can reference it without
- * creating a circular dependency on apps/producer-service/utils/encryption.ts.
- */
-export interface IEncryptedPayload {
-    encrypted: string; // hex-encoded ciphertext
-    iv: string;        // hex-encoded initialization vector
-    authTag: string;   // hex-encoded GCM authentication tag
-}
-
 // ============================================================================
 // AI ORCHESTRATOR INTERFACES
 // ============================================================================
@@ -32,8 +22,8 @@ export interface IAiConfig {
      * Keys are NEVER returned to the frontend in plaintext.
      */
     byok?: {
-        gemini?:    IEncryptedPayload;
-        openai?:    IEncryptedPayload;
+        gemini?: IEncryptedPayload;
+        openai?: IEncryptedPayload;
         anthropic?: IEncryptedPayload;
     };
     updatedAt?: Date;
@@ -46,12 +36,12 @@ export interface IAiConfig {
  * `rootCauseAnalysis` falls back to `org.aiAnalysisEnabled !== false`.
  */
 export interface IAiFeatureFlags {
-    rootCauseAnalysis:  boolean; // was aiAnalysisEnabled — migrated in 009
-    autoBugGeneration:  boolean;
+    rootCauseAnalysis: boolean; // was aiAnalysisEnabled — migrated in 009
+    autoBugGeneration: boolean;
     flakinessDetective: boolean;
-    testOptimizer:      boolean;
-    prRouting:          boolean;
-    qualityChatbot:     boolean;
+    testOptimizer: boolean;
+    prRouting: boolean;
+    qualityChatbot: boolean;
 }
 
 // ============================================================================
@@ -232,6 +222,20 @@ export interface IExecutionConfig {
 }
 
 /**
+ * Individual test result from an execution (Smart Execution Analytics)
+ */
+export interface ITestResult {
+    testId: string;
+    name?: string;
+    status: string;
+    duration: number;
+    error?: string | null;
+    timestamp?: number;
+    errorHash?: string;
+    performanceDegradation?: boolean;
+    attemptCount?: number;
+}
+/**
  * Test Execution entity
  * Represents a single test run (now multi-tenant aware)
  */
@@ -246,10 +250,11 @@ export interface IExecution {
     startTime: Date;
     endTime?: Date;
     config: IExecutionConfig;
-    tests: string[];
+    tests: Array<string | ITestResult>;
     output?: string;
     error?: string;
     analysis?: string;
+    aiModel?: string;
     reportsBaseUrl?: string;
     /** Logical run-group label supplied at trigger time (e.g. "Daily Sanity"). */
     groupName?: string;
@@ -298,6 +303,7 @@ export interface IProjectRunSettings {
         prod?: string;
     };
     defaultTestFolder: string;
+    autoQuarantineEnabled?: boolean;
     updatedAt: Date;
     updatedBy: string;
 }
@@ -508,6 +514,8 @@ export interface ICycleItem {
     manualSteps?: ITestStep[];
 }
 
+export type StabilityScore = 'A' | 'B' | 'C' | 'D' | 'F' | 'UNGRADED';
+
 /**
  * Manual test case entity.
  * Stored in the 'test_cases' collection with embedded steps.
@@ -524,6 +532,10 @@ export interface ITestCase {
     preconditions?: string;
     type: TestType;
     steps?: ITestStep[];
+    stabilityScore?: StabilityScore;
+    averageDurationMs?: number;
+    isQuarantined?: boolean;
+    retryAbuseCount?: number;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -614,8 +626,16 @@ export interface IIngestEventBatch {
 }
 
 export type IIngestEvent =
-    | { type: 'log';        testId?: string; chunk: string; timestamp: number }
+    | { type: 'log'; testId?: string; chunk: string; timestamp: number }
     | { type: 'test-begin'; testId: string; title: string; file: string; timestamp: number }
-    | { type: 'test-end';   testId: string; status: 'passed' | 'failed' | 'skipped' | 'timedOut';
-        duration: number; error?: string; timestamp: number }
-    | { type: 'status';     status: 'RUNNING' | 'ANALYZING'; timestamp: number };
+    | {
+        type: 'test-end'; testId: string; status: 'passed' | 'failed' | 'skipped' | 'timedOut';
+        duration: number; error?: string; timestamp: number
+    }
+    | { type: 'status'; status: 'RUNNING' | 'ANALYZING'; timestamp: number };
+
+// ============================================================================
+// UTILITIES EXPORTS
+// ============================================================================
+export * from './utils/encryption.js';
+export * from './utils/llm-config.js';

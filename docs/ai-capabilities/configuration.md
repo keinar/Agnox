@@ -21,6 +21,7 @@ All AI features are **off by default** (opt-in model). Enable them individually 
 | Smart Test Optimizer | `testOptimizer` | *(button in Test Cases)* |
 | Smart PR Routing | `prRouting` | *(toggle in Run Settings)* |
 | Quality Chatbot | `qualityChatbot` | Ask AI |
+| **Smart Analytics** | *(Project Setting)* | *(autoQuarantineEnabled toggle)* |
 
 ---
 

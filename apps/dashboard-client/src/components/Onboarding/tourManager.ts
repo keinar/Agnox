@@ -470,6 +470,33 @@ export function buildFeatureTour(
                     });
                 },
                 onNextClick: () => {
+                    navigate('/settings?tab=run-settings');
+                    waitForElement('[data-testid="run-settings-submit"]').then((el) => {
+                        if (el) featureTourDriver.moveNext();
+                        else featureTourDriver.destroy();
+                    });
+                },
+            },
+            {
+                element: '[data-testid="run-settings-submit"]',
+                popover: {
+                    title: '🛡️ Smart Analytics: Auto-Quarantine',
+                    description:
+                        'Phase 5 introduces <strong>Smart Execution Analytics</strong> — scroll down in Run Settings to see the Auto-Quarantine toggle.<br><br>' +
+                        '• <strong>Auto-Quarantine</strong> — Prevents flaky tests from blocking your CI/CD pipelines by automatically quarantining them after 3 consecutive failures. They self-heal on the next passing run.<br>' +
+                        '• <strong>A–F Stability Scoring</strong> — Every test case gets a grade based on its historical pass rate and retry usage.<br>' +
+                        '• <strong>🐌 Performance Degradation</strong> — A badge shown when a test runs significantly slower than its historical average.',
+                    side: 'top',
+                    align: 'start',
+                },
+                onPrevClick: () => {
+                    navigate('/chat');
+                    waitForElement('[data-testid="sidebar-nav-settings"]').then((el) => {
+                        if (el) featureTourDriver.movePrevious();
+                        else featureTourDriver.destroy();
+                    });
+                },
+                onNextClick: () => {
                     navigate('/settings/members');
                     waitForElement('[data-testid="sidebar-settings-tab-members"]').then((el) => {
                         if (el) featureTourDriver.moveNext();

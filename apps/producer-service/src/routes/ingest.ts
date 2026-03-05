@@ -6,7 +6,8 @@ import { z } from 'zod';
 import { getDbName } from '../config/server.js';
 import { createApiKeyAuthMiddleware } from '../middleware/auth.js';
 import { createCustomRateLimiter } from '../middleware/rateLimiter.js';
-import type { IIngestSession } from '../../../../packages/shared-types/index.js';
+import type { IIngestSession, ITestResult } from '../../../../packages/shared-types/index.js';
+import { SmartAnalyticsService } from '../services/smart-analytics.service.js';
 
 const DB_NAME = getDbName();
 
@@ -369,6 +370,8 @@ export async function ingestRoutes(
                     const msg = `▶ RUNNING  ${event.title}`;
                     pipeline.append(logKey, `${msg}\n`);
                     touchedLogKey = true;
+                    // Store testId->title mapping so teardown can persist a human-readable name
+                    pipeline.hset(`ingest:titles:${sessionId}`, event.testId, event.title);
                     app.io.to(orgRoom).emit('execution-log', { taskId, log: msg });
 
                 } else if (event.type === 'test-end') {
@@ -420,7 +423,7 @@ export async function ingestRoutes(
 
             // Extend session TTL on every event call to support test suites longer than 24 h.
             // Redis expire is idempotent and cheap; ignore failures.
-            redis.expire(`${SESSION_KEY_PREFIX}${sessionId}`, SESSION_TTL_SECONDS).catch(() => {});
+            redis.expire(`${SESSION_KEY_PREFIX}${sessionId}`, SESSION_TTL_SECONDS).catch(() => { });
 
             return reply.status(200).send({ success: true });
         },
@@ -468,29 +471,82 @@ export async function ingestRoutes(
             const finalStatus = status === 'PASSED' ? 'PASSED' : 'FAILED';
             const logKey = `live:logs:${taskId}`;
             const resultsKey = `${RESULTS_KEY_PREFIX}${sessionId}`;
+            const titlesKey = `ingest:titles:${sessionId}`;
             const sessionKey = `${SESSION_KEY_PREFIX}${sessionId}`;
 
             try {
                 const now = new Date();
 
-                // Drain buffered test results and permanent logs in parallel
-                const [rawResults, permanentLogs] = await Promise.all([
+                // Drain buffered test results, permanent logs, and test title map in parallel
+                const [rawResults, permanentLogs, titlesMap] = await Promise.all([
                     redis.lrange(resultsKey, 0, -1),
                     redis.get(logKey),
+                    redis.hgetall(titlesKey).catch(() => null),
                 ]);
 
-                const tests = rawResults
+                const rawParsedTests = rawResults
                     .map((r) => {
-                        try { return JSON.parse(r); } catch { return null; }
+                        try { return JSON.parse(r) as any; } catch { return null; }
                     })
                     .filter(Boolean);
+
+                const tests: ITestResult[] = rawParsedTests.map((t: any) => {
+                    const result: ITestResult = {
+                        testId: t.testId,
+                        name: (titlesMap ?? {})[t.testId] ?? undefined,
+                        status: t.status,
+                        duration: t.duration,
+                        error: t.error ?? null,
+                        timestamp: t.timestamp,
+                    };
+
+                    if (t.status === 'failed' || t.status === 'timedOut' || !!t.error) {
+                        const errorHash = SmartAnalyticsService.generateErrorHash(t.error);
+                        if (errorHash) {
+                            result.errorHash = errorHash;
+                        }
+                    }
+
+                    // Phase 5: DB Join for performance tracking moved to async updateTestCaseMetrics
+                    return result;
+                });
+
+                // Phase 5 Task 3: Quality Gate Bypass (CI/CD Webhook)
+                // Determine if all failed tests are strictly quarantined
+                let hasRealFailures = false;
+                if (tests.length > 0) {
+                    const testCaseIds = tests.map(t => new ObjectId(t.testId));
+                    const dbTestCases = await db.collection('test_cases').find({
+                        _id: { $in: testCaseIds },
+                        organizationId
+                    }).toArray();
+
+                    const quarantinedMap = new Map(dbTestCases.map(tc => [tc._id.toString(), tc.isQuarantined === true]));
+
+                    for (const test of tests) {
+                        if (test.status !== 'passed') {
+                            const isTestQuarantined = quarantinedMap.get(test.testId) || false;
+                            if (!isTestQuarantined) {
+                                hasRealFailures = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // If originally FAILED, but all failures were quarantined, bypass to PASSED
+                let effectiveStatus = finalStatus;
+                if (finalStatus === 'FAILED' && !hasRealFailures && tests.length > 0) {
+                    effectiveStatus = 'PASSED';
+                    app.log.info({ taskId, cycleId }, '[SmartAnalytics] Auto-Quarantine Quality Gate Bypass Applied. Overriding execution status to PASSED.');
+                }
 
                 // Finalise the Execution document
                 await executionsCollection.updateOne(
                     { taskId, organizationId },
                     {
                         $set: {
-                            status: finalStatus,
+                            status: effectiveStatus,
                             endTime: now,
                             tests,
                             output: permanentLogs ?? '',
@@ -499,7 +555,7 @@ export async function ingestRoutes(
                 );
 
                 // Finalise the TestCycle — mark the item complete and recalculate summary
-                const itemStatus: string = finalStatus === 'PASSED' ? 'PASSED' : 'FAILED';
+                const itemStatus: string = effectiveStatus === 'PASSED' ? 'PASSED' : 'FAILED';
 
                 await cyclesCollection.updateOne(
                     {
@@ -525,7 +581,7 @@ export async function ingestRoutes(
                 // The TTL index on ingest_sessions.createdAt will auto-purge after 7 days
                 await ingestSessionsCollection.insertOne({
                     ...session,
-                    status: finalStatus === 'PASSED' ? 'COMPLETED' : 'FAILED',
+                    status: effectiveStatus === 'PASSED' ? 'COMPLETED' : 'FAILED',
                     finalSummary: summary,
                     endTime: now,
                     // Coerce string dates (from Redis JSON round-trip) back to Date objects
@@ -534,7 +590,7 @@ export async function ingestRoutes(
                 });
 
                 // Clean up Redis — fire-and-forget, failures are non-critical
-                redis.del(logKey, resultsKey, sessionKey).catch((err: unknown) => {
+                redis.del(logKey, resultsKey, sessionKey, titlesKey).catch((err: unknown) => {
                     app.log.warn({ taskId, err: String(err) }, '[ingest] Failed to clean up Redis keys after teardown');
                 });
 
@@ -548,17 +604,20 @@ export async function ingestRoutes(
                     organizationId,
                     cycleId,
                     cycleItemId,
-                    status: finalStatus,
+                    status: effectiveStatus,
                 });
 
-                app.log.info(
-                    { organizationId, taskId, sessionId, status: finalStatus, tests: tests.length },
-                    '[ingest] Session torn down and archived successfully',
-                );
+                // Phase 5 Task 1: Historical Aggregation (Non-blocking)
+                const uniqueTestCaseIds = Array.from(new Set(tests.map(t => t.testId)));
+                // Trigger async without awaiting it to keep ingestion blazing fast
+                SmartAnalyticsService.updateTestCaseMetrics(db, uniqueTestCaseIds, organizationId).catch(err => {
+                    app.log.error({ err: String(err), organizationId }, '[SmartAnalytics] Failed async test metrics update');
+                });
 
-                return reply.status(200).send({
+                return reply.send({
                     success: true,
-                    data: { taskId, status: finalStatus },
+                    status: effectiveStatus,
+                    message: effectiveStatus === 'PASSED' && finalStatus === 'FAILED' ? 'Execution passed due to Auto-Quarantined tests.' : 'Execution completed.'
                 });
 
             } catch (error: unknown) {

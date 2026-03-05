@@ -3,6 +3,24 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [3.13.0] — 2026-03-05
+
+### Added
+- **Smart Execution Analytics (Phase 5)** — Persistent tracking of individual test health metrics: `stabilityScore` (A-F), `averageDurationMs`, and `isQuarantined` state.
+- **Auto-Quarantine & Quality Gate Bypass** — Automatically quarantine tests that fail 3 consecutive times to prevent CI/CD pipeline blocking. Webhooks return `PASSED` if all failed tests are quarantined.
+- **AI Failure Clustering** — MD5-based `errorHash` generation for failures, grouping similar errors to optimize AI token usage and analysis accuracy.
+- **`SmartAnalyticsService`** — Native backend logic for scoring algorithms, performance degradation checks (🐌 Snail badge), and historical metric aggregation.
+- **Enhanced Feature Tour** — Added "Smart Analytics" discovery step highlighting Auto-Quarantine and Stability Scoring in the Run Settings dashboard.
+
+### Changed
+- `apps/dashboard-client/src/components/Onboarding/tourManager.ts` — New 6th step added to `buildFeatureTour`.
+- `docs/core-features/executions.md` — Added "Auto-Quarantine & Quality Gate Bypass" section.
+- `docs/ai-capabilities/flakiness-detective.md` — Added "Smart Execution Analytics (Phase 5)" documentation.
+- `docs/ai-capabilities/configuration.md` — Added "Smart Analytics" to feature flags table.
+- `PLAN.md` — Marked AI Quality Orchestrator Phase 5 as complete (v3.13.0).
+- `PROJECT_CONTEXT.md` — Version bumped to 3.13.0; feature registry updated with Phase 5 details.
+- `package.json` — Version bumped from `3.12.0` to `3.13.0`.
+
 ## [3.12.0] — 2026-03-04
 
 ### Added

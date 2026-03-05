@@ -47,6 +47,8 @@ interface ITestCaseRow {
     suite?: string;
     preconditions?: string;
     type: 'MANUAL' | 'AUTOMATED';
+    stabilityScore?: string;
+    isQuarantined?: boolean;
     steps?: Array<{ action: string; expectedResult: string }>;
     createdAt: string;
 }
@@ -477,6 +479,9 @@ export function TestCases() {
                                                         Type
                                                     </th>
                                                     <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                                        Stability
+                                                    </th>
+                                                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                                         Steps
                                                     </th>
                                                     <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -522,6 +527,32 @@ export function TestCases() {
                                                             >
                                                                 {tc.type}
                                                             </span>
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <div className="flex flex-col items-start gap-1">
+                                                                {/* Stability Score Badge */}
+                                                                <span
+                                                                    title="Stability Score"
+                                                                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border
+                                                                        ${(tc.stabilityScore === 'A' || tc.stabilityScore === 'B') ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800' :
+                                                                            tc.stabilityScore === 'C' ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800' :
+                                                                                (tc.stabilityScore === 'D' || tc.stabilityScore === 'F') ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-800' :
+                                                                                    'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                                                                        }`}
+                                                                >
+                                                                    {tc.stabilityScore || 'UNGRADED'}
+                                                                </span>
+
+                                                                {/* Quarantine Badge */}
+                                                                {tc.isQuarantined && (
+                                                                    <span
+                                                                        title="This test is quarantined and will not fail CI/CD pipelines"
+                                                                        className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide border bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200 dark:bg-fuchsia-950/30 dark:text-fuchsia-400 dark:border-fuchsia-800"
+                                                                    >
+                                                                        QUARANTINED
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                         <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                                                             {tc.steps?.length ?? 0}

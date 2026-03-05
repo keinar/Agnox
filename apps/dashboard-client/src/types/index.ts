@@ -22,16 +22,30 @@ export interface IIngestMeta {
     ciContext?: IIngestCiContext;
 }
 
+/** An individual test result embedded inside an Execution document. */
+export interface ITestResult {
+    testId: string;
+    name?: string;
+    status: 'passed' | 'failed' | 'timedOut' | 'skipped';
+    duration?: number;
+    error?: string | null;
+    timestamp?: string;
+    errorHash?: string | null;
+    performanceDegradation?: boolean;
+    isQuarantined?: boolean;
+}
+
 export interface Execution {
     _id: string;
     taskId: string;
     status: 'RUNNING' | 'PASSED' | 'FAILED' | 'ERROR' | 'UNSTABLE' | 'ANALYZING';
     startTime: string;
     endTime?: string;
-    tests: string[];
+    tests: ITestResult[];
     output?: string;
     error?: string;
     analysis?: string;
+    aiModel?: string;
     config: ExecutionConfig;
     hasNativeReport?: boolean;
     hasAllureReport?: boolean;

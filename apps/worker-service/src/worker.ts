@@ -8,10 +8,13 @@ import * as tar from 'tar-fs';
 import Redis from 'ioredis';
 import { z } from 'zod';
 import { analyzeTestFailure } from './analysisService';
+import { parsePlaywrightReport } from './services/playwright-report-parser.js';
+import type { ITestResult } from '../../../packages/shared-types/index.js';
 import { logger } from './utils/logger.js';
 import { decrypt } from './utils/encryption.js';
 import { ProviderFactory } from './integrations/ProviderFactory.js';
 import { ICiContext } from './integrations/CiProvider.js';
+import { resolveLlmConfig, LlmNotConfiguredError } from '../../../packages/shared-types/index.js';
 
 dotenv.config();
 
@@ -330,6 +333,7 @@ export async function startWorker() {
             config,
             reportsBaseUrl: currentReportsBaseUrl,
             aiAnalysisEnabled: initialAiAnalysisEnabled,
+            tests: [], // Reset stale data; Tests tab stays hidden while run is live
         };
         if (groupName) runningUpdate.groupName = groupName;
         if (batchId) runningUpdate.batchId = batchId;
@@ -422,6 +426,12 @@ export async function startWorker() {
                     ),
                     TASK_ID: taskId,
                     FRAMEWORK_AGNOSTIC: 'true',
+                    // Tell Playwright to use ALL reporters so HTML, Allure, and JSON output
+                    // are all produced simultaneously. Setting only PLAYWRIGHT_JSON_OUTPUT_NAME
+                    // does NOT enable the JSON reporter — it only sets the output path. The
+                    // reporters list must be explicit so no existing reporters are dropped.
+                    PLAYWRIGHT_REPORTERS: 'line,html,allure-playwright,json',
+                    PLAYWRIGHT_JSON_OUTPUT_NAME: '/app/test-results/results.json',
                 }).map(([k, v]) => `${k}=${v}`),
                 // SECURITY_PLAN §1.4 — Container security limits
                 HostConfig: {
@@ -472,64 +482,7 @@ export async function startWorker() {
 
             const duration = new Date().getTime() - startTime.getTime();
 
-            // --- AI ANALYSIS START ---
-            let analysis = '';
-            let aiAnalysisEnabled = false;
-
-            // Fetch organization settings to check AI toggle (Worker-side enforcement)
-            try {
-                const organization = await organizationsCollection.findOne({
-                    _id: new ObjectId(organizationId)
-                });
-
-                if (organization) {
-                    // Default to true if not explicitly set to false
-                    aiAnalysisEnabled = organization.aiAnalysisEnabled !== false;
-                    logger.info({ organizationId, aiAnalysisEnabled }, 'Organization AI Analysis setting');
-                } else {
-                    logger.warn({ organizationId }, 'Organization not found. Defaulting AI Analysis to DISABLED for security.');
-                    aiAnalysisEnabled = false;
-                }
-            } catch (orgError: any) {
-                logger.error({ organizationId, error: orgError.message }, 'Failed to fetch organization settings');
-                aiAnalysisEnabled = false; // Fail closed: disable AI if can't fetch settings
-            }
-
-            if ((finalStatus === 'FAILED' || finalStatus === 'UNSTABLE') && aiAnalysisEnabled) {
-                logger.info({ taskId, finalStatus }, 'AI Analysis ENABLED. Starting analysis.');
-
-                // Multi-tenant: Filter by organizationId
-                await executionsCollection.updateOne(
-                    { taskId, organizationId },
-                    { $set: { status: 'ANALYZING', output: logsBuffer, aiAnalysisEnabled } }
-                );
-                await notifyProducer({
-                    taskId,
-                    organizationId,  // Include for room-based broadcasting
-                    status: 'ANALYZING',
-                    output: logsBuffer,
-                    reportsBaseUrl: currentReportsBaseUrl,
-                    image,
-                    aiAnalysisEnabled
-                });
-
-                if (!logsBuffer || logsBuffer.length < 50) {
-                    analysis = "AI Analysis skipped: Insufficient logs.";
-                } else {
-                    try {
-                        const context = finalStatus === 'UNSTABLE' ? "Note: The test passed after retries (Flaky)." : "";
-                        analysis = await analyzeTestFailure(logsBuffer + "\n" + context, image);
-                        logger.info({ taskId, analysisLength: analysis.length }, 'AI Analysis completed');
-                    } catch (aiError: any) {
-                        logger.error({ taskId, error: aiError.message }, 'AI Analysis CRASHED');
-                        analysis = `AI Analysis Failed: ${aiError.message}`;
-                    }
-                }
-            } else if ((finalStatus === 'FAILED' || finalStatus === 'UNSTABLE') && !aiAnalysisEnabled) {
-                logger.info({ taskId, finalStatus }, 'AI Analysis DISABLED by organization settings. Skipping analysis.');
-                analysis = "AI Analysis disabled for this organization.";
-            }
-            // --- AI ANALYSIS END ---
+            // AI Analysis block moved to after JSON report extraction
 
             logger.info({ taskId, baseTaskDir }, 'Copying artifacts from container');
             const copyAndRenameFolder = async (containerPath: string, hostSubDir: string) => {
@@ -601,6 +554,124 @@ export async function startWorker() {
             const hasNativeReport = fs.existsSync(path.join(baseTaskDir, 'native-report', 'index.html'));
             const hasAllureReport = fs.existsSync(path.join(baseTaskDir, 'allure-report', 'index.html'));
 
+            // --- Explicitly extract results.json from the container ---
+            // The test-results folder copy above may silently fail if the directory is empty
+            // or the JSON reporter did not run. This dedicated extraction ensures the file is
+            // on the host before parsePlaywrightReport is called; if the file genuinely does
+            // not exist in the container the catch below logs a warning and parsing falls back.
+            const testResultsHostDir = path.join(baseTaskDir, 'test-results');
+            if (!fs.existsSync(testResultsHostDir)) {
+                fs.mkdirSync(testResultsHostDir, { recursive: true });
+            }
+            try {
+                const jsonArchiveStream = await container.getArchive({ path: '/app/test-results/results.json' });
+                await new Promise<void>((resolve, reject) => {
+                    const extract = tar.extract(testResultsHostDir);
+                    jsonArchiveStream.pipe(extract);
+                    extract.on('finish', resolve);
+                    extract.on('error', reject);
+                });
+                logger.info({ taskId }, '[JSON] results.json extracted from container successfully');
+            } catch (jsonCopyErr) {
+                logger.warn({ taskId }, '[JSON] results.json not found in container — JSON reporter may not have run');
+            }
+
+            // --- Parse Playwright structured JSON report ---
+            // PLAYWRIGHT_JSON_OUTPUT_NAME was injected into the container so Playwright writes
+            // /app/test-results/results.json, which we explicitly copied above.
+            const playwrightJsonPath = path.join(baseTaskDir, 'test-results', 'results.json');
+            const parsedTestResults: ITestResult[] | null = parsePlaywrightReport(playwrightJsonPath);
+
+            // --- AI ANALYSIS START ---
+            let analysis = '';
+            let aiAnalysisEnabled = false;
+            let organizationDoc: any = null;
+
+            // Fetch organization settings to check AI toggle (Worker-side enforcement)
+            try {
+                const organization = await organizationsCollection.findOne({
+                    _id: new ObjectId(organizationId)
+                });
+                organizationDoc = organization;
+
+                if (organization) {
+                    // Default to true if not explicitly set to false
+                    aiAnalysisEnabled = organization.aiAnalysisEnabled !== false;
+                    logger.info({ organizationId, aiAnalysisEnabled }, 'Organization AI Analysis setting');
+                } else {
+                    logger.warn({ organizationId }, 'Organization not found. Defaulting AI Analysis to DISABLED for security.');
+                    aiAnalysisEnabled = false;
+                }
+            } catch (orgError: any) {
+                logger.error({ organizationId, error: orgError.message }, 'Failed to fetch organization settings');
+                aiAnalysisEnabled = false; // Fail closed: disable AI if can't fetch settings
+            }
+
+            let resolvedAiModel: string | undefined;
+            if ((finalStatus === 'FAILED' || finalStatus === 'UNSTABLE') && aiAnalysisEnabled) {
+                logger.info({ taskId, finalStatus }, 'AI Analysis ENABLED. Starting analysis.');
+
+                // Multi-tenant: Filter by organizationId
+                await executionsCollection.updateOne(
+                    { taskId, organizationId },
+                    { $set: { status: 'ANALYZING', output: logsBuffer, aiAnalysisEnabled } }
+                );
+                await notifyProducer({
+                    taskId,
+                    organizationId,  // Include for room-based broadcasting
+                    status: 'ANALYZING',
+                    output: logsBuffer,
+                    reportsBaseUrl: currentReportsBaseUrl,
+                    image,
+                    aiAnalysisEnabled
+                });
+
+                if (!logsBuffer || logsBuffer.length < 50) {
+                    analysis = "AI Analysis skipped: Insufficient logs.";
+                } else {
+                    try {
+                        const context = finalStatus === 'UNSTABLE' ? "Note: The test passed after retries (Flaky)." : "";
+                        // Use newly parsed test results directly, fallback to empty array
+                        const testsForAnalysis = (parsedTestResults || []).filter((t: any) => t && typeof t === 'object' && t.status !== 'passed');
+
+                        try {
+                            const llmConfig = resolveLlmConfig(organizationDoc?.aiConfig);
+                            resolvedAiModel = llmConfig.model;
+                            analysis = await analyzeTestFailure(logsBuffer + "\n" + context, image, testsForAnalysis, llmConfig);
+                            logger.info({ taskId, analysisLength: analysis.length }, 'AI Analysis completed');
+                        } catch (configErr: any) {
+                            if (configErr instanceof LlmNotConfiguredError) {
+                                logger.warn({ taskId, organizationId }, 'AI Analysis gracefully disabled: ' + configErr.message);
+                                analysis = "AI Analysis disabled: " + configErr.message;
+                            } else {
+                                throw configErr;
+                            }
+                        }
+                    } catch (aiError: any) {
+                        logger.error({ taskId, error: aiError.message }, 'AI Analysis CRASHED');
+                        analysis = `AI Analysis Failed: ${aiError.message}`;
+                    }
+                }
+            } else if ((finalStatus === 'FAILED' || finalStatus === 'UNSTABLE') && !aiAnalysisEnabled) {
+                logger.info({ taskId, finalStatus }, 'AI Analysis DISABLED by organization settings. Skipping analysis.');
+                analysis = "AI Analysis disabled for this organization.";
+            }
+            // --- AI ANALYSIS END ---
+
+            // Build artifact URL strings and the artifacts summary array.
+            // Stored on the execution document so external consumers (CI comments,
+            // notification webhooks, audit exports) can reference them without recomputing.
+            const htmlReportUrl = hasNativeReport
+                ? `${currentReportsBaseUrl}/${taskId}/native-report/index.html`
+                : null;
+            const allureReportUrl = hasAllureReport
+                ? `${currentReportsBaseUrl}/${taskId}/allure-report/index.html`
+                : null;
+            const artifacts: Array<{ type: string; name: string; url: string }> = [
+                ...(hasNativeReport ? [{ type: 'file', name: 'HTML Report', url: `${currentReportsBaseUrl}/${taskId}/native-report/index.html` }] : []),
+                ...(hasAllureReport ? [{ type: 'file', name: 'Allure Report', url: `${currentReportsBaseUrl}/${taskId}/allure-report/index.html` }] : []),
+            ];
+
             const updateData: Record<string, unknown> = {
                 taskId,
                 organizationId,  // Include for room-based broadcasting
@@ -611,9 +682,17 @@ export async function startWorker() {
                 image,
                 command,
                 analysis: analysis,
+                aiModel: resolvedAiModel,
                 aiAnalysisEnabled,  // Audit trail: Record whether AI was enabled for this execution
                 hasNativeReport,
-                hasAllureReport
+                hasAllureReport,
+                htmlReportUrl,
+                allureReportUrl,
+                artifacts,
+                // Replace the lazy folder-string placeholder with real per-test results.
+                // Falls back to an empty array if the JSON report was not produced
+                // (e.g. the image crashed before Playwright started writing).
+                tests: parsedTestResults ?? [],
             };
 
             // Forward cycle linkage so the producer can update the parent TestCycle

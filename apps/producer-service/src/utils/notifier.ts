@@ -6,8 +6,7 @@
  * forget — a failing webhook must never block the main execution flow.
  */
 
-import { IExecution, IOrganization } from '../../../../packages/shared-types/index.js';
-import { decrypt, IEncryptedPayload } from './encryption.js';
+import { IExecution, IOrganization, decrypt, IEncryptedPayload } from '../../../../packages/shared-types/index.js';
 
 const DASHBOARD_URL = process.env.DASHBOARD_URL || process.env.FRONTEND_URL || 'https://agnox.dev';
 

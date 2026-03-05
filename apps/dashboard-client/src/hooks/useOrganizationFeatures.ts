@@ -10,17 +10,26 @@ interface IOrganizationFeatures {
 }
 
 export interface IAiFeatureFlags {
-    rootCauseAnalysis:  boolean;
-    autoBugGeneration:  boolean;
+    rootCauseAnalysis: boolean;
+    autoBugGeneration: boolean;
     flakinessDetective: boolean;
-    testOptimizer:      boolean;
-    prRouting:          boolean;
-    qualityChatbot:     boolean;
+    testOptimizer: boolean;
+    prRouting: boolean;
+    qualityChatbot: boolean;
+}
+
+export interface IAiConfig {
+    defaultModel?: string;
+    byokConfigured?: {
+        gemini: boolean;
+        openai: boolean;
+        anthropic: boolean;
+    };
 }
 
 type FeatureUpdatePayload =
     Partial<IOrganizationFeatures> &
-    { aiFeatures?: Partial<IAiFeatureFlags> };
+    { aiFeatures?: Partial<IAiFeatureFlags>, aiConfig?: Partial<IAiConfig> };
 
 const DEFAULT_FEATURES: IOrganizationFeatures = {
     testCasesEnabled: true,
@@ -28,12 +37,12 @@ const DEFAULT_FEATURES: IOrganizationFeatures = {
 };
 
 const DEFAULT_AI_FEATURES: IAiFeatureFlags = {
-    rootCauseAnalysis:  false,
-    autoBugGeneration:  false,
+    rootCauseAnalysis: false,
+    autoBugGeneration: false,
     flakinessDetective: false,
-    testOptimizer:      false,
-    prRouting:          false,
-    qualityChatbot:     false,
+    testOptimizer: false,
+    prRouting: false,
+    qualityChatbot: false,
 };
 
 export function useOrganizationFeatures() {
@@ -42,25 +51,26 @@ export function useOrganizationFeatures() {
 
     const { data, isLoading } = useQuery({
         queryKey: ['organization-features'],
-        queryFn: async (): Promise<{ features: IOrganizationFeatures; aiFeatures: IAiFeatureFlags }> => {
+        queryFn: async (): Promise<{ features: IOrganizationFeatures; aiFeatures: IAiFeatureFlags; aiConfig?: IAiConfig }> => {
             const res = await axios.get(`${API_URL}/api/organization`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            const f  = res.data.organization?.features;
+            const f = res.data.organization?.features;
             const af = res.data.organization?.aiFeatures;
             return {
                 features: {
-                    testCasesEnabled:  f?.testCasesEnabled  !== false,
+                    testCasesEnabled: f?.testCasesEnabled !== false,
                     testCyclesEnabled: f?.testCyclesEnabled !== false,
                 },
                 aiFeatures: {
-                    rootCauseAnalysis:  af?.rootCauseAnalysis  ?? false,
-                    autoBugGeneration:  af?.autoBugGeneration  ?? false,
+                    rootCauseAnalysis: af?.rootCauseAnalysis ?? false,
+                    autoBugGeneration: af?.autoBugGeneration ?? false,
                     flakinessDetective: af?.flakinessDetective ?? false,
-                    testOptimizer:      af?.testOptimizer      ?? false,
-                    prRouting:          af?.prRouting          ?? false,
-                    qualityChatbot:     af?.qualityChatbot     ?? false,
+                    testOptimizer: af?.testOptimizer ?? false,
+                    prRouting: af?.prRouting ?? false,
+                    qualityChatbot: af?.qualityChatbot ?? false,
                 },
+                aiConfig: res.data.organization?.aiConfig,
             };
         },
         enabled: !!token,
@@ -82,10 +92,11 @@ export function useOrganizationFeatures() {
     });
 
     return {
-        features:      data?.features   ?? DEFAULT_FEATURES,
-        aiFeatures:    data?.aiFeatures  ?? DEFAULT_AI_FEATURES,
+        features: data?.features ?? DEFAULT_FEATURES,
+        aiFeatures: data?.aiFeatures ?? DEFAULT_AI_FEATURES,
+        aiConfig: data?.aiConfig,
         isLoading,
         updateFeatures: mutation.mutateAsync,
-        isUpdating:    mutation.isPending,
+        isUpdating: mutation.isPending,
     };
 }

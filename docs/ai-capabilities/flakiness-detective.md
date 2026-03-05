@@ -44,6 +44,25 @@ Past analyses are listed in the **history panel** on the right side of the Stabi
 
 ---
 
+## Smart Execution Analytics (Phase 5)
+
+Phase 5 introduces persistent tracking of individual test health across all executions. These metrics are displayed in the **Test Cases** table and the **Investigation Hub**.
+
+### A–F Stability Scoring
+Every test case is assigned a letter grade based on its historical pass rate and retry usage:
+- **🟢 A (>=95%) / B (>=80%)** — Highly reliable.
+- **🟡 C (>=65%)** — Noticeable flakiness; requires investigation.
+- **🔴 D (>=50%) / F (<50%)** — Unstable; primary candidates for Auto-Quarantine.
+- **⬜ UNGRADED** — Insufficient historical data.
+
+### 🐌 Performance Degradation
+Agnox tracks the **historical average duration** of every test. If a new execution runs significantly slower (e.g., >2x duration or >500ms regression), a 🐌 **Slow** badge is displayed in the Investigation Hub. This helps teams catch performance regressions before they reach production.
+
+### AI Failure Clustering
+To optimize LLM usage and accuracy, Agnox generates an `errorHash` (fingerprint) for every failure. Similar errors across a run are clustered together, ensuring the AI only analyzes unique root causes rather than wasting tokens on duplicate failures.
+
+---
+
 ## Related
 
 - [AI Configuration & BYOK →](./configuration)

@@ -147,6 +147,25 @@ AI analysis can be disabled per-organization in **Settings → Organization**.
 
 ---
 
+## Auto-Quarantine & Quality Gate Bypass
+
+Phase 5 introduces **Auto-Quarantine** to prevent flaky tests from blocking your CI/CD pipelines.
+
+### How it Works
+1. When a test fails **3 consecutive times**, Agnox automatically flags it as quarantined.
+2. In the **Test Cases** table, these tests appear with a prominent **QUARANTINED** badge.
+3. In the **Investigation Hub**, quarantined failures are dimmed and struck-through.
+
+### Quality Gate Bypass
+The Agnox CI/CD webhook (`POST /api/webhooks/ci/pr`) implements a smart quality gate:
+- If an execution fails, but **all failed tests are currently quarantined**, the webhook will return a `PASSED` status to your CI provider (e.g., GitHub Actions).
+- This ensures that known flaky tests do not halt your deployment pipeline while your team works on a fix.
+- A test automatically "self-heals" and leaves quarantine as soon as it passes once.
+
+> **Note:** Auto-Quarantine must be enabled in **Settings → Run Settings** for each project.
+
+---
+
 ## Related
 
 - [Test Cases →](./test-cases)

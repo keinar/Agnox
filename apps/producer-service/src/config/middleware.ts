@@ -24,7 +24,7 @@ export function setupSecurityHeaders(app: FastifyInstance): void {
         }
 
         // Content-Security-Policy (MED-1)
-        reply.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'");
+        reply.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'");
     });
 }
 

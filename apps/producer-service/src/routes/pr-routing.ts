@@ -25,7 +25,7 @@
 import { FastifyInstance } from 'fastify';
 import { MongoClient, ObjectId } from 'mongodb';
 import { randomUUID, createHmac, timingSafeEqual } from 'crypto';
-import { resolveLlmConfig, LlmNotConfiguredError } from '../utils/llm-config.js';
+import { resolveLlmConfig, LlmNotConfiguredError } from '../../../../packages/shared-types/index.js';
 import { rabbitMqService } from '../rabbitmq.js';
 import { computeOrgPriority } from '../utils/scheduling.js';
 
@@ -52,9 +52,9 @@ function extractChangedFiles(body: Record<string, any>): string[] {
     if (Array.isArray(body.commits)) {
         const files = new Set<string>();
         for (const commit of body.commits as any[]) {
-            for (const file of (commit.added    ?? []) as string[]) files.add(file);
+            for (const file of (commit.added ?? []) as string[]) files.add(file);
             for (const file of (commit.modified ?? []) as string[]) files.add(file);
-            for (const file of (commit.removed  ?? []) as string[]) files.add(file);
+            for (const file of (commit.removed ?? []) as string[]) files.add(file);
         }
         return [...files].slice(0, 500);
     }
@@ -68,18 +68,18 @@ function extractChangedFiles(body: Record<string, any>): string[] {
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
-import type { IResolvedLlmConfig } from '../utils/llm-config.js';
+import type { IResolvedLlmConfig } from '../../../../packages/shared-types/index.js';
 
 async function callLlmText(prompt: string, config: IResolvedLlmConfig): Promise<string> {
     if (config.provider === 'gemini') {
-        const genAI  = new GoogleGenerativeAI(config.apiKey);
-        const model  = genAI.getGenerativeModel({ model: config.model });
+        const genAI = new GoogleGenerativeAI(config.apiKey);
+        const model = genAI.getGenerativeModel({ model: config.model });
         const result = await model.generateContent(prompt);
         return result.response.text().trim();
     }
     if (config.provider === 'openai') {
-        const openai    = new OpenAI({ apiKey: config.apiKey });
-        const response  = await openai.chat.completions.create({
+        const openai = new OpenAI({ apiKey: config.apiKey });
+        const response = await openai.chat.completions.create({
             model: config.model,
             messages: [{ role: 'user', content: prompt }],
         });
@@ -87,10 +87,10 @@ async function callLlmText(prompt: string, config: IResolvedLlmConfig): Promise<
     }
     if (config.provider === 'anthropic') {
         const anthropic = new Anthropic({ apiKey: config.apiKey });
-        const response  = await anthropic.messages.create({
-            model:      config.model,
+        const response = await anthropic.messages.create({
+            model: config.model,
             max_tokens: 512,
-            messages:   [{ role: 'user', content: prompt }],
+            messages: [{ role: 'user', content: prompt }],
         });
         const block = response.content[0];
         return (block.type === 'text' ? block.text : '').trim();
@@ -111,8 +111,8 @@ export async function prRoutingRoutes(
     app: FastifyInstance,
     mongoClient: MongoClient,
 ): Promise<void> {
-    const db                 = mongoClient.db(DB_NAME);
-    const orgsCollection     = db.collection('organizations');
+    const db = mongoClient.db(DB_NAME);
+    const orgsCollection = db.collection('organizations');
     const settingsCollection = db.collection('projectRunSettings');
 
     // ── POST /api/webhooks/ci/pr ───────────────────────────────────────────────
@@ -159,7 +159,7 @@ export async function prRoutingRoutes(
             if (!sigHeader) {
                 return reply.status(401).send({ success: false, error: 'Missing X-Hub-Signature-256 header' });
             }
-            const rawBody  = JSON.stringify(request.body ?? {});
+            const rawBody = JSON.stringify(request.body ?? {});
             const expected = `sha256=${createHmac('sha256', org.webhookSecret as string).update(rawBody, 'utf8').digest('hex')}`;
             let signatureValid = false;
             try {
@@ -181,7 +181,7 @@ export async function prRoutingRoutes(
             });
         }
 
-        const body         = (request.body ?? {}) as Record<string, any>;
+        const body = (request.body ?? {}) as Record<string, any>;
         const changedFiles = extractChangedFiles(body);
 
         if (changedFiles.length === 0) {
@@ -212,8 +212,8 @@ export async function prRoutingRoutes(
         // Resolve LLM config
         const llmConfig = resolveLlmConfig(org.aiConfig);
 
-        const fileList    = changedFiles.slice(0, 100).join('\n');
-        const baseFolder  = runSettings.defaultTestFolder || 'tests';
+        const fileList = changedFiles.slice(0, 100).join('\n');
+        const baseFolder = runSettings.defaultTestFolder || 'tests';
 
         const routingPrompt = `You are a smart CI test router. Your job is to map changed source files to the most relevant automated test folder.
 
@@ -233,10 +233,10 @@ Your ENTIRE response must be a single valid JSON object. Do NOT include markdown
         app.log.info(`[pr-routing] Resolving test target for ${changedFiles.length} changed file(s) in org "${org.name}" using ${llmConfig.provider}/${llmConfig.model}`);
 
         let targetFolder = baseFolder;
-        let reasoning    = '';
+        let reasoning = '';
 
         try {
-            const rawText  = await callLlmText(routingPrompt, llmConfig);
+            const rawText = await callLlmText(routingPrompt, llmConfig);
             const jsonText = stripCodeFences(rawText);
 
             const parsed = JSON.parse(jsonText);
@@ -265,23 +265,23 @@ Your ENTIRE response must be a single valid JSON object. Do NOT include markdown
         }
 
         // Build RabbitMQ task
-        const taskId   = randomUUID();
-        const baseUrl  = runSettings.targetUrls?.staging ?? runSettings.targetUrls?.dev ?? '';
-        const command  = `npx playwright test ${targetFolder}`;
+        const taskId = randomUUID();
+        const baseUrl = runSettings.targetUrls?.staging ?? runSettings.targetUrls?.dev ?? '';
+        const command = `npx playwright test ${targetFolder}`;
 
         const task = {
             taskId,
             organizationId: orgIdStr,
-            image:          runSettings.dockerImage,
+            image: runSettings.dockerImage,
             command,
-            folder:         targetFolder,
+            folder: targetFolder,
             config: {
                 environment: 'staging' as const,
                 baseUrl,
                 retryAttempts: 1,
             },
             groupName: `PR Routing — ${new Date().toISOString().slice(0, 10)}`,
-            trigger:   'webhook' as const,
+            trigger: 'webhook' as const,
         };
 
         await rabbitMqService.sendToQueue(task, priority);

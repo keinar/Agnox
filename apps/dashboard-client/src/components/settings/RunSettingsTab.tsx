@@ -28,12 +28,14 @@ interface RunSettings {
         prod: string;
     };
     defaultTestFolder: string;
+    autoQuarantineEnabled?: boolean;
 }
 
 const EMPTY_SETTINGS: RunSettings = {
     dockerImage: '',
     targetUrls: { dev: '', staging: '', prod: '' },
     defaultTestFolder: '',
+    autoQuarantineEnabled: false,
 };
 
 // ── Shared class strings ───────────────────────────────────────────────────────
@@ -186,11 +188,10 @@ export function RunSettingsTab() {
         <div>
             {/* Feedback banner */}
             {message && (
-                <div className={`mb-4 px-4 py-3 rounded-lg text-sm border ${
-                    message.type === 'success'
+                <div className={`mb-4 px-4 py-3 rounded-lg text-sm border ${message.type === 'success'
                         ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400'
                         : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
-                }`}>
+                    }`}>
                     {message.text}
                 </div>
             )}
@@ -378,7 +379,7 @@ export function RunSettingsTab() {
                         </div>
 
                         {/* Default Test Folder */}
-                        <div className="mb-5">
+                        <div className="mb-8">
                             <label htmlFor="rs-test-folder" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                 Default Test Folder
                             </label>
@@ -390,6 +391,42 @@ export function RunSettingsTab() {
                                 placeholder="e.g. tests/e2e"
                                 className={INPUT_CLASS}
                             />
+                        </div>
+
+                        {/* ── Smart Analytics ──────────────────────────────────────────── */}
+                        <div className="mb-6">
+                            <h3 className="text-md font-semibold text-slate-900 dark:text-slate-100 mb-1">
+                                Smart Analytics
+                            </h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                                Phase 5 advanced analytics capabilities for this project.
+                            </p>
+
+                            {/* Auto-Quarantine Toggle */}
+                            <div className="flex items-center justify-between py-4 rounded-xl bg-slate-50 dark:bg-gh-bg-dark border border-slate-200 dark:border-gh-border-dark px-4 mb-5 max-w-lg">
+                                <div className="flex-1 min-w-0 pr-4">
+                                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                                        Auto-Quarantine Flaky Tests
+                                    </p>
+                                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                                        Automatically quarantine tests that fail 3 consecutive times to prevent them from blocking CI/CD pipelines. They will Auto-Heal on the next pass.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={settings.autoQuarantineEnabled || false}
+                                    onClick={() => setSettings(prev => ({ ...prev, autoQuarantineEnabled: !prev.autoQuarantineEnabled }))}
+                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors duration-200
+                                        ${settings.autoQuarantineEnabled ? 'bg-gh-accent dark:bg-gh-accent-dark' : 'bg-slate-300 dark:bg-slate-600'}
+                                        cursor-pointer`}
+                                >
+                                    <span
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200
+                                            ${settings.autoQuarantineEnabled ? 'translate-x-6' : 'translate-x-1'}`}
+                                    />
+                                </button>
+                            </div>
                         </div>
 
                         {/* Save button */}
@@ -445,11 +482,10 @@ export function RunSettingsTab() {
                                     />
                                 </button>
                             ) : (
-                                <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                                    aiFeatures.prRouting
+                                <span className={`text-xs font-semibold px-2 py-1 rounded-full ${aiFeatures.prRouting
                                         ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
                                         : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
-                                }`}>
+                                    }`}>
                                     {aiFeatures.prRouting ? 'Enabled' : 'Disabled'}
                                 </span>
                             )}

@@ -47,6 +47,8 @@ export default defineConfig({
             'Content-Type': 'application/json',
         },
         trace: 'on-first-retry',
+        screenshot: 'only-on-failure',
+        video: 'retain-on-failure',
     },
 
     projects: [

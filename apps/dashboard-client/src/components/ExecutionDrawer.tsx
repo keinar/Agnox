@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import type { Execution } from '../types';
+import type { Execution, ITestResult } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { TerminalView } from './TerminalView';
 import { AIAnalysisView } from './AIAnalysisView';
@@ -34,13 +34,13 @@ interface ExecutionDrawerProps {
   defaultTab?: DrawerTab;
 }
 
-export type DrawerTab = 'terminal' | 'artifacts' | 'ai-analysis';
+export type DrawerTab = 'terminal' | 'tests' | 'artifacts' | 'ai-analysis';
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }: ExecutionDrawerProps) {
   const { token } = useAuth();
-  const { aiFeatures } = useOrganizationFeatures();
+  const { aiFeatures, aiConfig } = useOrganizationFeatures();
   const queryClient = useQueryClient();
   const [fetchingReport, setFetchingReport] = useState(false);
   const [showJiraModal, setShowJiraModal] = useState(false);
@@ -90,7 +90,7 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
                 ...old,
                 executions: old.executions.map((ex: Execution) =>
                   ex.taskId === executionId &&
-                  ((ex as any).output?.length ?? 0) < historical.length
+                    ((ex as any).output?.length ?? 0) < historical.length
                     ? { ...ex, output: historical }
                     : ex,
                 ),
@@ -165,6 +165,17 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
       { id: 'terminal', label: 'Terminal' },
     ];
 
+    // Phase 5: Show Tests tab when there are results to display.
+    const testResults = (execution?.tests ?? []).map((t: any): ITestResult => {
+      if (typeof t === 'string') {
+        return { testId: t, name: t, status: 'failed' } as ITestResult;
+      }
+      return t as ITestResult;
+    });
+    if (testResults.length > 0) {
+      tabs.push({ id: 'tests', label: `Tests (${testResults.length})` });
+    }
+
     if (artifactsLoading || artifacts.length > 0) {
       tabs.push({ id: 'artifacts', label: 'Artifacts' });
     }
@@ -175,7 +186,7 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
     }
 
     return tabs;
-  }, [artifactsLoading, artifacts.length, execution?.status, execution?.analysis]);
+  }, [artifactsLoading, artifacts.length, execution?.tests, execution?.status, execution?.analysis]);
 
   // ── Derive the effective active tab — fully pure, no effects needed ──────
   // 1. If the stored tab belongs to a different executionId, reset to defaultTab.
@@ -571,6 +582,101 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
                     />
                   )}
 
+                  {/* ── Tests Tab (Phase 5: Smart Analytics) ──────────────────── */}
+                  {effectiveTab === 'tests' && (() => {
+                    const testResults = (execution?.tests ?? []).map((t: any): ITestResult => {
+                      if (typeof t === 'string') {
+                        return { testId: t, name: t, status: 'failed' } as ITestResult;
+                      }
+                      return t as ITestResult;
+                    });
+                    return (
+                      <div role="tabpanel" aria-labelledby="execution-drawer-tab-tests" className="h-full overflow-y-auto p-4">
+                        {testResults.length === 0 ? (
+                          <p className="text-sm text-slate-500 dark:text-slate-400 text-center pt-12">No test results recorded.</p>
+                        ) : (
+                          <ul className="flex flex-col gap-2">
+                            {testResults.map((t, idx) => {
+                              const isFailed = t.status !== 'passed' && t.status !== 'skipped';
+                              const isQuarantinedFail = isFailed && t.isQuarantined;
+
+                              return (
+                                <li
+                                  key={t.testId || idx}
+                                  className={`flex items-start gap-3 p-3 rounded-lg border transition-colors
+                                    ${isQuarantinedFail
+                                      ? 'bg-slate-50 dark:bg-gh-bg-subtle-dark border-slate-200 dark:border-gh-border-dark opacity-60'
+                                      : isFailed
+                                        ? 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50'
+                                        : t.status === 'skipped'
+                                          ? 'bg-slate-50 dark:bg-gh-bg-subtle-dark border-slate-200 dark:border-gh-border-dark'
+                                          : 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50'
+                                    }`}
+                                >
+                                  {/* Status Dot */}
+                                  <span
+                                    title={t.status}
+                                    className={`mt-0.5 shrink-0 w-2.5 h-2.5 rounded-full
+                                      ${t.status === 'passed' ? 'bg-emerald-500' :
+                                        t.status === 'skipped' ? 'bg-slate-400' :
+                                          isQuarantinedFail ? 'bg-slate-400' :
+                                            'bg-rose-500'}`}
+                                  />
+
+                                  {/* Details */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center flex-wrap gap-2">
+                                      <span className={`text-sm font-mono truncate ${isQuarantinedFail ? 'text-slate-500 dark:text-slate-400 line-through' :
+                                        isFailed ? 'text-rose-800 dark:text-rose-300' :
+                                          'text-slate-800 dark:text-slate-200'
+                                        }`}>
+                                        {t.name || t.testId || 'Unknown Test'}
+                                      </span>
+
+                                      {/* Performance Degradation Warning */}
+                                      {t.performanceDegradation && (
+                                        <span
+                                          title="Performance Degradation: This test ran significantly slower than its historical average."
+                                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800"
+                                        >
+                                          🐌 Slow
+                                        </span>
+                                      )}
+
+                                      {/* Quarantine Badge */}
+                                      {isQuarantinedFail && (
+                                        <span
+                                          title="This test is quarantined — its failure is suppressed in CI/CD pipelines."
+                                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-fuchsia-100 dark:bg-fuchsia-950/40 text-fuchsia-700 dark:text-fuchsia-400 border border-fuchsia-200 dark:border-fuchsia-800"
+                                        >
+                                          Ignored (Quarantined)
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {/* Error message */}
+                                    {t.error && !isQuarantinedFail && (
+                                      <p className="mt-1 text-xs text-rose-700 dark:text-rose-400 font-mono truncate" title={t.error}>
+                                        {t.error}
+                                      </p>
+                                    )}
+
+                                    {/* Duration */}
+                                    {typeof t.duration === 'number' && (
+                                      <p className="mt-0.5 text-[10px] text-slate-400 dark:text-slate-500">
+                                        {(t.duration / 1000).toFixed(2)}s
+                                      </p>
+                                    )}
+                                  </div>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   {effectiveTab === 'artifacts' && (
                     <div role="tabpanel" aria-labelledby="execution-drawer-tab-artifacts" className="h-full overflow-y-auto p-6">
                       <ArtifactsView artifacts={artifacts} isLoading={artifactsLoading} />
@@ -582,6 +688,7 @@ export function ExecutionDrawer({ executionId, execution, onClose, defaultTab }:
                       <AIAnalysisView
                         analysis={execution?.analysis ?? null}
                         status={execution?.status ?? ''}
+                        aiModel={execution?.aiModel || aiConfig?.defaultModel}
                       />
                     </div>
                   )}

@@ -20,7 +20,7 @@ import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import Redis from 'ioredis';
 import { z } from 'zod';
-import { resolveLlmConfig, LlmNotConfiguredError, IResolvedLlmConfig } from '../utils/llm-config.js';
+import { resolveLlmConfig, LlmNotConfiguredError, IResolvedLlmConfig } from '../../../../packages/shared-types/index.js';
 import { sanitizePipeline, PipelineSanitizationError, ALLOWED_COLLECTIONS } from '../utils/chat-sanitizer.js';
 import { createCustomRateLimiter } from '../middleware/rateLimiter.js';
 
@@ -136,7 +136,7 @@ function stripCodeFences(text: string): string {
 
 /** Zod schema for the chat endpoint body. Enforces non-empty + max 5000 chars. */
 const ChatMessageSchema = z.object({
-    message:        z.string().min(1).max(5000),
+    message: z.string().min(1).max(5000),
     conversationId: z.string().optional(),
 });
 

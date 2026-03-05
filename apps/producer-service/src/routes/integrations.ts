@@ -22,7 +22,7 @@
 
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { MongoClient, ObjectId } from 'mongodb';
-import { encrypt, decrypt, IEncryptedPayload } from '../utils/encryption.js';
+import { encrypt, decrypt, IEncryptedPayload } from '../../../../packages/shared-types/index.js';
 import { getDbName } from '../config/server.js';
 
 const DB_NAME = getDbName();

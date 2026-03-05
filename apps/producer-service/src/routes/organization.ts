@@ -22,7 +22,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { authMiddleware, adminOnly } from '../middleware/auth.js';
 import { checkUsageAlerts } from '../utils/usageAlerts.js';
-import { encrypt } from '../utils/encryption.js';
+import { encrypt } from '../../../../packages/shared-types/index.js';
 
 const DB_NAME = 'automation_platform';
 const REPORTS_DIR = process.env.REPORTS_DIR || path.join(process.cwd(), 'reports');
@@ -186,12 +186,12 @@ export async function organizationRoutes(
 
       // Backwards-compat: if aiFeatures absent, derive rootCauseAnalysis from legacy flag
       const aiFeatures = {
-        rootCauseAnalysis:  org.aiFeatures?.rootCauseAnalysis  ?? (org.aiAnalysisEnabled !== false),
-        autoBugGeneration:  org.aiFeatures?.autoBugGeneration  ?? false,
+        rootCauseAnalysis: org.aiFeatures?.rootCauseAnalysis ?? (org.aiAnalysisEnabled !== false),
+        autoBugGeneration: org.aiFeatures?.autoBugGeneration ?? false,
         flakinessDetective: org.aiFeatures?.flakinessDetective ?? false,
-        testOptimizer:      org.aiFeatures?.testOptimizer      ?? false,
-        prRouting:          org.aiFeatures?.prRouting          ?? false,
-        qualityChatbot:     org.aiFeatures?.qualityChatbot     ?? false,
+        testOptimizer: org.aiFeatures?.testOptimizer ?? false,
+        prRouting: org.aiFeatures?.prRouting ?? false,
+        qualityChatbot: org.aiFeatures?.qualityChatbot ?? false,
       };
 
       return reply.send({
@@ -209,8 +209,8 @@ export async function organizationRoutes(
           aiConfig: {
             defaultModel: org.aiConfig?.defaultModel ?? 'gemini-2.5-flash',
             byokConfigured: {
-              gemini:    !!org.aiConfig?.byok?.gemini,
-              openai:    !!org.aiConfig?.byok?.openai,
+              gemini: !!org.aiConfig?.byok?.gemini,
+              openai: !!org.aiConfig?.byok?.openai,
               anthropic: !!org.aiConfig?.byok?.anthropic,
             },
           },
@@ -595,12 +595,12 @@ export async function organizationRoutes(
           testCyclesEnabled: updatedOrg?.features?.testCyclesEnabled !== false,
         },
         aiFeatures: {
-          rootCauseAnalysis:  updatedOrg?.aiFeatures?.rootCauseAnalysis  ?? (updatedOrg?.aiAnalysisEnabled !== false),
-          autoBugGeneration:  updatedOrg?.aiFeatures?.autoBugGeneration  ?? false,
+          rootCauseAnalysis: updatedOrg?.aiFeatures?.rootCauseAnalysis ?? (updatedOrg?.aiAnalysisEnabled !== false),
+          autoBugGeneration: updatedOrg?.aiFeatures?.autoBugGeneration ?? false,
           flakinessDetective: updatedOrg?.aiFeatures?.flakinessDetective ?? false,
-          testOptimizer:      updatedOrg?.aiFeatures?.testOptimizer      ?? false,
-          prRouting:          updatedOrg?.aiFeatures?.prRouting          ?? false,
-          qualityChatbot:     updatedOrg?.aiFeatures?.qualityChatbot     ?? false,
+          testOptimizer: updatedOrg?.aiFeatures?.testOptimizer ?? false,
+          prRouting: updatedOrg?.aiFeatures?.prRouting ?? false,
+          qualityChatbot: updatedOrg?.aiFeatures?.qualityChatbot ?? false,
         },
       });
 
@@ -818,8 +818,8 @@ export async function organizationRoutes(
         data: {
           defaultModel: org.aiConfig?.defaultModel ?? 'gemini-2.5-flash',
           byokConfigured: {
-            gemini:    !!org.aiConfig?.byok?.gemini,
-            openai:    !!org.aiConfig?.byok?.openai,
+            gemini: !!org.aiConfig?.byok?.gemini,
+            openai: !!org.aiConfig?.byok?.openai,
             anthropic: !!org.aiConfig?.byok?.anthropic,
           },
         },
@@ -953,8 +953,8 @@ export async function organizationRoutes(
         data: {
           defaultModel: updatedOrg?.aiConfig?.defaultModel ?? 'gemini-2.5-flash',
           byokConfigured: {
-            gemini:    !!updatedOrg?.aiConfig?.byok?.gemini,
-            openai:    !!updatedOrg?.aiConfig?.byok?.openai,
+            gemini: !!updatedOrg?.aiConfig?.byok?.gemini,
+            openai: !!updatedOrg?.aiConfig?.byok?.openai,
             anthropic: !!updatedOrg?.aiConfig?.byok?.anthropic,
           },
         },
